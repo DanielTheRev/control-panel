@@ -1,12 +1,12 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Observable, fromEvent, of } from 'rxjs';
 import {
-  SocketNotification,
-  TransactionNotification,
+  newOrderNotification,
   OrderUpdateNotification,
+  SocketNotification,
   WebSocketState,
 } from '../interfaces/websocket.interface';
+import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -15,7 +15,7 @@ import { AuthService } from './auth.service';
 export class WebSocketService {
   private socket: Socket | null = null;
   private readonly SERVER_URL = 'http://localhost:3000';
-
+  private orderState = inject(OrdersStateService);
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
     connected: false,
@@ -36,17 +36,7 @@ export class WebSocketService {
     console.log('🔌 Inicializando WebSocketService');
     // Escuchar cambios en el estado de autenticación usando effect
     effect(() => {
-      const isAuth = this.authService.isAuthenticated();
-      const isAdmin = this.authService.isAdmin();
-      const user = this.authService.user();
-
-      console.log('🔄 Estado de auth cambió:', {
-        isAuth,
-        isAdmin,
-        user: user?.email,
-      });
-
-      if (isAuth && isAdmin) {
+      if (this.authService.isAuthenticated()) {
         console.log('✅ Usuario admin autenticado, conectando WebSocket...');
         this.connect();
       } else {
@@ -123,12 +113,12 @@ export class WebSocketService {
     // Notificaciones de transacciones
     this.socket.on(
       'transaction-notification',
-      (notification: TransactionNotification) => {
+      (notification: newOrderNotification) => {
         console.log('📨 Nueva transacción:', notification);
         this.addNotification(notification);
         this.showNotification(
           'Nueva Transacción',
-          `Orden #${notification.data.orderId.slice(-6)} - $${
+          `Orden #${notification.data._id.slice(-6)} - $${
             notification.data.total
           }`
         );
@@ -139,14 +129,19 @@ export class WebSocketService {
     this.socket.on(
       'order-notification',
       (notification: OrderUpdateNotification) => {
-        console.log('📨 Actualización de orden:', notification);
+        console.log('📨 Actualización de ordenes:', notification);
         this.addNotification(notification);
         this.showNotification(
-          'Orden Actualizada',
-          `Orden #${notification.data.orderId.slice(-6)} - ${
-            notification.data.newStatus
+          notification.message,
+          `Orden #${notification.data._id.slice(-6)} - Monto: ${
+            notification.data.total
+          } - Usuario: ${notification.data.user.name} - Email: ${
+            notification.data.user.email
           }`
         );
+        if (notification.type === 'order_new') {
+          this.orderState.addNewOrder(notification.data);
+        }
       }
     );
 
@@ -266,33 +261,5 @@ export class WebSocketService {
       connected: this.socket?.connected || false,
       socketId: this.socket?.id || null,
     };
-  }
-
-  // Método para pruebas - simular estado conectado
-  simulateConnection(): void {
-    console.log('🧪 Simulando conexión WebSocket para pruebas');
-    this.updateConnectionState(true);
-
-    // Agregar notificación de prueba
-    const testNotification: SocketNotification = {
-      id: 'test-' + Date.now(),
-      type: 'new_order',
-      message: 'Nueva orden recibida - Orden #123456',
-      data: { orderId: '123456', total: 299.99 },
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
-
-    this.addNotification(testNotification);
-    console.log('✅ Notificación de prueba agregada');
-  }
-
-  // Forzar reconexión
-  forceReconnect(): void {
-    console.log('🔄 Forzando reconexión WebSocket');
-    this.disconnect();
-    setTimeout(() => {
-      this.connect();
-    }, 1000);
   }
 }

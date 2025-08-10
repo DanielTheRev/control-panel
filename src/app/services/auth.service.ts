@@ -33,7 +33,7 @@ export class AuthService {
   public isAdmin = computed(() => this._authState().user?.role === 'admin');
 
   constructor(private http: HttpClient, private router: Router) {
-    this.initializeAuthState();
+    // this.initializeAuthState();
   }
 
   private initializeAuthState(): void {

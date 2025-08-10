@@ -7,17 +7,17 @@ import { IOrder } from '../interfaces/order.interface';
   providedIn: 'root',
 })
 export class OrdersService {
-  private apiUR = `http:localhost:3000/api/orders`;
+  private apiURI = `http://localhost:3000/api/orders`;
   private _http = inject(HttpClient);
 
   getOrders() {
-    return firstValueFrom(this._http.get(`${this.apiUR}`));
+    return firstValueFrom(this._http.get(`${this.apiURI}`));
   }
 
   updatePaymentState(orderID: string) {
     return firstValueFrom(
-      this._http.post<{ message: string; order: IOrder }>(
-        `${this.apiUR}/updatePaymentStatus`,
+      this._http.post<{ message: string; orderUpdated: IOrder }>(
+        `${this.apiURI}/updatePaymentStatus`,
         {
           orderID,
         }

@@ -1,22 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 
 // Importar las interfaces (asumiendo que están en archivos separados)
-import { httpResource, HttpResourceRef } from '@angular/common/http';
 import {
   IOrder,
-  IOrderItem,
-  OrdersApiResponse,
   OrderStatus,
   PaymentStatus,
 } from '../../interfaces/order.interface';
 import { PaymentType } from '../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../interfaces/shipping.interface';
-import { OrdersService } from '../../services/orders.service';
-
-interface SearchParams {
-  page: number;
-  limit: number;
-}
+import { OrdersStateService } from '../../states/order.state.service';
 
 @Component({
   selector: 'app-client-orders',
@@ -25,61 +17,36 @@ interface SearchParams {
   styleUrl: './client-orders.scss',
 })
 export class ClientOrders {
-  private orderService = inject(OrdersService);
-  private orderState: HttpResourceRef<OrdersApiResponse | undefined>;
+  // Inyectar el servicio de estado
+  private orderStateService = inject(OrdersStateService);
 
-  // Signals para filtros y paginación
-  selectedStatus = signal<string>('all');
-  selectedDateRange = signal<string>('this_week');
-  currentPage = signal<number>(1);
+  // Signal para órdenes expandidas
   expandedOrders = signal<Set<string>>(new Set());
-  requestParams = computed(() => {
-    const params: SearchParams = {
-      page: this.currentPage(),
-      limit: 12, // Puedes ajustar este valor según tus necesidades
-    };
 
-    // Agregar parámetros de búsqueda
-    // const searchQuery = this.buildSearchQuery();
-    // if (searchQuery) {
-    //   params.q = searchQuery;
-    // }
+  // Exponer propiedades del servicio para el template
+  readonly orders = this.orderStateService.orders;
+  readonly pagination = this.orderStateService.pagination;
+  readonly isLoading = this.orderStateService.isLoading;
+  readonly error = this.orderStateService.error;
+  readonly hasData = this.orderStateService.hasData;
 
-    return params;
-  });
+  // Estadísticas
+  readonly pendingCount = this.orderStateService.pendingCount;
+  readonly processingCount = this.orderStateService.processingCount;
+  readonly shippedCount = this.orderStateService.shippedCount;
+  readonly deliveredCount = this.orderStateService.deliveredCount;
+  readonly cancelledCount = this.orderStateService.cancelledCount;
+  readonly totalRevenue = this.orderStateService.totalRevenue;
+  readonly pendingPayments = this.orderStateService.pendingPayments;
 
-  constructor() {
-    this.orderState = httpResource(
-      () => ({
-        url: 'http://localhost:3000/api/orders',
-        method: 'GET',
-        params: {
-          page: this.requestParams().page,
-          limit: 10,
-        },
-      }),
-      {
-        parse: (res: any) => {
-          console.log(res);
-          return res;
-        },
-      }
-    );
-  }
+  // Filtros
+  readonly status = this.orderStateService.status;
+  readonly dateRange = this.orderStateService.dateRange;
+  readonly page = this.orderStateService.page;
 
-  // Computed signals
-  orders = computed(() => this.orderState.value()?.data || []);
-  pagination = computed(
-    () =>
-      this.orderState.value()?.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 10,
-      }
-  );
-  isLoading = computed(() => this.orderState.isLoading());
-  error = computed(() => this.orderState.error());
+  // Opciones para filtros
+  readonly statusOptions = this.orderStateService.getStatusOptions();
+  readonly dateRangeOptions = this.orderStateService.getDateRangeOptions();
 
   // Enums para usar en el template
   readonly OrderStatus = OrderStatus;
@@ -87,45 +54,32 @@ export class ClientOrders {
   readonly PaymentType = PaymentType;
   readonly ShippingType = ShippingType;
 
-  // Opciones para los filtros
-  readonly statusOptions = [
-    { value: 'all', label: 'Todas las órdenes' },
-    { value: OrderStatus.PENDING, label: 'Pendientes' },
-    { value: OrderStatus.PROCESSING_SHIPPING, label: 'En proceso' },
-    { value: OrderStatus.SHIPPED, label: 'Enviadas' },
-    { value: OrderStatus.DELIVERED, label: 'Entregadas' },
-    { value: OrderStatus.CANCELLED, label: 'Canceladas' },
-  ];
-
-  readonly dateRangeOptions = [
-    { value: 'this_week', label: 'Esta semana' },
-    { value: 'this_month', label: 'Este mes' },
-    { value: 'last_3_months', label: 'Últimos 3 meses' },
-    { value: 'last_6_months', label: 'Últimos 6 meses' },
-    { value: 'this_year', label: 'Este año' },
-  ];
-
   /**
    * Actualizar filtro de estado
    */
   updateStatusFilter(status: string): void {
-    this.selectedStatus.set(status);
-    this.currentPage.set(1); // Reset a la primera página
+    this.orderStateService.setStatus(status);
   }
 
   /**
    * Actualizar filtro de fecha
    */
   updateDateFilter(dateRange: string): void {
-    this.selectedDateRange.set(dateRange);
-    this.currentPage.set(1); // Reset a la primera página
+    this.orderStateService.setDateRange(dateRange);
   }
 
   /**
    * Cambiar página
    */
   changePage(page: number): void {
-    this.currentPage.set(page);
+    this.orderStateService.setPage(page);
+  }
+
+  /**
+   * Refrescar datos
+   */
+  refreshData(): void {
+    this.orderStateService.refresh();
   }
 
   /**
@@ -153,101 +107,106 @@ export class ClientOrders {
   /**
    * Marcar pago como recibido
    */
-  async markPaymentReceived(orderID: string) {
+  async markPaymentReceived(order: IOrder): Promise<void> {
     try {
-      const { message, order } = await this.orderService.updatePaymentState(
-        orderID
-      );
-      console.log(message);
-      this.orderState.update((oldSate) => {
-        if (!oldSate) return oldSate;
-        const newState = oldSate.data.map((_order) => {
-          if (_order._id === order._id) return order;
-          return _order;
-        });
-        return {
-          ...oldSate,
-          data: newState,
-        };
-      });
+      await this.orderStateService.updateOrder(order.orderNumber, order);
+      console.log('✅ Pago marcado como recibido');
     } catch (error) {
-      alert(error);
+      console.error('❌ Error al marcar pago como recibido:', error);
+      alert('Error al actualizar el pago. Por favor, intenta nuevamente.');
     }
-    // const updatedOrder: IOrder = {
-    //   ...order,
-    //   paymentInfo: {
-    //     ...order.paymentInfo,
-    //     status: PaymentStatus.APPROVED,
-    //     paymentDate: new Date(),
-    //   },
-    //   updatedAt: new Date(),
-    // };
-
-    // this.updateOrderOnServer(updatedOrder);
   }
 
   /**
    * Marcar orden como entregada (punto de encuentro)
    */
-  markAsDeliveredPickup(order: IOrder): void {
-    const updatedOrder: IOrder = {
-      ...order,
-      status: OrderStatus.DELIVERED,
-      paymentInfo: {
-        ...order.paymentInfo,
-        status: PaymentStatus.APPROVED,
-        paymentDate: order.paymentInfo.paymentDate || new Date(),
-      },
-      updatedAt: new Date(),
-    };
+  async markAsDeliveredPickup(order: IOrder): Promise<void> {
+    try {
+      const updatedOrder: IOrder = {
+        ...order,
+        status: OrderStatus.DELIVERED,
+        paymentInfo: {
+          ...order.paymentInfo,
+          status: PaymentStatus.APPROVED,
+          paymentDate: order.paymentInfo.paymentDate || new Date(),
+        },
+        updatedAt: new Date(),
+      };
 
-    // this.updateOrderOnServer(updatedOrder);
+      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      console.log('✅ Orden marcada como entregada en punto de encuentro');
+    } catch (error) {
+      console.error('❌ Error al marcar como entregada:', error);
+      alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
+    }
   }
 
   /**
    * Marcar orden como enviada
    */
-  markAsShipped(order: IOrder): void {
-    const updatedOrder: IOrder = {
-      ...order,
-      status: OrderStatus.SHIPPED,
-      updatedAt: new Date(),
-    };
+  async markAsShipped(order: IOrder): Promise<void> {
+    try {
+      const updatedOrder: IOrder = {
+        ...order,
+        status: OrderStatus.SHIPPED,
+        updatedAt: new Date(),
+      };
 
-    // this.updateOrderOnServer(updatedOrder);
+      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      console.log('✅ Orden marcada como enviada');
+    } catch (error) {
+      console.error('❌ Error al marcar como enviada:', error);
+      alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
+    }
   }
 
   /**
    * Marcar orden como entregada (envío a domicilio)
    */
-  markAsDelivered(order: IOrder): void {
-    const updatedOrder: IOrder = {
-      ...order,
-      status: OrderStatus.DELIVERED,
-      updatedAt: new Date(),
-    };
+  async markAsDelivered(order: IOrder): Promise<void> {
+    try {
+      const updatedOrder: IOrder = {
+        ...order,
+        status: OrderStatus.DELIVERED,
+        updatedAt: new Date(),
+      };
 
-    // this.updateOrderOnServer(updatedOrder);
+      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      console.log('✅ Orden marcada como entregada a domicilio');
+    } catch (error) {
+      console.error('❌ Error al marcar como entregada:', error);
+      alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
+    }
   }
 
   /**
    * Iniciar proceso de envío
    */
-  startShipping(order: IOrder): void {
-    const updatedOrder: IOrder = {
-      ...order,
-      status: OrderStatus.PROCESSING_SHIPPING,
-      updatedAt: new Date(),
-    };
+  async startShipping(order: IOrder): Promise<void> {
+    try {
+      const updatedOrder: IOrder = {
+        ...order,
+        status: OrderStatus.PROCESSING_SHIPPING,
+        updatedAt: new Date(),
+      };
 
-    // this.updateOrderOnServer(updatedOrder);
+      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      console.log('✅ Proceso de envío iniciado');
+    } catch (error) {
+      console.error('❌ Error al iniciar envío:', error);
+      alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
+    }
   }
 
   /**
    * Cancelar orden
    */
-  cancelOrder(order: IOrder): void {
-    if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
+  async cancelOrder(order: IOrder): Promise<void> {
+    if (!confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
+      return;
+    }
+
+    try {
       const updatedOrder: IOrder = {
         ...order,
         status: OrderStatus.CANCELLED,
@@ -258,7 +217,11 @@ export class ClientOrders {
         updatedAt: new Date(),
       };
 
-      // this.updateOrderOnServer(updatedOrder);
+      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      console.log('✅ Orden cancelada');
+    } catch (error) {
+      console.error('❌ Error al cancelar orden:', error);
+      alert('Error al cancelar la orden. Por favor, intenta nuevamente.');
     }
   }
 
@@ -386,7 +349,7 @@ export class ClientOrders {
   /**
    * Calcular total de ítems
    */
-  calculateItemsTotal(items: IOrderItem[]): number {
+  calculateItemsTotal(items: any[]): number {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }
 
@@ -394,25 +357,7 @@ export class ClientOrders {
    * Obtener array de páginas para la paginación
    */
   getPageNumbers(): number[] {
-    const totalPages = this.pagination().totalPages;
-    const currentPage = this.pagination().currentPage;
-    const pages: number[] = [];
-
-    // Mostrar máximo 5 páginas
-    const maxPages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
-    let endPage = Math.min(totalPages, startPage + maxPages - 1);
-
-    // Ajustar si estamos cerca del final
-    if (endPage - startPage + 1 < maxPages) {
-      startPage = Math.max(1, endPage - maxPages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
+    return this.orderStateService.getPageNumbers();
   }
 
   /**
@@ -440,7 +385,8 @@ export class ClientOrders {
    * Manejar reorden
    */
   reorder(order: IOrder): void {
-    console.log('Reordenando:', order.orderNumber);
+    console.log('🔄 Reordenando:', order.orderNumber);
+    // Implementar lógica de reorden aquí
   }
 
   /**
@@ -460,14 +406,27 @@ export class ClientOrders {
   /**
    * TrackBy function para ítems
    */
-  trackByItemIndex(index: number, item: IOrderItem): number {
+  trackByItemIndex(index: number, item: any): number {
     return index;
   }
 
   /**
-   * Recargar datos
+   * Resetear filtros
    */
-  refreshData(): void {
-    // this.ordersResource.reload();
+  resetFilters(): void {
+    this.orderStateService.resetFilters();
+  }
+
+  /**
+   * Obtener información de paginación para mostrar
+   */
+  getPaginationInfo(): string {
+    const pagination = this.pagination();
+    const start = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
+    const end = Math.min(
+      pagination.currentPage * pagination.itemsPerPage,
+      pagination.totalItems
+    );
+    return `Mostrando ${start} a ${end} de ${pagination.totalItems} resultados`;
   }
 }

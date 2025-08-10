@@ -1,3 +1,5 @@
+import { IOrder } from './order.interface';
+
 export interface SocketNotification {
   id: string;
   type: string;
@@ -7,40 +9,14 @@ export interface SocketNotification {
   read?: boolean;
 }
 
-export interface TransactionNotification extends SocketNotification {
-  type: 'new-transaction';
-  data: {
-    orderId: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    total: number;
-    status: string;
-    paymentMethod: string;
-    items: Array<{
-      product: any;
-      quantity: number;
-      price: number;
-    }>;
-  };
+export interface newOrderNotification extends SocketNotification {
+  type: 'transaction-new';
+  data: IOrder;
 }
 
 export interface OrderUpdateNotification extends SocketNotification {
-  type: 'order-update';
-  data: {
-    orderId: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    previousStatus: string;
-    newStatus: string;
-    total: number;
-    updatedBy: string;
-  };
+  type: 'order_new';
+  data: IOrder;
 }
 
 export interface WebSocketState {
