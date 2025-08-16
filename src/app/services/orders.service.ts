@@ -2,12 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { IOrder } from '../interfaces/order.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrdersService {
-  private apiURI = `http://localhost:3000/api/orders`;
+  private apiURI = `${environment.apiUrl}/orders`;
   private _http = inject(HttpClient);
 
   getOrders() {

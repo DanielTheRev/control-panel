@@ -8,13 +8,13 @@ import {
 } from '../interfaces/websocket.interface';
 import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class WebSocketService {
   private socket: Socket | null = null;
-  private readonly SERVER_URL = 'http://localhost:3000';
   private orderState = inject(OrdersStateService);
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
@@ -69,10 +69,11 @@ export class WebSocketService {
       token.substring(0, 20) + '...'
     );
 
-    this.socket = io(this.SERVER_URL, {
+    this.socket = io(environment.socket_config.url, {
       auth: {
         token: token,
       },
+      path: environment.socket_config.path,
       transports: ['websocket', 'polling'],
       autoConnect: true,
       timeout: 5000,
@@ -83,7 +84,7 @@ export class WebSocketService {
 
     this.setupEventListeners();
 
-    console.log('🔌 Intentando conectar WebSocket a:', this.SERVER_URL);
+    console.log('🔌 Intentando conectar WebSocket a:', environment.socket_config.path);
   }
 
   private setupEventListeners(): void {

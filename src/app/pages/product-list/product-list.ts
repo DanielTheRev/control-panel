@@ -1,6 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { IProduct } from '../../interfaces/product.interface';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-product-list',
@@ -11,7 +12,7 @@ import { IProduct } from '../../interfaces/product.interface';
 export class ProductList {
   productState = httpResource<IProduct[]>(
     () => ({
-      url: 'http://localhost:3000/api/products/all',
+      url: `${environment.apiUrl}/products/all`,
       method: 'GET',
     }),
     {

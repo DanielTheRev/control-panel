@@ -9,12 +9,13 @@ import {
   LoginResponse,
   User,
 } from '../interfaces/auth.interfaces';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/auth`;
 
   // Signals para el estado de autenticación
   private _authState = signal<AuthState>({
