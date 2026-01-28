@@ -1,0 +1,130 @@
+<!-- Contenedor del Dropdown -->
+<div class="relative flex items-center">
+  <!-- Botón de Notificaciones Mejorado -->
+  <button
+    type="button"
+    mat-icon-button
+    [matMenuTriggerFor]="notificationMenu"
+    (click)="markNotificationsAsRead()"
+    class="group relative flex items-center justify-center w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
+  >
+    <!-- Icono de campana en Gris Azulado (Slate) en lugar de Negro -->
+    <mat-icon
+      class="material-icons !text-slate-500 dark:text-slate-400 group-hover:text-blue-600 transition-colors"
+    >
+      notifications
+    </mat-icon>
+
+    <!-- Contador Dinámico: Solo se muestra si count > 0 -->
+    @if (notificationCount > 0) {
+    <span
+      class="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-md bg-red-600 text-[10px] font-black text-white ring-2 ring-white dark:ring-slate-900 shadow-md"
+    >
+      {{ notificationCount > 99 ? "99+" : notificationCount }}
+    </span>
+    }
+  </button>
+
+  <!-- Menú Desplegable -->
+  <mat-menu
+    #notificationMenu="matMenu"
+    xPosition="before"
+    class="minimal-dropdown-panel"
+  >
+    <div
+      class="w-[350px] sm:w-[400px] flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Cabecera -->
+      <div
+        class="flex items-center justify-between py-3.5 px-5 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800"
+      >
+        <span
+          class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest"
+          >Notificaciones</span
+        >
+        @if (notificationCount > 0) {
+        <span
+          class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white shadow-sm"
+        >
+          {{ notificationCount }} NUEVAS
+        </span>
+        }
+      </div>
+
+      <!-- Lista de Notificaciones -->
+      <div class="max-h-[400px] overflow-y-auto custom-scrollbar">
+        @if (latestNotifications.length > 0) { @for (notification of
+        latestNotifications; track notification.id || $index) {
+        <div
+          class="group flex p-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+        >
+          <!-- Icono Material Plano con esquinas LG -->
+          <div class="flex-shrink-0 mr-4">
+            <div
+              [class]="getIconBgClass(notification.type)"
+              class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm"
+            >
+              <mat-icon
+                class="material-icons !text-[20px] !w-5 !h-5 flex items-center justify-center"
+              >
+                {{ getMaterialIcon(notification.type) }}
+              </mat-icon>
+            </div>
+          </div>
+
+          <!-- Contenido -->
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-baseline mb-0.5">
+              <span
+                class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight"
+              >
+                {{ notification.timestamp | date : "dd MMM, HH:mm" }}
+              </span>
+              @if (!notification.read) {
+              <span
+                class="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+              ></span>
+              }
+            </div>
+            <p
+              class="text-sm font-medium text-slate-600 dark:text-slate-300 leading-snug group-hover:text-slate-900 dark:group-hover:text-white transition-colors"
+            >
+              {{ notification.message }}
+            </p>
+          </div>
+        </div>
+        } } @else {
+        <div
+          class="py-16 text-center text-slate-400 dark:text-slate-600 flex flex-col items-center gap-2"
+        >
+          <mat-icon class="material-icons !w-12 !h-12 !text-[48px] opacity-20"
+            >notifications_off</mat-icon
+          >
+          <p class="text-sm font-medium mt-2">Bandeja de entrada limpia</p>
+        </div>
+        }
+      </div>
+
+      <!-- Acciones finales -->
+      @if (latestNotifications.length > 0) {
+      <div
+        class="flex gap-3 p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
+      >
+        <button
+          (click)="clearNotifications()"
+          class="flex-1 px-3 py-2 text-[11px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
+        >
+          Borrar
+        </button>
+        <button
+          class="flex-1 px-3 py-2 text-[11px] font-bold bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-700 rounded-lg transition-all uppercase tracking-widest shadow-md shadow-blue-500/20"
+        >
+          Historial
+        </button>
+      </div>
+      }
+    </div>
+  </mat-menu>
+</div>
+<!-- end -->

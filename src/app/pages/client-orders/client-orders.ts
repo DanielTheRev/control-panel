@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 // Importar las interfaces (asumiendo que están en archivos separados)
+import { CurrencyPipe } from '@angular/common';
 import {
   IOrder,
   OrderStatus,
@@ -8,17 +9,22 @@ import {
 } from '../../interfaces/order.interface';
 import { PaymentType } from '../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../interfaces/shipping.interface';
+import { PageHeader } from "../../shared/components/page-header/page-header";
+import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../states/order.state.service';
 
 @Component({
   selector: 'app-client-orders',
-  imports: [],
+  imports: [PageLayout, PageHeader, CurrencyPipe],
   templateUrl: './client-orders.html',
   styleUrl: './client-orders.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientOrders {
   // Inyectar el servicio de estado
   private orderStateService = inject(OrdersStateService);
+
+
 
   // Signal para órdenes expandidas
   expandedOrders = signal<Set<string>>(new Set());
@@ -85,13 +91,13 @@ export class ClientOrders {
   /**
    * Toggle expansión de orden
    */
-  toggleOrderExpansion(orderNumber: string): void {
-    this.expandedOrders.update((expanded) => {
-      const newSet = new Set(expanded);
-      if (newSet.has(orderNumber)) {
-        newSet.delete(orderNumber);
+  toggleOrderExpansion(orderID: string): void {
+    this.expandedOrders.update((set) => {
+      const newSet = new Set(set);
+      if (newSet.has(orderID)) {
+        newSet.delete(orderID);
       } else {
-        newSet.add(orderNumber);
+        newSet.add(orderID);
       }
       return newSet;
     });
@@ -100,16 +106,17 @@ export class ClientOrders {
   /**
    * Verificar si una orden está expandida
    */
-  isOrderExpanded(orderNumber: string): boolean {
-    return this.expandedOrders().has(orderNumber);
+  isOrderExpanded(orderID: string): boolean {
+    return this.expandedOrders().has(orderID);
   }
 
   /**
    * Marcar pago como recibido
    */
-  async markPaymentReceived(order: IOrder): Promise<void> {
+  async markPaymentReceived(orderID: string): Promise<void> {
     try {
-      await this.orderStateService.updateOrder(order.orderNumber, order);
+      await this.orderStateService.updateOrder('updatePayment', { orderID, status: PaymentStatus.PAID });
+
       console.log('✅ Pago marcado como recibido');
     } catch (error) {
       console.error('❌ Error al marcar pago como recibido:', error);
@@ -120,20 +127,9 @@ export class ClientOrders {
   /**
    * Marcar orden como entregada (punto de encuentro)
    */
-  async markAsDeliveredPickup(order: IOrder): Promise<void> {
+  async markAsDeliveredPickup(orderID: string): Promise<void> {
     try {
-      const updatedOrder: IOrder = {
-        ...order,
-        status: OrderStatus.DELIVERED,
-        paymentInfo: {
-          ...order.paymentInfo,
-          status: PaymentStatus.APPROVED,
-          paymentDate: order.paymentInfo.paymentDate || new Date(),
-        },
-        updatedAt: new Date(),
-      };
-
-      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      await this.orderStateService.updateOrder('updateShippingStatus', { orderID, status: OrderStatus.DELIVERED });
       console.log('✅ Orden marcada como entregada en punto de encuentro');
     } catch (error) {
       console.error('❌ Error al marcar como entregada:', error);
@@ -144,15 +140,12 @@ export class ClientOrders {
   /**
    * Marcar orden como enviada
    */
-  async markAsShipped(order: IOrder): Promise<void> {
+  async markAsShipped(orderID: string): Promise<void> {
     try {
-      const updatedOrder: IOrder = {
-        ...order,
-        status: OrderStatus.SHIPPED,
-        updatedAt: new Date(),
-      };
-
-      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      await this.orderStateService.updateOrder(
+        'updateShippingStatus',
+        { orderID, status: OrderStatus.SHIPPED }
+      );
       console.log('✅ Orden marcada como enviada');
     } catch (error) {
       console.error('❌ Error al marcar como enviada:', error);
@@ -163,15 +156,13 @@ export class ClientOrders {
   /**
    * Marcar orden como entregada (envío a domicilio)
    */
-  async markAsDelivered(order: IOrder): Promise<void> {
+  async markAsDelivered(orderID: string): Promise<void> {
     try {
-      const updatedOrder: IOrder = {
-        ...order,
-        status: OrderStatus.DELIVERED,
-        updatedAt: new Date(),
-      };
 
-      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      await this.orderStateService.updateOrder(
+        'updateShippingStatus',
+        { orderID, status: OrderStatus.DELIVERED }
+      );
       console.log('✅ Orden marcada como entregada a domicilio');
     } catch (error) {
       console.error('❌ Error al marcar como entregada:', error);
@@ -182,15 +173,12 @@ export class ClientOrders {
   /**
    * Iniciar proceso de envío
    */
-  async startShipping(order: IOrder): Promise<void> {
+  async startShipping(orderID: string): Promise<void> {
     try {
-      const updatedOrder: IOrder = {
-        ...order,
-        status: OrderStatus.PROCESSING_SHIPPING,
-        updatedAt: new Date(),
-      };
-
-      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      await this.orderStateService.updateOrder(
+        'updateShippingStatus',
+        { orderID, status: OrderStatus.PROCESSING_SHIPPING }
+      );
       console.log('✅ Proceso de envío iniciado');
     } catch (error) {
       console.error('❌ Error al iniciar envío:', error);
@@ -201,23 +189,15 @@ export class ClientOrders {
   /**
    * Cancelar orden
    */
-  async cancelOrder(order: IOrder): Promise<void> {
+  async cancelOrder(orderID: string): Promise<void> {
     if (!confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
       return;
     }
-
     try {
-      const updatedOrder: IOrder = {
-        ...order,
-        status: OrderStatus.CANCELLED,
-        paymentInfo: {
-          ...order.paymentInfo,
-          status: PaymentStatus.CANCELLED,
-        },
-        updatedAt: new Date(),
-      };
-
-      await this.orderStateService.updateOrder(order.orderNumber, updatedOrder);
+      await this.orderStateService.updateOrder(
+        'updateShippingStatus',
+        { orderID, status: OrderStatus.CANCELLED }
+      );
       console.log('✅ Orden cancelada');
     } catch (error) {
       console.error('❌ Error al cancelar orden:', error);
@@ -272,55 +252,58 @@ export class ClientOrders {
   /**
    * Verificar si se puede cancelar la orden
    */
-  canCancelOrder(order: IOrder): boolean {
+  canCancelOrder(status: OrderStatus): boolean {
     return (
-      order.status === OrderStatus.PENDING ||
-      order.status === OrderStatus.PROCESSING_SHIPPING
+      status === OrderStatus.PENDING ||
+      status === OrderStatus.PROCESSING_SHIPPING
     );
   }
 
   /**
    * Verificar si se puede marcar pago como recibido
    */
-  canMarkPaymentReceived(order: IOrder): boolean {
-    return order.paymentInfo.status === PaymentStatus.PENDING;
+  canMarkPaymentReceived(status: PaymentStatus): boolean {
+    return status !== PaymentStatus.PAID;
   }
 
   /**
    * Verificar si se puede iniciar envío
    */
-  canStartShipping(order: IOrder): boolean {
+  canStartShipping(status: OrderStatus, paymentInfo: PaymentStatus, shippingInfo: ShippingType): boolean {
     return (
-      order.status === OrderStatus.PENDING &&
-      order.paymentInfo.status === PaymentStatus.APPROVED &&
-      order.shippingInfo.type === ShippingType.HOME_DELIVERY
+      status === OrderStatus.PENDING &&
+      paymentInfo === PaymentStatus.APPROVED &&
+      shippingInfo === ShippingType.HOME_DELIVERY
     );
   }
 
   /**
    * Verificar si se puede marcar como enviado
    */
-  canMarkAsShipped(order: IOrder): boolean {
-    return order.status === OrderStatus.PROCESSING_SHIPPING;
+  canMarkAsShipped(status: OrderStatus): boolean {
+    return (
+      status === OrderStatus.PROCESSING_SHIPPING ||
+      status === OrderStatus.PENDING
+    );
   }
 
   /**
    * Verificar si se puede marcar como entregado
    */
-  canMarkAsDelivered(order: IOrder): boolean {
+  canMarkAsDelivered(status: OrderStatus, shippingType: ShippingType, paymentStatus: PaymentStatus): boolean {
     return (
-      order.status === OrderStatus.SHIPPED ||
-      (order.status === OrderStatus.PENDING &&
-        order.shippingInfo.type === ShippingType.PICKUP &&
-        order.paymentInfo.status === PaymentStatus.APPROVED)
+      status === OrderStatus.SHIPPED ||
+      (status === OrderStatus.PENDING &&
+        shippingType === ShippingType.PICKUP &&
+        paymentStatus === PaymentStatus.APPROVED)
     );
   }
 
   /**
    * Verificar si se puede reordenar
    */
-  canReorder(order: IOrder): boolean {
-    return order.status === OrderStatus.DELIVERED;
+  canReorder(status: OrderStatus): boolean {
+    return status === OrderStatus.DELIVERED;
   }
 
   /**
@@ -337,14 +320,14 @@ export class ClientOrders {
   /**
    * Formatear precio en pesos argentinos
    */
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  }
+  // formatPrice(price: number): string {
+  //   return new Intl.NumberFormat('es-AR', {
+  //     style: 'currency',
+  //     currency: 'ARS',
+  //     minimumFractionDigits: 0,
+  //     maximumFractionDigits: 0,
+  //   }).format(price);
+  // }
 
   /**
    * Calcular total de ítems
@@ -384,16 +367,16 @@ export class ClientOrders {
   /**
    * Manejar reorden
    */
-  reorder(order: IOrder): void {
-    console.log('🔄 Reordenando:', order.orderNumber);
+  reorder(orderId: string): void {
+    console.log('🔄 Reordenando:', orderId);
     // Implementar lógica de reorden aquí
   }
 
   /**
    * Ver detalles de la orden
    */
-  viewOrderDetails(order: IOrder): void {
-    this.toggleOrderExpansion(order.orderNumber);
+  viewOrderDetails(orderId: string): void {
+    this.toggleOrderExpansion(orderId);
   }
 
   /**

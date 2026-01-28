@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { IOrder } from '../interfaces/order.interface';
+import { IOrder, OrderStatus, PaymentStatus } from '../interfaces/order.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -15,12 +15,22 @@ export class OrdersService {
     return firstValueFrom(this._http.get(`${this.apiURI}`));
   }
 
-  updatePaymentState(orderID: string) {
+  updatePaymentState(
+    orderID: string,
+    target: 'updatePayment' | 'updateShippingStatus',
+    status: PaymentStatus | OrderStatus,
+  ) {
+    const action =
+      target === 'updatePayment'
+        ? 'updatePaymentStatus'
+        : 'updateShippingStatus';
+
     return firstValueFrom(
       this._http.post<{ message: string; orderUpdated: IOrder }>(
-        `${this.apiURI}/updatePaymentStatus`,
+        `${this.apiURI}/${action}`,
         {
           orderID,
+          status,
         }
       )
     );

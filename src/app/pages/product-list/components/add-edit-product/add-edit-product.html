@@ -1,0 +1,264 @@
+<h2 mat-dialog-title>
+  {{ productSelected ? "Actualizar" : "Crear nuevo" }} producto
+</h2>
+<form [formGroup]="productForm" (ngSubmit)="saveProduct()">
+  <mat-dialog-content class="mat-typography">
+    <div class="grid gap-5 mb-6 sm:grid-cols-2">
+      <!-- Product Model -->
+      <div class="col-span-full">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Modelo</legend>
+          <input
+            class="input validator input-md input-primary w-full"
+            type="text"
+            placeholder="IPhone 15 pro"
+            name="model"
+            formControlName="model"
+            required
+          />
+        </fieldset>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Categoría</legend>
+          <select
+            class="select select-primary validator"
+            formControlName="category"
+            required
+          >
+            <option value="Smartphones">Smartphones</option>
+            <option value="Electronics">Electrodomésticos</option>
+            <option value="Screens">TV/Monitors</option>
+            <option value="PC">PC</option>
+            <option value="Console">Consolas</option>
+          </select>
+        </fieldset>
+      </div>
+
+      <!-- Brand -->
+      <div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Marca</legend>
+          <select class="select select-primary">
+            <option value="Apple">Apple</option>
+            <option value="Samsung">Samsung</option>
+            <option value="Poco">Poco</option>
+            <option value="Xiaomi">Xiaomi</option>
+            <option value="Motorola">Motorola</option>
+          </select>
+        </fieldset>
+      </div>
+
+      <!-- Price -->
+      <div class="col-span-full">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Precio de costo(En dolares)</legend>
+
+          <input
+            type="number"
+            name="price"
+            class="input validator input-primary w-full"
+            placeholder="358.23"
+            formControlName="price"
+            required
+          />
+        </fieldset>
+      </div>
+
+      <!-- short Description -->
+      <div class="col-span-full">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Description corta</legend>
+          <input
+            class="input validator input-md input-primary w-full"
+            type="text"
+            placeholder="Pantalla increíble, duración de batería extendida"
+            name="shortDescription"
+            formControlName="shortDescription"
+            required
+          />
+        </fieldset>
+      </div>
+
+      <!-- Description -->
+      <div class="sm:col-span-2">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Description</legend>
+          <textarea
+            class="textarea textarea-primary h-24 w-full validator"
+            name="largeDescription"
+            placeholder="una description mas detallada"
+            formControlName="largeDescription"
+            required
+          ></textarea>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- Selling Type -->
+    <!-- <div class="flex flex-wrap gap-4 mb-6">
+      <div class="flex items-center">
+        <input
+          id="store-only"
+          type="checkbox"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2"
+        />
+        <label
+          for="store-only"
+          class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+          >In-store only</label
+        >
+      </div>
+      <div class="flex items-center">
+        <input
+          id="online-only"
+          type="checkbox"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2"
+        />
+        <label
+          for="online-only"
+          class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Online selling only</label
+        >
+      </div>
+      <div class="flex items-center">
+        <input
+          id="both-selling"
+          type="checkbox"
+          checked
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2"
+        />
+        <label
+          for="both-selling"
+          class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Both</label
+        >
+      </div>
+    </div> -->
+
+    <!-- Features input-->
+    <div class="sm:col-span-2">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Features</legend>
+        <!-- features list -->
+        <div class="flex flex-wrap gap-2">
+          @for (
+            feature of featuresControls.controls;
+            track $index;
+            let idx = $index
+          ) {
+            <div
+              class="relative group badge badge-soft badge-primary flex gap-2 items-center"
+            >
+              <span>{{ feature.value }}</span>
+
+              <button
+                (click)="removeFeature(idx)"
+                class="absolute -top-2 -right-2 btn btn-circle btn-error btn-xs shadow-md opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          }
+        </div>
+        <div class="flex gap-2">
+          <input
+            class="input input-sm validator input-primary w-full"
+            type="text"
+            #inputFeature
+            (keydown.enter)="$event.preventDefault()"
+            placeholder="5G, Dual SIM, etc"
+            required
+          />
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            (click)="addFeature()"
+          >
+            Agregar
+          </button>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- Image Gallery Section -->
+    <div class="mb-6 mt-3" (paste)="onPasteImg($event)">
+      <span
+        class="block mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300"
+        >Imágenes del producto</span
+      >
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <!-- Image Cards -->
+        @for (img of imagesControls.controls; track $index; let idx = $index) {
+          <div
+            class="relative group bg-gray-100 dark:bg-gray-700 rounded-lg p-2 border border-gray-200 dark:border-gray-600"
+          >
+            <img
+              [src]="img.value.link"
+              alt="Side View"
+              class="w-full h-24 object-contain"
+            />
+            <button
+              (click)="removeImage(idx)"
+              class="absolute -top-2 -right-2 btn btn-circle btn-error btn-xs shadow-md opacity-0 group-hover:opacity-100 transition-all"
+            >
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        }
+
+        <!-- Dropzone placeholder within gallery if needed or separate -->
+        <label
+          for="dropzone-file"
+          class="flex flex-col items-center justify-center w-full h-28 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:border-gray-500 transition-all"
+        >
+          <svg
+            class="w-8 h-8 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            ></path>
+          </svg>
+          <input validator id="dropzone-file" type="file" class="hidden" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Footer Buttons -->
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <div class="flex items-center justify-between gap-2">
+      <button
+        class="btn btn-primary"
+        [disabled]="productForm.invalid"
+        type="submit"
+      >
+        Guardar
+      </button>
+
+      <button type="button" class="btn btn-soft" mat-dialog-close>
+        cancelar
+      </button>
+    </div>
+  </mat-dialog-actions>
+</form>

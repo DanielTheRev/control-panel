@@ -1,88 +1,30 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
 
 // Importar las interfaces originales
-import { IUser } from '../interfaces/User.interface';
+import { environment } from '../../environments/environment';
+import {
+  IOrder,
+  OrderFilters,
+  OrdersApiResponse,
+  OrderStatus,
+  PaymentStatus,
+} from '../interfaces/order.interface';
 import { PaymentType } from '../interfaces/paymentInfo.interface';
 import { ShippingType } from '../interfaces/shipping.interface';
-import { IOrder, OrdersApiResponse } from '../interfaces/order.interface';
 import { OrdersService } from '../services/orders.service';
-import { environment } from '../../environments/environment';
-
-// Enum para estados de orden
-export enum OrderStatus {
-  PENDING = 'Pendiente de encuentro',
-  PROCESSING_SHIPPING = 'En proceso de envío',
-  SHIPPED = 'Enviado',
-  DELIVERED = 'Entregado',
-  CANCELLED = 'Cancelado',
-}
-
-// Enum para estados de pago
-export enum PaymentStatus {
-  PENDING = 'Pendiente',
-  APPROVED = 'Aprobado',
-  REJECTED = 'Rechazado',
-  CANCELLED = 'Cancelado',
-}
-
-// Interface para items de la orden
-export interface IOrderItem {
-  product: string;
-  quantity: number;
-  price: number;
-  name: string;
-  image?: string;
-}
-
-// Interface para dirección de envío
-export interface IShippingAddress {
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  phone?: string;
-}
-
-// Interface para información de envío
-export interface IShippingInfo {
-  type: ShippingType;
-  pickupPoint?: {
-    name: string;
-    address: string;
-  };
-  shippingAddress?: IShippingAddress;
-  cost: number;
-}
-
-// Interface para información de pago
-export interface IPaymentInfo {
-  method: PaymentType;
-  status: PaymentStatus;
-  transactionId?: string;
-  paymentDate?: Date;
-  amount: number;
-}
-
-// Interface para filtros
-export interface OrderFilters {
-  status?: string;
-  userId?: string;
-  dateRange?: string;
-  page: number;
-  limit: number;
-}
+import { AuthService } from '../services/auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrdersStateService {
   private orderService = inject(OrdersService);
+  private auth = inject(AuthService);
   // Signals para filtros
   private _status = signal<string>('all');
   private _userId = signal<string | undefined>(undefined);
-  private _dateRange = signal<string>('this_week');
+  private _dateRange = signal<string>('');
   private _page = signal<number>(1);
   private _limit = signal<number>(10);
 
@@ -94,36 +36,29 @@ export class OrdersStateService {
   readonly limit = this._limit.asReadonly();
 
   // httpResource para obtener datos
-  private state = httpResource(
-    () => {
-      const params = new URLSearchParams();
-      params.set('page', this._page().toString());
-      params.set('limit', this._limit().toString());
+  private state = httpResource<OrdersApiResponse>(() => {
+    if (!this.auth.isAuthenticated()) return;
+    const params = new URLSearchParams();
+    params.set('page', this._page().toString());
+    params.set('limit', this._limit().toString());
 
-      if (this._status() !== 'all') {
-        params.set('status', this._status());
-      }
-
-      if (this._userId()) {
-        params.set('userId', this._userId()!);
-      }
-
-      if (this._dateRange() !== 'all') {
-        params.set('dateRange', this._dateRange());
-      }
-
-      return {
-        url: `${environment.apiUrl}/orders?${params.toString()}`,
-        method: 'GET' as const,
-      };
-    },
-    {
-      parse: (data: any) => {
-        console.log('📡 Datos recibidos de la API:', data);
-        return data as OrdersApiResponse;
-      },
+    if (this._status() !== 'all') {
+      params.set('status', this._status());
     }
-  );
+
+    if (this._userId()) {
+      params.set('userId', this._userId()!);
+    }
+
+    if (this._dateRange() !== 'all') {
+      params.set('dateRange', this._dateRange());
+    }
+
+    return {
+      url: `${environment.apiUrl}/orders?${params.toString()}`,
+      method: 'GET' as const,
+    };
+  });
 
   // método para agregar nueva orden
   addNewOrder(order: IOrder) {
@@ -158,7 +93,7 @@ export class OrdersStateService {
         totalPages: 1,
         totalItems: 0,
         itemsPerPage: 10,
-      }
+      },
   );
   readonly isLoading = computed(() => this.state.isLoading());
   readonly error = computed(() => this.state.error());
@@ -168,45 +103,45 @@ export class OrdersStateService {
   readonly pendingCount = computed(
     () =>
       this.orders().filter((order) => order.status === OrderStatus.PENDING)
-        .length
+        .length,
   );
 
   readonly processingCount = computed(
     () =>
       this.orders().filter(
-        (order) => order.status === OrderStatus.PROCESSING_SHIPPING
-      ).length
+        (order) => order.status === OrderStatus.PROCESSING_SHIPPING,
+      ).length,
   );
 
   readonly shippedCount = computed(
     () =>
       this.orders().filter((order) => order.status === OrderStatus.SHIPPED)
-        .length
+        .length,
   );
 
   readonly deliveredCount = computed(
     () =>
       this.orders().filter((order) => order.status === OrderStatus.DELIVERED)
-        .length
+        .length,
   );
 
   readonly cancelledCount = computed(
     () =>
       this.orders().filter((order) => order.status === OrderStatus.CANCELLED)
-        .length
+        .length,
   );
 
   readonly totalRevenue = computed(() =>
     this.orders()
       .filter((order) => order.status === OrderStatus.DELIVERED)
-      .reduce((total, order) => total + order.total, 0)
+      .reduce((total, order) => total + order.total, 0),
   );
 
   readonly pendingPayments = computed(
     () =>
       this.orders().filter(
-        (order) => order.paymentInfo.status === PaymentStatus.PENDING
-      ).length
+        (order) => order.paymentInfo.status === PaymentStatus.PENDING,
+      ).length,
   );
 
   // Métodos para actualizar filtros
@@ -241,16 +176,15 @@ export class OrdersStateService {
 
   // Método para actualizar una orden específica
   async updateOrder(
-    orderNumber: string,
-    updatedOrder: IOrder
+    target: 'updatePayment' | 'updateShippingStatus',
+    data: { orderID: string, status: PaymentStatus | OrderStatus },
   ): Promise<IOrder> {
     try {
       const { message, orderUpdated } =
-        await this.orderService.updatePaymentState(updatedOrder._id);
+        await this.orderService.updatePaymentState(data.orderID, target, data.status);
+      console.log(orderUpdated);
       this.updateOrderState(orderUpdated);
-      // Refrescar los datos después de la actualización
-      console.log(message);
-      // this.refresh();
+
       return orderUpdated;
     } catch (error) {
       console.error('Error al actualizar orden:', error);

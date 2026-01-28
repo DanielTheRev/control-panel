@@ -1,0 +1,99 @@
+/* 1. load tailwind */
+@import "tailwindcss";
+/* 2. load daisyui */
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+@import '@fontsource-variable/nunito';
+@import '@fontsource-variable/roboto';
+
+/* reset daisyui form styles */
+@layer base {
+
+  select,
+  input,
+  select,
+  textarea {
+    /* double border and  */
+    @apply !border-2 !rounded-lg placeholder:text-gray-400;
+  }
+
+  legend {
+    @apply !text-sm;
+  }
+}
+
+/* Only light theme */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Reset ScrollBar */
+main::-webkit-scrollbar {
+  width: 8px;
+}
+
+main::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400;
+}
+
+body {
+  font-family: 'Roboto Variable', 'Nunito Variable', sans-serif;
+  font-weight: 500;
+}
+
+
+/* custom styles */
+@layer components {
+  .sidebar-container {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .expanded {
+    width: 200px !important;
+  }
+
+  .collapsed {
+    width: 70px !important;
+  }
+
+  /* Estas clases moverán el contenido */
+  .margin-expanded {
+    margin-left: 200px !important;
+  }
+
+  .margin-collapsed {
+    margin-left: 70px !important;
+  }
+
+  .menu-item {
+    @apply flex items-center p-3 mx-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer;
+    height: 48px;
+    overflow: hidden;
+    white-space: nowrap;
+
+    /* Evita que el texto salte de línea al achicarse */
+    mat-icon {
+      @apply min-w-[24px];
+      /* Asegura que el icono no se deforme */
+    }
+
+    &.active {
+      mat-icon {
+        @apply !text-amber-500;
+        /* Asegura que el icono no se deforme */
+      }
+
+      /* .menu-text {
+        @apply text-amber-400 font-bold;
+      } */
+    }
+  }
+
+  .menu-text {
+    @apply ml-4 font-medium text-slate-700;
+  }
+}

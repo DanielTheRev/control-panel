@@ -1,6 +1,6 @@
-import { User } from './auth.interfaces';
 import { PaymentType } from './paymentInfo.interface';
 import { ShippingType } from './shipping.interface';
+import { IUser } from './User.interface';
 
 // Enum para estados de orden
 export enum OrderStatus {
@@ -61,7 +61,7 @@ export interface IPaymentInfo {
 // Interface principal de la orden
 export interface IOrder {
   _id: string;
-  user: User;
+  user: IUser;
   items: IOrderItem[];
   shippingInfo: IShippingInfo;
   paymentInfo: IPaymentInfo;
@@ -82,4 +82,52 @@ export interface OrdersApiResponse {
     totalItems: number;
     itemsPerPage: number;
   };
+}
+
+// Interface para items de la orden
+export interface IOrderItem {
+  product: string;
+  quantity: number;
+  price: number;
+  name: string;
+  image?: string;
+}
+
+// Interface para dirección de envío
+export interface IShippingAddress {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+}
+
+// Interface para información de envío
+export interface IShippingInfo {
+  type: ShippingType;
+  pickupPoint?: {
+    name: string;
+    address: string;
+  };
+  shippingAddress?: IShippingAddress;
+  cost: number;
+}
+
+// Interface para información de pago
+export interface IPaymentInfo {
+  method: PaymentType;
+  status: PaymentStatus;
+  transactionId?: string;
+  paymentDate?: Date;
+  amount: number;
+}
+
+// Interface para filtros
+export interface OrderFilters {
+  status?: string;
+  userId?: string;
+  dateRange?: string;
+  page: number;
+  limit: number;
 }

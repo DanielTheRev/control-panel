@@ -19,7 +19,7 @@ import { LoginCredentials } from '../../interfaces/auth.interfaces';
 export class Login {
   loginForm: FormGroup;
   formB = inject(FormBuilder);
-  
+
   // Estado local del componente
   showPassword = signal(false);
   submitAttempted = signal(false);
@@ -54,29 +54,29 @@ export class Login {
   }
 
   togglePasswordVisibility() {
-    this.showPassword.update(show => !show);
+    this.showPassword.update((show) => !show);
   }
 
   onSubmit() {
     this.submitAttempted.set(true);
-    
+
     if (this.loginForm.valid) {
       const credentials: LoginCredentials = {
         email: this.loginForm.get('email')?.value,
-        password: this.loginForm.get('password')?.value
+        password: this.loginForm.get('password')?.value,
       };
 
       console.log('🔐 Intentando login con:', { email: credentials.email });
-      
+
       this.authService.login(credentials).subscribe({
         next: (response) => {
           console.log('✅ Login exitoso:', response);
-          this.router.navigate(['/client-orders']);
+          this.router.navigate(['/home']);
         },
         error: (error) => {
           console.error('❌ Error en login:', error);
           // El error ya se maneja en el servicio
-        }
+        },
       });
     } else {
       console.log('❌ Formulario inválido');
@@ -85,7 +85,7 @@ export class Login {
   }
 
   private markFormGroupTouched() {
-    Object.keys(this.loginForm.controls).forEach(key => {
+    Object.keys(this.loginForm.controls).forEach((key) => {
       const control = this.loginForm.get(key);
       control?.markAsTouched();
     });
@@ -98,7 +98,11 @@ export class Login {
   // Helper methods para validación
   isFieldInvalid(fieldName: string): boolean {
     const field = this.loginForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched || this.submitAttempted()));
+    return !!(
+      field &&
+      field.invalid &&
+      (field.dirty || field.touched || this.submitAttempted())
+    );
   }
 
   getFieldError(fieldName: string): string {

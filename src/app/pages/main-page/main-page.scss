@@ -1,0 +1,9 @@
+@use "@angular/material" as mat;
+
+mat-drawer {
+  @include mat.sidenav-overrides(
+    (
+      container-shape: "",
+    )
+  );
+}

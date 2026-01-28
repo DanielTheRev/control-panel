@@ -1,0 +1,61 @@
+<mat-drawer-container class="h-screen w-full" [hasBackdrop]="false">
+  @let isExpanded = sidebarService.SidebarStatus().isExpanded; 
+  @let isCollapsed = sidebarService.SidebarStatus().isCollapsed;
+  <mat-drawer
+    mode="side"
+    opened="true"
+    [class.expanded]="isExpanded"
+    [class.collapsed]="isCollapsed"
+    class="sidebar-container overflow-hidden"
+  >
+    <div class="flex flex-col pt-14 h-full">
+      <div class="flex flex-col mt-4">
+        <a
+          routerLink="/home/product-list"
+          routerLinkActive="active"
+          class="menu-item transition-all"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Productos' : ''
+          "
+          matTooltipPosition="right"
+        >
+          <mat-icon>inventory_2</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Productos</span>
+          }
+        </a>
+
+        <a
+          routerLink="/home/client-orders"
+          routerLinkActive="active"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Pedidos' : ''
+          "
+          matTooltipPosition="right"
+          class="menu-item"
+        >
+          <mat-icon>shopping_cart</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Pedidos</span>
+          }
+        </a>
+      </div>
+    </div>
+  </mat-drawer>
+
+  <mat-drawer-content
+    class="!flex !flex-col h-full bg-white content-container overflow-hidden"
+    [class.margin-expanded]="sidebarService.SidebarStatus().isExpanded"
+    [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded"
+  >
+    <mat-toolbar class="bg-white shrink-0">
+      <app-navbar class="w-full" />
+    </mat-toolbar>
+
+    <main
+      class="flex-1 w-full overflow-y-auto p-2 border-2 rounded-tl-3xl border-amber-200 inset-shadow-xs inset-shadow-amber-200"
+    >
+      <router-outlet />
+    </main>
+  </mat-drawer-content>
+</mat-drawer-container>

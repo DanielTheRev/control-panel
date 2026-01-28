@@ -29,7 +29,7 @@ export class WebSocketService {
   public notifications = computed(() => this._wsState().notifications);
   public unreadCount = computed(() => this._wsState().unreadCount);
   public latestNotifications = computed(() =>
-    this._wsState().notifications.slice(-10).reverse()
+    this._wsState().notifications.slice(-10).reverse(),
   );
 
   constructor(private authService: AuthService) {
@@ -41,7 +41,7 @@ export class WebSocketService {
         this.connect();
       } else {
         console.log(
-          '❌ Usuario no admin o no autenticado, desconectando WebSocket...'
+          '❌ Usuario no admin o no autenticado, desconectando WebSocket...',
         );
         this.disconnect();
       }
@@ -54,25 +54,10 @@ export class WebSocketService {
       return;
     }
 
-    // Obtenemos las cookies que contienen el token de autenticación
-    const token = this.getCookieToken();
-
-    if (!token) {
-      console.warn('⚠️ No se pudo obtener el token para WebSocket');
-      const user = this.authService.user();
-      console.log('👤 Estado del usuario:', user);
-      return;
-    }
-
-    console.log(
-      '🔌 Creando conexión WebSocket con token:',
-      token.substring(0, 20) + '...'
-    );
+    console.log('🔌 Creando conexión WebSocket:');
 
     this.socket = io(environment.socket_config.url, {
-      auth: {
-        token: token,
-      },
+      withCredentials: true,
       path: environment.socket_config.path,
       transports: ['websocket', 'polling'],
       autoConnect: true,
@@ -84,7 +69,10 @@ export class WebSocketService {
 
     this.setupEventListeners();
 
-    console.log('🔌 Intentando conectar WebSocket a:', environment.socket_config.path);
+    console.log(
+      '🔌 Intentando conectar WebSocket a:',
+      environment.socket_config.path,
+    );
   }
 
   private setupEventListeners(): void {
@@ -108,7 +96,8 @@ export class WebSocketService {
 
     // Evento de confirmación de conexión exitosa
     this.socket.on('connection-success', (data: any) => {
-      console.log('✅ Conexión WebSocket confirmada:', data);
+      console.log('✅ Conexión WebSocket confirmada:');
+      console.table(data);
     });
 
     // Notificaciones de transacciones
@@ -121,9 +110,9 @@ export class WebSocketService {
           'Nueva Transacción',
           `Orden #${notification.data._id.slice(-6)} - $${
             notification.data.total
-          }`
+          }`,
         );
-      }
+      },
     );
 
     // Notificaciones de actualizaciones de órdenes
@@ -138,12 +127,12 @@ export class WebSocketService {
             notification.data.total
           } - Usuario: ${notification.data.user.name} - Email: ${
             notification.data.user.email
-          }`
+          }`,
         );
         if (notification.type === 'order_new') {
           this.orderState.addNewOrder(notification.data);
         }
-      }
+      },
     );
 
     // Notificaciones generales de admin
@@ -161,27 +150,6 @@ export class WebSocketService {
       this.updateConnectionState(false);
       console.log('🔴 WebSocket desconectado manualmente');
     }
-  }
-
-  // Obtener token de las cookies (simulado, ya que las httpOnly cookies no son accesibles desde JS)
-  private getCookieToken(): string | null {
-    // En un entorno real con httpOnly cookies, necesitaríamos un endpoint del servidor
-    // que nos proporcione un token específico para WebSocket, o usar el mismo sistema de cookies
-    // Para este ejemplo, simularemos que tenemos acceso al token
-
-    // Intentar obtener de una cookie accesible o hacer una petición al servidor
-    const user = this.authService.user();
-    console.log('🍪 Obteniendo token de cookie para usuario:', user?.email);
-
-    if (user) {
-      // Simular token basado en el usuario actual
-      const token = user.token;
-      console.log('✅ Token generado para WebSocket');
-      return token;
-    }
-
-    console.log('❌ No se pudo generar token - usuario no encontrado');
-    return null;
   }
 
   private updateConnectionState(connected: boolean): void {
@@ -227,7 +195,7 @@ export class WebSocketService {
       this._wsState.update((state: WebSocketState) => ({
         ...state,
         notifications: state.notifications.map((n: SocketNotification) =>
-          n.id === notificationId ? { ...n, read: true } : n
+          n.id === notificationId ? { ...n, read: true } : n,
         ),
       }));
     } else {

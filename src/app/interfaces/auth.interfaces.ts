@@ -1,12 +1,4 @@
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  token: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { IUser } from './User.interface';
 
 export interface LoginCredentials {
   email: string;
@@ -16,12 +8,12 @@ export interface LoginCredentials {
 export interface LoginResponse {
   success: boolean;
   message: string;
-  user: User;
+  user: IUser;
 }
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
+  user: IUser | null;
   loading: boolean;
   error: string | null;
 }
@@ -30,4 +22,9 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
+}
+
+export enum AuthProvider {
+  GOOGLE = 'google',
+  Email = 'email',
 }

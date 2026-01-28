@@ -1,0 +1,35 @@
+.material-icons {
+  font-family: "Material Icons" !important;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+::ng-deep .minimal-dropdown-panel.mat-mdc-menu-panel {
+  max-width: none !important;
+  min-width: auto !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  margin-top: 10px;
+}
+
+::ng-deep .minimal-dropdown-panel .mat-mdc-menu-content {
+  padding: 0 !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}

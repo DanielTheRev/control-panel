@@ -5,3 +5,17 @@
   height: 100%;
   overflow: auto;
 }
+
+::ng-deep .mat-mdc-table { background: transparent !important; }
+    ::ng-deep .mat-mdc-header-cell { 
+      font-size: 11px; text-transform: uppercase; font-weight: 800; 
+      letter-spacing: 0.05em; color: #94a3b8; border-bottom: 2px solid #f8fafc !important;
+      padding: 0 24px !important;
+    }
+    ::ng-deep .mat-mdc-cell { 
+      border-bottom: 1px solid #f8fafc !important; 
+      padding: 0 24px !important;
+      color: #334155;
+    }
+    .dark ::ng-deep .mat-mdc-header-cell { border-bottom-color: #1e293b !important; }
+    .dark ::ng-deep .mat-mdc-cell { border-bottom-color: #1e293b !important; color: #cbd5e1; }

@@ -4,12 +4,13 @@ import { Router } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import {
+  AuthProvider,
   AuthState,
   LoginCredentials,
   LoginResponse,
-  User,
 } from '../interfaces/auth.interfaces';
 import { environment } from '../../environments/environment';
+import { IUser } from '../interfaces/User.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -33,32 +34,37 @@ export class AuthService {
   public error = computed(() => this._authState().error);
   public isAdmin = computed(() => this._authState().user?.role === 'admin');
 
-  constructor(private http: HttpClient, private router: Router) {
-    // this.initializeAuthState();
-  }
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+  ) {}
 
-  private initializeAuthState(): void {
+  initializeAuthState() {
     console.log('🔄 Inicializando estado de autenticación...');
     this.setLoading(true);
-    this.checkAuthStatus().subscribe({
-      next: (user) => {
-        if (user) {
-          console.log('✅ Usuario autenticado encontrado:', user);
-          this.setAuthenticatedState(user);
-        } else {
-          console.log('❌ No hay usuario autenticado');
+    return this.checkAuthStatus().pipe(
+      tap({
+        next: (user) => {
+          if (user) {
+            console.log('✅ Usuario autenticado encontrado:');
+            console.table(user);
+            this.setAuthenticatedState(user);
+          } else {
+            console.log('❌ No hay usuario autenticado');
+            this.setUnauthenticatedState();
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error verificando estado de autenticación:', error);
+
           this.setUnauthenticatedState();
-        }
-      },
-      error: (error) => {
-        console.error('❌ Error verificando estado de autenticación:', error);
-        this.setUnauthenticatedState();
-      },
-      complete: () => {
-        this.setLoading(false);
-        console.log('✅ Inicialización de auth completada');
-      },
-    });
+        },
+        complete: () => {
+          this.setLoading(false);
+          console.log('✅ Inicialización de auth completada');
+        },
+      }),
+    );
   }
 
   private setLoading(loading: boolean): void {
@@ -69,7 +75,7 @@ export class AuthService {
     this._authState.update((state) => ({ ...state, error }));
   }
 
-  private setAuthenticatedState(user: User): void {
+  private setAuthenticatedState(user: IUser): void {
     this._authState.set({
       isAuthenticated: true,
       user,
@@ -92,9 +98,13 @@ export class AuthService {
     this.setError(null);
 
     return this.http
-      .post<LoginResponse>(`${this.API_URL}/login/admin`, credentials)
+      .post<LoginResponse>(`${this.API_URL}/admin/login`, {
+        ...credentials,
+        provider: AuthProvider.Email,
+      })
       .pipe(
         tap((response: LoginResponse) => {
+          console.log(response);
           if (response.success) {
             this.setAuthenticatedState(response.user);
             console.log('✅ Login exitoso:', response.user);
@@ -105,7 +115,7 @@ export class AuthService {
           this.setUnauthenticatedState(errorMessage);
           console.error('❌ Error en login:', error);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -124,27 +134,17 @@ export class AuthService {
         this.router.navigate(['/login']);
         console.error('⚠️ Error en logout (limpiando estado local):', error);
         return of(null);
-      })
+      }),
     );
   }
 
-  checkAuthStatus(): Observable<User | null> {
-    return this.http.get<{ user: User }>(`${this.API_URL}/getAdminUser`).pipe(
-      map((response) => response.user),
+  checkAuthStatus(): Observable<IUser | null> {
+    return this.http.get<IUser>(`${this.API_URL}/getUser`).pipe(
+      map((response) => response),
       catchError(() => {
         console.log('❌ Usuario no autenticado');
         return of(null);
-      })
-    );
-  }
-
-  // Método para obtener el token del usuario actual (para WebSocket)
-  getCurrentUserToken(): Observable<string | null> {
-    // Como estamos usando httpOnly cookies, el token se envía automáticamente
-    // Este método podría usarse para obtener un token separado para WebSocket si fuera necesario
-    return this.checkAuthStatus().pipe(
-      map((user) => (user ? 'auth-token-from-cookie' : null)),
-      catchError(() => of(null))
+      }),
     );
   }
 
@@ -167,7 +167,7 @@ export class AuthService {
       catchError(() => {
         this.router.navigate(['/login']);
         return of(false);
-      })
+      }),
     );
   }
 
@@ -178,24 +178,18 @@ export class AuthService {
           return true;
         } else {
           console.warn(
-            '⚠️ Acceso denegado: Se requieren permisos de administrador'
+            '⚠️ Acceso denegado: Se requieren permisos de administrador',
           );
           this.router.navigate(['/login']);
           return false;
         }
-      })
+      }),
     );
   }
 
   // Utility methods
   clearError(): void {
     this.setError(null);
-  }
-
-  getAuthToken(): string | null {
-    // Con httpOnly cookies, no necesitamos manejar tokens manualmente
-    // El navegador los envía automáticamente
-    return null;
   }
 
   // Método para refrescar manualmente el estado de autenticación
