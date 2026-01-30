@@ -1,0 +1,198 @@
+<app-page-layout>
+  <app-page-header 
+    [title]="isEditMode() ? 'Editar Producto' : 'Crear Nuevo Producto'" 
+    [subtitle]="isEditMode() ? 'Actualiza la información del producto' : 'Agrega un nuevo producto al inventario'">
+      <div actions class="flex gap-2">
+        <a routerLink="/home/products" class="btn btn-soft">
+          <mat-icon>arrow_back</mat-icon> Volver
+        </a>
+      </div>
+  </app-page-header>
+
+  <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+    <form [formGroup]="productForm" (ngSubmit)="saveProduct()">
+      <div class="grid gap-5 mb-6 sm:grid-cols-2">
+        <!-- Product Model -->
+        <div class="col-span-full">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Modelo</legend>
+            <input
+              class="input validator input-md input-primary w-full"
+              type="text"
+              placeholder="iPhone 15 Pro"
+              name="model"
+              formControlName="model"
+              required
+            />
+          </fieldset>
+        </div>
+  
+        <!-- Category -->
+        <div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Categoría</legend>
+            <select
+              class="select select-primary validator w-full"
+              formControlName="category"
+              required
+            >
+              <option value="Smartphones">Smartphones</option>
+              <option value="Electronics">Electrodomésticos</option>
+              <option value="Screens">TV/Monitores</option>
+              <option value="PC">PC</option>
+              <option value="Console">Consolas</option>
+            </select>
+          </fieldset>
+        </div>
+  
+        <!-- Brand -->
+        <div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Marca</legend>
+            <select class="select select-primary w-full" formControlName="brand">
+              <option value="Apple">Apple</option>
+              <option value="Samsung">Samsung</option>
+              <option value="Poco">Poco</option>
+              <option value="Xiaomi">Xiaomi</option>
+              <option value="Motorola">Motorola</option>
+            </select>
+          </fieldset>
+        </div>
+  
+        <!-- Price -->
+        <div class="col-span-full">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Precio de costo (En dólares)</legend>
+            <input
+              type="number"
+              name="price"
+              class="input validator input-primary w-full"
+              placeholder="358.23"
+              formControlName="price"
+              required
+            />
+          </fieldset>
+        </div>
+  
+        <!-- Short Description -->
+        <div class="col-span-full">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Descripción corta</legend>
+            <input
+              class="input validator input-md input-primary w-full"
+              type="text"
+              placeholder="Pantalla increíble, duración de batería extendida"
+              name="shortDescription"
+              formControlName="shortDescription"
+              required
+            />
+          </fieldset>
+        </div>
+  
+        <!-- Description -->
+        <div class="col-span-full">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Descripción detallada</legend>
+            <textarea
+              class="textarea textarea-primary h-24 w-full validator"
+              name="largeDescription"
+              placeholder="Una descripción más detallada..."
+              formControlName="largeDescription"
+              required
+            ></textarea>
+          </fieldset>
+        </div>
+      </div>
+  
+      <!-- Features input-->
+      <div class="mb-6">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Características</legend>
+          <!-- features list -->
+          <div class="flex flex-wrap gap-2 mb-2">
+            @for (feature of featuresControls.controls; track $index; let idx = $index) {
+              <div class="relative group badge badge-lg badge-soft badge-primary flex gap-2 items-center pr-2">
+                <span>{{ feature.value }}</span>
+                <button
+                  type="button"
+                  (click)="removeFeature(idx)"
+                  class="btn btn-circle btn-error btn-xs opacity-50 group-hover:opacity-100 transition-opacity"
+                >
+                  <mat-icon class="text-xs scale-75">close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+          <div class="flex gap-2">
+            <input
+              class="input input-sm validator input-primary w-full"
+              type="text"
+              #inputFeature
+              (keydown.enter)="$event.preventDefault(); addFeature()"
+              placeholder="5G, Dual SIM, etc"
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              (click)="addFeature()"
+            >
+              Agregar
+            </button>
+          </div>
+        </fieldset>
+      </div>
+  
+      <!-- Image Gallery Section -->
+      <div class="mb-6 mt-3" (paste)="onPasteImg($event)">
+        <span class="block mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Imágenes del producto (Pegar o Seleccionar)
+        </span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <!-- Image Cards -->
+          @for (img of imagesControls.controls; track $index; let idx = $index) {
+            <div class="relative group bg-slate-50 dark:bg-slate-700 rounded-xl p-2 border border-slate-200 dark:border-slate-600 aspect-square flex items-center justify-center overflow-hidden">
+              <img
+                [src]="img.value.link"
+                alt="Product Image"
+                class="w-full h-full object-contain"
+              />
+              <button
+                type="button"
+                (click)="removeImage(idx)"
+                class="absolute top-2 right-2 btn btn-circle btn-error btn-sm shadow-md opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <mat-icon class="scale-75">delete</mat-icon>
+              </button>
+            </div>
+          }
+  
+          <!-- Dropzone -->
+          <label
+            for="dropzone-file"
+            class="flex flex-col items-center justify-center w-full aspect-square border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 transition-all"
+          >
+            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+               <mat-icon class="text-slate-400 !w-8 !h-8 !text-[2rem]">cloud_upload</mat-icon>
+               <p class="text-xs text-slate-500 mt-2">Click o pegar imagen</p>
+            </div>
+            <input id="dropzone-file" type="file" class="hidden" (change)="onFileSelected($event)" accept="image/*" />
+          </label>
+        </div>
+      </div>
+  
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
+        <a routerLink="/product-list" class="btn btn-ghost">
+          Cancelar
+        </a>
+        <button
+          class="btn btn-primary px-8"
+          [disabled]="productForm.invalid"
+          type="submit"
+        >
+          <mat-icon>save</mat-icon> {{ isEditMode() ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</app-page-layout>

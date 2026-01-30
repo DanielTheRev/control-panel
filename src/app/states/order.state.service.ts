@@ -63,6 +63,8 @@ export class OrdersStateService {
   // método para agregar nueva orden
   addNewOrder(order: IOrder) {
     this.state.update((oldState) => {
+      console.log('Agregando nueva compra al estado de ordenes');
+      console.log(oldState);
       if (!oldState) return oldState;
       return {
         data: [order, ...oldState.data],

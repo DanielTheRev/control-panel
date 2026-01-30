@@ -11,7 +11,7 @@
     <div class="flex flex-col pt-14 h-full">
       <div class="flex flex-col mt-4">
         <a
-          routerLink="/home/product-list"
+          routerLink="/home/products"
           routerLinkActive="active"
           class="menu-item transition-all"
           [matTooltip]="
@@ -37,6 +37,36 @@
           <mat-icon>shopping_cart</mat-icon>
           @if (sidebarService.SidebarStatus().isExpanded) {
           <span class="menu-text">Pedidos</span>
+          }
+        </a>
+
+        <a
+          routerLink="/home/payment-methods"
+          routerLinkActive="active"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Métodos de Pago' : ''
+          "
+          matTooltipPosition="right"
+          class="menu-item"
+        >
+          <mat-icon>payments</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Pagos</span>
+          }
+        </a>
+
+        <a
+          routerLink="/home/shipping-options"
+          routerLinkActive="active"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Opciones de Envío' : ''
+          "
+          matTooltipPosition="right"
+          class="menu-item"
+        >
+          <mat-icon>local_shipping</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Envíos</span>
           }
         </a>
       </div>

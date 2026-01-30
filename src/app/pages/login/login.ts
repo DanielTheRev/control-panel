@@ -34,10 +34,6 @@ export class Login {
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
-    // Si ya está autenticado, redirigir
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/client-orders']);
-    }
   }
 
   // Computed properties del servicio

@@ -1,11 +1,11 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import {
-  newOrderNotification,
-  OrderUpdateNotification,
-  SocketNotification,
-  WebSocketState,
-} from '../interfaces/websocket.interface';
+  IAdminNotification,
+  INotification,
+  NotificationType,
+} from '../interfaces/notification.interface';
+import { WebSocketState } from '../interfaces/websocket.interface';
 import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -16,6 +16,7 @@ import { environment } from '../../environments/environment';
 export class WebSocketService {
   private socket: Socket | null = null;
   private orderState = inject(OrdersStateService);
+
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
     connected: false,
@@ -26,15 +27,14 @@ export class WebSocketService {
   // Computed properties
   public wsState = computed(() => this._wsState());
   public connected = computed(() => this._wsState().connected);
-  public notifications = computed(() => this._wsState().notifications);
+  public notifications = computed(() => this._wsState().notifications as INotification[]);
   public unreadCount = computed(() => this._wsState().unreadCount);
   public latestNotifications = computed(() =>
-    this._wsState().notifications.slice(-10).reverse(),
+    (this._wsState().notifications as INotification[]).slice(0, 50)
   );
 
   constructor(private authService: AuthService) {
     console.log('🔌 Inicializando WebSocketService');
-    // Escuchar cambios en el estado de autenticación usando effect
     effect(() => {
       if (this.authService.isAuthenticated()) {
         console.log('✅ Usuario admin autenticado, conectando WebSocket...');
@@ -68,79 +68,38 @@ export class WebSocketService {
     });
 
     this.setupEventListeners();
-
-    console.log(
-      '🔌 Intentando conectar WebSocket a:',
-      environment.socket_config.path,
-    );
   }
 
   private setupEventListeners(): void {
     if (!this.socket) return;
 
-    // Eventos de conexión
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket conectado:', this.socket?.id);
       this.updateConnectionState(true);
     });
 
-    this.socket.on('disconnect', (reason: string) => {
-      console.log('❌ WebSocket desconectado:', reason);
+    this.socket.on('disconnect', () => {
       this.updateConnectionState(false);
     });
 
-    this.socket.on('connect_error', (error: Error) => {
-      console.error('❌ Error de conexión WebSocket:', error);
-      this.updateConnectionState(false);
-    });
+    // Unificada: Notificación de Admin
+    this.socket.on('admin-notification', (notification: IAdminNotification) => {
+      console.log('📨 Notificación de Admin:', notification);
 
-    // Evento de confirmación de conexión exitosa
-    this.socket.on('connection-success', (data: any) => {
-      console.log('✅ Conexión WebSocket confirmada:');
-      console.table(data);
-    });
-
-    // Notificaciones de transacciones
-    this.socket.on(
-      'transaction-notification',
-      (notification: newOrderNotification) => {
-        console.log('📨 Nueva transacción:', notification);
-        this.addNotification(notification);
-        this.showNotification(
-          'Nueva Transacción',
-          `Orden #${notification.data._id.slice(-6)} - $${
-            notification.data.total
-          }`,
-        );
-      },
-    );
-
-    // Notificaciones de actualizaciones de órdenes
-    this.socket.on(
-      'order-notification',
-      (notification: OrderUpdateNotification) => {
-        console.log('📨 Actualización de ordenes:', notification);
-        this.addNotification(notification);
-        this.showNotification(
-          notification.message,
-          `Orden #${notification.data._id.slice(-6)} - Monto: ${
-            notification.data.total
-          } - Usuario: ${notification.data.user.name} - Email: ${
-            notification.data.user.email
-          }`,
-        );
-        if (notification.type === 'order_new') {
-          this.orderState.addNewOrder(notification.data);
-        }
-      },
-    );
-
-    // Notificaciones generales de admin
-    this.socket.on('admin-notification', (notification: SocketNotification) => {
-      console.log('📨 Notificación de admin:', notification);
+      this.handleSideEffects(notification);
       this.addNotification(notification);
-      this.showNotification('Notificación', `${notification.type}`);
+
+      // Mostrar notificación nativa si es relevante
+      if (!notification.read) {
+        this.showNotification(notification.title, notification.message);
+      }
     });
+  }
+
+  private handleSideEffects(notification: IAdminNotification) {
+    // Si es una nueva orden, actualizar el estado
+    if (notification.type === NotificationType.NEW_ORDER) {
+      this.orderState.addNewOrder(notification.data);
+    }
   }
 
   disconnect(): void {
@@ -148,18 +107,17 @@ export class WebSocketService {
       this.socket.disconnect();
       this.socket = null;
       this.updateConnectionState(false);
-      console.log('🔴 WebSocket desconectado manualmente');
     }
   }
 
   private updateConnectionState(connected: boolean): void {
-    this._wsState.update((state: WebSocketState) => ({ ...state, connected }));
+    this._wsState.update((state) => ({ ...state, connected }));
   }
 
-  private addNotification(notification: SocketNotification): void {
-    this._wsState.update((state: WebSocketState) => ({
+  private addNotification(notification: any): void {
+    this._wsState.update((state) => ({
       ...state,
-      notifications: [notification, ...state.notifications].slice(0, 100), // Limitar a 100 notificaciones
+      notifications: [notification, ...state.notifications].slice(0, 100),
       unreadCount: state.unreadCount + 1,
     }));
   }
@@ -171,6 +129,16 @@ export class WebSocketService {
         icon: '/favicon.ico',
         tag: 'electro-hub-admin',
       });
+    } else {
+      this.requestNotificationPermission().then(() => {
+        if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            tag: 'electro-hub-admin',
+          });
+        }
+      });
     }
   }
 
@@ -178,57 +146,46 @@ export class WebSocketService {
   joinRoom(room: string): void {
     if (this.socket?.connected) {
       this.socket.emit('join-room', room);
-      console.log(`🛋️ Unido a la sala: ${room}`);
     }
   }
 
   leaveRoom(room: string): void {
     if (this.socket?.connected) {
       this.socket.emit('leave-room', room);
-      console.log(`🛋️ Salido de la sala: ${room}`);
     }
   }
 
   markAsRead(notificationId?: string): void {
     if (notificationId) {
-      // Marcar una notificación específica como leída
-      this._wsState.update((state: WebSocketState) => ({
+      this._wsState.update((state) => ({
         ...state,
-        notifications: state.notifications.map((n: SocketNotification) =>
+        notifications: state.notifications.map((n: any) =>
           n.id === notificationId ? { ...n, read: true } : n,
         ),
+        unreadCount: Math.max(0, state.unreadCount - 1)
       }));
     } else {
-      // Marcar todas como leídas
-      this._wsState.update((state: WebSocketState) => ({
+      this._wsState.update((state) => ({
         ...state,
+        notifications: state.notifications.map((n: any) => ({ ...n, read: true })),
         unreadCount: 0,
       }));
     }
   }
 
   clearNotifications(): void {
-    this._wsState.update((state: WebSocketState) => ({
+    this._wsState.update((state) => ({
       ...state,
       notifications: [],
       unreadCount: 0,
     }));
   }
 
-  // Solicitar permisos de notificación
   async requestNotificationPermission(): Promise<boolean> {
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
       return permission === 'granted';
     }
     return false;
-  }
-
-  // Obtener estadísticas de conexión
-  getConnectionStats(): { connected: boolean; socketId: string | null } {
-    return {
-      connected: this.socket?.connected || false,
-      socketId: this.socket?.id || null,
-    };
   }
 }

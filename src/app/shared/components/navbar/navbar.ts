@@ -26,6 +26,6 @@ export class Navbar {
   }
 
   getConnectionStatus() {
-    return this.wsService.getConnectionStats();
+    return this.wsService.wsState();
   }
 }

@@ -1,0 +1,55 @@
+<app-page-layout>
+  <app-page-header header title="Métodos de Pago" subtitle="Gestiona las formas de pago disponibles">
+    <div actions class="flex">
+      <button class="btn btn-primary">
+        <mat-icon>add</mat-icon> Nuevo Método
+      </button>
+    </div>
+  </app-page-header>
+
+  <div class="table-container rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm flex-1 flex flex-col">
+    <div class="overflow-y-auto flex-1 custom-scrollbar">
+      <table mat-table [dataSource]="dataSource" class="w-full">
+        
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef> Nombre </th>
+          <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef> Estado </th>
+          <td mat-cell *matCellDef="let element"> 
+            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight bg-emerald-100 text-emerald-700">
+              {{element.status}}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef> </th>
+          <td mat-cell *matCellDef="let element" class="text-right">
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="text-slate-300">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" class="modern-row-menu">
+              <button mat-menu-item>
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <button mat-menu-item class="!text-red-500">
+                <mat-icon class="!text-red-500">delete_outline</mat-icon>
+                <span>Eliminar</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-16"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"></tr>
+      </table>
+    </div>
+  </div>
+</app-page-layout>

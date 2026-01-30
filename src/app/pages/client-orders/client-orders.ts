@@ -115,7 +115,7 @@ export class ClientOrders {
    */
   async markPaymentReceived(orderID: string): Promise<void> {
     try {
-      await this.orderStateService.updateOrder('updatePayment', { orderID, status: PaymentStatus.PAID });
+      await this.orderStateService.updateOrder('updatePayment', { orderID, status: PaymentStatus.APPROVED });
 
       console.log('✅ Pago marcado como recibido');
     } catch (error) {
@@ -263,7 +263,7 @@ export class ClientOrders {
    * Verificar si se puede marcar pago como recibido
    */
   canMarkPaymentReceived(status: PaymentStatus): boolean {
-    return status !== PaymentStatus.PAID;
+    return status !== PaymentStatus.APPROVED;
   }
 
   /**
