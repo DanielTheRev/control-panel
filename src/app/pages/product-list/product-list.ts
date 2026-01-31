@@ -1,4 +1,5 @@
-import { CurrencyPipe } from '@angular/common';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { CurrencyPipe, SlicePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
@@ -29,10 +30,18 @@ import { ProductStoreService } from '../../states/product.state.service';
     CurrencyPipe,
     RouterLink,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    SlicePipe
   ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.scss',
+  animations: [
+    trigger('detailExpand', [
+      state('collapsed,void', style({height: '0px', minHeight: '0'})),
+      state('expanded', style({height: '*'})),
+      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class ProductList {
   ProductState = inject(ProductStoreService);
@@ -42,14 +51,15 @@ export class ProductList {
   displayedColumns: string[] = [
     'image',
     'category',
-    'rating',
-    'variants',
+    'brand',
+    // 'variants',
     'stock',
     'price_cash',
     'price_installments',
-    'financials',
-    'actions',
+    // 'financials',
   ];
+  columnsToDisplayWithExpand = ['expand', ...this.displayedColumns];
+  expandedElement: IProduct | null = null;
 
   getPricesFormatted(prices: IProductPrices) {
     const pricesFormatted = Object.entries(prices)
