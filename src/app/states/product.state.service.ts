@@ -8,9 +8,14 @@ import { IProduct } from '../interfaces/product.interface';
 })
 export class ProductStoreService {
   #fetchedProducts = httpResource<IProduct[]>(() => ({
-    url: `${environment.apiUrl}/products/all`,
+    url: `${environment.apiUrl}/products/list`,
     method: 'GET',
-  }));
+  }),{
+    parse: (response: any) => {
+      console.log(response);
+      return response
+    }
+  });
 
   readonly products = computed(() => ({
     data: this.#fetchedProducts.value() || [],

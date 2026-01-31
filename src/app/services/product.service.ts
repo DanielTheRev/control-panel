@@ -1,7 +1,26 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { environment } from '../../environments/environment.development';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
+
+  #apiUrl = environment.apiUrl;
+  #http = inject(HttpClient);
+
+  constructor() { }
+
+  create(productData: FormData) {
+    return this.#http.post(`${this.#apiUrl}/products`, productData);
+  }
+
+  updateProduct(id: string, productData: FormData) {
+    return this.#http.patch(`${this.#apiUrl}/products/${id}`, productData);
+  }
+
+  deleteProduct(id: string) {
+    return this.#http.delete(`${this.#apiUrl}/products/${id}`);
+  }
 }

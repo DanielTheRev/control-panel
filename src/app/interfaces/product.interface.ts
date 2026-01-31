@@ -8,11 +8,14 @@ export interface IProduct {
   model: string;
   prices: IProductPrices;
   discount: number;
-  rating: number;
-  reviews: number;
+  rating: number | null;
+  reviews: number | null;
   stock: number;
   images: IProductImage[];
   features: string[];
+  colors: string[];
+  storage: string[];
+  specifications: { key: string; value: string }[];
 }
 
 export interface IProductCreateDTO {
@@ -35,12 +38,16 @@ export enum IProductCategories {
 }
 
 export interface IProductPrices {
-  efectivo_transferencia: number;
-  tarjeta_credito_debito: number;
-  cuotas: {
-    '3_cuotas_sin_interes': number;
-    '6_cuotas_sin_interes': number;
-  };
+	costPrice: number;
+	profitMargin: number;
+	baseCommission: number;
+	cft6Cuotas: number;
+	efectivo_transferencia: number;
+	tarjeta_credito_debito: number;
+	cuotas: {
+		cuotas_3_si: number;
+		cuotas_6_si: number;
+	};
 }
 
 export interface IProductImage {
