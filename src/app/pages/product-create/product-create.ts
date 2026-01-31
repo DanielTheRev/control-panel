@@ -97,15 +97,16 @@ export class ProductCreate implements OnInit {
   }
 
   loadProduct(id: string) {
-    this.#http.get<any>(`${environment.apiUrl}/products/${id}`).subscribe({
+    this.#http.get<any>(`${environment.apiUrl}/products/complete/${id}`).subscribe({
       next: (product) => {
+        console.log(product);
         this.originalProduct = JSON.parse(JSON.stringify(product));
         // Patch simple fields
         this.productForm.patchValue({
           model: product.model,
           brand: product.brand,
           category: product.category,
-          price: 10,
+          price: product.prices.costPrice,
           shortDescription: product.shortDescription,
           largeDescription: product.largeDescription,
         });
@@ -338,8 +339,10 @@ export class ProductCreate implements OnInit {
       this.#productService.create(formData).subscribe({
         next: () => {
           this.productForm.controls['images'].value.forEach((img: any) => {
-            this.removeImage(img.link) // Just to cleanup blobs if any logic relied on it
-          })
+            if (img.link && img.link.startsWith('blob:')) {
+              window.URL.revokeObjectURL(img.link);
+            }
+          });
           this.#router.navigate(['/products']);
         },
         error: (err) => {

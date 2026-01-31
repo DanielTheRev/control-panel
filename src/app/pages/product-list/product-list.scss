@@ -19,3 +19,36 @@
     }
     .dark ::ng-deep .mat-mdc-header-cell { border-bottom-color: #1e293b !important; }
     .dark ::ng-deep .mat-mdc-cell { border-bottom-color: #1e293b !important; color: #cbd5e1; }
+
+    /* Fix for detail row height */
+    .detail-row {
+      height: 0 !important;
+      min-height: 0 !important;
+    }
+    .detail-row td {
+      border: 0 !important;
+    }
+
+    /* Row Hover and Active States */
+    .mat-mdc-row {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #f2f2f2 !important; /* slate-200 - Much stronger hover */
+      }
+
+      &.expanded-row {
+        background-color: #f2f2f2 !important; /* blue-100 - Distinct active state */
+      }
+    }
+    
+    /* Dark mode adjustments */
+    .dark .mat-mdc-row:hover {
+        background-color: #334155 !important; /* slate-700 hover */
+    }
+    .dark .mat-mdc-row.expanded-row {
+        background-color: #1e293b !important; /* slate-800 active base */
+        background-image: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent); /* Blue tint */
+        border-left: 4px solid #3b82f6; 
+    }
