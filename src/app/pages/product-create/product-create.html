@@ -79,12 +79,9 @@
 
                     <fieldset class="fieldset mt-4">
                         <legend class="fieldset-legend">Descripción Detallada</legend>
-                        <textarea class="textarea textarea-bordered h-48 w-full text-base leading-relaxed"
-                            placeholder="Describe todas las características y beneficios del producto aquí..."
-                            formControlName="largeDescription">
-                    </textarea>
+                        <quill-editor formControlName="largeDescription" class="content-editor"></quill-editor>
                         <div class="label">
-                            <span class="label-text-alt text-slate-400">Este campo soporta texto extenso.</span>
+                            <span class="label-text-alt text-slate-400">Este campo soporta texto rico (negrita, listas, etc).</span>
                         </div>
                     </fieldset>
                 </div>

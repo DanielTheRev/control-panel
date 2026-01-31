@@ -1,4 +1,5 @@
 import { Component, ElementRef, inject, OnInit, computed, signal, viewChild } from '@angular/core';
+import { QuillEditorComponent, QuillModule } from 'ngx-quill';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -25,7 +26,8 @@ import { ProductService } from '../../services/product.service';
     MatIcon,
     RouterLink,
     PageLayout,
-    PageHeader
+    PageHeader,
+    QuillEditorComponent,
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
@@ -62,9 +64,9 @@ export class ProductCreate implements OnInit {
     colors: this.#fb.array<string>([]),
     storage: this.#fb.array<string>([]),
     features: this.#fb.array<string>([]),
+
     specifications: this.#fb.array<FormGroup>([]),
   });
-
   // Getters for FormArrays
   get imagesControls() {
     return this.productForm.get('images') as FormArray;

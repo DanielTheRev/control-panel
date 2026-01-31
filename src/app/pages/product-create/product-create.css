@@ -1,0 +1,8 @@
+:host ::ng-deep quill-editor.content-editor .ql-container {
+    height: 12rem; /* h-48 equivalent */
+    font-size: 1rem;
+}
+
+:host ::ng-deep quill-editor.content-editor .ql-editor {
+    min-height: 100%;
+}
