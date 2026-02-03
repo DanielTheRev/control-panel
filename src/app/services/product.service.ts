@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment.development';
 import { HttpClient } from '@angular/common/http';
+import { IProduct } from '../interfaces/product.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,7 @@ export class ProductService {
   }
 
   updateProduct(id: string, productData: FormData) {
-    return this.#http.patch(`${this.#apiUrl}/products/${id}`, productData);
+    return this.#http.patch<Partial<IProduct>>(`${this.#apiUrl}/products/${id}`, productData);
   }
 
   deleteProduct(id: string) {

@@ -249,15 +249,13 @@
                 class="row-detail overflow-hidden flex flex-col bg-gray-50 dark:bg-slate-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.05)] border-y border-gray-200 dark:border-gray-700"
                 [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
 
-                <!-- ... CONTENT ... -->
-                <div class="p-6"> <!-- removed border-b since container has border-y -->
+                <div class="p-6">
 
-                  <!-- 1. Gallery Section (Top Row) -->
                   @if(element.images && element.images.length > 0) {
                   <div class="grid grid-cols-3 gap-2 mt-4 w-full p-10">
                     @for (img of element.images; track $index; let idx = $index) {
                     <div
-                      class="relative group aspect-square rounded-lg overflow-hidden border border-base-200 bg-base-50">
+                      class="relative card group aspect-square rounded-lg overflow-hidden border border-base-200 bg-base-50">
                       <img [src]="img.url" class="w-full h-full object-cover" alt="Product thumbnail">
                     </div>
                     }
@@ -269,18 +267,15 @@
                   </div>
                   }
 
-                  <!-- Description ... -->
                   <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wide">Detalles</h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed max-w-4xl">
-                    {{ element.largeDescription || element.shortDescription || 'Sin descripción disponible.' }}
-                  </p>
+                  <div
+                    [innerHTML]="getDescriptionSanitized(element.largeDescription || element.shortDescription || 'Sin descripción disponible.')"
+                    class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                    <!-- {{ element.largeDescription || element.shortDescription || 'Sin descripción disponible.' }} -->
+                  </div>
 
-                  <!-- Grid ... -->
-                  <!-- ... Same grid as before ... -->
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <!-- ... content ... -->
-                    <!-- Using element reference from user's latest paste -->
-                    <!-- Col 1: Financial State -->
+
                     <div
                       class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
                       <h5 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-100 pb-2">Estado

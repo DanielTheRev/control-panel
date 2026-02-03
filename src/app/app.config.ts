@@ -35,7 +35,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideQuillConfig({
       modules: {
-        syntax: true,
+        syntax: false,
         toolbar: [
           ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
           ['blockquote', 'code-block'],

@@ -15,6 +15,7 @@ import { ProductService } from '../../services/product.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-product-list',
@@ -37,8 +38,8 @@ import { ProductStoreService } from '../../states/product.state.service';
   styleUrl: './product-list.scss',
   animations: [
     trigger('detailExpand', [
-      state('collapsed,void', style({height: '0px', minHeight: '0'})),
-      state('expanded', style({height: '*'})),
+      state('collapsed,void', style({ height: '0px', minHeight: '0' })),
+      state('expanded', style({ height: '*' })),
       transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
     ]),
   ],
@@ -47,6 +48,7 @@ export class ProductList {
   ProductState = inject(ProductStoreService);
   #productService = inject(ProductService);
   #snackBar = inject(MatSnackBar);
+  #domSanitizer = inject(DomSanitizer);
 
   displayedColumns: string[] = [
     'image',
@@ -109,7 +111,7 @@ export class ProductList {
           this.#snackBar.open('Producto eliminado correctamente', 'Cerrar', {
             duration: 3000,
           });
-          window.location.reload(); 
+          window.location.reload();
         },
         error: () => {
           this.#snackBar.open('Error al eliminar el producto', 'Cerrar', {
@@ -122,11 +124,15 @@ export class ProductList {
 
   copyLink(product: IProduct) {
     // Assuming a standard public URL structure
-    const url = `${'https://electromix.com.ar'}/product/${product.slug}`; 
+    const url = `${'https://electromix.com.ar'}/products/${product.slug}`;
     navigator.clipboard.writeText(url).then(() => {
-        this.#snackBar.open('Enlace copiado al portapapeles', 'Cerrar', {
-            duration: 2000,
-        });
+      this.#snackBar.open('Enlace copiado al portapapeles', 'Cerrar', {
+        duration: 2000,
+      });
     });
+  }
+
+  getDescriptionSanitized(description: string) {
+    return this.#domSanitizer.bypassSecurityTrustHtml(description);
   }
 }

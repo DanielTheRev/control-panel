@@ -10,7 +10,7 @@ export class ProductStoreService {
   #fetchedProducts = httpResource<IProduct[]>(() => ({
     url: `${environment.apiUrl}/products/list`,
     method: 'GET',
-  }),{
+  }), {
     parse: (response: any) => {
       console.log(response);
       return response
@@ -24,4 +24,11 @@ export class ProductStoreService {
     isLoading: this.#fetchedProducts.isLoading(),
     itemsCount: (this.#fetchedProducts.value() || []).length,
   }));
+
+  updateProduct(product: Partial<IProduct>) {
+    this.#fetchedProducts.update(state => {
+      if (!state) return state;
+      return state.map(p => p._id === product._id ? { ...p, ...product } : p);
+    });
+  }
 }

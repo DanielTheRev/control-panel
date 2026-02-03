@@ -1,19 +1,19 @@
-import { Component, ElementRef, inject, OnInit, computed, signal, viewChild } from '@angular/core';
-import { QuillEditorComponent, QuillModule } from 'ngx-quill';
+import { HttpClient } from '@angular/common/http';
+import { Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { IProductCreateDTO } from '../../interfaces/product.interface';
+import { ProductService } from '../../services/product.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
-import { MatIcon } from '@angular/material/icon';
-import { ProductService } from '../../services/product.service';
+import { RichTextModule } from '../../shared/modules/rich-text.module';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { ProductStoreService } from '../../states/product.state.service';
 
 @Component({
   selector: 'app-product-create',
@@ -27,7 +27,8 @@ import { ProductService } from '../../services/product.service';
     RouterLink,
     PageLayout,
     PageHeader,
-    QuillEditorComponent,
+    RichTextModule,
+    MatSnackBarModule
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
@@ -38,10 +39,13 @@ export class ProductCreate implements OnInit {
   #route = inject(ActivatedRoute);
   #http = inject(HttpClient);
   #productService = inject(ProductService);
+  #deletedImages: string[] = [];
+  #snackBar = inject(MatSnackBar);
+  #productState = inject(ProductStoreService);
 
 
   productId = signal<string | null>(null);
-  isEditMode = computed(() => !!this.productId());
+  isEditMode = computed(() => this.productId() !== null);
 
   private originalProduct: any = null;
 
@@ -101,8 +105,7 @@ export class ProductCreate implements OnInit {
   loadProduct(id: string) {
     this.#http.get<any>(`${environment.apiUrl}/products/complete/${id}`).subscribe({
       next: (product) => {
-        console.log(product);
-        this.originalProduct = JSON.parse(JSON.stringify(product));
+        this.originalProduct = structuredClone(product);
         // Patch simple fields
         this.productForm.patchValue({
           model: product.model,
@@ -188,8 +191,15 @@ export class ProductCreate implements OnInit {
 
   removeImage(index: number) {
     const blobURL = this.imagesControls.at(index).value.link;
-    if (blobURL.startsWith('blob:')) {
+    const isBlob = blobURL.startsWith('blob:');
+    if (isBlob) {
       window.URL.revokeObjectURL(blobURL);
+    }
+    if (!isBlob) {
+      const img = this.originalProduct().images.find((img: any) => img.url === blobURL);
+      if (img) {
+        this.#deletedImages.push(img.public_id);
+      }
     }
     this.imagesControls.removeAt(index);
   }
@@ -266,11 +276,18 @@ export class ProductCreate implements OnInit {
       // --- EDIT MODE (Differential Update) ---
       let hasChanges = false;
 
+      if (productData.price !== this.originalProduct.prices.costPrice) {
+        formData.append('price', productData.price);
+        console.log('no es igual, hay cambios en:', 'price');
+        hasChanges = true;
+      }
+
       // 1. Compare Simple Fields
-      const simpleFields = ['model', 'brand', 'category', 'price', 'shortDescription', 'largeDescription'];
+      const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription'];
       simpleFields.forEach(field => {
         if (productData[field] !== this.originalProduct[field]) {
           formData.append(field, productData[field]);
+          console.log('no es igual, hay cambios en:', field);
           hasChanges = true;
         }
       });
@@ -280,6 +297,7 @@ export class ProductCreate implements OnInit {
       arrayFields.forEach(field => {
         if (JSON.stringify(productData[field]) !== JSON.stringify(this.originalProduct[field])) {
           formData.append(field, JSON.stringify(productData[field]));
+          console.log('no es igual, hay cambios en:', field);
           hasChanges = true;
         }
       });
@@ -288,6 +306,7 @@ export class ProductCreate implements OnInit {
       const originalSpecs = (this.originalProduct.specifications || []).map((s: any) => ({ key: s.key, value: s.value }));
       if (JSON.stringify(productData.specifications) !== JSON.stringify(originalSpecs)) {
         formData.append('specifications', JSON.stringify(productData.specifications));
+        console.log('no es igual, hay cambios en:', 'specifications');
         hasChanges = true;
       }
 
@@ -295,10 +314,17 @@ export class ProductCreate implements OnInit {
       // Only append NEW images (files)
       const newFiles = productData.images.filter((img: any) => img.file !== null);
       if (newFiles.length > 0) {
+        console.log('no es igual, hay cambios en:', 'images');
         hasChanges = true;
         newFiles.forEach((img: any) => {
           formData.append('images', img.file);
         });
+      }
+
+      if (this.#deletedImages.length > 0) {
+        console.log('no es igual, hay cambios en:', 'deletedImages');
+        hasChanges = true
+        formData.append('deletedImages', JSON.stringify(this.#deletedImages));
       }
 
       if (!hasChanges) {
@@ -307,12 +333,19 @@ export class ProductCreate implements OnInit {
       }
       console.log(hasChanges);
       console.log('Updating product with changes:', formData);
-      // this.#productService.updateProduct(this.productId()!, formData).subscribe({
-      //   next: () => {
-      //     this.#router.navigate(['/products']);
-      //   },
-      //   error: (err) => console.error('Error updating product', err)
-      // });
+
+      if (this.productId() === null) return;
+      this.#productService.updateProduct(this.productId() as string, formData).subscribe({
+        next: (productUpdated) => {
+          console.log(productUpdated);
+          this.#productState.updateProduct(productUpdated);
+          this.#snackBar.open('Producto actualizado correctamente', 'Cerrar', {
+            duration: 3000,
+          });
+          this.#router.navigate(['/products']);
+        },
+        error: (err) => console.error('Error updating product', err)
+      });
 
     } else {
       // --- CREATE MODE ---
@@ -337,20 +370,22 @@ export class ProductCreate implements OnInit {
         }
       }
 
+      console.log(productData);
+
       console.log('Creating product:', formData);
-      this.#productService.create(formData).subscribe({
-        next: () => {
-          this.productForm.controls['images'].value.forEach((img: any) => {
-            if (img.link && img.link.startsWith('blob:')) {
-              window.URL.revokeObjectURL(img.link);
-            }
-          });
-          this.#router.navigate(['/products']);
-        },
-        error: (err) => {
-          console.error('Error creating product', err);
-        }
-      });
+      // this.#productService.create(formData).subscribe({
+      //   next: () => {
+      //     this.productForm.controls['images'].value.forEach((img: any) => {
+      //       if (img.link && img.link.startsWith('blob:')) {
+      //         window.URL.revokeObjectURL(img.link);
+      //       }
+      //     });
+      //     this.#router.navigate(['/products']);
+      //   },
+      //   error: (err) => {
+      //     console.error('Error creating product', err);
+      //   }
+      // });
     }
   }
 }
