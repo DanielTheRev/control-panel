@@ -69,6 +69,36 @@
           <span class="menu-text">Envíos</span>
           }
         </a>
+
+        <a
+          routerLink="/home/banners"
+          routerLinkActive="active"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Banners & Secciones' : ''
+          "
+          matTooltipPosition="right"
+          class="menu-item"
+        >
+          <mat-icon>view_carousel</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Banners</span>
+          }
+        </a>
+
+        <a
+          routerLink="/home/hero"
+          routerLinkActive="active"
+          [matTooltip]="
+            sidebarService.SidebarStatus().isCollapsed ? 'Hero Slider' : ''
+          "
+          matTooltipPosition="right"
+          class="menu-item"
+        >
+          <mat-icon>view_day</mat-icon>
+          @if (sidebarService.SidebarStatus().isExpanded) {
+          <span class="menu-text">Hero Slider</span>
+          }
+        </a>
       </div>
     </div>
   </mat-drawer>

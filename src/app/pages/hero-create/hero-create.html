@@ -1,0 +1,120 @@
+<app-page-layout>
+  <app-page-header [title]="isEditMode() ? 'Editar Slide' : 'Nuevo Slide'"
+    [subtitle]="isEditMode() ? 'Modifica los datos del slide principal' : 'Sube una nueva imagen al carrusel'">
+    <div actions class="flex gap-2">
+      <a routerLink="/home/hero" class="btn btn-ghost text-slate-500">Cancelar</a>
+      <button class="btn btn-primary" (click)="saveSlide()" [disabled]="heroForm.invalid">
+        <mat-icon>save</mat-icon> Guardar
+      </button>
+    </div>
+  </app-page-header>
+
+  <form [formGroup]="heroForm" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+    <!-- LEFT: Images -->
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h3 class="card-title text-lg mb-4">Imágenes</h3>
+
+        <!-- Desktop Image -->
+        <div class="form-control w-full">
+          <label class="label"><span class="label-text font-bold">URL Imagen Desktop</span></label>
+          <input type="text" class="input input-bordered w-full" placeholder="https://..."
+            formControlName="imageDesktop" />
+          <div class="label"><span class="label-text-alt">Copia y pega la URL de la imagen aquí</span></div>
+
+          @if (imageDesktopValue) {
+          <div class="mt-2 relative w-full aspect-video rounded-lg overflow-hidden border border-base-300">
+            <img [src]="imageDesktopValue" class="w-full h-full object-cover">
+          </div>
+          }
+        </div>
+
+        <!-- Mobile Image -->
+        <div class="form-control w-full mt-4">
+          <label class="label"><span class="label-text font-bold">URL Imagen Mobile</span></label>
+          <input type="text" class="input input-bordered w-full" placeholder="https://..."
+            formControlName="imageMobile" />
+
+          @if (imageMobileValue) {
+          <div
+            class="mt-2 relative w-full aspect-[4/5] max-w-[200px] mx-auto rounded-lg overflow-hidden border border-base-300">
+            <img [src]="imageMobileValue" class="w-full h-full object-cover">
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+
+
+    <!-- RIGHT: Config -->
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h3 class="card-title text-lg mb-4">Configuración</h3>
+
+        <fieldset class="fieldset w-full">
+          <legend class="fieldset-legend">Título de Referencia (Admin)</legend>
+          <input type="text" class="input input-bordered w-full" placeholder="Ej. Oferta Navidad"
+            formControlName="title" />
+        </fieldset>
+
+        <fieldset class="fieldset w-full mt-4">
+          <legend class="fieldset-legend">Link de Destino</legend>
+          <input type="text" class="input input-bordered w-full" placeholder="Ej. /category/smartphones o https://..."
+            formControlName="link" />
+          <div class="label"><span class="label-text-alt">A dónde va el usuario al hacer clic en la imagen</span></div>
+        </fieldset>
+
+        <fieldset class="fieldset w-full mt-4">
+          <legend class="fieldset-legend">Texto Alternativo (SEO)</legend>
+          <input type="text" class="input input-bordered w-full" placeholder="Descripción de la imagen"
+            formControlName="altText" />
+        </fieldset>
+
+        <fieldset class="fieldset w-full mt-4">
+            <legend class="fieldset-legend">Configuración del Botón</legend>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Texto del Botón</span></label>
+                    <input type="text" class="input input-bordered w-full" placeholder="Ej. Comprar Ahora" formControlName="buttonText" />
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Clases CSS (Tailwind)</span></label>
+                     <input type="text" class="input input-bordered w-full" placeholder="Ej. btn btn-primary w-full shadow-lg" formControlName="buttonStyle" />
+                     <div class="label"><span class="label-text-alt">Escribe las clases de Tailwind/DaisyUI</span></div>
+                </div>
+            </div>
+            
+            <!-- PREVIEW BUTTON -->
+            <div class="mt-4 p-4 bg-base-200 rounded-lg flex items-center justify-between">
+                <div>
+                    <span class="text-sm opacity-60 block">Previsualización:</span>
+                    <span class="text-xs text-info" *ngIf="heroForm.get('buttonStyle')?.value?.includes('w-full')">
+                        (Si usas w-full, ocupará todo el ancho en la web real)
+                    </span>
+                </div>
+                <button [class]="heroForm.get('buttonStyle')?.value">
+                    {{ heroForm.get('buttonText')?.value }}
+                </button>
+            </div>
+        </fieldset>
+
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <fieldset class="fieldset w-full">
+            <legend class="fieldset-legend">Orden</legend>
+            <input type="number" class="input input-bordered w-full" formControlName="order" />
+          </fieldset>
+
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4 mt-6">
+              <span class="label-text font-bold">Visible</span>
+              <input type="checkbox" class="toggle toggle-primary" formControlName="isActive" />
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </form>
+</app-page-layout>

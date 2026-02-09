@@ -8,6 +8,7 @@ export enum PaymentType {
 
 // Interface principal del documento
 export interface IPaymentMethod {
+  _id: string;
   type: PaymentType;
   name: string;
   description?: string;

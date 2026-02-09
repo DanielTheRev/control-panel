@@ -1,5 +1,6 @@
 /* 1. load tailwind */
 @import "tailwindcss";
+
 /* 2. load daisyui */
 @plugin "daisyui" {
   themes: light --default;
@@ -10,12 +11,12 @@
 
 /* reset daisyui form styles */
 @layer base {
-
-  select,
-  input,
   select,
   textarea {
-    /* double border and  */
+    @apply border-2! rounded-lg! placeholder:text-gray-400;
+  }
+
+  input:not(.toggle) {
     @apply !border-2 !rounded-lg placeholder:text-gray-400;
   }
 

@@ -1,6 +1,7 @@
 <app-page-layout>
     @let title = productId() ? 'Editar Producto' : 'Crear Nuevo Producto';
-    @let subtitle = productId() ? 'Edita cualquier campo para actualizar el producto.' : 'Rellena la información para tu nuevo artículo.';
+    @let subtitle = productId() ? 'Edita cualquier campo para actualizar el producto.'
+    : 'Rellena la información para tu nuevo artículo.';
 
     <app-page-header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
@@ -55,7 +56,7 @@
 
                     <div class="mt-4">
                         <fieldset class="fieldset w-1/2">
-                            <legend class="fieldset-legend">Precio (USD)</legend>
+                            <legend class="fieldset-legend">Precio de Costo (USD)</legend>
                             <div class="join w-full">
                                 <span class="join-item btn btn-static bg-base-200 border-base-300">$</span>
                                 <input type="number" class="join-item input input-bordered w-full" placeholder="0.00"
@@ -63,6 +64,11 @@
                             </div>
                         </fieldset>
                     </div>
+
+                    <!-- Price Calculator Preview -->
+                    @if (calculatedPrices()) {
+                        <app-price-preview [prices]="calculatedPrices()!"></app-price-preview>
+                    }
                 </div>
             </div>
 

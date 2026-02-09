@@ -1,12 +1,14 @@
-import { Component } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { animate, state as animationState, style, transition, trigger } from '@angular/animations';
+import { CurrencyPipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
-import { MatChipsModule } from '@angular/material/chips';
-import { CurrencyPipe } from '@angular/common';
+import { ShippingOptionsStateService } from '../../states/shipping-options.state.service';
+import { IShippingOption } from '../../interfaces/shipping.interface';
 
 @Component({
   selector: 'app-shipping-options',
@@ -14,22 +16,33 @@ import { CurrencyPipe } from '@angular/common';
   imports: [
     PageLayout,
     PageHeader,
-    MatButtonModule,
     MatIconModule,
     MatTableModule,
     MatMenuModule,
-    MatChipsModule,
-    CurrencyPipe
+    CurrencyPipe,
+    RouterLink
   ],
   templateUrl: './shipping-options.html',
+  styleUrl: './shipping-options.css',
+  animations: [
+    trigger('detailExpand', [
+      animationState('collapsed', style({height: '0px', minHeight: '0'})),
+      animationState('expanded', style({height: '*'})),
+      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class ShippingOptions {
-  displayedColumns: string[] = ['name', 'cost', 'type', 'actions'];
-  
-  // Mock data
-  dataSource = [
-    { name: 'Retiro en Local', cost: 0, type: 'Retiro' },
-    { name: 'Envío Moto (CABA)', cost: 3500, type: 'Domicilio' },
-    { name: 'Correo Argentino', cost: 6800, type: 'Domicilio' },
-  ];
+  #shippingOptionsStateService = inject(ShippingOptionsStateService);
+  displayedColumns: string[] = ['name', 'cost', 'type', 'isActive', 'isDefaultForCash', 'actions'];
+  readonly state = this.#shippingOptionsStateService.state;
+
+  expandedElement = signal<IShippingOption | null>(null);
+
+  toggleRow(element: IShippingOption) {
+    // Only expand if it has pickup points
+    if (element.type === 'Punto de encuentro' && element.pickupPoints && element.pickupPoints.length > 0) {
+        this.expandedElement.update(current => current === element ? null : element);
+    }
+  }
 }

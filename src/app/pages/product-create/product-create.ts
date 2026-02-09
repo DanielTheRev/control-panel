@@ -14,21 +14,22 @@ import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { RichTextModule } from '../../shared/modules/rich-text.module';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductStoreService } from '../../states/product.state.service';
+import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
+import { PricePreview } from '../../shared/components/price-preview/price-preview';
+import { IProductPrices } from '../../interfaces/product.interface';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-product-create',
   imports: [
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     ReactiveFormsModule,
-    MatChipsModule,
     MatIcon,
     RouterLink,
     PageLayout,
     PageHeader,
     RichTextModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    PricePreview
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
@@ -46,6 +47,7 @@ export class ProductCreate implements OnInit {
 
   productId = signal<string | null>(null);
   isEditMode = computed(() => this.productId() !== null);
+  calculatedPrices = signal<IProductPrices | null>(null); // Signal for price preview
 
   private originalProduct: any = null;
 
@@ -92,6 +94,22 @@ export class ProductCreate implements OnInit {
     return this.productForm.get('specifications') as FormArray;
   }
 
+  constructor() {
+    // Listen to price changes
+    this.productForm.get('price')?.valueChanges.pipe(
+      takeUntilDestroyed(),
+      debounceTime(800),
+      distinctUntilChanged(),
+      filter(value => value > 0),
+      switchMap(value => this.#productService.calculatePrices(Number(value)))
+    ).subscribe({
+      next: (prices) => {
+        this.calculatedPrices.set(prices);
+      },
+      error: (err) => console.error('Error calculating prices', err)
+    });
+  }
+
   ngOnInit() {
     this.#route.paramMap.subscribe(params => {
       const id = params.get('id');
@@ -115,6 +133,8 @@ export class ProductCreate implements OnInit {
           shortDescription: product.shortDescription,
           largeDescription: product.largeDescription,
         });
+
+        this.calculatedPrices.set(product.prices);
 
         // Patch Arrays
         if (product.colors && Array.isArray(product.colors)) {

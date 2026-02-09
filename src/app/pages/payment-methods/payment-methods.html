@@ -1,28 +1,49 @@
 <app-page-layout>
   <app-page-header header title="Métodos de Pago" subtitle="Gestiona las formas de pago disponibles">
     <div actions class="flex">
-      <button class="btn btn-primary">
-        <mat-icon>add</mat-icon> Nuevo Método
-      </button>
+      <a routerLink="/home/payment-methods/create" class="btn btn-primary">
+        <mat-icon>add</mat-icon>
+        Nuevo Método
+      </a>
     </div>
   </app-page-header>
 
-  <div class="table-container rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm flex-1 flex flex-col">
+  <div class="table-container rounded-lg overflow-hidden bg-white dark:bg-slate-810 shadow-sm flex-1 flex flex-col table-fix">
     <div class="overflow-y-auto flex-1 custom-scrollbar">
-      <table mat-table [dataSource]="dataSource" class="w-full">
-        
+      <table mat-table [dataSource]="state().data" class="w-full">
+
         <!-- Name Column -->
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef> Nombre </th>
-          <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+          <td mat-cell *matCellDef="let element"> 
+            <span class="font-medium text-slate-700 dark:text-slate-200">{{element.name}}</span>
+          </td>
         </ng-container>
 
         <!-- Status Column -->
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef> Estado </th>
-          <td mat-cell *matCellDef="let element"> 
-            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight bg-emerald-100 text-emerald-700">
-              {{element.status}}
+          <td mat-cell *matCellDef="let element">
+            @if (element.isActive) {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Activo
+                </span>
+            } @else {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                    Inactivo
+                </span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Description Column -->
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef> Descripción </th>
+          <td mat-cell *matCellDef="let element">
+            <span class="text-sm text-slate-500 max-w-[300px] truncate block" [title]="element.description">
+              {{element.description || '-'}}
             </span>
           </td>
         </ng-container>
@@ -35,11 +56,11 @@
               <mat-icon>more_horiz</mat-icon>
             </button>
             <mat-menu #menu="matMenu" class="modern-row-menu">
-              <button mat-menu-item>
+              <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
                 <mat-icon>edit</mat-icon>
                 <span>Editar</span>
               </button>
-              <button mat-menu-item class="!text-red-500">
+              <button mat-menu-item class="!text-red-500" (click)="delete(element._id)">
                 <mat-icon class="!text-red-500">delete_outline</mat-icon>
                 <span>Eliminar</span>
               </button>
@@ -47,8 +68,9 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-16"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-14 !border-b-0"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors !border-b border-slate-100 dark:border-slate-800/50"></tr>
       </table>
     </div>
   </div>

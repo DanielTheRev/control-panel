@@ -1,0 +1,106 @@
+@let state = bannerService.state();
+
+<app-page-layout>
+  <app-page-header header title="Banners & Secciones" subtitle="Crea y edita las secciones de la página de inicio">
+    <div actions>
+      <a routerLink="create" class="btn btn-primary">
+        <mat-icon>add</mat-icon>
+        Nueva sección
+      </a>
+    </div>
+  </app-page-header>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="flex justify-center items-center w-full h-ful">
+      @if (state.error) {
+      <div class="alert alert-vertical alert-error">
+        <mat-icon>error</mat-icon>
+        <span>Error al traer los banners</span>
+        <button class="btn btn-sm btn-primary" (click)="refresh()">Reintentar</button>
+      </div>
+      }
+      @if (state.isLoading) {
+      <div class="flex items-center justify-center w-full h-full">
+        <span class="loading loading-ring loading-xl"></span>
+      </div>
+      }
+      @if (!state.hasValue) {
+      <div class="flex items-center justify-center w-full h-full">
+        <span class="text-slate-400">No hay banner para mostrar, puedes crear uno desde el botón "Nueva sección"</span>
+      </div>
+      }
+    </div>
+
+    @let showTable = state.hasValue && state.banners.length > 0 && !state.isLoading && !state.error;
+    @if (showTable) {
+    <table mat-table [dataSource]="state.banners" class="w-full">
+
+      <!-- Image Column -->
+      <ng-container matColumnDef="Portada">
+        <th mat-header-cell *matHeaderCellDef> Portada </th>
+        <td mat-cell *matCellDef="let banner">
+          <img [src]="banner.image" alt="Banner" class="w-16 h-10 object-cover rounded my-2">
+        </td>
+      </ng-container>
+
+      <!-- Brand Name Column -->
+      <ng-container matColumnDef="Marca">
+        <th mat-header-cell *matHeaderCellDef> Marca / ID </th>
+        <td mat-cell *matCellDef="let banner" class="font-medium"> {{banner.brandName}} </td>
+      </ng-container>
+
+      <!-- Title Column -->
+      <ng-container matColumnDef="Titulo">
+        <th mat-header-cell *matHeaderCellDef> Titulo </th>
+        <td mat-cell *matCellDef="let banner">
+          <div class="flex flex-col">
+            <span class="font-medium">{{banner.title}}</span>
+            <span class="text-xs text-gray-500">{{banner.subtitle}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Order Column -->
+      <ng-container matColumnDef="Posicion">
+        <th mat-header-cell *matHeaderCellDef> Posicion </th>
+        <td mat-cell *matCellDef="let banner"> {{banner.order}} </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="Estado">
+        <th mat-header-cell *matHeaderCellDef> Estado </th>
+        <td mat-cell *matCellDef="let banner">
+          <span class="px-2 py-1 rounded text-xs" [class.bg-green-100]="banner.isActive"
+            [class.text-green-800]="banner.isActive" [class.bg-red-100]="!banner.isActive"
+            [class.text-red-800]="!banner.isActive">
+            {{banner.isActive ? 'Active' : 'Inactive'}}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="Acciones">
+        <th mat-header-cell *matHeaderCellDef> Acciones </th>
+        <td mat-cell *matCellDef="let banner">
+          <button mat-icon-button [matMenuTriggerFor]="menu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <a mat-menu-item [routerLink]="['edit', banner._id]">
+              <mat-icon>edit</mat-icon>
+              <span>Edit</span>
+            </a>
+            <button mat-menu-item (click)="deleteBanner(banner._id!)">
+              <mat-icon color="warn">delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    }
+
+  </div>
+</app-page-layout>

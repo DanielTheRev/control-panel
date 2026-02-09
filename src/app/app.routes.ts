@@ -44,11 +44,75 @@ export const routes: Routes = [
       },
       {
         path: 'payment-methods',
-        component: PaymentMethods,
+        children: [
+            {
+                path: '',
+                pathMatch: 'full',
+                component: PaymentMethods
+            },
+            {
+                path: 'create',
+                loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
+            },
+            {
+                path: 'edit/:id',
+                loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
+            }
+        ]
       },
       {
         path: 'shipping-options',
-        component: ShippingOptions,
+        children: [
+            {
+                path: '',
+                pathMatch: 'full',
+                component: ShippingOptions
+            },
+            {
+                path: 'create',
+                loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
+            },
+            {
+                path: 'edit/:id',
+                loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
+            }
+        ]
+      },
+      {
+        path: 'banners',
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/banner-list/banner-list').then(c => c.BannerList)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/banner-create/banner-create').then(c => c.BannerCreate)
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () => import('./pages/banner-create/banner-create').then(c => c.BannerCreate)
+          }
+        ]
+      },
+      {
+        path: 'hero',
+        children: [
+            {
+                path: '',
+                pathMatch: 'full',
+                loadComponent: () => import('./pages/hero-list/hero-list').then(c => c.HeroListComponent)
+            },
+            {
+                path: 'create',
+                loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
+            },
+            {
+                path: 'edit/:id',
+                loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
+            }
+        ]
       },
       {
         path: '**',

@@ -38,16 +38,21 @@ export enum IProductCategories {
 }
 
 export interface IProductPrices {
-	costPrice: number;
-	profitMargin: number;
-	baseCommission: number;
-	cft6Cuotas: number;
-	efectivo_transferencia: number;
-	tarjeta_credito_debito: number;
-	cuotas: {
-		cuotas_3_si: number;
-		cuotas_6_si: number;
-	};
+  costPrice: number;
+  profitMargin: number;
+  baseCommission: number;
+  cft6Cuotas: number;
+  efectivo_transferencia: number;
+  tarjeta_credito_debito: number;
+  cuotas: {
+    cuotas_3_si: number;
+    cuotas_6_si: number;
+  };
+  earnings?: {
+    cash_transfer: number;
+    card_3_installments: number;
+    card_6_installments: number;
+  };
 }
 
 export interface IProductImage {

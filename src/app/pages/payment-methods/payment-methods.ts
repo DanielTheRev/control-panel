@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
-import { MatChipsModule } from '@angular/material/chips';
+import { PaymentMethodsStateService } from '../../states/payment-methods.state.service';
+import { PaymentMethodsService } from '../../services/payment-methods.service';
 
 @Component({
   selector: 'app-payment-methods',
@@ -13,21 +15,33 @@ import { MatChipsModule } from '@angular/material/chips';
   imports: [
     PageLayout,
     PageHeader,
-    MatButtonModule,
     MatIconModule,
     MatTableModule,
     MatMenuModule,
-    MatChipsModule
+    RouterLink,
+    MatSnackBarModule
   ],
   templateUrl: './payment-methods.html',
 })
 export class PaymentMethods {
-  displayedColumns: string[] = ['name', 'status', 'actions'];
-  
-  // Mock data
-  dataSource = [
-    { name: 'Efectivo', status: 'Activo' },
-    { name: 'Transferencia Bancaria', status: 'Activo' },
-    { name: 'Tarjeta de Crédito', status: 'Activo' },
-  ];
+  readonly #paymentMethodsState = inject(PaymentMethodsStateService);
+  readonly #paymentMethodsService = inject(PaymentMethodsService);
+  readonly #snackBar = inject(MatSnackBar);
+
+  readonly state = this.#paymentMethodsState.state;
+
+  displayedColumns: string[] = ['name', 'status', 'description', 'actions'];
+
+  async delete(id: string) {
+    if (confirm('¿Estás seguro de eliminar este método de pago?')) {
+      try {
+        await this.#paymentMethodsService.delete(id);
+        this.#paymentMethodsState.deletePaymentMethod(id);
+        this.#snackBar.open('Método de pago eliminado', 'Cerrar', { duration: 3000 });
+      } catch (err) {
+        console.error('Error deleting', err);
+        this.#snackBar.open('Error al eliminar', 'Cerrar', { duration: 3000 });
+      }
+    }
+  }
 }

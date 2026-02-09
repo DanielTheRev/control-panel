@@ -12,11 +12,13 @@ export interface IPickupPoint {
 
 // Interface principal del documento
 export interface IShippingOption {
+  _id: string;
   type: ShippingType;
   name: string;
   cost: number;
   pickupPoints?: IPickupPoint[];
   isDefaultForCash: boolean;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
