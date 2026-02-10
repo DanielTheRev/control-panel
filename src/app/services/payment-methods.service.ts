@@ -9,21 +9,21 @@ import { firstValueFrom } from 'rxjs';
 })
 export class PaymentMethodsService {
   #http = inject(HttpClient);
-  #apiUrl = `${environment.apiUrl}/payment-methods`;
+  apiUrl = `${environment.apiUrl}/payment-methods`;
 
   getById(id: string) {
-    return this.#http.get<IPaymentMethod>(`${this.#apiUrl}/${id}`);
+    return firstValueFrom(this.#http.get<IPaymentMethod>(`${this.apiUrl}/${id}`));
   }
 
   create(paymentMethod: Omit<IPaymentMethod, '_id'>) {
-    return firstValueFrom(this.#http.post<IPaymentMethod>(`${this.#apiUrl}`, paymentMethod));
+    return firstValueFrom(this.#http.post<IPaymentMethod>(`${this.apiUrl}`, paymentMethod));
   }
 
   update(id: string, paymentMethod: Partial<IPaymentMethod>) {
-    return firstValueFrom(this.#http.put<IPaymentMethod>(`${this.#apiUrl}/${id}`, paymentMethod));
+    return firstValueFrom(this.#http.put<IPaymentMethod>(`${this.apiUrl}/${id}`, paymentMethod));
   }
 
   delete(id: string) {
-    return firstValueFrom(this.#http.delete<IPaymentMethod>(`${this.#apiUrl}/${id}`));
+    return firstValueFrom(this.#http.delete<IPaymentMethod>(`${this.apiUrl}/${id}`));
   }
 }

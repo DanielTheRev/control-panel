@@ -8,11 +8,10 @@ import { PaymentMethodsService } from '../services/payment-methods.service';
   providedIn: 'root'
 })
 export class PaymentMethodsStateService {
-  #apiUrl = `${environment.apiUrl}/payment-methods`;
   #paymentService = inject(PaymentMethodsService);
   #state = httpResource<IPaymentMethod[]>(() => {
     return {
-      url: `${this.#apiUrl}`,
+      url: `${this.#paymentService.apiUrl}`,
       method: 'GET',
     };
   });
@@ -26,6 +25,10 @@ export class PaymentMethodsStateService {
 
   refresh() {
     this.#state.reload();
+  }
+
+  async getPaymentMethodByID(id: string) {
+    return this.#paymentService.getById(id);
   }
 
   async addPaymentMethod(paymentMethod: IPaymentMethod) {

@@ -12,7 +12,7 @@ export class HeroService {
   readonly apiUrl = `${environment.apiUrl}/hero`;
 
   getById(id: string) {
-    return this.#http.get<IHeroSlide>(`${this.apiUrl}/${id}`);
+    return firstValueFrom(this.#http.get<IHeroSlide>(`${this.apiUrl}/${id}`));
   }
 
   create(slide: FormData) {

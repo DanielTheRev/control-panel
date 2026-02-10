@@ -2,33 +2,35 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment.development';
 import { HttpClient } from '@angular/common/http';
 import { IProduct, IProductPrices } from '../interfaces/product.interface';
-import { map, Observable } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
 
-  #apiUrl = environment.apiUrl;
+  #apiUrl = `${environment.apiUrl}/products`;
   #http = inject(HttpClient);
 
   constructor() { }
 
-  create(productData: FormData) {
-    return this.#http.post(`${this.#apiUrl}/products`, productData);
+  getProduct(id: string) {
+    return firstValueFrom(this.#http.get<IProduct>(`${this.#apiUrl}/complete/${id}`));
   }
 
-  updateProduct(id: string, product: FormData): Observable<IProduct> {
-    return this.#http.put<any>(`${this.#apiUrl}/products/${id}`, product).pipe(
-      map(response => response.data)
-    );
+  create(productData: FormData) {
+    return firstValueFrom(this.#http.post<IProduct>(`${this.#apiUrl}`, productData));
+  }
+
+  updateProduct(id: string, product: FormData) {
+    return firstValueFrom(this.#http.patch<any>(`${this.#apiUrl}/${id}`, product));
   }
 
   calculatePrices(costPrice: number): Observable<IProductPrices> {
-    return this.#http.post<IProductPrices>(`${this.#apiUrl}/products/calculate-prices`, { costPrice })
+    return this.#http.post<IProductPrices>(`${this.#apiUrl}/calculate-prices`, { costPrice })
   }
 
   deleteProduct(id: string) {
-    return this.#http.delete(`${this.#apiUrl}/products/${id}`);
+    return firstValueFrom(this.#http.delete(`${this.#apiUrl}/${id}`));
   }
 }

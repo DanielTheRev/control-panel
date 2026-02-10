@@ -9,10 +9,10 @@ import { firstValueFrom, Observable } from 'rxjs';
 })
 export class BannerService {
   private http = inject(HttpClient);
-  apiUrl = `${environment.apiUrl}/home/banners`;
+  readonly apiUrl = `${environment.apiUrl}/home/banners`;
 
-  getBannerById(id: string): Observable<IBanner> {
-    return this.http.get<IBanner>(`${this.apiUrl}/${id}`);
+  getBannerById(id: string): Promise<IBanner> {
+    return firstValueFrom(this.http.get<IBanner>(`${this.apiUrl}/${id}`));
   }
 
   createBanner(banner: IBanner) {

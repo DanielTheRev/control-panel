@@ -37,7 +37,7 @@ export const routes: Routes = [
             component: ProductCreate,
           },
           {
-            path: 'edit/:id',
+            path: 'edit/:productID',
             component: ProductCreate,
           },
         ]
@@ -55,7 +55,7 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
             },
             {
-                path: 'edit/:id',
+                path: 'edit/:paymentMethodID',
                 loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
             }
         ]
@@ -73,7 +73,7 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
             },
             {
-                path: 'edit/:id',
+                path: 'edit/:shippingOptionID',
                 loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
             }
         ]
@@ -91,7 +91,7 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/banner-create/banner-create').then(c => c.BannerCreate)
           },
           {
-            path: 'edit/:id',
+            path: 'edit/:bannerID',
             loadComponent: () => import('./pages/banner-create/banner-create').then(c => c.BannerCreate)
           }
         ]
@@ -109,7 +109,7 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
             },
             {
-                path: 'edit/:id',
+                path: 'edit/:slideID',
                 loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
             }
         ]

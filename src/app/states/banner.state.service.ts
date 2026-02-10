@@ -27,6 +27,10 @@ export class BannerStateService {
     this.#state.reload();
   }
 
+  async getBannerById(id: string) {
+    return this.#bannerService.getBannerById(id);
+  }
+
   async addBanner(banner: IBanner) {
     try {
       await this.#bannerService.createBanner(banner);

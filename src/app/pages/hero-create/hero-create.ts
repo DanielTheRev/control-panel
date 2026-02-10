@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -33,13 +33,14 @@ import { HeroStateService } from '../../states/hero.state.service';
   ],
   templateUrl: './hero-create.html'
 })
-export class HeroCreateComponent {
+export class HeroCreateComponent implements OnInit {
   #fb = inject(FormBuilder);
   #heroService = inject(HeroService);
   #heroStateService = inject(HeroStateService);
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
-  #route = inject(ActivatedRoute);
+  readonly slideID = input.required<string>();
+
 
   heroForm: FormGroup = this.#fb.group({
     title: ['', Validators.required],
@@ -53,36 +54,36 @@ export class HeroCreateComponent {
     isActive: [true]
   });
 
-  slideId = signal<string | null>(null);
   isEditMode = signal(false);
 
   get imageDesktopValue() { return this.heroForm.get('imageDesktop')?.value; }
   get imageMobileValue() { return this.heroForm.get('imageMobile')?.value; }
 
-  constructor() {
-    this.#route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.slideId.set(id);
-        this.isEditMode.set(true);
-        this.loadSlide(id);
-      }
-    });
+
+  ngOnInit(): void {
+    const id = this.slideID();
+    if (id) {
+      this.isEditMode.set(true);
+      this.loadSlide(id);
+    }
   }
 
-  loadSlide(id: string) {
-    this.#heroService.getById(id).subscribe(slide => {
+  async loadSlide(id: string) {
+    try {
+      const slide = await this.#heroStateService.getSlideById(id);
       if (slide) {
         this.heroForm.patchValue(slide);
       }
-    });
+    } catch (error) {
+      this.showMessage('Error al cargar slide');
+    }
   }
 
   async saveSlide() {
     if (this.heroForm.invalid) return;
 
     const request = this.isEditMode()
-      ? this.#heroStateService.updateSlide(this.slideId()!, this.heroForm.value)
+      ? this.#heroStateService.updateSlide(this.slideID(), this.heroForm.value)
       : this.#heroStateService.addSlide(this.heroForm.value);
     const message = this.isEditMode() ? 'Slide actualizado correctamente' : 'Slide guardado correctamente';
 

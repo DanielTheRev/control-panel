@@ -12,7 +12,7 @@ export class ShippingOptionsService {
   readonly apiUrl = `${environment.apiUrl}/shipping`;
 
   getById(id: string) {
-    return this.#http.get<IShippingOption>(`${this.apiUrl}/${id}`);
+    return firstValueFrom(this.#http.get<IShippingOption>(`${this.apiUrl}/${id}`));
   }
 
   create(shippingOption: Partial<IShippingOption>) {

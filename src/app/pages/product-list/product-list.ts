@@ -47,6 +47,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 export class ProductList {
   ProductState = inject(ProductStoreService);
   #productService = inject(ProductService);
+  #productState = inject(ProductStoreService);
   #snackBar = inject(MatSnackBar);
   #domSanitizer = inject(DomSanitizer);
 
@@ -104,21 +105,18 @@ export class ProductList {
   }
 
 
-  deleteProduct(product: IProduct) {
+  async deleteProduct(product: IProduct) {
     if (confirm(`¿Estás seguro de que deseas eliminar el producto ${product.model}?`)) {
-      this.#productService.deleteProduct(product._id).subscribe({
-        next: () => {
-          this.#snackBar.open('Producto eliminado correctamente', 'Cerrar', {
-            duration: 3000,
-          });
-          window.location.reload();
-        },
-        error: () => {
-          this.#snackBar.open('Error al eliminar el producto', 'Cerrar', {
-            duration: 3000,
-          });
-        }
-      });
+      try {
+        await this.#productState.deleteProduct(product._id);
+        this.#snackBar.open('Producto eliminado correctamente', 'Cerrar', {
+          duration: 3000,
+        });
+      } catch (error) {
+        this.#snackBar.open('Error al eliminar el producto', 'Cerrar', {
+          duration: 3000,
+        });
+      }
     }
   }
 

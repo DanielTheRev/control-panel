@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -25,13 +25,11 @@ import { ShippingOptionsStateService } from '../../states/shipping-options.state
 export class ShippingOptionsCreate implements OnInit {
   #fb = inject(FormBuilder);
   #router = inject(Router);
-  #route = inject(ActivatedRoute);
-  #shippingService = inject(ShippingOptionsService);
   #shippingState = inject(ShippingOptionsStateService);
   #snackBar = inject(MatSnackBar);
 
-  optionId = signal<string | null>(null);
-  isEditMode = computed(() => this.optionId() !== null);
+  shippingOptionID = input.required<string>();
+  isEditMode = computed(() => this.shippingOptionID() !== null);
   shippingTypes = Object.values(ShippingType);
 
   form: FormGroup = this.#fb.group({
@@ -48,37 +46,27 @@ export class ShippingOptionsCreate implements OnInit {
   }
 
   ngOnInit() {
-    this.#route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.optionId.set(id);
-        this.loadOption(id);
-      }
-    });
-
-    // Listen to type changes to handle pickupPoints validation/clearing if needed
-    // For now, we only show pickup points if type is PICKUP in the template
+    const id = this.shippingOptionID();
+    if (id) {
+      this.loadOption(id);
+    }
   }
 
-  loadOption(id: string) {
-    this.#shippingService.getById(id).subscribe({
-      next: (option) => {
-        this.form.patchValue({
-          type: option.type,
-          name: option.name,
-          cost: option.cost,
-          isActive: option.isActive,
-          isDefaultForCash: option.isDefaultForCash
-        });
-
-        if (option.pickupPoints && Array.isArray(option.pickupPoints)) {
-          option.pickupPoints.forEach(point => {
-            this.addPickupPoint(point.name, point.address);
-          });
-        }
-      },
-      error: (err) => console.error('Error loading shipping option', err)
+  async loadOption(id: string) {
+    const option = await this.#shippingState.getShippingOptionByID(id);
+    this.form.patchValue({
+      type: option.type,
+      name: option.name,
+      cost: option.cost,
+      isActive: option.isActive,
+      isDefaultForCash: option.isDefaultForCash
     });
+
+    if (option.pickupPoints && Array.isArray(option.pickupPoints)) {
+      option.pickupPoints.forEach(point => {
+        this.addPickupPoint(point.name, point.address);
+      });
+    }
   }
 
   addPickupPoint(name: string = '', address: string = '') {
@@ -107,7 +95,7 @@ export class ShippingOptionsCreate implements OnInit {
 
     if (this.isEditMode()) {
       try {
-        await this.#shippingState.updateShippingOption(this.optionId()!, value);
+        await this.#shippingState.updateShippingOption(this.shippingOptionID(), value);
         this.#snackBar.open('Opción de envío actualizada', 'Cerrar', { duration: 3000 });
         this.#router.navigate(['/home/shipping-options']);
       } catch (error) {

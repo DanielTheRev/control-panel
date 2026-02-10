@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -25,13 +25,11 @@ import { PaymentMethodsStateService } from '../../states/payment-methods.state.s
 export class PaymentMethodsCreate implements OnInit {
   #fb = inject(FormBuilder);
   #router = inject(Router);
-  #route = inject(ActivatedRoute);
-  #paymentService = inject(PaymentMethodsService);
   #paymentMethodsState = inject(PaymentMethodsStateService);
   #snackBar = inject(MatSnackBar);
+  readonly paymentMethodID = input.required<string>();
 
-  methodId = signal<string | null>(null);
-  isEditMode = computed(() => this.methodId() !== null);
+  isEditMode = computed(() => this.paymentMethodID() !== null);
   paymentTypes = Object.values(PaymentType);
 
   form: FormGroup = this.#fb.group({
@@ -43,28 +41,26 @@ export class PaymentMethodsCreate implements OnInit {
   });
 
   ngOnInit() {
-    this.#route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.methodId.set(id);
-        this.loadMethod(id);
-      }
-    });
+    const id = this.paymentMethodID();
+    if (id) {
+      this.loadMethod(id);
+    }
   }
 
-  loadMethod(id: string) {
-    this.#paymentService.getById(id).subscribe({
-      next: (method) => {
-        this.form.patchValue({
-          name: method.name,
-          type: method.type,
-          description: method.description,
-          processingFee: method.processingFee || 0,
-          isActive: method.isActive
-        });
-      },
-      error: (err) => console.error('Error loading payment method', err)
-    });
+  async loadMethod(id: string) {
+    try {
+      const method = await this.#paymentMethodsState.getPaymentMethodByID(id);
+      this.form.patchValue({
+        name: method.name,
+        type: method.type,
+        description: method.description,
+        processingFee: method.processingFee || 0,
+        isActive: method.isActive
+      });
+    } catch (error) {
+      console.error('Error loading payment method', error);
+      this.#snackBar.open('Error al cargar el método de pago', 'Cerrar', { duration: 3000 });
+    }
   }
 
   async save() {
@@ -77,7 +73,7 @@ export class PaymentMethodsCreate implements OnInit {
 
     if (this.isEditMode()) {
       try {
-        await this.#paymentMethodsState.updatePaymentMethod(this.methodId()!, value)
+        await this.#paymentMethodsState.updatePaymentMethod(this.paymentMethodID()!, value)
         this.#snackBar.open('Método de pago actualizado', 'Cerrar', { duration: 3000 });
         this.#router.navigate(['/home/payment-methods']);
       } catch (error) {

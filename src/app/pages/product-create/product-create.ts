@@ -1,23 +1,16 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { environment } from '../../../environments/environment';
-import { ProductService } from '../../services/product.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router, RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
+import { IProductPrices } from '../../interfaces/product.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
-import { RichTextModule } from '../../shared/modules/rich-text.module';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ProductStoreService } from '../../states/product.state.service';
-import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
 import { PricePreview } from '../../shared/components/price-preview/price-preview';
-import { IProductPrices } from '../../interfaces/product.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RichTextModule } from '../../shared/modules/rich-text.module';
+import { ProductStoreService } from '../../states/product.state.service';
 
 @Component({
   selector: 'app-product-create',
@@ -36,17 +29,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class ProductCreate implements OnInit {
   #fb = inject(FormBuilder);
-  #router = inject(Router);
-  #route = inject(ActivatedRoute);
-  #http = inject(HttpClient);
-  #productService = inject(ProductService);
   #deletedImages: string[] = [];
   #snackBar = inject(MatSnackBar);
   #productState = inject(ProductStoreService);
+  #router = inject(Router);
 
-
-  productId = signal<string | null>(null);
-  isEditMode = computed(() => this.productId() !== null);
+  productID = input.required<string>();
+  isEditMode = computed(() => this.productID() !== null);
   calculatedPrices = signal<IProductPrices | null>(null); // Signal for price preview
 
   private originalProduct: any = null;
@@ -101,7 +90,7 @@ export class ProductCreate implements OnInit {
       debounceTime(800),
       distinctUntilChanged(),
       filter(value => value > 0),
-      switchMap(value => this.#productService.calculatePrices(Number(value)))
+      switchMap(value => this.#productState.calculatePrices(Number(value)))
     ).subscribe({
       next: (prices) => {
         this.calculatedPrices.set(prices);
@@ -111,64 +100,61 @@ export class ProductCreate implements OnInit {
   }
 
   ngOnInit() {
-    this.#route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.productId.set(id);
-        this.loadProduct(id);
-      }
-    });
+    const id = this.productID();
+    console.log("ID del producto => ", id);
+    if (id) {
+      this.#loadProduct(id);
+    }
   }
 
-  loadProduct(id: string) {
-    this.#http.get<any>(`${environment.apiUrl}/products/complete/${id}`).subscribe({
-      next: (product) => {
-        this.originalProduct = structuredClone(product);
-        // Patch simple fields
-        this.productForm.patchValue({
-          model: product.model,
-          brand: product.brand,
-          category: product.category,
-          price: product.prices.costPrice,
-          shortDescription: product.shortDescription,
-          largeDescription: product.largeDescription,
-        });
+  async #loadProduct(id: string) {
+    try {
+      const product = await this.#productState.getProduct(id);
+      this.originalProduct = structuredClone(product);
+      // Patch simple fields
+      this.productForm.patchValue({
+        model: product.model,
+        brand: product.brand,
+        category: product.category,
+        price: product.prices.costPrice,
+        shortDescription: product.shortDescription,
+        largeDescription: product.largeDescription,
+      });
 
-        this.calculatedPrices.set(product.prices);
+      this.calculatedPrices.set(product.prices);
 
-        // Patch Arrays
-        if (product.colors && Array.isArray(product.colors)) {
-          product.colors.forEach((c: string) => this.colorsControls.push(this.#fb.control(c)));
-        }
-        if (product.storage && Array.isArray(product.storage)) {
-          product.storage.forEach((s: string) => this.storageControls.push(this.#fb.control(s)));
-        }
-        if (product.features && Array.isArray(product.features)) {
-          product.features.forEach((f: string) => this.featuresControls.push(this.#fb.control(f)));
-        }
-        if (product.specifications && Array.isArray(product.specifications)) {
-          product.specifications.forEach((s: any) => {
-            this.specificationsControls.push(this.#fb.group({
-              key: [s.key, Validators.required],
-              value: [s.value, Validators.required]
-            }));
-          });
-        }
-
-        // Patch images
-        if (product.images && Array.isArray(product.images)) {
-          product.images.forEach((img: any) => {
-            this.imagesControls.push(this.#fb.group({
-              link: [img.url || img],
-              file: [null]
-            }));
-          });
-        }
-      },
-      error: (err) => {
-        console.error('Error loading product', err);
+      // Patch Arrays
+      if (product.colors && Array.isArray(product.colors)) {
+        product.colors.forEach((c: string) => this.colorsControls.push(this.#fb.control(c)));
       }
-    });
+      if (product.storage && Array.isArray(product.storage)) {
+        product.storage.forEach((s: string) => this.storageControls.push(this.#fb.control(s)));
+      }
+      if (product.features && Array.isArray(product.features)) {
+        product.features.forEach((f: string) => this.featuresControls.push(this.#fb.control(f)));
+      }
+      if (product.specifications && Array.isArray(product.specifications)) {
+        product.specifications.forEach((s: any) => {
+          this.specificationsControls.push(this.#fb.group({
+            key: [s.key, Validators.required],
+            value: [s.value, Validators.required]
+          }));
+        });
+      }
+
+      // Patch images
+      if (product.images && Array.isArray(product.images)) {
+        product.images.forEach((img: any) => {
+          this.imagesControls.push(this.#fb.group({
+            link: [img.url || img],
+            file: [null]
+          }));
+        });
+      }
+    } catch (error) {
+      this.#snackBar.open('Error al cargar el producto', 'Cerrar', { duration: 3000 });
+    }
+
   }
 
   /* --- Image Handling --- */
@@ -284,7 +270,7 @@ export class ProductCreate implements OnInit {
     this.specificationsControls.removeAt(index);
   }
 
-  saveProduct() {
+  async saveProduct() {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
       return;
@@ -293,119 +279,106 @@ export class ProductCreate implements OnInit {
     const formData = new FormData();
 
     if (this.isEditMode() && this.originalProduct) {
-      // --- EDIT MODE (Differential Update) ---
-      let hasChanges = false;
-
-      if (productData.price !== this.originalProduct.prices.costPrice) {
-        formData.append('price', productData.price);
-        console.log('no es igual, hay cambios en:', 'price');
-        hasChanges = true;
-      }
-
-      // 1. Compare Simple Fields
-      const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription'];
-      simpleFields.forEach(field => {
-        if (productData[field] !== this.originalProduct[field]) {
-          formData.append(field, productData[field]);
-          console.log('no es igual, hay cambios en:', field);
-          hasChanges = true;
-        }
-      });
-
-      // 2. Compare Arrays (Colors, Storage, Features)
-      const arrayFields = ['colors', 'storage', 'features'];
-      arrayFields.forEach(field => {
-        if (JSON.stringify(productData[field]) !== JSON.stringify(this.originalProduct[field])) {
-          formData.append(field, JSON.stringify(productData[field]));
-          console.log('no es igual, hay cambios en:', field);
-          hasChanges = true;
-        }
-      });
-
-      // 3. Compare Specifications (Array of Objects)
-      const originalSpecs = (this.originalProduct.specifications || []).map((s: any) => ({ key: s.key, value: s.value }));
-      if (JSON.stringify(productData.specifications) !== JSON.stringify(originalSpecs)) {
-        formData.append('specifications', JSON.stringify(productData.specifications));
-        console.log('no es igual, hay cambios en:', 'specifications');
-        hasChanges = true;
-      }
-
-      // 4. Handle Images
-      // Only append NEW images (files)
-      const newFiles = productData.images.filter((img: any) => img.file !== null);
-      if (newFiles.length > 0) {
-        console.log('no es igual, hay cambios en:', 'images');
-        hasChanges = true;
-        newFiles.forEach((img: any) => {
-          formData.append('images', img.file);
+      if (this.productID() === null) return this.#snackBar.open('Error al actualizar el producto', 'Cerrar', { duration: 3000 });
+      const changes = this.#hasChanges(productData);
+      if (!changes.hasChanges) return this.#snackBar.open('No hay cambios para actualizar', 'Cerrar', { duration: 3000 });
+      try {
+        await this.#productState.updateProduct(this.productID() as string, changes.formData);
+        this.#snackBar.open('Producto actualizado correctamente', 'Cerrar', {
+          duration: 3000,
         });
-      }
-
-      if (this.#deletedImages.length > 0) {
-        console.log('no es igual, hay cambios en:', 'deletedImages');
-        hasChanges = true
-        formData.append('deletedImages', JSON.stringify(this.#deletedImages));
-      }
-
-      if (!hasChanges) {
-        console.log('No changes detected.');
+        this.#router.navigate(['/products']);
+        return;
+      } catch (error) {
+        console.error('Error updating product', error);
+        this.#snackBar.open('Error al actualizar el producto', 'Cerrar', {
+          duration: 3000,
+        });
         return;
       }
-      console.log(hasChanges);
-      console.log('Updating product with changes:', formData);
-
-      if (this.productId() === null) return;
-      this.#productService.updateProduct(this.productId() as string, formData).subscribe({
-        next: (productUpdated) => {
-          console.log(productUpdated);
-          this.#productState.updateProduct(productUpdated);
-          this.#snackBar.open('Producto actualizado correctamente', 'Cerrar', {
-            duration: 3000,
-          });
-          this.#router.navigate(['/products']);
-        },
-        error: (err) => console.error('Error updating product', err)
-      });
-
-    } else {
-      // --- CREATE MODE ---
-      // Append simple fields
-      formData.append('model', productData.model);
-      formData.append('brand', productData.brand);
-      formData.append('category', productData.category);
-      formData.append('price', productData.price.toString());
-      formData.append('shortDescription', productData.shortDescription);
-      formData.append('largeDescription', productData.largeDescription);
-
-      // Append arrays as JSON strings
-      formData.append('colors', JSON.stringify(productData.colors));
-      formData.append('storage', JSON.stringify(productData.storage));
-      formData.append('features', JSON.stringify(productData.features));
-      formData.append('specifications', JSON.stringify(productData.specifications));
-
-      // Append files
-      for (const img of productData.images) {
-        if (img.file) {
-          formData.append('images', img.file);
-        }
-      }
-
-      console.log(productData);
-
-      console.log('Creating product:', formData);
-      // this.#productService.create(formData).subscribe({
-      //   next: () => {
-      //     this.productForm.controls['images'].value.forEach((img: any) => {
-      //       if (img.link && img.link.startsWith('blob:')) {
-      //         window.URL.revokeObjectURL(img.link);
-      //       }
-      //     });
-      //     this.#router.navigate(['/products']);
-      //   },
-      //   error: (err) => {
-      //     console.error('Error creating product', err);
-      //   }
-      // });
     }
+    try {
+      await this.#productState.createProduct(formData);
+      this.#revokeBlobUrls();
+      this.#router.navigate(['/products']);
+      this.#snackBar.open('Producto creado correctamente', 'Cerrar', {
+        duration: 3000,
+      });
+      return;
+    } catch (error) {
+      console.error('Error creating product', error);
+      this.#snackBar.open('Error al crear el producto', 'Cerrar', {
+        duration: 3000,
+      });
+      return
+    }
+
+  }
+
+  #hasChanges(productData: any): { hasChanges: boolean, formData: FormData } {
+    let changes = {
+      hasChanges: false,
+      formData: new FormData()
+    };
+
+    if (productData.price !== this.originalProduct.prices.costPrice) {
+      changes.formData.append('price', productData.price);
+      console.log('no es igual, hay cambios en:', 'price');
+      changes.hasChanges = true;
+    }
+
+    // 1. Compare Simple Fields
+    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription'];
+    simpleFields.forEach(field => {
+      if (productData[field] !== this.originalProduct[field]) {
+        changes.formData.append(field, productData[field]);
+        console.log('no es igual, hay cambios en:', field);
+        changes.hasChanges = true;
+      }
+    });
+
+    // 2. Compare Arrays (Colors, Storage, Features)
+    const arrayFields = ['colors', 'storage', 'features'];
+    arrayFields.forEach(field => {
+      if (JSON.stringify(productData[field]) !== JSON.stringify(this.originalProduct[field])) {
+        changes.formData.append(field, JSON.stringify(productData[field]));
+        console.log('no es igual, hay cambios en:', field);
+        changes.hasChanges = true;
+      }
+    });
+
+    // 3. Compare Specifications (Array of Objects)
+    const originalSpecs = (this.originalProduct.specifications || []).map((s: any) => ({ key: s.key, value: s.value }));
+    if (JSON.stringify(productData.specifications) !== JSON.stringify(originalSpecs)) {
+      changes.formData.append('specifications', JSON.stringify(productData.specifications));
+      console.log('no es igual, hay cambios en:', 'specifications');
+      changes.hasChanges = true;
+    }
+
+    // 4. Handle Images
+    // Only append NEW images (files)
+    const newFiles = productData.images.filter((img: any) => img.file !== null);
+    if (newFiles.length > 0) {
+      console.log('no es igual, hay cambios en:', 'images');
+      changes.hasChanges = true;
+      newFiles.forEach((img: any) => {
+        changes.formData.append('images', img.file);
+      });
+    }
+
+    if (this.#deletedImages.length > 0) {
+      console.log('no es igual, hay cambios en:', 'deletedImages');
+      changes.hasChanges = true;
+      changes.formData.append('deletedImages', JSON.stringify(this.#deletedImages));
+    }
+    return changes;
+  }
+
+  #revokeBlobUrls() {
+    this.productForm.controls['images'].value.forEach((img: any) => {
+      if (img.link && img.link.startsWith('blob:')) {
+        window.URL.revokeObjectURL(img.link);
+      }
+    });
   }
 }

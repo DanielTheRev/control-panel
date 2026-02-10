@@ -1,6 +1,6 @@
 <app-page-layout>
-    @let title = productId() ? 'Editar Producto' : 'Crear Nuevo Producto';
-    @let subtitle = productId() ? 'Edita cualquier campo para actualizar el producto.'
+    @let title = productID() ? 'Editar Producto' : 'Crear Nuevo Producto';
+    @let subtitle = productID() ? 'Edita cualquier campo para actualizar el producto.'
     : 'Rellena la información para tu nuevo artículo.';
 
     <app-page-header [title]="title" [subtitle]="subtitle">

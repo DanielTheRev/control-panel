@@ -30,6 +30,15 @@ export class HeroStateService {
     this.#state.reload();
   }
 
+  async getSlideById(id: string) {
+    try {
+      const slide = await this.#heroService.getById(id);
+      return slide;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addSlide(data: FormData) {
     try {
       const newSlide = await this.#heroService.create(data);

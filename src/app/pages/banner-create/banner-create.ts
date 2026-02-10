@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,60 +29,50 @@ import { BannerStateService } from '../../states/banner.state.service';
 })
 export class BannerCreate implements OnInit {
   private fb = inject(FormBuilder);
-  private bannerService = inject(BannerService);
   #bannerStateService = inject(BannerStateService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
+  readonly bannerID = input.required<string>();
 
-  bannerForm: FormGroup;
+  bannerForm: FormGroup = this.fb.group({
+    brandName: ['', Validators.required],
+    title: ['', Validators.required],
+    subtitle: ['', Validators.required],
+    description: ['', Validators.required],
+    image: ['', [Validators.required]], // Basic URL validation can be added
+    textClass: ['text-white'],
+    buttonClass: ['bg-white text-black'],
+    icon: ['Smartphone'],
+    order: [0],
+    isActive: [true]
+  });
+
   isEditMode = false;
-  bannerId: string | null = null;
   loading = false;
-
-  constructor() {
-    this.bannerForm = this.fb.group({
-      brandName: ['', Validators.required],
-      title: ['', Validators.required],
-      subtitle: ['', Validators.required],
-      description: ['', Validators.required],
-      image: ['', [Validators.required]], // Basic URL validation can be added
-      textClass: ['text-white'],
-      buttonClass: ['bg-white text-black'],
-      icon: ['Smartphone'],
-      order: [0],
-      isActive: [true]
-    });
-  }
 
   get imagePreview() {
     return this.bannerForm.get('image')?.value;
   }
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.isEditMode = true;
-        this.bannerId = params['id'];
-        this.loadBanner(this.bannerId!);
-      }
-    });
+    if (this.bannerID()) {
+      this.isEditMode = true;
+      this.loadBanner(this.bannerID());
+    }
   }
 
-  loadBanner(id: string) {
+  async loadBanner(id: string) {
     this.loading = true;
-    this.bannerService.getBannerById(id).subscribe({
-      next: (response) => {
-        this.bannerForm.patchValue(response);
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading banner', error);
-        this.showSnackBar('Error loading banner details');
-        this.loading = false;
-        this.router.navigate(['/home/banners']);
-      }
-    });
+    try {
+      const response = await this.#bannerStateService.getBannerById(id);
+      this.bannerForm.patchValue(response);
+      this.loading = false;
+    } catch (error) {
+      console.error('Error loading banner', error);
+      this.showSnackBar('Error loading banner details');
+      this.loading = false;
+      this.router.navigate(['/home/banners']);
+    }
   }
 
   async onSubmit() {
@@ -91,10 +81,10 @@ export class BannerCreate implements OnInit {
     this.loading = true;
     const bannerData: IBanner = this.bannerForm.value;
 
-    if (this.isEditMode && this.bannerId) {
+    if (this.isEditMode && this.bannerID()) {
       try {
 
-        await this.#bannerStateService.updateBanner(this.bannerId, bannerData);
+        await this.#bannerStateService.updateBanner(this.bannerID(), bannerData);
         this.showSnackBar('Banner updated successfully');
         this.router.navigate(['/home/banners']);
         this.loading = false;

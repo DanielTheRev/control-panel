@@ -28,6 +28,10 @@ export class ShippingOptionsStateService {
     this.#shippingOptions.reload();
   }
 
+  getShippingOptionByID(id: string) {
+    return this.#shippingOptionsService.getById(id);
+  }
+
 
   async addShippingOption(shippingOption: Omit<IShippingOption, '_id'>) {
     try {
