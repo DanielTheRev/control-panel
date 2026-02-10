@@ -1,0 +1,33 @@
+<div class="space-y-4" (paste)="onPasteImg($event)">
+  <!-- Drop zone / Input -->
+  <div class="flex items-center justify-center w-full">
+    <label for="dropzone-file"
+      class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-base-200 border-base-300">
+      <div class="flex flex-col items-center justify-center pt-5 pb-6">
+        <mat-icon class="text-4xl text-base-content/50 mb-2">cloud_upload</mat-icon>
+        <p class="text-sm text-base-content/70"><span class="font-semibold">Click para subir</span>, arrastra o pega la
+          imagen</p>
+        <p class="text-xs text-base-content/50">SVG, PNG, JPG or GIF (MAX. 800x400px)</p>
+      </div>
+      <input id="dropzone-file" type="file" class="hidden" accept="image/*" (change)="onFileSelected($event)" />
+    </label>
+  </div>
+
+  <!-- Preview Grid -->
+  @if(imagesControls().length > 0){
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    @for (control of imagesControls().controls; track $index) {
+    <div class="relative group aspect-square bg-base-200 rounded-lg overflow-hidden border border-base-300">
+      <img [src]="control.value.link" class="w-full h-full object-cover" alt="Product preview" />
+
+      <div
+        class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <button type="button" class="btn btn-circle btn-error btn-sm" (click)="removeImage($index)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

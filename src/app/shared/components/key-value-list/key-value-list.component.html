@@ -1,0 +1,30 @@
+<div class="space-y-4">
+  @for (group of formArray().controls; track $index) {
+  <div [formGroup]="asFormGroup(group)" class="flex gap-2 items-start">
+    <label class="form-control w-full">
+      @if($first){
+      <div class="label"><span class="label-text">{{ keyPlaceholder() }}</span></div>
+      }
+      <input type="text" formControlName="key" [placeholder]="keyPlaceholder()" class="input input-bordered w-full" />
+    </label>
+
+    <label class="form-control w-full">
+      @if($first){
+      <div class="label"><span class="label-text">{{ valuePlaceholder() }}</span></div>
+      }
+      <input type="text" formControlName="value" [placeholder]="valuePlaceholder()"
+        class="input input-bordered w-full" />
+    </label>
+
+    <button type="button" class="btn btn-square btn-error mt-auto mb-[2px]" [class.mt-[36px]]="$first"
+      (click)="remove($index)">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  }
+
+  <button type="button" class="btn btn-outline btn-block border-dashed" (click)="add()">
+    <mat-icon>add</mat-icon>
+    Agregar {{ entityName() }}
+  </button>
+</div>

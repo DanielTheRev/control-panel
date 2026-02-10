@@ -1,0 +1,20 @@
+<div class="space-y-2">
+  <div class="flex gap-2">
+    <input #tagInput type="text" [placeholder]="placeholder()" class="input w-full"
+      (keydown.enter)="$event.preventDefault(); add()" />
+    <button type="button" class="btn btn-primary" (click)="add()">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    @for (control of formArray().controls; track $index) {
+    <div class="badge badge-primary badge-lg gap-2 pr-1">
+      {{ control.value }}
+      <button type="button" class="btn btn-ghost btn-xs btn-circle text-error" (click)="remove($index)">
+        <mat-icon class="icon-sm">delete</mat-icon>
+      </button>
+    </div>
+    }
+  </div>
+</div>

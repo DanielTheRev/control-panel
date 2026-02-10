@@ -46,7 +46,6 @@ import { DomSanitizer } from '@angular/platform-browser';
 })
 export class ProductList {
   ProductState = inject(ProductStoreService);
-  #productService = inject(ProductService);
   #productState = inject(ProductStoreService);
   #snackBar = inject(MatSnackBar);
   #domSanitizer = inject(DomSanitizer);
@@ -55,11 +54,9 @@ export class ProductList {
     'image',
     'category',
     'brand',
-    // 'variants',
     'stock',
     'price_cash',
     'price_installments',
-    // 'financials',
   ];
   columnsToDisplayWithExpand = ['expand', ...this.displayedColumns];
   expandedElement: IProduct | null = null;

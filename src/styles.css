@@ -11,9 +11,10 @@
 
 /* reset daisyui form styles */
 @layer base {
+
   select,
   textarea {
-    @apply border-2! rounded-lg! placeholder:text-gray-400;
+    @apply !border-2 !rounded-lg placeholder:text-gray-400;
   }
 
   input:not(.toggle) {
@@ -49,6 +50,10 @@ body {
 
 /* custom styles */
 @layer components {
+  .icon-sm {
+    @apply text-[18px] w-[18px] h-[18px];
+  }
+
   .sidebar-container {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
