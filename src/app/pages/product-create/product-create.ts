@@ -1,20 +1,20 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIcon } from '@angular/material/icon';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
+import { QuillModule } from 'ngx-quill';
 import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
 import { IProduct, IProductPrices } from '../../interfaces/product.interface';
+import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
+import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PricePreview } from '../../shared/components/price-preview/price-preview';
-import { RichTextModule } from '../../shared/modules/rich-text.module';
-import { ProductStoreService } from '../../states/product.state.service';
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
-import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
-import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
+import { ProductStoreService } from '../../states/product.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
-import { MatIcon } from '@angular/material/icon';
 
 @Component({
   selector: 'app-product-create',
@@ -22,7 +22,7 @@ import { MatIcon } from '@angular/material/icon';
     ReactiveFormsModule,
     PageLayout,
     PageHeader,
-    RichTextModule,
+    QuillModule,
     MatSnackBarModule,
     PricePreview,
     TagInputComponent,
@@ -37,7 +37,6 @@ import { MatIcon } from '@angular/material/icon';
 export class ProductCreate implements OnInit {
   #fb = inject(FormBuilder);
   #deletedImages: string[] = [];
-  #snackBar = inject(MatSnackBar);
   #productState = inject(ProductStoreService);
   #router = inject(Router);
 
@@ -46,10 +45,9 @@ export class ProductCreate implements OnInit {
   calculatedPrices = signal<IProductPrices | null>(null);
 
   originalProduct = signal<IProduct | null>(null);
-
-  // Computed for passing strictly typed array to image upload component if needed, 
-  // but for now we just pass the originalProduct().images array directly if it exists.
   originalImages = computed(() => this.originalProduct()?.images || []);
+  hasChanges = signal<boolean>(false);
+  isLoading = signal<boolean>(false);
 
   productForm: FormGroup = this.#fb.group({
     model: ['', Validators.required],
@@ -142,7 +140,7 @@ export class ProductCreate implements OnInit {
         });
       }
     } catch (error) {
-      this.#snackBar.open('Error al cargar el producto', 'Cerrar', { duration: 3000 });
+      console.log(error);
     }
   }
 
@@ -169,27 +167,31 @@ export class ProductCreate implements OnInit {
       const changes = ProductFormUtils.hasChanges(productData, this.originalProduct(), this.#deletedImages);
 
       if (!changes.hasChanges) {
-        return this.#snackBar.open('No hay cambios para actualizar', 'Cerrar', { duration: 3000 });
+        return
       }
-
+      this.hasChanges.set(true);
+      this.isLoading.set(true);
       try {
         await this.#productState.updateProduct(this.productID(), changes.formData);
-        return this.#showSuccess('Producto actualizado correctamente');
+        this.#router.navigate(['/products']);
       } catch (error) {
         console.error('Error updating product', error);
-        return this.#snackBar.open('Error al actualizar el producto', 'Cerrar', { duration: 3000 });
+      } finally {
+        this.isLoading.set(false);
       }
     } else {
       // Create Mode
+      this.isLoading.set(true);
       try {
         this.#buildCreateFormData(formData, productData);
 
         await this.#productState.createProduct(formData);
         this.#revokeBlobUrls();
-        return this.#showSuccess('Producto creado correctamente');
+        this.#router.navigate(['/products']);
       } catch (error) {
         console.error('Error creating product', error);
-        return this.#snackBar.open('Error al crear el producto', 'Cerrar', { duration: 3000 });
+      } finally {
+        this.isLoading.set(false);
       }
     }
   }
@@ -210,11 +212,6 @@ export class ProductCreate implements OnInit {
     data.images.forEach((img: any) => {
       if (img.file) formData.append('images', img.file);
     });
-  }
-
-  #showSuccess(message: string) {
-    this.#snackBar.open(message, 'Cerrar', { duration: 3000 });
-    this.#router.navigate(['/products']);
   }
 
   #revokeBlobUrls() {

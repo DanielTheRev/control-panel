@@ -3,6 +3,7 @@ import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { IProduct } from '../interfaces/product.interface';
 import { ProductService } from '../services/product.service';
+import { NotificationsService } from '../services/notifications.service';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +14,7 @@ export class ProductStoreService {
     url: `${environment.apiUrl}/products/list`,
     method: 'GET',
   }));
+  #notificationService = inject(NotificationsService);
 
   readonly products = computed(() => ({
     data: this.#fetchedProducts.value() || [],
@@ -27,6 +29,7 @@ export class ProductStoreService {
       const product = await this.#productService.getProduct(id);
       return product;
     } catch (error) {
+      this.#notificationService.error('Error al obtener el producto');
       throw error;
     }
   }
@@ -39,7 +42,9 @@ export class ProductStoreService {
     try {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
+      // this.#notificationService.success('Producto creado correctamente');
     } catch (error) {
+      // this.#notificationService.error('Error al crear el producto');
       throw error;
     }
   }
@@ -48,7 +53,9 @@ export class ProductStoreService {
     try {
       const product = await this.#productService.updateProduct(id, data);
       this.#updateProduct(product);
+      // this.#notificationService.success('Producto actualizado correctamente');
     } catch (error) {
+      // this.#notificationService.error('Error al actualizar el producto');
       throw error;
     }
   }

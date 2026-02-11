@@ -9,7 +9,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideQuillConfig } from 'ngx-quill/config';
-
+import { provideHotToastConfig } from '@ngxpert/hot-toast';
 import { routes } from './app.routes';
 import { httpInterceptor } from './interceptors/http.interceptors';
 import { initializeAuth } from './core/app_initializers';
@@ -17,22 +17,17 @@ import { initializeAuth } from './core/app_initializers';
 // for angular currency pipe
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 registerLocaleData(localeEsAr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(initializeAuth),
-    provideBrowserGlobalErrorListeners(),  
+    provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideRouter(routes, withViewTransitions(), withComponentInputBinding()),
     provideHttpClient(withInterceptors([httpInterceptor])),
     { provide: LOCALE_ID, useValue: 'es-Ar' },
-    {
-      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-      useValue: { appearance: 'outline' },
-    },
     provideQuillConfig({
       modules: {
         syntax: false,
@@ -40,9 +35,9 @@ export const appConfig: ApplicationConfig = {
           ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
           ['blockquote', 'code-block'],
           [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-          [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
+          [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
           [{ 'direction': 'rtl' }],                         // text direction
           [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
           [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
@@ -53,7 +48,8 @@ export const appConfig: ApplicationConfig = {
           ['link', 'image', 'video']                         // link and image, video
         ]
       }
-    })
+    }),
+    provideHotToastConfig()
 
   ],
 };
