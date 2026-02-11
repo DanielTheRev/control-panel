@@ -22,7 +22,16 @@ export const routes: Routes = [
     children: [
       {
         path: 'client-orders',
-        component: ClientOrders,
+        children: [
+          {
+            path: '',
+            component: ClientOrders,
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./pages/client-orders/order-details/order-details').then(c => c.OrderDetails)
+          }
+        ]
       },
       {
         path: 'products',

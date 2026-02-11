@@ -283,7 +283,12 @@
                       <div class="flex flex-col gap-2">
                         <div class="flex justify-between text-sm items-center">
                           <span class="text-gray-500">Costo(dólares)</span>
-                          <span class="font-medium text-gray-900 dark:text-white">{{ element.prices.costPrice |
+                          <span class="font-medium text-gray-900 dark:text-white">{{ element.prices.costPrice.inUSD |
+                            currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm items-center">
+                          <span class="text-gray-500">Costo(pesos)</span>
+                          <span class="font-medium text-gray-900 dark:text-white">{{ element.prices.costPrice.inARS |
                             currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
                         </div>
                         <div class="flex justify-between text-sm items-center">
@@ -296,12 +301,7 @@
                             {{ element.prices.profitMargin }}%
                           </span>
                         </div>
-                        <div class="flex justify-between text-sm items-center">
-                          <span class="text-gray-500">Precio Lista</span>
-                          <span class="font-medium text-gray-900 dark:text-white">{{
-                            element.prices.efectivo_transferencia |
-                            currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
-                        </div>
+
                       </div>
                     </div>
 

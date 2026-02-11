@@ -1,5 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 // Importar las interfaces originales
 import { environment } from '../../environments/environment';
@@ -194,8 +195,22 @@ export class OrdersStateService {
     }
   }
 
-  // Método para obtener una orden específica
-  getOrderByNumber(orderNumber: string): IOrder | undefined {
+  // Método para obtener una orden específica (del estado o API)
+  async getOrderById(orderId: string): Promise<IOrder | undefined> {
+    // const existingOrder = this.orders().find((o) => o._id === orderId);
+    // if (existingOrder) return existingOrder;
+
+    try {
+      const order = await firstValueFrom(this.orderService.getOrderById(orderId));
+      return order;
+    } catch (err) {
+      console.error('Error fetching order', err);
+      throw err;
+    }
+  }
+
+  // Método para obtener una orden específica (síncrono, solo del estado actual)
+  getOrderFromState(orderNumber: string): IOrder | undefined {
     return this.orders().find((order) => order.orderNumber === orderNumber);
   }
 

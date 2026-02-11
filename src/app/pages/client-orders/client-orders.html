@@ -1,479 +1,242 @@
 <app-page-layout>
-  <!-- Header stats -->
-  <app-page-header header title="Gestión de Órdenes" [subtitle]="
+    <!-- Header stats -->
+    <app-page-header header title="Gestión de Órdenes" [subtitle]="
       isLoading()
         ? 'cargando ordenes'
         : `${pagination().totalItems} órdenes encontradas`
     ">
-    <div actions class="flex flex-col sm:flex-row gap-3">
-      <select [value]="status()" (change)="updateStatusFilter($any($event.target).value)" [disabled]="isLoading()"
-        class="select select-primary !outline-none">
-        @for (option of statusOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+        <div actions class="flex flex-col sm:flex-row gap-3">
+            <select [value]="status()" (change)="updateStatusFilter($any($event.target).value)" [disabled]="isLoading()"
+                class="select select-primary !outline-none">
+                @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+                }
+            </select>
 
-      <select [value]="dateRange()" (change)="updateDateFilter($any($event.target).value)" [disabled]="isLoading()"
-        class="select select-primary !outline-none">
-        @for (option of dateRangeOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+            <select [value]="dateRange()" (change)="updateDateFilter($any($event.target).value)"
+                [disabled]="isLoading()" class="select select-primary !outline-none">
+                @for (option of dateRangeOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+                }
+            </select>
 
-      <button (click)="resetFilters()" [disabled]="isLoading()" class="btn">
-        Limpiar filtros
-      </button>
+            <button (click)="resetFilters()" [disabled]="isLoading()" class="btn btn-ghost">
+                Limpiar
+            </button>
 
-      <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-soft btn-primary">
-        <svg class="w-4 h-4" [class.animate-spin]="isLoading()" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        @if (isLoading()) {
-        Cargando...
-        } @else {
-        Actualizar
-        }
-      </button>
-    </div>
-  </app-page-header>
-
-  <!-- Estado de error -->
-  @if (error()) {
-  <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-    <div class="flex items-center">
-      <svg class="w-5 h-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div>
-        <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
-          Error al cargar las órdenes
-        </h3>
-        <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-          No se pudieron cargar los datos desde el servidor. Verifica que la
-          API esté funcionando en localhost:3000.
-        </p>
-      </div>
-    </div>
-    <button (click)="refreshData()"
-      class="mt-3 px-3 py-1 text-sm font-medium text-red-800 dark:text-red-200 bg-red-100 dark:bg-red-800/30 hover:bg-red-200 dark:hover:bg-red-800/50 rounded transition-colors duration-200">
-      Reintentar
-    </button>
-  </div>
-  }
-
-  <!-- Estado de carga -->
-  @if (isLoading()) {
-  <div class="space-y-4">
-    @for (i of [1, 2, 3]; track i) {
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div class="animate-pulse">
-        <div class="flex items-center space-x-4">
-          <div class="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-          <div class="flex-1 space-y-2">
-            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
-            <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/6"></div>
-          </div>
-          <div class="space-y-2">
-            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
-            <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
-          </div>
+            <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-soft btn-primary">
+                <mat-icon [class.animate-spin]="isLoading()">refresh</mat-icon>
+                Actualizar
+            </button>
         </div>
-      </div>
+    </app-page-header>
+
+    <!-- Estado de error -->
+    @if (error()) {
+    <div role="alert" class="alert alert-error mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+            <h3 class="font-bold">Error al cargar datos!</h3>
+            <div class="text-xs">No se pudieron cargar las órdenes. Intenta nuevamente.</div>
+        </div>
+        <button class="btn btn-sm" (click)="refreshData()">Reintentar</button>
     </div>
     }
-  </div>
-  } @else {
-  <!-- Lista de órdenes -->
-  <div class="space-y-4">
-    @if (orders().length === 0) {
-    <!-- Estado vacío -->
+
+    @if(!isLoading() && !hasData()) {
     <div class="text-center py-12">
-      <div class="w-16 h-16 mx-auto mb-4 text-gray-400">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      </div>
-      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-        No hay órdenes
-      </h3>
-      <p class="text-gray-500 dark:text-gray-400">
-        No se encontraron órdenes con los filtros seleccionados.
-      </p>
-    </div>
-    } @else {
-    <!-- Órdenes -->
-    @for (order of orders(); track trackByOrderNumber($index, order)) {
-    <div
-      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
-      <!-- Header de la orden -->
-      <div class="p-4 sm:p-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <!-- Información principal -->
-          <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Usuario y orden -->
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ order.user.name.charAt(0).toUpperCase() }}
-                </span>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {{ order.user.name }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  #{{ order.orderNumber }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Fecha y total -->
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Fecha
-              </p>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ formatDate(order.createdAt) }}
-              </p>
-              <p class="text-lg font-bold text-gray-900 dark:text-white">
-                {{ order.total | currency : "ARS" : "symbol-narrow" : "1.0-0" }}
-              </p>
-            </div>
-
-            <!-- Estados -->
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                Estado
-              </p>
-              <div class="space-y-1">
-                <span [class]="getOrderStatusBadgeClass(order.status)">
-                  {{ order.status }}
-                </span>
-                <br />
-                <span [class]="
-                          getPaymentStatusBadgeClass(order.paymentInfo.status)
-                        ">
-                  Pago: {{ order.paymentInfo.status }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Envío -->
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Envío
-              </p>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ getShippingTypeText(order.shippingInfo.type) }}
-              </p>
-              @if (order.shippingInfo.pickupPoint?.name) {
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {{ order.shippingInfo.pickupPoint?.name }}
-              </p>
-              }
-            </div>
-          </div>
-
-          <!-- Botones de acción -->
-          <div class="flex flex-wrap gap-2 lg:flex-col lg:w-48">
-            @if (canMarkPaymentReceived(order.paymentInfo.status)) {
-            <button (click)="markPaymentReceived(order._id)" class="btn btn-sm btn-primary">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 32 32" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              Confirmar pago
-            </button>
-            }
-            @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type)) {
-            <button (click)="startShipping(order._id)" class="btn btn-sm btn-success">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 8h14M5 8a2 2 0 110-4h1.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293H15a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-              </svg>
-              Iniciar envío
-            </button>
-            }
-            @if (canMarkAsShipped(order.status)) {
-            <button (click)="markAsShipped(order._id)" class="btn btn-sm btn-success">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-              </svg>
-              Marcar enviado
-            </button>
-            }
-            @if (
-            canMarkAsDelivered(order.status, order.shippingInfo.type, order.paymentInfo.status) &&
-            order.shippingInfo.type === ShippingType.PICKUP
-            ) {
-            <button (click)="markAsDeliveredPickup(order._id)" class="btn btn-success btn-sm">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Marcar como entregado
-            </button>
-            }
-            @if (
-            canMarkAsDelivered(order.status, order.shippingInfo.type, order.paymentInfo.status) &&
-            order.shippingInfo.type === ShippingType.HOME_DELIVERY
-            ) {
-            <button (click)="markAsDelivered(order._id)" class="btn btn-sm btn-accent">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Entregado a domicilio
-            </button>
-            }
-            @if (canReorder(order.status)) {
-            <button (click)="reorder(order._id)" class="btn btn-dash btn-success">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reordenar
-            </button>
-            }
-            @if (canCancelOrder(order.status)) {
-            <button (click)="cancelOrder(order._id)" class="btn btn-sm btn-error">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancelar
-            </button>
-            }
-
-            <button (click)="toggleOrderExpansion(order._id)" class="btn btn-dash btn-accent">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              @if (isOrderExpanded(order._id)) {
-              Ocultar detalles
-              } @else {
-              Ver detalles
-              }
-            </button>
-          </div>
+        <div class="w-16 h-16 mx-auto mb-4 text-gray-400">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
         </div>
-      </div>
-
-      <!-- Detalles expandibles -->
-      @let isExpanded = isOrderExpanded(order._id);
-      @if (isExpanded) {
-      <div class="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <div class="p-4 sm:p-6">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Información del cliente -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Información del Cliente
-              </h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Nombre:</span>
-                  <span class="text-gray-900 dark:text-white font-medium">{{ order.user.name }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Email:</span>
-                  <span class="text-gray-900 dark:text-white">{{
-                    order.user.email
-                    }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Rol:</span>
-                  <span class="text-gray-900 dark:text-white">{{
-                    order.user.role
-                    }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Información de pago -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Información de Pago
-              </h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Método:</span>
-                  <span class="text-gray-900 dark:text-white font-medium">{{
-                    getPaymentMethodText(order.paymentInfo.method)
-                    }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Estado:</span>
-                  <span [class]="
-                              getPaymentStatusBadgeClass(
-                                order.paymentInfo.status
-                              )
-                            ">
-                    {{ order.paymentInfo.status }}
-                  </span>
-                </div>
-                @if (order.paymentInfo.transactionId) {
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">ID Transacción:</span>
-                  <span class="text-gray-900 dark:text-white font-mono text-xs">{{ order.paymentInfo.transactionId
-                    }}</span>
-                </div>
-                }
-                @if (order.paymentInfo.paymentDate) {
-                <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">Fecha de Pago:</span>
-                  <span class="text-gray-900 dark:text-white">{{
-                    formatDate(order.paymentInfo.paymentDate)
-                    }}</span>
-                </div>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- Productos -->
-          <div class="mt-6">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              Productos ({{ order.items.length }})
-            </h4>
-            <div class="space-y-3">
-              @for (
-              item of order.items;
-              track trackByItemIndex($index, item)
-              ) {
-              <div
-                class="flex items-center space-x-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                @if (item.image) {
-                <img [src]="item.image" [alt]="item.name" class="w-12 h-12 object-cover rounded-lg" />
-                } @else {
-                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                  <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                }
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {{ item.name }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Cantidad: {{ item.quantity }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ item.price | currency : "ARS" : "symbol-narrow" : "1.0-0" }}
-                  </p>
-                  @if (item.quantity > 1) {
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ item.price * item.quantity | currency : "ARS" : "symbol-narrow" : "1.0-0" }}
-                    total
-                  </p>
-                  }
-                </div>
-              </div>
-              }
-            </div>
-
-            <!-- Resumen de costos -->
-            <div class="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Subtotal productos:</span>
-                  <span class="text-gray-900 dark:text-white">{{
-                    calculateItemsTotal(order.items) | currency : "ARS" : "symbol-narrow" : "1.0-0"
-                    }}</span>
-                </div>
-                @if (order.shippingCost > 0) {
-                <div class="flex justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Costo de envío:</span>
-                  <span class="text-gray-900 dark:text-white">{{
-                    order.shippingCost | currency : "ARS" : "symbol-narrow" : "1.0-0"
-                    }}</span>
-                </div>
-                }
-                <div class="flex justify-between pt-2 border-t border-gray-300 dark:border-gray-600">
-                  <span class="font-semibold text-gray-900 dark:text-white">Total:</span>
-                  <span class="font-bold text-lg text-gray-900 dark:text-white">{{ order.total | currency : "ARS" :
-                    "symbol-narrow" : "1.0-0" }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notas adicionales -->
-            @if (order.notes) {
-            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <h5 class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                Notas:
-              </h5>
-              <p class="text-sm text-blue-800 dark:text-blue-300">
-                {{ order.notes }}
-              </p>
-            </div>
-            }
-          </div>
-        </div>
-      </div>
-      }
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            No hay órdenes
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400">
+            No se encontraron órdenes con los filtros seleccionados.
+        </p>
     </div>
     }
-    }
-  </div>
-  }
 
-  <!-- Paginación -->
-  @if (pagination().totalPages > 1 && !isLoading()) {
-  <div class="mt-8 flex items-center justify-between">
-    <div class="text-sm text-gray-700 dark:text-gray-300">
-      {{ getPaginationInfo() }}
+    <!-- Tabla de Órdenes -->
+    <div class="bg-white dark:bg-base-200 rounded-xl shadow-sm border border-base-200 overflow-hidden">
+        @if (isLoading() && !hasData()) {
+        <!-- Skeleton Loading -->
+        <div class="p-4 space-y-4">
+            @for (i of [1,2,3,4,5]; track i) {
+            <div class="skeleton w-full h-12"></div>
+            }
+        </div>
+        } @else if(!isLoading() && hasData()) {
+        <div class="overflow-x-auto">
+            <table mat-table [dataSource]="orders()" class="w-full">
+
+                <!-- ID Column -->
+                <ng-container matColumnDef="orderNumber">
+                    <th mat-header-cell *matHeaderCellDef class="!pl-6"> #ID </th>
+                    <td mat-cell *matCellDef="let order" class="!pl-6 font-mono text-xs"> {{order.orderNumber}} </td>
+                </ng-container>
+
+                <!-- User Column -->
+                <ng-container matColumnDef="user">
+                    <th mat-header-cell *matHeaderCellDef> Cliente </th>
+                    <td mat-cell *matCellDef="let order">
+                        <div class="flex items-center gap-3 py-2">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                    <span class="text-xs">{{ order.user.name.charAt(0).toUpperCase() }}</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-medium text-sm">{{order.user.name}}</span>
+                                <span class="text-xs opacity-60">{{order.user.email}}</span>
+                            </div>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <!-- Date Column -->
+                <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef> Fecha </th>
+                    <td mat-cell *matCellDef="let order" class="text-sm">
+                        {{ order.createdAt | date:'shortDate' }}<br>
+                        <span class="text-xs opacity-60">{{ order.createdAt | date:'shortTime' }}</span>
+                    </td>
+                </ng-container>
+
+                <!-- Total Column -->
+                <ng-container matColumnDef="total">
+                    <th mat-header-cell *matHeaderCellDef> Total </th>
+                    <td mat-cell *matCellDef="let order" class="font-bold">
+                        {{ order.total | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef> Estado </th>
+                    <td mat-cell *matCellDef="let order">
+                        <span [class]="getOrderStatusBadgeClass(order.status)">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                </ng-container>
+
+                <!-- Payment Payment Column -->
+                <ng-container matColumnDef="payment">
+                    <th mat-header-cell *matHeaderCellDef> Pago </th>
+                    <td mat-cell *matCellDef="let order">
+                        <div class="flex flex-col items-start gap-1">
+                            <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">
+                                {{ order.paymentInfo.status }}
+                            </span>
+                            <span class="text-[10px] opacity-70">{{ order.paymentInfo.method }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <!-- Shipping Column -->
+                <ng-container matColumnDef="shipping">
+                    <th mat-header-cell *matHeaderCellDef> Envío </th>
+                    <td mat-cell *matCellDef="let order" class="text-xs">
+                        {{ getShippingTypeText(order.shippingInfo.type) }}
+                    </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef class="!pr-6 text-right"> Acciones </th>
+                    <td mat-cell *matCellDef="let order" class="!pr-6 text-right">
+                        <a [routerLink]="['/home/client-orders', order._id]" class="btn btn-sm btn-ghost btn-square" matTooltip="Ver detalles">
+                            <mat-icon>visibility</mat-icon>
+                        </a>
+                        
+                        <button mat-icon-button [matMenuTriggerFor]="menu" class="btn btn-sm btn-ghost btn-square">
+                            <mat-icon>more_vert</mat-icon>
+                        </button>
+                        
+                        <mat-menu #menu="matMenu">
+                            <!-- Payment Actions -->
+                            @if (canMarkPaymentReceived(order.paymentInfo.status)) {
+                                <button mat-menu-item (click)="markPaymentReceived(order._id)">
+                                    <mat-icon class="text-success">attach_money</mat-icon>
+                                    <span>Marcar pago recibido</span>
+                                </button>
+                            }
+
+                            <!-- Shipping Actions -->
+                            @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type)) {
+                                <button mat-menu-item (click)="startShipping(order._id)">
+                                    <mat-icon class="text-info">local_shipping</mat-icon>
+                                    <span>Iniciar envío</span>
+                                </button>
+                            }
+
+                            @if (canMarkAsShipped(order.status)) {
+                                <button mat-menu-item (click)="markAsShipped(order._id)">
+                                    <mat-icon class="text-primary">flight_takeoff</mat-icon>
+                                    <span>Marcar como enviado</span>
+                                </button>
+                            }
+
+                            @if (canMarkAsDelivered(order.status, order.shippingInfo.type, order.paymentInfo.status)) {
+                                @if (order.shippingInfo.type === 'pickup') {
+                                    <button mat-menu-item (click)="markAsDeliveredPickup(order._id)">
+                                        <mat-icon class="text-success">check_circle</mat-icon>
+                                        <span>Entregar (Retiro)</span>
+                                    </button>
+                                } @else {
+                                    <button mat-menu-item (click)="markAsDelivered(order._id)">
+                                        <mat-icon class="text-success">check_circle</mat-icon>
+                                        <span>Entregar (Domicilio)</span>
+                                    </button>
+                                }
+                            }
+
+                            <!-- Cancel Action -->
+                            @if (canCancelOrder(order.status)) {
+                                <button mat-menu-item (click)="cancelOrder(order._id)">
+                                    <mat-icon class="text-error">cancel</mat-icon>
+                                    <span class="text-error">Cancelar orden</span>
+                                </button>
+                            }
+                        </mat-menu>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                    class="hover:bg-base-200/50 transition-colors"></tr>
+            </table>
+
+            @if (hasData() && orders().length === 0) {
+            <div class="text-center py-12 text-gray-400">
+                <mat-icon class="text-6xl !w-16 !h-16 mb-2">inbox</mat-icon>
+                <p>No se encontraron órdenes</p>
+            </div>
+            }
+        </div>
+
+        <!-- Paginator (Custom implementation reusing daisyUI/Tailwind styles but connected to logic) -->
+        <div class="p-4 border-t border-base-200 flex justify-between items-center bg-base-100">
+            <div class="text-sm opacity-70">
+                {{ (pagination().currentPage - 1) * pagination().itemsPerPage + 1 }} -
+                {{ Math.min(pagination().currentPage * pagination().itemsPerPage, pagination().totalItems) }}
+                de {{ pagination().totalItems }}
+            </div>
+            <div class="join">
+                <button class="join-item btn btn-sm" [disabled]="pagination().currentPage === 1"
+                    (click)="changePage(pagination().currentPage - 1)">«</button>
+                <button class="join-item btn btn-sm">Página {{ pagination().currentPage }}</button>
+                <button class="join-item btn btn-sm" [disabled]="pagination().currentPage === pagination().totalPages"
+                    (click)="changePage(pagination().currentPage + 1)">»</button>
+            </div>
+        </div>
+        }
     </div>
-
-    <nav class="flex items-center space-x-1">
-      <!-- Botón anterior -->
-      <button (click)="changePage(pagination().currentPage - 1)" [disabled]="pagination().currentPage === 1"
-        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-
-      <!-- Números de página -->
-      @for (page of getPageNumbers(); track page) {
-      <button (click)="changePage(page)" [class]="
-              page === pagination().currentPage
-                ? 'px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-lg'
-                : 'px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200'
-            ">
-        {{ page }}
-      </button>
-      }
-
-      <!-- Botón siguiente -->
-      <button (click)="changePage(pagination().currentPage + 1)"
-        [disabled]="pagination().currentPage === pagination().totalPages"
-        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </nav>
-  </div>
-  }
 </app-page-layout>

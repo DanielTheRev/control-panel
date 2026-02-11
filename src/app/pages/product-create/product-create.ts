@@ -106,7 +106,7 @@ export class ProductCreate implements OnInit {
         model: product.model,
         brand: product.brand,
         category: product.category,
-        price: product.prices.costPrice,
+        price: product.prices.costPrice.inUSD,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
       });

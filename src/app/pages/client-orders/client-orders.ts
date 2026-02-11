@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { CurrencyPipe, DatePipe, CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatChipsModule } from '@angular/material/chips';
 
-// Importar las interfaces (asumiendo que están en archivos separados)
-import { CurrencyPipe } from '@angular/common';
 import {
   IOrder,
   OrderStatus,
@@ -15,7 +22,22 @@ import { OrdersStateService } from '../../states/order.state.service';
 
 @Component({
   selector: 'app-client-orders',
-  imports: [PageLayout, PageHeader, CurrencyPipe],
+  standalone: true,
+  imports: [
+    CommonModule, 
+    PageLayout, 
+    PageHeader, 
+    CurrencyPipe, 
+    DatePipe,
+    RouterLink,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatIconModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatChipsModule
+  ],
   templateUrl: './client-orders.html',
   styleUrl: './client-orders.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,11 +46,6 @@ export class ClientOrders {
   // Inyectar el servicio de estado
   private orderStateService = inject(OrdersStateService);
 
-
-
-  // Signal para órdenes expandidas
-  expandedOrders = signal<Set<string>>(new Set());
-
   // Exponer propiedades del servicio para el template
   readonly orders = this.orderStateService.orders;
   readonly pagination = this.orderStateService.pagination;
@@ -36,14 +53,12 @@ export class ClientOrders {
   readonly error = this.orderStateService.error;
   readonly hasData = this.orderStateService.hasData;
 
-  // Estadísticas
+  // Estadísticas (por si se quieren mostrar arriba)
   readonly pendingCount = this.orderStateService.pendingCount;
   readonly processingCount = this.orderStateService.processingCount;
   readonly shippedCount = this.orderStateService.shippedCount;
   readonly deliveredCount = this.orderStateService.deliveredCount;
   readonly cancelledCount = this.orderStateService.cancelledCount;
-  readonly totalRevenue = this.orderStateService.totalRevenue;
-  readonly pendingPayments = this.orderStateService.pendingPayments;
 
   // Filtros
   readonly status = this.orderStateService.status;
@@ -57,8 +72,11 @@ export class ClientOrders {
   // Enums para usar en el template
   readonly OrderStatus = OrderStatus;
   readonly PaymentStatus = PaymentStatus;
-  readonly PaymentType = PaymentType;
-  readonly ShippingType = ShippingType;
+  
+  protected readonly Math = Math;
+  
+  // Table Columns
+  displayedColumns: string[] = ['orderNumber', 'user', 'date', 'total', 'status', 'payment', 'shipping', 'actions'];
 
   /**
    * Actualizar filtro de estado
@@ -87,36 +105,66 @@ export class ClientOrders {
   refreshData(): void {
     this.orderStateService.refresh();
   }
-
+  
   /**
-   * Toggle expansión de orden
+   * Obtener clases CSS para el badge de estado de orden
    */
-  toggleOrderExpansion(orderID: string): void {
-    this.expandedOrders.update((set) => {
-      const newSet = new Set(set);
-      if (newSet.has(orderID)) {
-        newSet.delete(orderID);
-      } else {
-        newSet.add(orderID);
-      }
-      return newSet;
-    });
+  getOrderStatusBadgeClass(status: OrderStatus): string {
+    const baseClasses = 'badge badge-sm border-0 font-medium';
+    switch (status) {
+      case OrderStatus.PENDING: return `${baseClasses} bg-amber-100 text-amber-800`;
+      case OrderStatus.PROCESSING_SHIPPING: return `${baseClasses} bg-blue-100 text-blue-800`;
+      case OrderStatus.SHIPPED: return `${baseClasses} bg-purple-100 text-purple-800`;
+      case OrderStatus.DELIVERED: return `${baseClasses} bg-green-100 text-green-800`;
+      case OrderStatus.CANCELLED: return `${baseClasses} bg-red-100 text-red-800`;
+      default: return `${baseClasses} bg-gray-100 text-gray-800`;
+    }
   }
 
   /**
-   * Verificar si una orden está expandida
+   * Obtener clases CSS para el badge de estado de pago
    */
-  isOrderExpanded(orderID: string): boolean {
-    return this.expandedOrders().has(orderID);
+  getPaymentStatusBadgeClass(status: PaymentStatus): string {
+    const baseClasses = 'badge badge-xs border-0';
+    switch (status) {
+      case PaymentStatus.PENDING: return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case PaymentStatus.APPROVED: return `${baseClasses} bg-green-100 text-green-800`;
+      case PaymentStatus.REJECTED: return `${baseClasses} bg-red-100 text-red-800`;
+      case PaymentStatus.CANCELLED: return `${baseClasses} bg-gray-100 text-gray-800`;
+      default: return `${baseClasses} bg-gray-100 text-gray-800`;
+    }
   }
 
+  /**
+   * Obtener texto descriptivo del tipo de envío
+   */
+  getShippingTypeText(shippingType: ShippingType): string {
+    switch (shippingType) {
+      case ShippingType.PICKUP: return 'Retiro';
+      case ShippingType.HOME_DELIVERY: return 'Envío';
+      default: return 'N/A';
+    }
+  }
+  
+  /**
+   * Resetear filtros
+   */
+  resetFilters(): void {
+    this.orderStateService.resetFilters();
+  }
+
+  /**
+   * TrackBy function para optimizar el rendimiento de la lista
+   */
+  trackByOrderNumber(index: number, order: IOrder): string {
+    return order.orderNumber;
+  }
   /**
    * Marcar pago como recibido
    */
   async markPaymentReceived(orderID: string): Promise<void> {
     try {
       await this.orderStateService.updateOrder('updatePayment', { orderID, status: PaymentStatus.APPROVED });
-
       console.log('✅ Pago marcado como recibido');
     } catch (error) {
       console.error('❌ Error al marcar pago como recibido:', error);
@@ -158,7 +206,6 @@ export class ClientOrders {
    */
   async markAsDelivered(orderID: string): Promise<void> {
     try {
-
       await this.orderStateService.updateOrder(
         'updateShippingStatus',
         { orderID, status: OrderStatus.DELIVERED }
@@ -205,49 +252,7 @@ export class ClientOrders {
     }
   }
 
-  /**
-   * Obtener clases CSS para el badge de estado de orden
-   */
-  getOrderStatusBadgeClass(status: OrderStatus): string {
-    const baseClasses =
-      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium';
-
-    switch (status) {
-      case OrderStatus.PENDING:
-        return `${baseClasses} bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300`;
-      case OrderStatus.PROCESSING_SHIPPING:
-        return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300`;
-      case OrderStatus.SHIPPED:
-        return `${baseClasses} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300`;
-      case OrderStatus.DELIVERED:
-        return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`;
-      case OrderStatus.CANCELLED:
-        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300`;
-    }
-  }
-
-  /**
-   * Obtener clases CSS para el badge de estado de pago
-   */
-  getPaymentStatusBadgeClass(status: PaymentStatus): string {
-    const baseClasses =
-      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium';
-
-    switch (status) {
-      case PaymentStatus.PENDING:
-        return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300`;
-      case PaymentStatus.APPROVED:
-        return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`;
-      case PaymentStatus.REJECTED:
-        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
-      case PaymentStatus.CANCELLED:
-        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300`;
-    }
-  }
+  // --- Predicates ---
 
   /**
    * Verificar si se puede cancelar la orden
@@ -297,119 +302,5 @@ export class ClientOrders {
         shippingType === ShippingType.PICKUP &&
         paymentStatus === PaymentStatus.APPROVED)
     );
-  }
-
-  /**
-   * Verificar si se puede reordenar
-   */
-  canReorder(status: OrderStatus): boolean {
-    return status === OrderStatus.DELIVERED;
-  }
-
-  /**
-   * Formatear fecha
-   */
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  }
-
-  /**
-   * Formatear precio en pesos argentinos
-   */
-  // formatPrice(price: number): string {
-  //   return new Intl.NumberFormat('es-AR', {
-  //     style: 'currency',
-  //     currency: 'ARS',
-  //     minimumFractionDigits: 0,
-  //     maximumFractionDigits: 0,
-  //   }).format(price);
-  // }
-
-  /**
-   * Calcular total de ítems
-   */
-  calculateItemsTotal(items: any[]): number {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
-  }
-
-  /**
-   * Obtener array de páginas para la paginación
-   */
-  getPageNumbers(): number[] {
-    return this.orderStateService.getPageNumbers();
-  }
-
-  /**
-   * Obtener texto descriptivo del tipo de envío
-   */
-  getShippingTypeText(shippingType: ShippingType): string {
-    switch (shippingType) {
-      case ShippingType.PICKUP:
-        return 'Punto de encuentro';
-      case ShippingType.HOME_DELIVERY:
-        return 'Envío a domicilio';
-      default:
-        return 'No especificado';
-    }
-  }
-
-  /**
-   * Obtener texto del método de pago
-   */
-  getPaymentMethodText(paymentType: PaymentType): string {
-    return paymentType;
-  }
-
-  /**
-   * Manejar reorden
-   */
-  reorder(orderId: string): void {
-    console.log('🔄 Reordenando:', orderId);
-    // Implementar lógica de reorden aquí
-  }
-
-  /**
-   * Ver detalles de la orden
-   */
-  viewOrderDetails(orderId: string): void {
-    this.toggleOrderExpansion(orderId);
-  }
-
-  /**
-   * TrackBy function para optimizar el rendimiento de la lista
-   */
-  trackByOrderNumber(index: number, order: IOrder): string {
-    return order.orderNumber;
-  }
-
-  /**
-   * TrackBy function para ítems
-   */
-  trackByItemIndex(index: number, item: any): number {
-    return index;
-  }
-
-  /**
-   * Resetear filtros
-   */
-  resetFilters(): void {
-    this.orderStateService.resetFilters();
-  }
-
-  /**
-   * Obtener información de paginación para mostrar
-   */
-  getPaginationInfo(): string {
-    const pagination = this.pagination();
-    const start = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
-    const end = Math.min(
-      pagination.currentPage * pagination.itemsPerPage,
-      pagination.totalItems
-    );
-    return `Mostrando ${start} a ${end} de ${pagination.totalItems} resultados`;
   }
 }

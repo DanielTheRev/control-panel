@@ -15,6 +15,10 @@ export class OrdersService {
     return firstValueFrom(this._http.get(`${this.apiURI}`));
   }
 
+  getOrderById(id: string) {
+    return this._http.get<IOrder>(`${this.apiURI}/admin/${id}`);
+  }
+
   updatePaymentState(
     orderID: string,
     target: 'updatePayment' | 'updateShippingStatus',

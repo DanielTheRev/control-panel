@@ -18,9 +18,12 @@ export class ProductService {
   getProduct(id: string) {
     return firstValueFrom(this.#http.get<IProduct>(`${this.#apiUrl}/complete/${id}`).pipe(
       this.#toast.observe({
-        loading: 'Obteniendo producto...',
-        success: 'Producto obtenido correctamente',
-        error: 'Error al obtener el producto',
+        error: {
+          content: 'Error al obtener el producto',
+          icon: '❌',
+          position: 'top-right',
+          theme: 'snackbar',
+        }
       })
     ));
   }
@@ -28,9 +31,24 @@ export class ProductService {
   create(productData: FormData) {
     return firstValueFrom(this.#http.post<IProduct>(`${this.#apiUrl}`, productData).pipe(
       this.#toast.observe({
-        loading: 'Creando producto...',
-        success: 'Producto creado correctamente',
-        error: 'Error al crear el producto',
+        loading: {
+          content: 'Creando producto...',
+          icon: '⏳',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        success: {
+          content: 'Producto creado correctamente',
+          icon: '✅',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        error: {
+          content: 'Error al crear el producto',
+          icon: '❌',
+          position: 'top-right',
+          theme: 'snackbar',
+        }
       })
     ));
   }
@@ -38,9 +56,24 @@ export class ProductService {
   updateProduct(id: string, product: FormData) {
     return firstValueFrom(this.#http.patch<any>(`${this.#apiUrl}/${id}`, product).pipe(
       this.#toast.observe({
-        loading: 'Actualizando producto...',
-        success: 'Producto actualizado correctamente',
-        error: 'Error al actualizar el producto',
+        loading: {
+          content: 'Actualizando producto...',
+          icon: '⏳',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        success: {
+          content: 'Producto actualizado correctamente',
+          icon: '✅',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        error: {
+          content: 'Error al actualizar el producto',
+          icon: '❌',
+          position: 'top-right',
+          theme: 'snackbar',
+        }
       })
     ));
   }

@@ -1,0 +1,237 @@
+<app-page-layout>
+  <app-page-header [title]="'Orden #' + (order()?.orderNumber || '...')"
+    [subtitle]="loading() ? 'Cargando detalles...' : 'Detalles de la orden'">
+    <div actions>
+      <button class="btn btn-primary" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-5 h-5 mr-2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Volver
+      </button>
+    </div>
+  </app-page-header>
+
+  @if (loading()) {
+  <div class="flex justify-center items-center h-64">
+    <span class="loading loading-spinner loading-lg text-primary"></span>
+  </div>
+  } @else if (order() && order() !== undefined) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column: Order Info -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Order Stats Card -->
+      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+        <mat-card-header>
+          <mat-card-title class="text-lg font-bold">Estado del Pedido</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="pt-4">
+          <div class="flex flex-wrap gap-4">
+            <div class="badge badge-lg p-3" [ngClass]="getOrderStatusBadgeClass(order()!.status)">
+              {{ order()!.status }}
+            </div>
+            <div class="text-sm text-gray-500 flex items-center">
+              <mat-icon class="mr-1 text-sm">calendar_today</mat-icon>
+              {{ order()!.createdAt | date:'medium' }}
+            </div>
+          </div>
+
+          <!-- Timeline (Simple representation) -->
+          <div class="mt-6">
+            <ul class="steps steps-vertical lg:steps-horizontal w-full">
+              @for (entry of order()!.history; track entry.timestamp) {
+              <li class="step step-primary" [attr.data-content]="'✓'">
+                <span class="font-medium">{{ entry.status }}</span>
+                <span class="text-xs opacity-60 block">{{ entry.timestamp | date:'short' }}</span>
+              </li>
+              }
+            </ul>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Items Table -->
+      <mat-card class="!rounded-xl !shadow-sm border border-base-200 overflow-hidden">
+        <mat-card-header>
+          <mat-card-title class="text-lg font-bold">Productos</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="p-0">
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="items()" class="w-full">
+              <!-- Image Column -->
+              <ng-container matColumnDef="image">
+                <th mat-header-cell *matHeaderCellDef> Producto </th>
+                <td mat-cell *matCellDef="let element">
+                  <div class="flex items-center gap-3 py-2">
+                    <div class="avatar">
+                      <div class="mask mask-squircle w-12 h-12 bg-base-200">
+                        @if (element.product.images) {
+                        <img [src]="element.product.images[0].url" [alt]="element.product.name" />
+                        } @else {
+                        <span class="text-xs">No img</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Product Name Column -->
+              <ng-container matColumnDef="product">
+                <th mat-header-cell *matHeaderCellDef> Nombre </th>
+                <td mat-cell *matCellDef="let element" class="font-medium"> {{element.product.brand + ' ' +
+                  element.product.model}} </td>
+              </ng-container>
+
+              <!-- Quantity Column -->
+              <ng-container matColumnDef="quantity">
+                <th mat-header-cell *matHeaderCellDef> Cant. </th>
+                <td mat-cell *matCellDef="let element"> {{element.quantity}} </td>
+              </ng-container>
+
+              <!-- Price Column -->
+              <ng-container matColumnDef="price">
+                <th mat-header-cell *matHeaderCellDef> Precio Unit. </th>
+                @if (order()?.paymentInfo?.method === paymentType.CARD){
+                <td mat-cell *matCellDef="let element"> {{element.product.prices.tarjeta_credito_debito |
+                  currency:'ARS':'symbol-narrow':'1.0-0'}}
+                </td>
+                } @else {
+                <td mat-cell *matCellDef="let element"> {{element.product.prices.efectivo_transferencia |
+                  currency:'ARS':'symbol-narrow':'1.0-0'}}
+                </td>
+                }
+              </ng-container>
+
+              <!-- Cost Column -->
+              <ng-container matColumnDef="cost">
+                <th mat-header-cell *matHeaderCellDef> Costo Unit. </th>
+                <td mat-cell *matCellDef="let element" class="text-gray-500">
+                  {{ (element.product.prices.costPrice.inUSD || 0) | currency:'USD':'symbol-narrow':'1.0-0' }}
+                </td>
+              </ng-container>
+
+              <!-- Profit Column -->
+              <ng-container matColumnDef="profit">
+                <th mat-header-cell *matHeaderCellDef> Ganancia </th>
+                @if (order()?.paymentInfo?.method === paymentType.CARD){
+                <td mat-cell *matCellDef="let element" class="text-success font-medium">
+                  {{ (element.product.prices.earnings.card_6_installments * element.quantity) |
+                  currency:'ARS':'symbol-narrow':'1.0-0'
+                  }}
+
+                </td>
+                } @else {
+                <td mat-cell *matCellDef="let element" class="text-success font-medium">
+                  {{ (element.product.prices.earnings.cash_transfer * element.quantity) |
+                  currency:'ARS':'symbol-narrow':'1.0-0'
+                  }}
+                </td>
+                }
+              </ng-container>
+
+              <!-- Total Column -->
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef> Total </th>
+                @if (order()?.paymentInfo?.method === paymentType.CARD){
+                <td mat-cell *matCellDef="let element" class="font-bold"> {{
+                  (element.product.prices.card_6_installments * element.quantity) |
+                  currency:'ARS':'symbol-narrow':'1.0-0' }} </td>
+                } @else {
+                <td mat-cell *matCellDef="let element" class="font-bold"> {{
+                  (element.product.prices.cash_transfer * element.quantity) |
+                  currency:'ARS':'symbol-narrow':'1.0-0' }} </td>
+                }
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Right Column: Financials & Customer -->
+    <div class="space-y-6">
+      <!-- Financial Summary -->
+      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+        <mat-card-header>
+          <mat-card-title class="text-lg font-bold text-success">Resumen Financiero</mat-card-title>
+        </mat-card-header>
+        <div class="divider m-0"></div>
+        <mat-card-content class="pt-4 space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-500">Ingresos Totales (Prod):</span>
+            <span class="font-medium">{{ productsSubtotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-500">Costo de Ventas (COGS):</span>
+            <span class="font-medium text-error">- {{ totalCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-500">Envío (Cobrado):</span>
+            <span class="font-medium text-info">+ {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+          <div class="divider my-2"></div>
+          <div class="flex justify-between items-center text-lg font-bold">
+            <span>Ganancia Bruta:</span>
+            <span class="text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-xs text-gray-500">
+            <span>Margen:</span>
+            <span>{{ margin() | number:'1.1-2' }}%</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Customer Info -->
+      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+        <mat-card-header>
+          <mat-card-title class="text-lg font-bold">Cliente</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="pt-4">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="avatar placeholder">
+              <div class="flex items-center justify-center bg-blue-600 text-white rounded-full w-10">
+                <span class="text-xl">{{ order()!.user.name.charAt(0).toUpperCase() }}</span>
+              </div>
+            </div>
+            <div>
+              <p class="font-bold">{{ order()!.user.name }}</p>
+              <p class="text-xs text-gray-500">{{ order()!.user.email }}</p>
+            </div>
+          </div>
+
+          <div class="divider my-2"></div>
+
+          <h4 class="font-semibold text-sm mb-2 mt-4">Envío</h4>
+          <div class="text-sm text-gray-600 space-y-1">
+            <p><span class="font-medium">Tipo:</span> {{ order()!.shippingInfo.type }}</p>
+            @if (order()!.shippingInfo.pickupPoint) {
+            <p><span class="font-medium">Punto de retiro:</span> {{ order()!.shippingInfo.pickupPoint?.name }}</p>
+            <p class="text-xs">{{ order()!.shippingInfo.pickupPoint?.address }}</p>
+            }
+          </div>
+
+          <h4 class="font-semibold text-sm mb-2 mt-4">Pago</h4>
+          <div class="text-sm text-gray-600 space-y-1">
+            <p><span class="font-medium">Método:</span> {{ order()!.paymentInfo.method }}</p>
+            <p><span class="font-medium">Estado:</span> <span class="badge badge-sm"
+                [ngClass]="{'badge-success': order()!.paymentInfo.status === 'Aprobado', 'badge-warning': order()!.paymentInfo.status === 'Pendiente'}">{{
+                order()!.paymentInfo.status }}</span></p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+  } @else {
+  <div class="alert alert-error mt-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Error! No se pudo cargar la orden.</span>
+  </div>
+  }
+</app-page-layout>
