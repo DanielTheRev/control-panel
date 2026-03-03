@@ -65,8 +65,10 @@
                   <div class="flex items-center gap-3 py-2">
                     <div class="avatar">
                       <div class="mask mask-squircle w-12 h-12 bg-base-200">
-                        @if (element.product.images) {
-                        <img [src]="element.product.images[0].url" [alt]="element.product.name" />
+                        @if (element.product?.images?.length) {
+                        <img [src]="element.product.images[0].url" [alt]="element.product.model" />
+                        } @else if (element.productSnapshot?.image) {
+                        <img [src]="element.productSnapshot.image" alt="Product" />
                         } @else {
                         <span class="text-xs">No img</span>
                         }
@@ -79,8 +81,29 @@
               <!-- Product Name Column -->
               <ng-container matColumnDef="product">
                 <th mat-header-cell *matHeaderCellDef> Nombre </th>
-                <td mat-cell *matCellDef="let element" class="font-medium"> {{element.product.brand + ' ' +
-                  element.product.model}} </td>
+                <td mat-cell *matCellDef="let element">
+                  <div class="flex flex-col">
+                    <span class="font-medium">
+                      {{ element.productSnapshot?.brand || element.product?.brand }}
+                      {{ element.productSnapshot?.model || element.product?.model }}
+                    </span>
+                    @if (element.variantLabel) {
+                    <span class="text-xs text-gray-400">{{ element.variantLabel }}</span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Variant SKU Column -->
+              <ng-container matColumnDef="variant">
+                <th mat-header-cell *matHeaderCellDef> Variante </th>
+                <td mat-cell *matCellDef="let element">
+                  @if (element.variantSku) {
+                  <span class="badge badge-ghost badge-sm font-mono">{{ element.variantSku }}</span>
+                  } @else {
+                  <span class="text-xs text-gray-400">—</span>
+                  }
+                </td>
               </ng-container>
 
               <!-- Quantity Column -->

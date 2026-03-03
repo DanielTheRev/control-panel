@@ -83,7 +83,7 @@ export class OrderDetails implements OnInit {
     return (this.grossProfit() / revenue) * 100;
   });
 
-  displayedColumns: string[] = ['image', 'product', 'quantity', 'price', 'cost', 'profit', 'total'];
+  displayedColumns: string[] = ['image', 'product', 'variant', 'quantity', 'price', 'cost', 'profit', 'total'];
 
   async ngOnInit() {
     if (this.id) {
