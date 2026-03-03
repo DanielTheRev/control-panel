@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment.development';
 import { HttpClient } from '@angular/common/http';
 import { IProduct, IProductPrices } from '../interfaces/product.interface';
-import { firstValueFrom, map, Observable } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { HotToastService } from '@ngxpert/hot-toast';
 
 @Injectable({
@@ -26,6 +26,12 @@ export class ProductService {
         }
       })
     ));
+  }
+
+  getProducts(type?: string) {
+    const params: any = {};
+    if (type) params.type = type;
+    return firstValueFrom(this.#http.get<IProduct[]>(`${this.#apiUrl}/list`, { params }));
   }
 
   create(productData: FormData) {

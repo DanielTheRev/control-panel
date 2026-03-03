@@ -1,5 +1,56 @@
+// ============ ENUMS ============
+
+export enum ProductType {
+  TECH = 'TechProduct',
+  CLOTHING = 'ClothingProduct'
+}
+
+export enum IProductCategories {
+  // Tech
+  Electrodomesticos = 'Electrodomésticos',
+  Smartphones = 'Smartphones',
+  Pantallas = 'TV / Monitores',
+  PC = 'PC',
+  Consolas = 'Consolas',
+  // Clothing
+  Remeras = 'Remeras',
+  Pantalones = 'Pantalones',
+  Buzos = 'Buzos / Hoodies',
+  Camperas = 'Camperas',
+  Zapatillas = 'Zapatillas',
+  Accesorios = 'Accesorios',
+  Shorts = 'Shorts'
+}
+
+// ============ VARIANT INTERFACES ============
+
+export interface IVariantAttribute {
+  key: string;
+  value: string;
+}
+
+export interface IVariantColor {
+  name: string;
+  hex: string;
+}
+
+export interface IVariant {
+  _id?: string;
+  sku: string;
+  attributes: IVariantAttribute[];
+  color?: IVariantColor;
+  stock: number;
+  reservedStock: number;
+  isActive: boolean;
+  images: { url: string; public_id: string }[];
+  barcode?: string;
+}
+
+// ============ PRODUCT INTERFACES ============
+
 export interface IProduct {
   _id: string;
+  productType: ProductType;
   slug: string;
   category: IProductCategories;
   shortDescription: string;
@@ -10,31 +61,29 @@ export interface IProduct {
   discount: number;
   rating: number | null;
   reviews: number | null;
-  stock: number;
   images: IProductImage[];
   features: string[];
-  colors: string[];
-  storage: string[];
   specifications: { key: string; value: string }[];
-}
-
-export interface IProductCreateDTO {
-  brand: string;
-  shortDescription: string;
-  largeDescription: string;
-  model: string;
-  price: number;
-  category: IProductCategories;
-  image: { link: string; file: File }[];
-  features: string[];
-}
-
-export enum IProductCategories {
-  Electrodomesticos = 'Electrodomésticos',
-  Smartphones = 'Smartphones',
-  Pantallas = 'TV / Monitores',
-  PC = 'PC',
-  Consolas = 'Consolas',
+  variants: IVariant[];
+  lowStockThreshold?: number;
+  // Virtuals
+  totalStock?: number;
+  hasStock?: boolean;
+  // Tech fields (opcionales, presentes si productType === TECH)
+  storage?: string[];
+  ram?: string;
+  processor?: string;
+  screenSize?: string;
+  os?: string;
+  connectivity?: string[];
+  // Clothing fields (opcionales, presentes si productType === CLOTHING)
+  gender?: 'Hombre' | 'Mujer' | 'Unisex' | 'Niños';
+  fit?: 'Regular' | 'Slim' | 'Oversized' | 'Relaxed';
+  material?: string;
+  composition?: { material: string; percentage: number }[];
+  sizeType?: 'Ropa' | 'Calzado' | 'Numérico';
+  careInstructions?: string[];
+  season?: string;
 }
 
 export interface IProductPrices {
@@ -42,7 +91,7 @@ export interface IProductPrices {
     inUSD: number;
     inARS: number;
   };
-  dolarsPrice: number;
+  dolarPrice: number;
   profitMargin: number;
   baseCommission: number;
   cft6Cuotas: number;
@@ -64,6 +113,33 @@ export interface IProductImage {
   public_id: string;
   width?: number;
   height?: number;
+}
+
+export interface IProductCreateDTO {
+  productType: ProductType;
+  brand: string;
+  model: string;
+  shortDescription: string;
+  largeDescription: string;
+  price: number;
+  category: IProductCategories;
+  image: { link: string; file: File }[];
+  features: string[];
+  specifications: { key: string; value: string }[];
+  variants: IVariant[];
+  // Tech
+  storage?: string[];
+  ram?: string;
+  processor?: string;
+  screenSize?: string;
+  os?: string;
+  // Clothing
+  gender?: string;
+  fit?: string;
+  material?: string;
+  composition?: { material: string; percentage: number }[];
+  sizeType?: string;
+  careInstructions?: string[];
 }
 
 export interface IProductUpdateDTO extends Partial<IProductCreateDTO> {

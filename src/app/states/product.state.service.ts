@@ -1,7 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IProduct } from '../interfaces/product.interface';
+import { IProduct, ProductType } from '../interfaces/product.interface';
 import { ProductService } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
 
@@ -24,6 +24,19 @@ export class ProductStoreService {
     itemsCount: (this.#fetchedProducts.value() || []).length,
   }));
 
+  readonly techProducts = computed(() =>
+    (this.#fetchedProducts.value() || []).filter(p => p.productType === ProductType.TECH)
+  );
+
+  readonly clothingProducts = computed(() =>
+    (this.#fetchedProducts.value() || []).filter(p => p.productType === ProductType.CLOTHING)
+  );
+
+  readonly categories = computed(() => {
+    const products = this.#fetchedProducts.value() || [];
+    return [...new Set(products.map(p => p.category))];
+  });
+
   async getProduct(id: string) {
     try {
       const product = await this.#productService.getProduct(id);
@@ -42,9 +55,7 @@ export class ProductStoreService {
     try {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
-      // this.#notificationService.success('Producto creado correctamente');
     } catch (error) {
-      // this.#notificationService.error('Error al crear el producto');
       throw error;
     }
   }
@@ -53,9 +64,7 @@ export class ProductStoreService {
     try {
       const product = await this.#productService.updateProduct(id, data);
       this.#updateProduct(product);
-      // this.#notificationService.success('Producto actualizado correctamente');
     } catch (error) {
-      // this.#notificationService.error('Error al actualizar el producto');
       throw error;
     }
   }

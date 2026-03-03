@@ -1,6 +1,6 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CurrencyPipe, SlicePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { CurrencyPipe, NgClass, SlicePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
@@ -10,7 +10,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { IProduct, IProductPrices } from '../../interfaces/product.interface';
+import { IProduct, IProductPrices, ProductType } from '../../interfaces/product.interface';
 import { ProductService } from '../../services/product.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
@@ -29,6 +29,7 @@ import { DomSanitizer } from '@angular/platform-browser';
     MatDividerModule,
     MatMenuModule,
     CurrencyPipe,
+    NgClass,
     RouterLink,
     MatSnackBarModule,
     MatTooltipModule,
@@ -50,8 +51,11 @@ export class ProductList {
   #snackBar = inject(MatSnackBar);
   #domSanitizer = inject(DomSanitizer);
 
+  activeFilter = signal<string>('all');
+
   displayedColumns: string[] = [
     'image',
+    'type',
     'category',
     'brand',
     'stock',
@@ -78,29 +82,26 @@ export class ProductList {
     return pricesFormatted;
   }
 
-  getColorValue(color: string): string {
-    const colorMap: { [key: string]: string } = {
-      'negro': 'black',
-      'blanco': 'white',
-      'rojo': 'red',
-      'azul': 'blue',
-      'verde': 'green',
-      'amarillo': 'yellow',
-      'gris': 'gray',
-      'plateado': 'silver',
-      'dorado': 'gold',
-      'naranja': 'orange',
-      'rosa': 'pink',
-      'violeta': 'violet',
-      'marron': 'brown',
-      'celeste': 'skyblue',
-      'space gray': '#4b4b4b',
-      'midnight': '#191970',
-      'starlight': '#f8f9ec'
-    };
-    return colorMap[color.toLowerCase()] || color;
+  getProductTypeLabel(type: string): string {
+    return type === ProductType.TECH ? '📱 Tech' : '👕 Ropa';
   }
 
+  getProductTypeClass(type: string): string {
+    return type === ProductType.TECH
+      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+      : 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300';
+  }
+
+  getTotalStock(product: IProduct): number {
+    if (product.totalStock !== undefined) return product.totalStock;
+    return product.variants
+      ?.filter(v => v.isActive)
+      .reduce((sum, v) => sum + v.stock, 0) || 0;
+  }
+
+  setFilter(filter: string) {
+    this.activeFilter.set(filter);
+  }
 
   async deleteProduct(product: IProduct) {
     if (confirm(`¿Estás seguro de que deseas eliminar el producto ${product.model}?`)) {
@@ -118,7 +119,6 @@ export class ProductList {
   }
 
   copyLink(product: IProduct) {
-    // Assuming a standard public URL structure
     const url = `${'https://electromix.com.ar'}/products/${product.slug}`;
     navigator.clipboard.writeText(url).then(() => {
       this.#snackBar.open('Enlace copiado al portapapeles', 'Cerrar', {

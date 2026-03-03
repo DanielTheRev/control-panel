@@ -26,6 +26,33 @@
         <!-- LEFT COLUMN (3/5): Main Information -->
         <div class="lg:col-span-3 space-y-6">
 
+            <!-- Product Type Selector -->
+            <div class="card bg-base-100 shadow-sm border border-base-200">
+                <div class="card-body p-6">
+                    <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" formControlName="productType" value="tech" class="peer hidden" />
+                            <div
+                                class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all text-center">
+                                <span class="text-2xl">📱</span>
+                                <p class="font-bold mt-1">Tecnología</p>
+                                <p class="text-xs text-slate-400">Smartphones, TVs, Consolas</p>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" formControlName="productType" value="clothing" class="peer hidden" />
+                            <div
+                                class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 transition-all text-center">
+                                <span class="text-2xl">👕</span>
+                                <p class="font-bold mt-1">Indumentaria</p>
+                                <p class="text-xs text-slate-400">Remeras, Pantalones, Zapatillas</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- Basic Info Card -->
             <div class="card bg-base-100 shadow-sm border border-base-200">
                 <div class="card-body p-6">
@@ -41,22 +68,30 @@
                         <fieldset class="fieldset">
                             <legend class="fieldset-legend">Marca</legend>
                             <select class="select select-bordered w-full" formControlName="brand">
-                                <option value="Apple">Apple</option>
-                                <option value="Samsung">Samsung</option>
-                                <option value="Poco">Poco</option>
-                                <option value="Xiaomi">Xiaomi</option>
-                                <option value="Motorola">Motorola</option>
+                                @if (selectedType() === 'tech') {
+                                @for (b of techBrands; track b) {
+                                <option [value]="b">{{ b }}</option>
+                                }
+                                } @else {
+                                @for (b of clothingBrands; track b) {
+                                <option [value]="b">{{ b }}</option>
+                                }
+                                }
                             </select>
                         </fieldset>
 
                         <fieldset class="fieldset">
                             <legend class="fieldset-legend">Categoría</legend>
                             <select class="select select-bordered w-full" formControlName="category">
-                                <option value="Smartphones">Smartphones</option>
-                                <option value="Electronics">Electrodomésticos</option>
-                                <option value="Screens">TV/Monitores</option>
-                                <option value="PC">PC</option>
-                                <option value="Console">Consolas</option>
+                                @if (selectedType() === 'tech') {
+                                @for (c of techCategories; track c) {
+                                <option [value]="c">{{ c }}</option>
+                                }
+                                } @else {
+                                @for (c of clothingCategories; track c) {
+                                <option [value]="c">{{ c }}</option>
+                                }
+                                }
                             </select>
                         </fieldset>
                     </div>
@@ -78,6 +113,88 @@
                     }
                 </div>
             </div>
+
+            <!-- Tech-Specific Fields -->
+            @if (selectedType() === 'tech') {
+            <div class="card bg-base-100 shadow-sm border border-blue-100 dark:border-blue-900">
+                <div class="card-body p-6">
+                    <h3 class="card-title text-lg mb-4">
+                        <span class="text-blue-500">📱</span> Campos de Tecnología
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">RAM</legend>
+                            <input type="text" class="input input-bordered w-full" placeholder="Ej. 8GB"
+                                formControlName="ram" />
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Procesador</legend>
+                            <input type="text" class="input input-bordered w-full" placeholder="Ej. Snapdragon 8 Gen 3"
+                                formControlName="processor" />
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Tamaño de Pantalla</legend>
+                            <input type="text" class="input input-bordered w-full" placeholder="Ej. 6.7&quot;"
+                                formControlName="screenSize" />
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Sistema Operativo</legend>
+                            <input type="text" class="input input-bordered w-full" placeholder="Ej. Android 14"
+                                formControlName="os" />
+                        </fieldset>
+                    </div>
+                    <div class="mt-4">
+                        <label class="label font-medium pb-2">Almacenamiento</label>
+                        <app-tag-input [formArray]="storageControls" placeholder="Añadir capacidad (ej. 256GB)">
+                        </app-tag-input>
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- Clothing-Specific Fields -->
+            @if (selectedType() === 'clothing') {
+            <div class="card bg-base-100 shadow-sm border border-pink-100 dark:border-pink-900">
+                <div class="card-body p-6">
+                    <h3 class="card-title text-lg mb-4">
+                        <span class="text-pink-500">👕</span> Campos de Indumentaria
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Género</legend>
+                            <select class="select select-bordered w-full" formControlName="gender">
+                                <option value="Hombre">Hombre</option>
+                                <option value="Mujer">Mujer</option>
+                                <option value="Unisex">Unisex</option>
+                                <option value="Niños">Niños</option>
+                            </select>
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Fit / Corte</legend>
+                            <select class="select select-bordered w-full" formControlName="fit">
+                                <option value="Regular">Regular</option>
+                                <option value="Slim">Slim</option>
+                                <option value="Oversized">Oversized</option>
+                                <option value="Relaxed">Relaxed</option>
+                            </select>
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Material</legend>
+                            <input type="text" class="input input-bordered w-full" placeholder="Ej. Algodón"
+                                formControlName="material" />
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Tipo de Talle</legend>
+                            <select class="select select-bordered w-full" formControlName="sizeType">
+                                <option value="Ropa">Ropa (S, M, L, XL)</option>
+                                <option value="Calzado">Calzado (38-44)</option>
+                                <option value="Numérico">Numérico</option>
+                            </select>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+            }
 
             <!-- Description Card -->
             <div class="card bg-base-100 shadow-sm border border-base-200">
@@ -115,29 +232,72 @@
             <!-- Variants Card -->
             <div class="card bg-base-100 shadow-sm border border-base-200">
                 <div class="card-body p-6">
-                    <h3 class="card-title text-lg mb-4">Variantes</h3>
-
-                    <!-- Colors -->
-                    <div class="mb-6">
-                        <label class="label font-medium pb-2">Colores</label>
-                        <app-tag-input [formArray]="colorsControls" placeholder="Añadir color (ej. Azul)">
-                        </app-tag-input>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="card-title text-lg">Variantes</h3>
+                        <button type="button" class="btn btn-sm btn-primary" (click)="addVariant()">
+                            <mat-icon>add</mat-icon> Agregar
+                        </button>
                     </div>
 
-                    <!-- Storage -->
-                    <div class="mb-6">
-                        <label class="label font-medium pb-2">Almacenamiento</label>
-                        <app-tag-input [formArray]="storageControls" placeholder="Añadir capacidad (ej. 256GB)">
-                        </app-tag-input>
+                    @if (variantsControls.length === 0) {
+                    <div class="text-center py-6 text-slate-400">
+                        <mat-icon class="text-4xl mb-2">style</mat-icon>
+                        <p class="text-sm">No hay variantes. Cada variante tiene su SKU y stock.</p>
                     </div>
+                    }
 
-                    <!-- Features / Tags -->
-                    <div class="mb-4">
-                        <label class="label font-medium pb-2">Etiquetas</label>
-                        <app-tag-input [formArray]="featuresControls" placeholder="Añadir etiqueta (ej. 5G, Oferta)">
-                        </app-tag-input>
+                    @for (variant of variantsControls.controls; track $index; let i = $index) {
+                    <div class="border border-base-200 rounded-lg p-4 mb-3 relative" [formGroupName]="'variants'">
+                        <div [formGroupName]="i">
+                            <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2 text-red-400"
+                                (click)="removeVariant(i)">
+                                <mat-icon>close</mat-icon>
+                            </button>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend text-xs">SKU</legend>
+                                    <input type="text" class="input input-bordered input-sm w-full font-mono"
+                                        placeholder="SAM-001-128" formControlName="sku" />
+                                </fieldset>
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend text-xs">Stock</legend>
+                                    <input type="number" class="input input-bordered input-sm w-full"
+                                        formControlName="stock" />
+                                </fieldset>
+                            </div>
+
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend text-xs">Atributos (key:value, separados por coma)
+                                </legend>
+                                <input type="text" class="input input-bordered input-sm w-full"
+                                    placeholder="Talle:M, Color:Negro" formControlName="attributesJson" />
+                            </fieldset>
+
+                            <div class="grid grid-cols-2 gap-3 mt-2">
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend text-xs">Color (nombre)</legend>
+                                    <input type="text" class="input input-bordered input-sm w-full" placeholder="Negro"
+                                        formControlName="colorName" />
+                                </fieldset>
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend text-xs">Color (hex)</legend>
+                                    <input type="color" class="input input-bordered input-sm w-full h-8"
+                                        formControlName="colorHex" />
+                                </fieldset>
+                            </div>
+                        </div>
                     </div>
+                    }
+                </div>
+            </div>
 
+            <!-- Features Card -->
+            <div class="card bg-base-100 shadow-sm border border-base-200">
+                <div class="card-body p-6">
+                    <h3 class="card-title text-lg mb-4">Etiquetas</h3>
+                    <app-tag-input [formArray]="featuresControls" placeholder="Añadir etiqueta (ej. 5G, Oferta)">
+                    </app-tag-input>
                 </div>
             </div>
 

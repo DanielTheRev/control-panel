@@ -23,8 +23,15 @@ export enum PaymentStatus {
 // Interface para items de la orden
 export interface IOrderItem {
   product: IProduct;
+  variantSku: string;
+  variantLabel: string;
   quantity: number;
-  price: number
+  price: number;
+  productSnapshot: {
+    brand: string;
+    model: string;
+    image?: string;
+  };
 }
 
 // Interface para dirección de envío
