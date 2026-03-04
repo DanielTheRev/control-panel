@@ -1,21 +1,18 @@
-import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CurrencyPipe, NgClass, SlicePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { CurrencyPipe, NgClass } from '@angular/common';
+import { Component, effect, inject, signal } from '@angular/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
-import { IProduct, IProductPrices, ProductType } from '../../interfaces/product.interface';
-import { ProductService } from '../../services/product.service';
+import { Router, RouterLink } from '@angular/router';
+import { IProduct, ProductType } from '../../interfaces/product.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
-import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-product-list',
@@ -33,25 +30,17 @@ import { DomSanitizer } from '@angular/platform-browser';
     RouterLink,
     MatSnackBarModule,
     MatTooltipModule,
-    SlicePipe
   ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.scss',
-  animations: [
-    trigger('detailExpand', [
-      state('collapsed,void', style({ height: '0px', minHeight: '0' })),
-      state('expanded', style({ height: '*' })),
-      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
-    ]),
-  ],
 })
 export class ProductList {
   ProductState = inject(ProductStoreService);
-  #productState = inject(ProductStoreService);
   #snackBar = inject(MatSnackBar);
-  #domSanitizer = inject(DomSanitizer);
+  #router = inject(Router);
 
   activeFilter = signal<string>('all');
+  dataSource = new MatTableDataSource<IProduct>([]);
 
   displayedColumns: string[] = [
     'image',
@@ -62,24 +51,12 @@ export class ProductList {
     'price_cash',
     'price_installments',
   ];
-  columnsToDisplayWithExpand = ['expand', ...this.displayedColumns];
-  expandedElement: IProduct | null = null;
 
-  getPricesFormatted(prices: IProductPrices) {
-    const pricesFormatted = Object.entries(prices)
-      .map(([key, value]) => {
-        const labels: any = {
-          efectivo_transferencia: 'Efectivo / transferencia',
-          tarjeta_credito_debito: 'Tarjeta debito / credito',
-        };
+  constructor() {
+  }
 
-        return {
-          label: labels[key] as string,
-          value: value,
-        };
-      })
-      .filter((e) => e.label !== undefined);
-    return pricesFormatted;
+  onPageChange(event: PageEvent) {
+    this.ProductState.changePage(event.pageIndex + 1, event.pageSize);
   }
 
   getProductTypeLabel(type: string): string {
@@ -103,10 +80,14 @@ export class ProductList {
     this.activeFilter.set(filter);
   }
 
+  viewProduct(product: IProduct) {
+    this.#router.navigate(['/home/products', product._id]);
+  }
+
   async deleteProduct(product: IProduct) {
     if (confirm(`¿Estás seguro de que deseas eliminar el producto ${product.model}?`)) {
       try {
-        await this.#productState.deleteProduct(product._id);
+        await this.ProductState.deleteProduct(product._id);
         this.#snackBar.open('Producto eliminado correctamente', 'Cerrar', {
           duration: 3000,
         });
@@ -125,9 +106,5 @@ export class ProductList {
         duration: 2000,
       });
     });
-  }
-
-  getDescriptionSanitized(description: string) {
-    return this.#domSanitizer.bypassSecurityTrustHtml(description);
   }
 }

@@ -39,14 +39,14 @@
     </div>
   </app-page-header>
 
-  <div class="flex-1">
+  <div class="flex-1 flex flex-col min-h-0 h-full w-full">
     @if (Products.hasError) {
     <div role="alert" class="alert alert-error mb-4">
       <span>Error al traer los productos</span>
     </div>
     }
 
-    @if (Products.isLoading) {
+    @if (Products.isLoading && !Products.hasData) {
     <div class="flex items-center justify-center w-full h-full">
       <span class="loading loading-ring loading-xl"></span>
     </div>
@@ -59,49 +59,31 @@
     }
 
     <!-- TABLA DE PRODUCTOS -->
-    @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.isLoading && !Products.hasError;
+    @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.hasError;
     @if (showTable) {
     <div
-      class="table-container rounded-xl overflow-hidden border border-base-300 bg-base-100 shadow-sm flex-1 flex flex-col">
+      class="table-container rounded-md overflow-hidden border border-base-300 bg-base-100! shadow-md flex-1 flex flex-col relative min-h-0">
+      @if (Products.isLoading) {
+      <div class="absolute inset-0 bg-base-100!/50 z-10 flex items-center justify-center">
+        <span class="loading loading-ring loading-md"></span>
+      </div>
+      }
       <div class="overflow-y-auto flex-1 custom-scrollbar">
-        <table mat-table [dataSource]="Products.data" class="w-full" multiTemplateDataRows>
+        <table mat-table [dataSource]="Products.data" class="w-full">
 
-          <!-- Expand Column -->
-          <ng-container matColumnDef="expand">
-            <th mat-header-cell *matHeaderCellDef aria-label="row actions"
-              class="px-4 py-2 w-12 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
-              &nbsp;</th>
-            <td mat-cell *matCellDef="let element"
-              class="px-4 py-2 w-12 text-sm font-normal text-base-content whitespace-nowrap border-b border-base-300">
-              <button mat-icon-button aria-label="expand row"
-                (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
-                @if (expandedElement === element) {
-                <mat-icon>keyboard_arrow_up</mat-icon>
-                } @else {
-                <mat-icon>keyboard_arrow_down</mat-icon>
-                }
-              </button>
-            </td>
-          </ng-container>
-
-          <!-- Producto (Image) -->
+          <!-- Producto (Image + Name) -->
           <ng-container matColumnDef="image">
-            <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
               Producto
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-base-content whitespace-nowrap border-b border-base-300">
+              class="px-4 py-2 text-sm text-base-content whitespace-nowrap border-b border-base-300">
               <div class="flex items-center gap-4 py-1">
-                <div
-                  class="product-img-frame shrink-0 bg-base-200 border border-base-300 rounded-lg p-1 w-10 h-10 flex items-center justify-center">
-                  @let imageURL =
-                  p.images.length
-                  <= 0 ? "/no-image.png" : p.images[0]; <img [src]="imageURL.url"
-                    class="max-h-full max-w-full object-contain hover:scale-110 transition-transform" />
-                </div>
+                @let imageURL = p.images.length <= 0 ? "/no-image.jpg": p.images[0].url;
+                <img [src]="imageURL"
+                  class="w-10 h-10 object-cover rounded-lg shadow-md border border-base-content/10 shrink-0" />
                 <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-bold text-base-content truncate max-w-62.5">{{ p.brand + ' ' + p.model
+                  <span class="text-sm font-semibold text-base-content truncate max-w-62.5">{{ p.brand + ' ' + p.model
                     }}</span>
                 </div>
               </div>
@@ -110,12 +92,11 @@
 
           <!-- Type -->
           <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
               Tipo
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
+              class="px-4 py-2 text-sm text-base-content/60 whitespace-nowrap border-b border-base-300">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 [ngClass]="getProductTypeClass(p.productType)">
                 {{ getProductTypeLabel(p.productType) }}
@@ -125,14 +106,12 @@
 
           <!-- Category -->
           <ng-container matColumnDef="category">
-            <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
               Categoría
             </th>
-            <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
+            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
               <span
-                class="px-2.5 py-0.5 rounded-full bg-base-200 text-base-content/60 text-[10px] font-bold uppercase tracking-wider">
+                class="bg-base-200 text-base-content/60 text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded border border-base-300">
                 {{ p.category }}
               </span>
             </td>
@@ -140,85 +119,52 @@
 
           <!-- Brand -->
           <ng-container matColumnDef="brand">
-            <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
               Marca
             </th>
-            <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
+            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
               <span class="text-xs font-bold text-primary uppercase tracking-widest">
                 {{ p.brand }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Stock (from variants) -->
+          <!-- Stock -->
           <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
               Stock
             </th>
-            <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
+            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
               @let stock = getTotalStock(p);
-              <div class="flex items-center gap-2">
-                <div class="w-2.5 h-2.5 rounded-full" [class.bg-green-400]="stock > 10"
-                  [class.bg-yellow-400]="stock <= 10 && stock > 0" [class.bg-red-400]="stock === 0">
-                </div>
-                <span class="text-[10px] font-black uppercase tracking-tight text-base-content/70">{{ stock }}
-                  UNIDADES</span>
-              </div>
+              <span
+                class="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-md shadow-sm border border-primary/20 inline-block text-center min-w-[60px]">
+                {{ stock }}
+              </span>
             </td>
           </ng-container>
 
-          <!-- PRECIOS -->
+          <!-- Precio-Costo -->
           <ng-container matColumnDef="price_cash">
-            <th mat-header-cell *matHeaderCellDef
-              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-base-content/50 border-b border-base-300">
-              Efectivo
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+              Precio-Costo
             </th>
             <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
-              <div class="flex flex-col gap-1.5 py-1">
-                <!-- Discount Badge -->
-                @if(p.discount > 0) {
-                <div
-                  class="inline-flex self-start px-2 py-0.5 rounded bg-error/10 text-error text-[10px] font-black uppercase tracking-wide">
-                  {{ p.discount }}% OFF
-                </div>
-                }
-                <span class="text-sm font-black text-base-content tracking-tight">
-                  {{
-                  p.prices.efectivo_transferencia
-                  | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                  }}
-                </span>
-
-                <!-- @for (price of getPricesFormatted(p.prices); track $index) {
-                <div class="flex flex-col leading-none border-l-2 pl-3 border-base-300 group cursor-default">
-                  <span
-                    class="text-[9px] font-bold uppercase text-base-content/40 tracking-wider mb-0.5 transition-colors group-hover:text-primary">
-                    {{ price.label }}
-                  </span>
-                  <span class="text-sm font-black text-base-content tracking-tight">
-                    {{
-                    price.value
-                    | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                    }}
-                  </span>
-                </div>
-                } -->
-              </div>
+              <span class="text-base-content/60 font-medium">
+                {{
+                p.prices.efectivo_transferencia
+                | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                }}
+              </span>
             </td>
           </ng-container>
 
-          <!-- Financiación -->
+          <!-- Precio-Publico -->
           <ng-container matColumnDef="price_installments">
-            <th mat-header-cell *matHeaderCellDef
-              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-base-content/50 border-b border-base-300">
-              Tarjeta credito/debito
+            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+              Precio-Publico
             </th>
             <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
-              <span class="text-sm font-black text-base-content tracking-tight">
+              <span class="text-success font-bold">
                 {{
                 p.prices.tarjeta_credito_debito
                 | currency: "ARS" : "symbol-narrow" : "1.0-0"
@@ -227,210 +173,18 @@
             </td>
           </ng-container>
 
-          <!-- CUSTOM EXPANDED DETAIL ROW  -->
-          <ng-container matColumnDef="expandedDetail">
-            <td mat-cell *matCellDef="let element" [attr.colspan]="columnsToDisplayWithExpand.length"
-              class="!p-0 border-0 h-0">
-              <div
-                class="row-detail overflow-hidden flex flex-col bg-base-200 shadow-[inset_0_4px_12px_rgba(0,0,0,0.03)] border-y border-base-300"
-                [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
-
-                <div class="p-6">
-
-                  @if(element.images && element.images.length > 0) {
-                  <div class="grid grid-cols-3 gap-2 mt-4 w-full p-10">
-                    @for (img of element.images; track $index; let idx = $index) {
-                    <div
-                      class="relative card group aspect-square rounded-lg overflow-hidden border border-base-300 bg-base-100">
-                      <img [src]="img.url" class="w-full h-full object-cover" alt="Product thumbnail">
-                    </div>
-                    }
-                  </div>
-                  } @else {
-                  <div
-                    class="aspect-video bg-base-100 rounded-lg border border-base-300 p-2 flex items-center justify-center text-base-content/40 text-sm shadow-sm">
-                    No images
-                  </div>
-                  }
-
-                  <h4 class="text-sm font-bold text-base-content mb-2 uppercase tracking-wide">Detalles</h4>
-                  <div
-                    [innerHTML]="getDescriptionSanitized(element.largeDescription || element.shortDescription || 'Sin descripción disponible.')"
-                    class="text-base-content/60 mb-6 leading-relaxed">
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-
-                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
-                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">
-                        Estado
-                        Financiero</h5>
-                      <div class="flex flex-col gap-2">
-                        <div class="flex justify-between text-sm items-center">
-                          <span class="text-base-content/50">Costo(dólares)</span>
-                          <span class="font-medium text-base-content">{{ element.prices.costPrice.inUSD |
-                            currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
-                        </div>
-                        <div class="flex justify-between text-sm items-center">
-                          <span class="text-base-content/50">Costo(pesos)</span>
-                          <span class="font-medium text-base-content">{{ element.prices.costPrice.inARS |
-                            currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
-                        </div>
-                        <div class="flex justify-between text-sm items-center">
-                          <span class="text-base-content/50">Margen</span>
-                          <span class="font-bold px-2 py-0.5 rounded text-xs"
-                            [class.bg-success/10]="element.prices.profitMargin > 20"
-                            [class.text-success]="element.prices.profitMargin > 20"
-                            [class.bg-warning/10]="element.prices.profitMargin <= 20"
-                            [class.text-warning]="element.prices.profitMargin <= 20">
-                            {{ element.prices.profitMargin }}%
-                          </span>
-                        </div>
-
-                      </div>
-                    </div>
-
-                    <!-- Col 2: Stock & Logística -->
-                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
-                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">
-                        Logística
-                      </h5>
-                      <div class="flex flex-col gap-3">
-                        <div class="flex items-center gap-3">
-                          <div
-                            class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                            <mat-icon>inventory_2</mat-icon>
-                          </div>
-                          <div class="flex flex-col">
-                            <span class="text-xs text-base-content/50">Stock Total</span>
-                            <span class="text-sm font-bold text-base-content">{{ getTotalStock(element) }} u.</span>
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                          <div
-                            class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
-                            <mat-icon>style</mat-icon>
-                          </div>
-                          <div class="flex flex-col">
-                            <span class="text-xs text-base-content/50">Variantes</span>
-                            <span class="text-sm font-bold text-base-content">{{ element.variants?.length || 0 }}
-                              variantes</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Col 3: Variantes -->
-                    <div class="sm:col-span-2 bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
-                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">
-                        Variantes
-                      </h5>
-                      @if(element.variants?.length) {
-                      <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                          <thead>
-                            <tr class="text-left text-base-content/40 uppercase">
-                              <th class="pb-2">SKU</th>
-                              <th class="pb-2">Atributos</th>
-                              <th class="pb-2">Stock</th>
-                              <th class="pb-2">Estado</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            @for(v of element.variants; track v.sku) {
-                            <tr class="border-t border-base-300">
-                              <td class="py-1.5 font-mono font-bold text-base-content/60">{{ v.sku }}</td>
-                              <td class="py-1.5">
-                                <div class="flex gap-1 flex-wrap">
-                                  @for(attr of v.attributes; track attr.key) {
-                                  <span class="badge badge-xs badge-ghost h-auto py-0.5">{{ attr.key }}: {{ attr.value
-                                    }}</span>
-                                  }
-                                  @if(v.color) {
-                                  <span class="inline-flex items-center gap-1 badge badge-xs badge-ghost h-auto py-0.5">
-                                    <span class="w-3 h-3 rounded-full border"
-                                      [style.background-color]="v.color.hex"></span>
-                                    {{ v.color.name }}
-                                  </span>
-                                  }
-                                </div>
-                              </td>
-                              <td class="py-1.5 font-bold" [class.text-success]="v.stock > 0"
-                                [class.text-error]="v.stock === 0">{{ v.stock }}</td>
-                              <td class="py-1.5">
-                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
-                                  [class.bg-success/10]="v.isActive" [class.text-success]="v.isActive"
-                                  [class.bg-base-200]="!v.isActive" [class.text-base-content/40]="!v.isActive">
-                                  {{ v.isActive ? 'Activo' : 'Inactivo' }}
-                                </span>
-                              </td>
-                            </tr>
-                            }
-                          </tbody>
-                        </table>
-                      </div>
-                      } @else {
-                      <span class="text-xs text-base-content/40 italic">Sin variantes</span>
-                      }
-                    </div>
-
-                    <!-- Col 4: Specs / Brand -->
-                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
-                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">
-                        Info
-                        Adicional</h5>
-                      <div class="flex flex-col gap-2">
-                        <div class="flex justify-between items-center text-sm">
-                          <span class="text-base-content/50 text-xs uppercase">Marca</span>
-                          <span class="font-bold text-base-content">{{ element.brand }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                          <span class="text-base-content/50 text-xs uppercase">Categoría</span>
-                          <span class="font-medium text-base-content/70">{{ element.category }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                          <span class="text-base-content/50 text-xs uppercase">SKU</span>
-                          <span class="font-mono text-xs text-base-content/40">#{{ element._id | slice:0:6 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Buttons -->
-                  <div class="flex items-center gap-3 mt-4 border-t border-base-300 pt-4">
-                    <button type="button" [routerLink]="['edit', element._id]" class="btn btn-sm btn-warning">
-                      <mat-icon class="w-5 h-5 ">edit</mat-icon>
-                      Editar Producto
-                    </button>
-                    <button type="button" (click)="copyLink(element)" class="btn btn-sm btn-info">
-                      <mat-icon class="w-5 h-5 ">visibility</mat-icon>
-                      Ver Preview
-                    </button>
-                    <div class="flex-grow"></div>
-                    <button type="button" (click)="deleteProduct(element)" class="btn btn-sm btn-error">
-                      <mat-icon class="w-5 h-5 ">delete_outline</mat-icon>
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="columnsToDisplayWithExpand"
-            class="bg-base-200 !h-10 border-b border-base-300"></tr>
-          <!-- h-10 header -->
-          <tr mat-row *matRowDef="let element; columns: columnsToDisplayWithExpand;"
-            class="example-element-row property-transition border-b border-base-300 hover:bg-base-200/50"
-            [class.expanded-row]="expandedElement === element"
-            (click)="expandedElement = expandedElement === element ? null : element">
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
+            class="bg-base-100! h-10! border-b border-base-300"></tr>
+          <tr mat-row *matRowDef="let element; columns: displayedColumns;"
+            class="border-b border-base-300 hover:bg-base-200/50 transition-colors" (click)="viewProduct(element)">
           </tr>
-          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row h-0"></tr>
         </table>
       </div>
       <!-- Paginación -->
-      <mat-paginator [length]="Products.data.length" [pageSize]="10" [pageSizeOptions]="[5, 10, 25, 100]"
-        class="border-t border-base-300 bg-base-100 shrink-0"></mat-paginator>
+      <mat-paginator [length]="ProductState.pagination().totalItems" [pageSize]="ProductState.pagination().itemsPerPage"
+        [pageIndex]="ProductState.pagination().currentPage - 1" [pageSizeOptions]="[10, 20]"
+        (page)="onPageChange($event)" class="border-t border-base-300 bg-base-100! shrink-0">
+      </mat-paginator>
     </div>
     }
   </div>

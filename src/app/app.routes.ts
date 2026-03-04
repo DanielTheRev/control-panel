@@ -49,6 +49,10 @@ export const routes: Routes = [
             path: 'edit/:productID',
             component: ProductCreate,
           },
+          {
+            path: ':productID',
+            loadComponent: () => import('./pages/product-detail/product-detail').then(c => c.ProductDetail)
+          },
         ]
       },
       {

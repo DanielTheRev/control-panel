@@ -1,7 +1,8 @@
-import { httpResource } from '@angular/common/http';
-import { computed, inject, Injectable } from '@angular/core';
+import { httpResource, HttpResourceRef } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { IProduct, ProductType } from '../interfaces/product.interface';
+import { IPaginatedResult } from '../interfaces/pagination.interface';
 import { ProductService } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
 
@@ -10,32 +11,69 @@ import { NotificationsService } from '../services/notifications.service';
 })
 export class ProductStoreService {
   #productService = inject(ProductService);
-  #fetchedProducts = httpResource<IProduct[]>(() => ({
-    url: `${environment.apiUrl}/products/list`,
-    method: 'GET',
-  }));
   #notificationService = inject(NotificationsService);
 
-  readonly products = computed(() => ({
-    data: this.#fetchedProducts.value() || [],
-    hasData: this.#fetchedProducts.hasValue(),
-    hasError: this.#fetchedProducts.error(),
-    isLoading: this.#fetchedProducts.isLoading(),
-    itemsCount: (this.#fetchedProducts.value() || []).length,
-  }));
+  // Pagination signals — httpResource reacts to these automatically
+  private pageNumber = signal(1);
+  private pageSize = signal(10);
+
+  // httpResource that auto-fetches when page/size signals change
+  #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
+
+  constructor() {
+    this.#fetchedProducts = httpResource<IPaginatedResult<IProduct>>(() => ({
+      url: `${environment.apiUrl}/products/list`,
+      params: {
+        page: this.pageNumber(),
+        limit: this.pageSize(),
+      },
+    }));
+  }
+
+  // Public computed state (maintains same shape for backward compatibility)
+  readonly products = computed(() => {
+    const result = this.#fetchedProducts.value();
+    return {
+      data: result?.data || [],
+      hasData: this.#fetchedProducts.hasValue(),
+      hasError: !!this.#fetchedProducts.error(),
+      isLoading: this.#fetchedProducts.isLoading(),
+      itemsCount: result?.pagination?.totalItems ?? 0,
+    };
+  });
+
+  readonly pagination = computed(() => {
+    const result = this.#fetchedProducts.value();
+    return result!.pagination
+  });
 
   readonly techProducts = computed(() =>
-    (this.#fetchedProducts.value() || []).filter(p => p.productType === ProductType.TECH)
+    (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.TECH)
   );
 
   readonly clothingProducts = computed(() =>
-    (this.#fetchedProducts.value() || []).filter(p => p.productType === ProductType.CLOTHING)
+    (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.CLOTHING)
   );
 
   readonly categories = computed(() => {
-    const products = this.#fetchedProducts.value() || [];
+    const products = this.#fetchedProducts.value()?.data || [];
     return [...new Set(products.map(p => p.category))];
   });
+
+  // Pagination methods — just update the signals, httpResource handles the rest
+  setPage(page: number) {
+    this.pageNumber.set(page);
+  }
+
+  setPageSize(size: number) {
+    this.pageSize.set(size);
+    this.pageNumber.set(1); // Reset to first page when changing size
+  }
+
+  changePage(page: number, size: number) {
+    this.pageSize.set(size);
+    this.pageNumber.set(page);
+  }
 
   async getProduct(id: string) {
     try {
@@ -53,8 +91,8 @@ export class ProductStoreService {
 
   async createProduct(data: FormData) {
     try {
-      const product = await this.#productService.create(data);
-      this.#addProduct(product);
+      await this.#productService.create(data);
+      this.#fetchedProducts.reload();
     } catch (error) {
       throw error;
     }
@@ -62,8 +100,8 @@ export class ProductStoreService {
 
   async updateProduct(id: string, data: FormData) {
     try {
-      const product = await this.#productService.updateProduct(id, data);
-      this.#updateProduct(product);
+      await this.#productService.updateProduct(id, data);
+      this.#fetchedProducts.reload();
     } catch (error) {
       throw error;
     }
@@ -72,30 +110,9 @@ export class ProductStoreService {
   async deleteProduct(id: string) {
     try {
       await this.#productService.deleteProduct(id);
-      this.#deleteProduct(id);
+      this.#fetchedProducts.reload();
     } catch (error) {
       throw error;
     }
-  }
-
-  #addProduct(product: IProduct) {
-    this.#fetchedProducts.update(state => {
-      if (!state) return state;
-      return [...state, product];
-    });
-  }
-
-  #updateProduct(product: Partial<IProduct>) {
-    this.#fetchedProducts.update(state => {
-      if (!state) return state;
-      return state.map(p => p._id === product._id ? { ...p, ...product } : p);
-    });
-  }
-
-  #deleteProduct(id: string) {
-    this.#fetchedProducts.update(state => {
-      if (!state) return state;
-      return state.filter(p => p._id !== id);
-    });
   }
 }

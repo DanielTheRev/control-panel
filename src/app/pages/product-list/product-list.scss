@@ -13,40 +13,26 @@
 ::ng-deep .mat-mdc-header-cell {
   font-size: 11px;
   text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: oklch(from oklch(var(--color-base-content)) l c h / 0.5);
-  border-bottom: 1px solid oklch(var(--color-base-300)) !important;
-  padding: 0 24px !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: oklch(from oklch(var(--color-base-content)) l c h / 0.4);
+  border-bottom: 1px solid oklch(from oklch(var(--color-base-300)) l c h / 0.5) !important;
+  padding: 0 16px !important;
 }
 
 ::ng-deep .mat-mdc-cell {
-  border-bottom: 1px solid oklch(var(--color-base-300)) !important;
-  padding: 0 24px !important;
+  border-bottom: 1px solid oklch(from oklch(var(--color-base-300)) l c h / 0.5) !important;
+  padding: 0 16px !important;
   color: oklch(var(--color-base-content));
 }
 
-/* Fix for detail row height */
-.detail-row {
-  height: 0 !important;
-  min-height: 0 !important;
-}
-
-.detail-row td {
-  border: 0 !important;
-}
-
-/* Row Hover and Active States */
+/* Row Hover States */
 .mat-mdc-row {
   cursor: pointer;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: oklch(from oklch(var(--color-base-200)) l c h / 0.5) !important;
-  }
-
-  &.expanded-row {
-    background-color: oklch(var(--color-base-200)) !important;
+    background-color: oklch(from oklch(var(--color-base-200)) l c h / 0.4) !important;
   }
 }
 
