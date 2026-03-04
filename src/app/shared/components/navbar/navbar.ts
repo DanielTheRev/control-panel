@@ -17,7 +17,7 @@ export class Navbar {
   private wsService = inject(WebSocketService);
   private sidebarService = inject(SidebarService);
 
-  isDark = false;
+  isDark = document.documentElement.getAttribute('data-theme') === 'electromix-dark';
 
   get wsConnected() {
     return this.wsService.connected();
@@ -29,8 +29,9 @@ export class Navbar {
 
   toggleTheme() {
     this.isDark = !this.isDark;
-    const html = document.documentElement;
-    html.setAttribute('data-theme', this.isDark ? 'electromix-dark' : 'electromix-light');
+    const theme = this.isDark ? 'electromix-dark' : 'electromix-light';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
   }
 
   getConnectionStatus() {

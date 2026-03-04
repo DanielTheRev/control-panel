@@ -1,6 +1,10 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="electromix-dark">
 <head>
+  <script>
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <meta charset="utf-8">
   <title>ControlPanel</title>
   <base href="/">
