@@ -119,7 +119,7 @@ main::-webkit-scrollbar-thumb {
   }
 
   .collapsed {
-    width: 70px !important;
+    width: 80px !important;
   }
 
   .margin-expanded {
@@ -127,33 +127,40 @@ main::-webkit-scrollbar-thumb {
   }
 
   .margin-collapsed {
-    margin-left: 70px !important;
+    margin-left: 80px !important;
   }
 
   .menu-item {
-    @apply flex items-center p-3 mx-2 rounded-lg hover:bg-base-300/50 transition-colors cursor-pointer;
-    height: 48px;
+    @apply flex items-center px-3 py-2 mx-2 rounded-md transition-colors duration-200 cursor-pointer;
+    @apply text-sm font-medium text-base-content/40 hover:text-base-content;
     overflow: hidden;
     white-space: nowrap;
 
     mat-icon {
-      @apply min-w-[24px] text-base-content/50;
+      @apply min-w-[20px] text-[20px] w-5 h-5 text-base-content/40;
+      @apply transition-colors duration-200;
+    }
+
+    &:hover mat-icon {
+      @apply text-base-content;
     }
 
     &.active {
-      @apply bg-primary/10;
+      @apply bg-base-200 text-base-content font-medium;
 
       mat-icon {
-        @apply !text-primary;
+        @apply !text-base-content;
       }
     }
   }
 
   .menu-text {
-    @apply ml-4 font-medium text-base-content/70;
+    @apply ml-4 text-sm;
+    color: inherit;
   }
 
   .menu-item.active .menu-text {
-    @apply text-primary font-semibold;
+    @apply font-semibold;
+    color: inherit;
   }
 }

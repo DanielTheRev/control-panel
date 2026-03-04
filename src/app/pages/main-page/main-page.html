@@ -10,30 +10,30 @@
     class="sidebar-container overflow-hidden border-none">
 
     <!-- Sidebar Card -->
-    <div class="flex flex-col h-[calc(100%-16px)] m-2 mr-0 rounded-2xl bg-base-100 overflow-hidden">
+    <div class="flex flex-col h-[calc(100%-16px)] m-2 mr-0 rounded-md bg-base-100 overflow-hidden">
       <!-- Logo Area -->
-      <div class="h-16 flex items-center shrink-0 overflow-hidden"
-        [class.px-5]="isExpanded" [class.px-0]="!isExpanded" [class.justify-center]="!isExpanded">
-        <div class="flex items-center justify-center w-9 h-9 rounded-full bg-primary shrink-0 cursor-pointer shadow-md"
+      <div class="h-14 flex items-center justify-center shrink-0 overflow-hidden mt-1"
+        [class.px-4]="isExpanded">
+        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary shrink-0 cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.3)]"
           (click)="sidebarService.toggleExpanded()">
           <svg class="w-5 h-5 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z">
             </path>
           </svg>
         </div>
-        <span class="ml-3 text-lg font-bold tracking-wide whitespace-nowrap text-base-content transition-opacity duration-200"
-          [class.opacity-100]="isExpanded" [class.opacity-0]="!isExpanded"
-          [class.w-0]="!isExpanded" [class.overflow-hidden]="!isExpanded">Electromix</span>
+        @if (isExpanded) {
+        <span class="ml-3 text-lg font-bold tracking-wide whitespace-nowrap text-base-content">Electromix</span>
+        }
       </div>
 
       <!-- Navigation Links -->
-      <div class="flex flex-col mt-4 grow overflow-hidden">
+      <nav class="flex-grow px-1 py-4 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5">
         @if (isExpanded) {
-        <span class="px-5 text-[11px] font-bold mb-2 uppercase tracking-widest text-base-content/40">Panel</span>
+        <span class="px-4 text-[11px] font-bold mb-1 uppercase tracking-widest text-base-content/40">Panel</span>
         }
 
         <a routerLink="/home/products" routerLinkActive="active"
-          class="menu-item transition-all"
+          class="menu-item"
           [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
           <mat-icon>inventory_2</mat-icon>
           @if (isExpanded) {
@@ -51,7 +51,7 @@
         </a>
 
         @if (isExpanded) {
-        <span class="px-5 text-[11px] font-bold mb-2 mt-6 uppercase tracking-widest text-base-content/40">Configuración</span>
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
         }
 
         <a routerLink="/home/payment-methods" routerLinkActive="active"
@@ -73,7 +73,7 @@
         </a>
 
         @if (isExpanded) {
-        <span class="px-5 text-[11px] font-bold mb-2 mt-6 uppercase tracking-widest text-base-content/40">Contenido</span>
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Contenido</span>
         }
 
         <a routerLink="/home/banners" routerLinkActive="active"
@@ -93,10 +93,10 @@
           <span class="menu-text">Hero Slider</span>
           }
         </a>
-      </div>
+      </nav>
 
-      <!-- User + Toggle at Bottom -->
-      <div class="p-3 mt-auto border-t border-base-300">
+      <!-- Collapse Toggle at Bottom -->
+      <div class="p-2 mt-auto border-t border-base-300">
         <button class="menu-item mx-0! w-full" [class.justify-center]="!isExpanded"
           (click)="sidebarService.toggleExpanded()">
           <mat-icon class="transition-transform duration-300"
@@ -117,7 +117,7 @@
     [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded">
 
     <!-- Main Content Card -->
-    <div class="flex-1 flex flex-col m-2 ml-1 rounded-2xl bg-base-100 overflow-hidden">
+    <div class="flex-1 flex flex-col m-2 ml-1 rounded-md bg-base-100 overflow-hidden">
       <!-- Topbar -->
       <div class="shrink-0 border-b border-base-300">
         <app-navbar class="w-full" />
