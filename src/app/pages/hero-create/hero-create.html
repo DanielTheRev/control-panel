@@ -2,7 +2,7 @@
   <app-page-header [title]="isEditMode() ? 'Editar Slide' : 'Nuevo Slide'"
     [subtitle]="isEditMode() ? 'Modifica los datos del slide principal' : 'Sube una nueva imagen al carrusel'">
     <div actions class="flex gap-2">
-      <a routerLink="/home/hero" class="btn btn-ghost text-slate-500">Cancelar</a>
+      <a routerLink="/home/hero" class="btn btn-ghost text-base-content/50">Cancelar</a>
       <button class="btn btn-primary" (click)="saveSlide()" [disabled]="heroForm.invalid">
         <mat-icon>save</mat-icon> Guardar
       </button>
@@ -12,7 +12,7 @@
   <form [formGroup]="heroForm" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
     <!-- LEFT: Images -->
-    <div class="card bg-base-100 shadow-sm border border-base-200">
+    <div class="card bg-base-100 shadow-sm border border-base-300">
       <div class="card-body">
         <h3 class="card-title text-lg mb-4">Imágenes</h3>
 

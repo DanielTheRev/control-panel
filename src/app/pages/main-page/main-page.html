@@ -1,121 +1,132 @@
-<mat-drawer-container class="h-screen w-full" [hasBackdrop]="false">
-  @let isExpanded = sidebarService.SidebarStatus().isExpanded; 
+<mat-drawer-container class="h-screen w-full overflow-hidden" [hasBackdrop]="false">
+  @let isExpanded = sidebarService.SidebarStatus().isExpanded;
   @let isCollapsed = sidebarService.SidebarStatus().isCollapsed;
+
   <mat-drawer
     mode="side"
     opened="true"
     [class.expanded]="isExpanded"
     [class.collapsed]="isCollapsed"
-    class="sidebar-container overflow-hidden"
-  >
-    <div class="flex flex-col pt-14 h-full">
-      <div class="flex flex-col mt-4">
-        <a
-          routerLink="/home/products"
-          routerLinkActive="active"
+    class="sidebar-container overflow-hidden border-none">
+
+    <!-- Sidebar Card -->
+    <div class="flex flex-col h-[calc(100%-16px)] m-2 mr-0 rounded-2xl bg-base-100 overflow-hidden">
+      <!-- Logo Area -->
+      <div class="h-16 flex items-center shrink-0 overflow-hidden"
+        [class.px-5]="isExpanded" [class.px-0]="!isExpanded" [class.justify-center]="!isExpanded">
+        <div class="flex items-center justify-center w-9 h-9 rounded-full bg-primary shrink-0 cursor-pointer shadow-md"
+          (click)="sidebarService.toggleExpanded()">
+          <svg class="w-5 h-5 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z">
+            </path>
+          </svg>
+        </div>
+        <span class="ml-3 text-lg font-bold tracking-wide whitespace-nowrap text-base-content transition-opacity duration-200"
+          [class.opacity-100]="isExpanded" [class.opacity-0]="!isExpanded"
+          [class.w-0]="!isExpanded" [class.overflow-hidden]="!isExpanded">Electromix</span>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="flex flex-col mt-4 grow overflow-hidden">
+        @if (isExpanded) {
+        <span class="px-5 text-[11px] font-bold mb-2 uppercase tracking-widest text-base-content/40">Panel</span>
+        }
+
+        <a routerLink="/home/products" routerLinkActive="active"
           class="menu-item transition-all"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Productos' : ''
-          "
-          matTooltipPosition="right"
-        >
+          [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
           <mat-icon>inventory_2</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Productos</span>
           }
         </a>
 
-        <a
-          routerLink="/home/client-orders"
-          routerLinkActive="active"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Pedidos' : ''
-          "
-          matTooltipPosition="right"
+        <a routerLink="/home/client-orders" routerLinkActive="active"
           class="menu-item"
-        >
+          [matTooltip]="isCollapsed ? 'Pedidos' : ''" matTooltipPosition="right">
           <mat-icon>shopping_cart</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Pedidos</span>
           }
         </a>
 
-        <a
-          routerLink="/home/payment-methods"
-          routerLinkActive="active"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Métodos de Pago' : ''
-          "
-          matTooltipPosition="right"
+        @if (isExpanded) {
+        <span class="px-5 text-[11px] font-bold mb-2 mt-6 uppercase tracking-widest text-base-content/40">Configuración</span>
+        }
+
+        <a routerLink="/home/payment-methods" routerLinkActive="active"
           class="menu-item"
-        >
+          [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
           <mat-icon>payments</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Pagos</span>
           }
         </a>
 
-        <a
-          routerLink="/home/shipping-options"
-          routerLinkActive="active"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Opciones de Envío' : ''
-          "
-          matTooltipPosition="right"
+        <a routerLink="/home/shipping-options" routerLinkActive="active"
           class="menu-item"
-        >
+          [matTooltip]="isCollapsed ? 'Opciones de Envío' : ''" matTooltipPosition="right">
           <mat-icon>local_shipping</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Envíos</span>
           }
         </a>
 
-        <a
-          routerLink="/home/banners"
-          routerLinkActive="active"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Banners & Secciones' : ''
-          "
-          matTooltipPosition="right"
+        @if (isExpanded) {
+        <span class="px-5 text-[11px] font-bold mb-2 mt-6 uppercase tracking-widest text-base-content/40">Contenido</span>
+        }
+
+        <a routerLink="/home/banners" routerLinkActive="active"
           class="menu-item"
-        >
+          [matTooltip]="isCollapsed ? 'Banners & Secciones' : ''" matTooltipPosition="right">
           <mat-icon>view_carousel</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Banners</span>
           }
         </a>
 
-        <a
-          routerLink="/home/hero"
-          routerLinkActive="active"
-          [matTooltip]="
-            sidebarService.SidebarStatus().isCollapsed ? 'Hero Slider' : ''
-          "
-          matTooltipPosition="right"
+        <a routerLink="/home/hero" routerLinkActive="active"
           class="menu-item"
-        >
+          [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
           <mat-icon>view_day</mat-icon>
-          @if (sidebarService.SidebarStatus().isExpanded) {
+          @if (isExpanded) {
           <span class="menu-text">Hero Slider</span>
           }
         </a>
+      </div>
+
+      <!-- User + Toggle at Bottom -->
+      <div class="p-3 mt-auto border-t border-base-300">
+        <button class="menu-item mx-0! w-full" [class.justify-center]="!isExpanded"
+          (click)="sidebarService.toggleExpanded()">
+          <mat-icon class="transition-transform duration-300"
+            [style.transform]="isExpanded ? 'rotate(0deg)' : 'rotate(180deg)'">
+            chevron_left
+          </mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Colapsar</span>
+          }
+        </button>
       </div>
     </div>
   </mat-drawer>
 
   <mat-drawer-content
-    class="!flex !flex-col h-full bg-white content-container overflow-hidden"
+    class="flex! flex-col! h-full overflow-hidden"
     [class.margin-expanded]="sidebarService.SidebarStatus().isExpanded"
-    [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded"
-  >
-    <mat-toolbar class="bg-white shrink-0">
-      <app-navbar class="w-full" />
-    </mat-toolbar>
+    [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded">
 
-    <main
-      class="flex-1 w-full overflow-y-auto p-2 border-2 rounded-tl-3xl border-amber-200 inset-shadow-xs inset-shadow-amber-200"
-    >
-      <router-outlet />
-    </main>
+    <!-- Main Content Card -->
+    <div class="flex-1 flex flex-col m-2 ml-1 rounded-2xl bg-base-100 overflow-hidden">
+      <!-- Topbar -->
+      <div class="shrink-0 border-b border-base-300">
+        <app-navbar class="w-full" />
+      </div>
+
+      <!-- Main Workspace -->
+      <main class="flex-1 w-full overflow-y-auto flex flex-col">
+        <router-outlet />
+      </main>
+    </div>
   </mat-drawer-content>
 </mat-drawer-container>

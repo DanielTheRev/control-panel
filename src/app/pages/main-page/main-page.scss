@@ -1,9 +1,40 @@
 @use "@angular/material" as mat;
 
+/* Force the container background - Material overrides tailwind classes */
+mat-drawer-container.mat-drawer-container {
+  background-color: #ede9fe !important; /* violet-100 */
+}
+
 mat-drawer {
   @include mat.sidenav-overrides(
     (
       container-shape: "",
+      container-background-color: transparent,
     )
   );
+}
+
+mat-drawer-content {
+  @include mat.sidenav-overrides(
+    (
+      content-background-color: transparent,
+    )
+  );
+}
+
+mat-toolbar {
+  background: transparent !important;
+}
+
+/* Dark mode: use :host-context to reach the html[data-theme] */
+:host-context([data-theme="electromix-dark"]) mat-drawer-container.mat-drawer-container {
+  background-color: #1f1f22 !important; /* zinc-900 */
+}
+
+/* Make routed components fill the full workspace height */
+main > :not(router-outlet) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }

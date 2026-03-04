@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Notifications } from './components/notifications/notifications';
@@ -17,12 +17,20 @@ export class Navbar {
   private wsService = inject(WebSocketService);
   private sidebarService = inject(SidebarService);
 
+  isDark = false;
+
   get wsConnected() {
     return this.wsService.connected();
   }
 
   toggleExpanded() {
     this.sidebarService.toggleExpanded();
+  }
+
+  toggleTheme() {
+    this.isDark = !this.isDark;
+    const html = document.documentElement;
+    html.setAttribute('data-theme', this.isDark ? 'electromix-dark' : 'electromix-light');
   }
 
   getConnectionStatus() {

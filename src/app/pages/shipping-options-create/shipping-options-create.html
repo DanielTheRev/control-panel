@@ -4,7 +4,7 @@
 
     <app-page-header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
-            <a routerLink="/home/shipping-options" class="btn btn-ghost text-slate-500">
+            <a routerLink="/home/shipping-options" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
             <button class="btn btn-primary px-8" (click)="save()" [disabled]="form.invalid">
@@ -17,7 +17,7 @@
 
         <!-- Main Info -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Información General</h3>
 
@@ -97,7 +97,7 @@
                         }
                         @if (pickupPointsControls.length === 0) {
                         <div
-                            class="text-center py-8 text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                            class="text-center py-8 text-base-content/40 bg-base-200 rounded-lg border border-dashed border-base-300">
                             <p>No hay puntos de retiro configurados</p>
                             <button type="button" class="btn btn-sm btn-link no-underline"
                                 (click)="addPickupPoint()">Agregar uno ahora</button>
@@ -113,11 +113,11 @@
         <div class="lg:col-span-1 space-y-6">
             <div class="card bg-base-100 shadow-sm border border-base-200">
                 <div class="card-body p-6">
-                    <h3 class="card-title text-sm uppercase text-slate-500 mb-4">Ayuda</h3>
-                    <p class="text-sm text-slate-600 mb-4">
+                    <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
+                    <p class="text-sm text-base-content/60 mb-4">
                         Configura las opciones de envío disponibles para tus clientes.
                     </p>
-                    <ul class="list-disc list-inside text-sm text-slate-600 space-y-2">
+                    <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
                         <li><strong>Envío a domicilio:</strong> Requiere dirección del cliente.</li>
                         <li><strong>Punto de encuentro:</strong> El cliente elige dónde retirar.</li>
                     </ul>

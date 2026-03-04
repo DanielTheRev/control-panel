@@ -5,7 +5,7 @@
 
     <app-page-header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
-            <a routerLink="/products" class="btn btn-ghost text-slate-500">
+            <a routerLink="/products" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
             @let disable = productForm.invalid || isEditMode() && hasChanges() || isLoading();
@@ -27,26 +27,26 @@
         <div class="lg:col-span-3 space-y-6">
 
             <!-- Product Type Selector -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
                     <div class="flex gap-3">
                         <label class="flex-1 cursor-pointer">
                             <input type="radio" formControlName="productType" value="tech" class="peer hidden" />
                             <div
-                                class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all text-center">
+                                class="p-4 rounded-xl border-2 border-base-300 peer-checked:border-primary peer-checked:bg-primary/10 transition-all text-center">
                                 <span class="text-2xl">📱</span>
                                 <p class="font-bold mt-1">Tecnología</p>
-                                <p class="text-xs text-slate-400">Smartphones, TVs, Consolas</p>
+                                <p class="text-xs text-base-content/40">Smartphones, TVs, Consolas</p>
                             </div>
                         </label>
                         <label class="flex-1 cursor-pointer">
                             <input type="radio" formControlName="productType" value="clothing" class="peer hidden" />
                             <div
-                                class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 transition-all text-center">
+                                class="p-4 rounded-xl border-2 border-base-300 peer-checked:border-secondary peer-checked:bg-secondary/10 transition-all text-center">
                                 <span class="text-2xl">👕</span>
                                 <p class="font-bold mt-1">Indumentaria</p>
-                                <p class="text-xs text-slate-400">Remeras, Pantalones, Zapatillas</p>
+                                <p class="text-xs text-base-content/40">Remeras, Pantalones, Zapatillas</p>
                             </div>
                         </label>
                     </div>
@@ -54,7 +54,7 @@
             </div>
 
             <!-- Basic Info Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Información Principal</h3>
 
@@ -116,10 +116,10 @@
 
             <!-- Tech-Specific Fields -->
             @if (selectedType() === 'tech') {
-            <div class="card bg-base-100 shadow-sm border border-blue-100 dark:border-blue-900">
+            <div class="card bg-base-100 shadow-sm border border-primary/20">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">
-                        <span class="text-blue-500">📱</span> Campos de Tecnología
+                        <span class="text-primary">📱</span> Campos de Tecnología
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <fieldset class="fieldset">
@@ -154,10 +154,10 @@
 
             <!-- Clothing-Specific Fields -->
             @if (selectedType() === 'clothing') {
-            <div class="card bg-base-100 shadow-sm border border-pink-100 dark:border-pink-900">
+            <div class="card bg-base-100 shadow-sm border border-secondary/20">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">
-                        <span class="text-pink-500">👕</span> Campos de Indumentaria
+                        <span class="text-secondary">👕</span> Campos de Indumentaria
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <fieldset class="fieldset">
@@ -197,7 +197,7 @@
             }
 
             <!-- Description Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Descripción</h3>
 
@@ -220,7 +220,7 @@
         <div class="lg:col-span-2 space-y-6">
 
             <!-- Images Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Imágenes del Producto</h3>
                     <app-image-upload [imagesControls]="imagesControls" [originalImages]="originalImages()"
@@ -230,7 +230,7 @@
             </div>
 
             <!-- Variants Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="card-title text-lg">Variantes</h3>
@@ -240,16 +240,16 @@
                     </div>
 
                     @if (variantsControls.length === 0) {
-                    <div class="text-center py-6 text-slate-400">
+                    <div class="text-center py-6 text-base-content/40">
                         <mat-icon class="text-4xl mb-2">style</mat-icon>
                         <p class="text-sm">No hay variantes. Cada variante tiene su SKU y stock.</p>
                     </div>
                     }
 
                     @for (variant of variantsControls.controls; track $index; let i = $index) {
-                    <div class="border border-base-200 rounded-lg p-4 mb-3 relative" [formGroupName]="'variants'">
+                    <div class="border border-base-300 rounded-lg p-4 mb-3 relative" [formGroupName]="'variants'">
                         <div [formGroupName]="i">
-                            <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2 text-red-400"
+                            <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2 text-error"
                                 (click)="removeVariant(i)">
                                 <mat-icon>close</mat-icon>
                             </button>
@@ -293,7 +293,7 @@
             </div>
 
             <!-- Features Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Etiquetas</h3>
                     <app-tag-input [formArray]="featuresControls" placeholder="Añadir etiqueta (ej. 5G, Oferta)">
@@ -302,7 +302,7 @@
             </div>
 
             <!-- Specifications Card -->
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="card-title text-lg">Especificaciones</h3>

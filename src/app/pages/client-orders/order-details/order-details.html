@@ -21,7 +21,7 @@
     <!-- Left Column: Order Info -->
     <div class="lg:col-span-2 space-y-6">
       <!-- Order Stats Card -->
-      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+      <mat-card class="!rounded-xl !shadow-sm border border-base-300">
         <mat-card-header>
           <mat-card-title class="text-lg font-bold">Estado del Pedido</mat-card-title>
         </mat-card-header>
@@ -30,7 +30,7 @@
             <div class="badge badge-lg p-3" [ngClass]="getOrderStatusBadgeClass(order()!.status)">
               {{ order()!.status }}
             </div>
-            <div class="text-sm text-gray-500 flex items-center">
+            <div class="text-sm text-base-content/50 flex items-center">
               <mat-icon class="mr-1 text-sm">calendar_today</mat-icon>
               {{ order()!.createdAt | date:'medium' }}
             </div>
@@ -51,7 +51,7 @@
       </mat-card>
 
       <!-- Items Table -->
-      <mat-card class="!rounded-xl !shadow-sm border border-base-200 overflow-hidden">
+      <mat-card class="!rounded-xl !shadow-sm border border-base-300 overflow-hidden">
         <mat-card-header>
           <mat-card-title class="text-lg font-bold">Productos</mat-card-title>
         </mat-card-header>
@@ -88,7 +88,7 @@
                       {{ element.productSnapshot?.model || element.product?.model }}
                     </span>
                     @if (element.variantLabel) {
-                    <span class="text-xs text-gray-400">{{ element.variantLabel }}</span>
+                    <span class="text-xs text-base-content/40">{{ element.variantLabel }}</span>
                     }
                   </div>
                 </td>
@@ -101,7 +101,7 @@
                   @if (element.variantSku) {
                   <span class="badge badge-ghost badge-sm font-mono">{{ element.variantSku }}</span>
                   } @else {
-                  <span class="text-xs text-gray-400">—</span>
+                  <span class="text-xs text-base-content/40">—</span>
                   }
                 </td>
               </ng-container>
@@ -129,7 +129,7 @@
               <!-- Cost Column -->
               <ng-container matColumnDef="cost">
                 <th mat-header-cell *matHeaderCellDef> Costo Unit. </th>
-                <td mat-cell *matCellDef="let element" class="text-gray-500">
+                <td mat-cell *matCellDef="let element" class="text-base-content/50">
                   {{ (element.product.prices.costPrice.inUSD || 0) | currency:'USD':'symbol-narrow':'1.0-0' }}
                 </td>
               </ng-container>
@@ -178,22 +178,22 @@
     <!-- Right Column: Financials & Customer -->
     <div class="space-y-6">
       <!-- Financial Summary -->
-      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+      <mat-card class="!rounded-xl !shadow-sm border border-base-300">
         <mat-card-header>
           <mat-card-title class="text-lg font-bold text-success">Resumen Financiero</mat-card-title>
         </mat-card-header>
         <div class="divider m-0"></div>
         <mat-card-content class="pt-4 space-y-3">
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-500">Ingresos Totales (Prod):</span>
+            <span class="text-base-content/50">Ingresos Totales (Prod):</span>
             <span class="font-medium">{{ productsSubtotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-500">Costo de Ventas (COGS):</span>
+            <span class="text-base-content/50">Costo de Ventas (COGS):</span>
             <span class="font-medium text-error">- {{ totalCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-500">Envío (Cobrado):</span>
+            <span class="text-base-content/50">Envío (Cobrado):</span>
             <span class="font-medium text-info">+ {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
           </div>
           <div class="divider my-2"></div>
@@ -201,7 +201,7 @@
             <span>Ganancia Bruta:</span>
             <span class="text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
           </div>
-          <div class="flex justify-between items-center text-xs text-gray-500">
+          <div class="flex justify-between items-center text-xs text-base-content/50">
             <span>Margen:</span>
             <span>{{ margin() | number:'1.1-2' }}%</span>
           </div>
@@ -209,27 +209,27 @@
       </mat-card>
 
       <!-- Customer Info -->
-      <mat-card class="!rounded-xl !shadow-sm border border-base-200">
+      <mat-card class="!rounded-xl !shadow-sm border border-base-300">
         <mat-card-header>
           <mat-card-title class="text-lg font-bold">Cliente</mat-card-title>
         </mat-card-header>
         <mat-card-content class="pt-4">
           <div class="flex items-center gap-3 mb-4">
             <div class="avatar placeholder">
-              <div class="flex items-center justify-center bg-blue-600 text-white rounded-full w-10">
+              <div class="flex items-center justify-center bg-primary text-primary-content rounded-full w-10">
                 <span class="text-xl">{{ order()!.user.name.charAt(0).toUpperCase() }}</span>
               </div>
             </div>
             <div>
               <p class="font-bold">{{ order()!.user.name }}</p>
-              <p class="text-xs text-gray-500">{{ order()!.user.email }}</p>
+              <p class="text-xs text-base-content/50">{{ order()!.user.email }}</p>
             </div>
           </div>
 
           <div class="divider my-2"></div>
 
           <h4 class="font-semibold text-sm mb-2 mt-4">Envío</h4>
-          <div class="text-sm text-gray-600 space-y-1">
+          <div class="text-sm text-base-content/60 space-y-1">
             <p><span class="font-medium">Tipo:</span> {{ order()!.shippingInfo.type }}</p>
             @if (order()!.shippingInfo.pickupPoint) {
             <p><span class="font-medium">Punto de retiro:</span> {{ order()!.shippingInfo.pickupPoint?.name }}</p>
@@ -238,7 +238,7 @@
           </div>
 
           <h4 class="font-semibold text-sm mb-2 mt-4">Pago</h4>
-          <div class="text-sm text-gray-600 space-y-1">
+          <div class="text-sm text-base-content/60 space-y-1">
             <p><span class="font-medium">Método:</span> {{ order()!.paymentInfo.method }}</p>
             <p><span class="font-medium">Estado:</span> <span class="badge badge-sm"
                 [ngClass]="{'badge-success': order()!.paymentInfo.status === 'Aprobado', 'badge-warning': order()!.paymentInfo.status === 'Pendiente'}">{{

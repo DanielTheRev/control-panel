@@ -11,19 +11,17 @@
       <div class="w-full mb-1">
         <div class="sm:flex">
           <!-- Search & Filters -->
-          <div class="hidden sm:flex items-center sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
+          <div class="hidden sm:flex items-center sm:mb-0">
             <form class="lg:pr-3" action="#" method="GET">
               <label for="products-search" class="sr-only">Buscar</label>
               <div class="relative mt-1 lg:w-64 xl:w-96">
                 <input type="text" name="email" id="products-search"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="input input-bordered w-full"
                   placeholder="Buscar productos...">
               </div>
             </form>
-            <!-- ... Filters ... -->
             <div class="flex pl-0 mt-3 space-x-1 sm:pl-2 sm:mt-0">
-              <select
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+              <select class="select select-bordered">
                 <option disabled selected>Categorias</option>
                 <option>Electrónica</option>
                 <option>Ropa</option>
@@ -33,9 +31,8 @@
           </div>
           <!-- Actions (Add Product) -->
           <div class="flex items-center ml-auto space-x-2 sm:space-x-3 px-2">
-            <button type="button" routerLink="create"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-              <mat-icon class="mr-2 -ml-1">add</mat-icon> Nuevo producto
+            <button type="button" routerLink="create" class="btn btn-primary">
+              <mat-icon class="mr-1 -ml-1">add</mat-icon> Nuevo producto
             </button>
           </div>
         </div>
@@ -45,24 +42,20 @@
 
   <div class="flex-1">
     @if (Products.hasError) {
-    <!-- ... Error State ... -->
     <div role="alert" class="alert alert-error mb-4">
-      <!-- ... -->
       <span>Error al traer los productos</span>
     </div>
     }
 
     @if (Products.isLoading) {
-    <!-- ... Loading State ... -->
     <div class="flex items-center justify-center w-full h-full">
       <span class="loading loading-ring loading-xl"></span>
     </div>
     }
 
     @if (Products.itemsCount === 0 && !Products.isLoading) {
-    <!-- ... Empty State ... -->
     <div class="flex items-center justify-center w-full h-full">
-      <span class="text-slate-400">No hay productos</span>
+      <span class="text-base-content/40">No hay productos</span>
     </div>
     }
 
@@ -70,17 +63,17 @@
     @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.isLoading && !Products.hasError;
     @if (showTable) {
     <div
-      class="table-container rounded-md overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm flex-1 flex flex-col">
+      class="table-container rounded-xl overflow-hidden border border-base-300 bg-base-100 shadow-sm flex-1 flex flex-col">
       <div class="overflow-y-auto flex-1 custom-scrollbar">
         <table mat-table [dataSource]="Products.data" class="w-full" multiTemplateDataRows>
 
           <!-- Expand Column -->
           <ng-container matColumnDef="expand">
             <th mat-header-cell *matHeaderCellDef aria-label="row actions"
-              class="px-4 py-2 w-12 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 w-12 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               &nbsp;</th>
             <td mat-cell *matCellDef="let element"
-              class="px-4 py-2 w-12 text-sm font-normal text-gray-900 whitespace-nowrap dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 w-12 text-sm font-normal text-base-content whitespace-nowrap border-b border-base-300">
               <button mat-icon-button aria-label="expand row"
                 (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
                 @if (expandedElement === element) {
@@ -95,21 +88,21 @@
           <!-- Producto (Image) -->
           <ng-container matColumnDef="image">
             <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               Producto
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-gray-900 whitespace-nowrap dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-sm font-normal text-base-content whitespace-nowrap border-b border-base-300">
               <div class="flex items-center gap-4 py-1">
                 <div
-                  class="product-img-frame shrink-0 bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-700 rounded-lg p-1 w-10 h-10 flex items-center justify-center">
+                  class="product-img-frame shrink-0 bg-base-200 border border-base-300 rounded-lg p-1 w-10 h-10 flex items-center justify-center">
                   @let imageURL =
                   p.images.length
                   <= 0 ? "/no-image.png" : p.images[0]; <img [src]="imageURL.url"
                     class="max-h-full max-w-full object-contain hover:scale-110 transition-transform" />
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-bold text-slate-800 dark:text-white truncate max-w-[250px]">{{ p.model
+                  <span class="text-sm font-bold text-base-content truncate max-w-[250px]">{{ p.model
                     }}</span>
                 </div>
               </div>
@@ -119,11 +112,11 @@
           <!-- Type -->
           <ng-container matColumnDef="type">
             <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               Tipo
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-gray-500 whitespace-nowrap dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
               <span
                 class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 [ngClass]="getProductTypeClass(p.productType)">
@@ -135,13 +128,13 @@
           <!-- Category -->
           <ng-container matColumnDef="category">
             <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               Categoría
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-gray-500 whitespace-nowrap dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
               <span
-                class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+                class="px-2.5 py-0.5 rounded-full bg-base-200 text-base-content/60 text-[10px] font-bold uppercase tracking-wider">
                 {{ p.category }}
               </span>
             </td>
@@ -150,12 +143,12 @@
           <!-- Brand -->
           <ng-container matColumnDef="brand">
             <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               Marca
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-gray-500 whitespace-nowrap dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-              <span class="text-xs font-bold text-blue-500 uppercase tracking-widest">
+              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
+              <span class="text-xs font-bold text-primary uppercase tracking-widest">
                 {{ p.brand }}
               </span>
             </td>
@@ -164,17 +157,17 @@
           <!-- Stock (from variants) -->
           <ng-container matColumnDef="stock">
             <th mat-header-cell *matHeaderCellDef
-              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-xs font-medium tracking-wider text-left text-base-content/50 uppercase border-b border-base-300">
               Stock
             </th>
             <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm font-normal text-gray-500 whitespace-nowrap dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+              class="px-4 py-2 text-sm font-normal text-base-content/60 whitespace-nowrap border-b border-base-300">
               @let stock = getTotalStock(p);
               <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full" [class.bg-green-400]="stock > 10"
                   [class.bg-yellow-400]="stock <= 10 && stock > 0" [class.bg-red-400]="stock === 0">
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-tight">{{ stock }} UNIDADES</span>
+                <span class="text-[10px] font-black uppercase tracking-tight text-base-content/70">{{ stock }} UNIDADES</span>
               </div>
             </td>
           </ng-container>
@@ -187,26 +180,26 @@
           <!-- PRECIOS -->
           <ng-container matColumnDef="price_cash">
             <th mat-header-cell *matHeaderCellDef
-              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-gray-500 dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-base-content/50 border-b border-base-300">
               Precios
             </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
               <div class="flex flex-col gap-1.5 py-1">
                 <!-- Discount Badge -->
                 @if(p.discount > 0) {
                 <div
-                  class="inline-flex self-start px-2 py-0.5 rounded bg-rose-100 text-rose-600 text-[10px] font-black uppercase tracking-wide">
+                  class="inline-flex self-start px-2 py-0.5 rounded bg-error/10 text-error text-[10px] font-black uppercase tracking-wide">
                   {{ p.discount }}% OFF
                 </div>
                 }
                 @for (price of getPricesFormatted(p.prices); track $index) {
                 <div
-                  class="flex flex-col leading-none border-l-2 pl-3 border-slate-100 dark:border-slate-700 group cursor-default">
+                  class="flex flex-col leading-none border-l-2 pl-3 border-base-300 group cursor-default">
                   <span
-                    class="text-[9px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-0.5 transition-colors group-hover:text-blue-500">
+                    class="text-[9px] font-bold uppercase text-base-content/40 tracking-wider mb-0.5 transition-colors group-hover:text-primary">
                     {{ price.label }}
                   </span>
-                  <span class="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">
+                  <span class="text-sm font-black text-base-content tracking-tight">
                     {{
                     price.value
                     | currency: "ARS" : "symbol-narrow" : "1.0-0"
@@ -221,19 +214,19 @@
           <!-- Financiación -->
           <ng-container matColumnDef="price_installments">
             <th mat-header-cell *matHeaderCellDef
-              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-gray-500 dark:text-white border-b border-gray-100 dark:border-gray-700">
+              class="font-black uppercase text-[10px] tracking-widest px-4 py-2 text-base-content/50 border-b border-base-300">
               Financiación
             </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
               <div class="flex flex-col gap-1.5 py-1">
                 <!-- 3 Cuotas -->
                 <div
-                  class="flex flex-col leading-none border-l-2 pl-3 border-blue-100 dark:border-blue-900 group cursor-default">
+                  class="flex flex-col leading-none border-l-2 pl-3 border-primary/20 group cursor-default">
                   <span
-                    class="text-[9px] font-bold uppercase text-blue-400 dark:text-blue-500 tracking-wider mb-0.5 transition-colors group-hover:text-blue-600">
+                    class="text-[9px] font-bold uppercase text-primary/60 tracking-wider mb-0.5 transition-colors group-hover:text-primary">
                     3 Cuotas Sin Interés
                   </span>
-                  <span class="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">
+                  <span class="text-sm font-black text-base-content tracking-tight">
                     {{
                     p.prices.cuotas.cuotas_3_si
                     | currency: "ARS" : "symbol-narrow" : "1.0-0"
@@ -242,12 +235,12 @@
                 </div>
                 <!-- 6 Cuotas -->
                 <div
-                  class="flex flex-col leading-none border-l-2 pl-3 border-indigo-100 dark:border-indigo-900 group cursor-default">
+                  class="flex flex-col leading-none border-l-2 pl-3 border-secondary/20 group cursor-default">
                   <span
-                    class="text-[9px] font-bold uppercase text-indigo-400 dark:text-indigo-500 tracking-wider mb-0.5 transition-colors group-hover:text-indigo-600">
+                    class="text-[9px] font-bold uppercase text-secondary/60 tracking-wider mb-0.5 transition-colors group-hover:text-secondary">
                     6 Cuotas Sin Interés
                   </span>
-                  <span class="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">
+                  <span class="text-sm font-black text-base-content tracking-tight">
                     {{
                     p.prices.cuotas.cuotas_6_si
                     | currency: "ARS" : "symbol-narrow" : "1.0-0"
@@ -261,9 +254,9 @@
           <!-- CUSTOM EXPANDED DETAIL ROW  -->
           <ng-container matColumnDef="expandedDetail">
             <td mat-cell *matCellDef="let element" [attr.colspan]="columnsToDisplayWithExpand.length"
-              class="!p-0 border-0 h-0"> <!-- ADDED h-0 here to ensure no min-height -->
+              class="!p-0 border-0 h-0">
               <div
-                class="row-detail overflow-hidden flex flex-col bg-gray-50 dark:bg-slate-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.05)] border-y border-gray-200 dark:border-gray-700"
+                class="row-detail overflow-hidden flex flex-col bg-base-200 shadow-[inset_0_4px_12px_rgba(0,0,0,0.03)] border-y border-base-300"
                 [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
 
                 <div class="p-6">
@@ -272,49 +265,47 @@
                   <div class="grid grid-cols-3 gap-2 mt-4 w-full p-10">
                     @for (img of element.images; track $index; let idx = $index) {
                     <div
-                      class="relative card group aspect-square rounded-lg overflow-hidden border border-base-200 bg-base-50">
+                      class="relative card group aspect-square rounded-lg overflow-hidden border border-base-300 bg-base-100">
                       <img [src]="img.url" class="w-full h-full object-cover" alt="Product thumbnail">
                     </div>
                     }
                   </div>
                   } @else {
                   <div
-                    class="aspect-video bg-white rounded-lg border border-gray-200 p-2 flex items-center justify-center text-gray-400 text-sm shadow-sm">
+                    class="aspect-video bg-base-100 rounded-lg border border-base-300 p-2 flex items-center justify-center text-base-content/40 text-sm shadow-sm">
                     No images
                   </div>
                   }
 
-                  <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wide">Detalles</h4>
+                  <h4 class="text-sm font-bold text-base-content mb-2 uppercase tracking-wide">Detalles</h4>
                   <div
                     [innerHTML]="getDescriptionSanitized(element.largeDescription || element.shortDescription || 'Sin descripción disponible.')"
-                    class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                    <!-- {{ element.largeDescription || element.shortDescription || 'Sin descripción disponible.' }} -->
+                    class="text-base-content/60 mb-6 leading-relaxed">
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
 
-                    <div
-                      class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <h5 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-100 pb-2">Estado
+                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
+                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">Estado
                         Financiero</h5>
                       <div class="flex flex-col gap-2">
                         <div class="flex justify-between text-sm items-center">
-                          <span class="text-gray-500">Costo(dólares)</span>
-                          <span class="font-medium text-gray-900 dark:text-white">{{ element.prices.costPrice.inUSD |
+                          <span class="text-base-content/50">Costo(dólares)</span>
+                          <span class="font-medium text-base-content">{{ element.prices.costPrice.inUSD |
                             currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
                         </div>
                         <div class="flex justify-between text-sm items-center">
-                          <span class="text-gray-500">Costo(pesos)</span>
-                          <span class="font-medium text-gray-900 dark:text-white">{{ element.prices.costPrice.inARS |
+                          <span class="text-base-content/50">Costo(pesos)</span>
+                          <span class="font-medium text-base-content">{{ element.prices.costPrice.inARS |
                             currency: 'ARS':'symbol-narrow':'1.0-0' }}</span>
                         </div>
                         <div class="flex justify-between text-sm items-center">
-                          <span class="text-gray-500">Margen</span>
+                          <span class="text-base-content/50">Margen</span>
                           <span class="font-bold px-2 py-0.5 rounded text-xs"
-                            [class.bg-green-100]="element.prices.profitMargin > 20"
-                            [class.text-green-700]="element.prices.profitMargin > 20"
-                            [class.bg-yellow-100]="element.prices.profitMargin <= 20"
-                            [class.text-yellow-700]="element.prices.profitMargin <= 20">
+                            [class.bg-success/10]="element.prices.profitMargin > 20"
+                            [class.text-success]="element.prices.profitMargin > 20"
+                            [class.bg-warning/10]="element.prices.profitMargin <= 20"
+                            [class.text-warning]="element.prices.profitMargin <= 20">
                             {{ element.prices.profitMargin }}%
                           </span>
                         </div>
@@ -323,44 +314,42 @@
                     </div>
 
                     <!-- Col 2: Stock & Logística -->
-                    <div
-                      class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <h5 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-100 pb-2">Logística
+                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
+                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">Logística
                       </h5>
                       <div class="flex flex-col gap-3">
                         <div class="flex items-center gap-3">
                           <div
-                            class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                            class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                             <mat-icon>inventory_2</mat-icon>
                           </div>
                           <div class="flex flex-col">
-                            <span class="text-xs text-gray-500">Stock Total</span>
-                            <span class="text-sm font-bold text-gray-900 dark:text-white">{{ getTotalStock(element) }} u.</span>
+                            <span class="text-xs text-base-content/50">Stock Total</span>
+                            <span class="text-sm font-bold text-base-content">{{ getTotalStock(element) }} u.</span>
                           </div>
                         </div>
                         <div class="flex items-center gap-3">
                           <div
-                            class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                            class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
                             <mat-icon>style</mat-icon>
                           </div>
                           <div class="flex flex-col">
-                            <span class="text-xs text-gray-500">Variantes</span>
-                            <span class="text-sm font-bold text-gray-900 dark:text-white">{{ element.variants?.length || 0 }} variantes</span>
+                            <span class="text-xs text-base-content/50">Variantes</span>
+                            <span class="text-sm font-bold text-base-content">{{ element.variants?.length || 0 }} variantes</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <!-- Col 3: Variantes -->
-                    <div
-                      class="sm:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <h5 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-100 pb-2">Variantes
+                    <div class="sm:col-span-2 bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
+                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">Variantes
                       </h5>
                       @if(element.variants?.length) {
                       <div class="overflow-x-auto">
                         <table class="w-full text-xs">
                           <thead>
-                            <tr class="text-left text-gray-400 uppercase">
+                            <tr class="text-left text-base-content/40 uppercase">
                               <th class="pb-2">SKU</th>
                               <th class="pb-2">Atributos</th>
                               <th class="pb-2">Stock</th>
@@ -369,8 +358,8 @@
                           </thead>
                           <tbody>
                             @for(v of element.variants; track v.sku) {
-                            <tr class="border-t border-gray-50 dark:border-gray-700">
-                              <td class="py-1.5 font-mono font-bold text-gray-600 dark:text-gray-300">{{ v.sku }}</td>
+                            <tr class="border-t border-base-300">
+                              <td class="py-1.5 font-mono font-bold text-base-content/60">{{ v.sku }}</td>
                               <td class="py-1.5">
                                 <div class="flex gap-1 flex-wrap">
                                   @for(attr of v.attributes; track attr.key) {
@@ -384,11 +373,11 @@
                                   }
                                 </div>
                               </td>
-                              <td class="py-1.5 font-bold" [class.text-green-600]="v.stock > 0" [class.text-red-500]="v.stock === 0">{{ v.stock }}</td>
+                              <td class="py-1.5 font-bold" [class.text-success]="v.stock > 0" [class.text-error]="v.stock === 0">{{ v.stock }}</td>
                               <td class="py-1.5">
                                 <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
-                                  [class.bg-green-100]="v.isActive" [class.text-green-700]="v.isActive"
-                                  [class.bg-gray-100]="!v.isActive" [class.text-gray-500]="!v.isActive">
+                                  [class.bg-success/10]="v.isActive" [class.text-success]="v.isActive"
+                                  [class.bg-base-200]="!v.isActive" [class.text-base-content/40]="!v.isActive">
                                   {{ v.isActive ? 'Activo' : 'Inactivo' }}
                                 </span>
                               </td>
@@ -398,34 +387,33 @@
                         </table>
                       </div>
                       } @else {
-                      <span class="text-xs text-gray-400 italic">Sin variantes</span>
+                      <span class="text-xs text-base-content/40 italic">Sin variantes</span>
                       }
                     </div>
 
                     <!-- Col 4: Specs / Brand -->
-                    <div
-                      class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <h5 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-100 pb-2">Info
+                    <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
+                      <h5 class="text-xs font-bold text-base-content/50 uppercase mb-3 border-b border-base-300 pb-2">Info
                         Adicional</h5>
                       <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center text-sm">
-                          <span class="text-gray-500 text-xs uppercase">Marca</span>
-                          <span class="font-bold text-gray-900 dark:text-white">{{ element.brand }}</span>
+                          <span class="text-base-content/50 text-xs uppercase">Marca</span>
+                          <span class="font-bold text-base-content">{{ element.brand }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm">
-                          <span class="text-gray-500 text-xs uppercase">Categoría</span>
-                          <span class="font-medium text-gray-700 dark:text-gray-300">{{ element.category }}</span>
+                          <span class="text-base-content/50 text-xs uppercase">Categoría</span>
+                          <span class="font-medium text-base-content/70">{{ element.category }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm">
-                          <span class="text-gray-500 text-xs uppercase">SKU</span>
-                          <span class="font-mono text-xs text-gray-400">#{{ element._id | slice:0:6 }}</span>
+                          <span class="text-base-content/50 text-xs uppercase">SKU</span>
+                          <span class="font-mono text-xs text-base-content/40">#{{ element._id | slice:0:6 }}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Buttons -->
-                  <div class="flex items-center gap-3 mt-4 border-t border-gray-100 pt-4">
+                  <div class="flex items-center gap-3 mt-4 border-t border-base-300 pt-4">
                     <button type="button" [routerLink]="['edit', element._id]" class="btn btn-sm btn-warning">
                       <mat-icon class="w-5 h-5 ">edit</mat-icon>
                       Editar Producto
@@ -446,10 +434,10 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="columnsToDisplayWithExpand"
-            class="bg-gray-50 dark:bg-gray-700 !h-10 border-b border-gray-200 dark:border-gray-600"></tr>
+            class="bg-base-200 !h-10 border-b border-base-300"></tr>
           <!-- h-10 header -->
           <tr mat-row *matRowDef="let element; columns: columnsToDisplayWithExpand;"
-            class="example-element-row property-transition border-b dark:border-gray-700"
+            class="example-element-row property-transition border-b border-base-300 hover:bg-base-200/50"
             [class.expanded-row]="expandedElement === element"
             (click)="expandedElement = expandedElement === element ? null : element">
           </tr>
@@ -458,7 +446,7 @@
       </div>
       <!-- Paginación -->
       <mat-paginator [length]="Products.data.length" [pageSize]="10" [pageSizeOptions]="[5, 10, 25, 100]"
-        class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0"></mat-paginator>
+        class="border-t border-base-300 bg-base-100 shrink-0"></mat-paginator>
     </div>
     }
   </div>

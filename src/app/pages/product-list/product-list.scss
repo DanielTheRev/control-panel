@@ -15,24 +15,15 @@
   text-transform: uppercase;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: #94a3b8;
-  border-bottom: 2px solid #f8fafc !important;
+  color: oklch(from oklch(var(--color-base-content)) l c h / 0.5);
+  border-bottom: 1px solid oklch(var(--color-base-300)) !important;
   padding: 0 24px !important;
 }
 
 ::ng-deep .mat-mdc-cell {
-  border-bottom: 1px solid #f8fafc !important;
+  border-bottom: 1px solid oklch(var(--color-base-300)) !important;
   padding: 0 24px !important;
-  color: #334155;
-}
-
-.dark ::ng-deep .mat-mdc-header-cell {
-  border-bottom-color: #1e293b !important;
-}
-
-.dark ::ng-deep .mat-mdc-cell {
-  border-bottom-color: #1e293b !important;
-  color: #cbd5e1;
+  color: oklch(var(--color-base-content));
 }
 
 /* Fix for detail row height */
@@ -51,26 +42,16 @@
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #f2f2f2 !important;
-    /* slate-200 - Much stronger hover */
+    background-color: oklch(from oklch(var(--color-base-200)) l c h / 0.5) !important;
   }
 
   &.expanded-row {
-    background-color: #f2f2f2 !important;
-    /* blue-100 - Distinct active state */
+    background-color: oklch(var(--color-base-200)) !important;
   }
 }
 
-/* Dark mode adjustments */
-.dark .mat-mdc-row:hover {
-  background-color: #334155 !important;
-  /* slate-700 hover */
-}
-
-.dark .mat-mdc-row.expanded-row {
-  background-color: #1e293b !important;
-  /* slate-800 active base */
-  background-image: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent);
-  /* Blue tint */
-  border-left: 4px solid #3b82f6;
+/* Paginator */
+::ng-deep .mat-mdc-paginator {
+  background: transparent !important;
+  color: oklch(var(--color-base-content)) !important;
 }

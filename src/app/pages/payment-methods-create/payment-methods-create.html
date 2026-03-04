@@ -4,7 +4,7 @@
 
     <app-page-header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
-            <a routerLink="/home/payment-methods" class="btn btn-ghost text-slate-500">
+            <a routerLink="/home/payment-methods" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
             <button class="btn btn-primary px-8" (click)="save()" [disabled]="form.invalid">
@@ -17,7 +17,7 @@
         
         <!-- Main Info -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-6">
                     <h3 class="card-title text-lg mb-4">Información General</h3>
                     
@@ -61,11 +61,11 @@
         <div class="lg:col-span-1 space-y-6">
             <div class="card bg-base-100 shadow-sm border border-base-200">
                 <div class="card-body p-6">
-                    <h3 class="card-title text-sm uppercase text-slate-500 mb-4">Ayuda</h3>
-                    <p class="text-sm text-slate-600 mb-4">
+                    <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
+                    <p class="text-sm text-base-content/60 mb-4">
                         Configura los métodos de pago que aceptarás.
                     </p>
-                    <ul class="list-disc list-inside text-sm text-slate-600 space-y-2">
+                    <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
                         <li><strong>Descripción:</strong> Se mostrará al cliente al finalizar la compra. Úsala para dar instrucciones (ej. enviar comprobante).</li>
                         <li><strong>Recargo:</strong> Porcentaje extra opcional.</li>
                     </ul>

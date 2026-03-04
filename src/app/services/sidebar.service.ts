@@ -4,7 +4,7 @@ import { computed, Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class SidebarService {
-  private Expanded = signal(false);
+  private Expanded = signal(true);
 
   SidebarStatus = computed(() => ({
     isExpanded: this.Expanded(),

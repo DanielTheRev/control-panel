@@ -9,7 +9,7 @@
   </app-page-header>
 
   <div
-    class="table-container rounded-lg overflow-hidden bg-white dark:bg-slate-810 shadow-sm flex-1 flex flex-col table-fix">
+    class="table-container rounded-lg overflow-hidden bg-base-100 shadow-sm flex-1 flex flex-col table-fix">
     <div class="overflow-y-auto flex-1 custom-scrollbar">
       <table mat-table [dataSource]="state().data" multiTemplateDataRows class="w-full">
 
@@ -18,7 +18,7 @@
           <th mat-header-cell *matHeaderCellDef> Nombre </th>
           <td mat-cell *matCellDef="let element">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-slate-700 dark:text-slate-200">{{element.name}}</span>
+              <span class="font-medium text-base-content">{{element.name}}</span>
               @if (element.type === 'Punto de encuentro' && element.pickupPoints?.length) {
               <span class="badge badge-sm badge-ghost gap-1 cursor-pointer"
                 (click)="$event.stopPropagation(); toggleRow(element)">
@@ -35,7 +35,7 @@
         <ng-container matColumnDef="cost">
           <th mat-header-cell *matHeaderCellDef> Costo </th>
           <td mat-cell *matCellDef="let element">
-            <span class="font-bold font-mono text-slate-600 dark:text-slate-300">
+            <span class="font-bold font-mono text-base-content/60">
               {{element.cost | currency: "ARS" : "symbol-narrow" : "1.0-0"}}
             </span>
           </td>
@@ -81,7 +81,7 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef> </th>
           <td mat-cell *matCellDef="let element" class="text-right">
-            <button mat-icon-button [matMenuTriggerFor]="menu" class="text-slate-300"
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="text-base-content/30"
               (click)="$event.stopPropagation()">
               <mat-icon>more_horiz</mat-icon>
             </button>
@@ -90,8 +90,8 @@
                 <mat-icon>edit</mat-icon>
                 <span>Editar</span>
               </button>
-              <button mat-menu-item class="!text-red-500">
-                <mat-icon class="!text-red-500">delete_outline</mat-icon>
+              <button mat-menu-item class="!text-error">
+                <mat-icon class="!text-error">delete_outline</mat-icon>
                 <span>Eliminar</span>
               </button>
             </mat-menu>
@@ -102,20 +102,20 @@
         <ng-container matColumnDef="expandedDetail">
           <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length" class="!!p-0 !border-0">
             <div class="overflow-hidden" [@detailExpand]="element == expandedElement() ? 'expanded' : 'collapsed'">
-              <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
-                <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Puntos de Retiro Disponibles
+              <div class="p-4 bg-base-200 border-t border-base-300">
+                <h4 class="text-sm font-semibold text-base-content mb-2">Puntos de Retiro Disponibles
                 </h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   @for (point of element.pickupPoints; track $index) {
                   <div
-                    class="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    class="flex items-start gap-3 p-3 bg-base-100 rounded-lg border border-base-300">
                     <div
                       class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm shrink-0">
                       {{$index + 1}}
                     </div>
                     <div>
-                      <p class="font-medium text-slate-900 dark:text-white text-sm">{{point.name}}</p>
-                      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{point.address}}</p>
+                      <p class="font-medium text-base-content text-sm">{{point.name}}</p>
+                      <p class="text-xs text-base-content/50 mt-0.5">{{point.address}}</p>
                     </div>
                   </div>
                   }
@@ -127,8 +127,8 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-14 !border-b-0"></tr>
         <tr mat-row *matRowDef="let element; columns: displayedColumns;"
-          class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer !border-b border-slate-100 dark:border-slate-800/50"
-          [class.bg-slate-50]="expandedElement() === element" (click)="toggleRow(element)">
+          class="hover:bg-base-200/50 transition-colors cursor-pointer !border-b border-base-300"
+          [class.bg-base-200]="expandedElement() === element" (click)="toggleRow(element)">
         </tr>
         <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="!h-0"></tr>
       </table>

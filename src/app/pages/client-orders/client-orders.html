@@ -48,23 +48,23 @@
 
     @if(!isLoading() && !hasData()) {
     <div class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-4 text-gray-400">
+        <div class="w-16 h-16 mx-auto mb-4 text-base-content/30">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 class="text-lg font-medium text-base-content mb-2">
             No hay órdenes
         </h3>
-        <p class="text-gray-500 dark:text-gray-400">
+        <p class="text-base-content/50">
             No se encontraron órdenes con los filtros seleccionados.
         </p>
     </div>
     }
 
     <!-- Tabla de Órdenes -->
-    <div class="bg-white dark:bg-base-200 rounded-xl shadow-sm border border-base-200 overflow-hidden">
+    <div class="bg-base-100 rounded-xl shadow-sm border border-base-300 overflow-hidden">
         @if (isLoading() && !hasData()) {
         <!-- Skeleton Loading -->
         <div class="p-4 space-y-4">
@@ -215,7 +215,7 @@
             </table>
 
             @if (hasData() && orders().length === 0) {
-            <div class="text-center py-12 text-gray-400">
+            <div class="text-center py-12 text-base-content/30">
                 <mat-icon class="text-6xl !w-16 !h-16 mb-2">inbox</mat-icon>
                 <p>No se encontraron órdenes</p>
             </div>
@@ -223,7 +223,7 @@
         </div>
 
         <!-- Paginator (Custom implementation reusing daisyUI/Tailwind styles but connected to logic) -->
-        <div class="p-4 border-t border-base-200 flex justify-between items-center bg-base-100">
+        <div class="p-4 border-t border-base-300 flex justify-between items-center bg-base-100">
             <div class="text-sm opacity-70">
                 {{ (pagination().currentPage - 1) * pagination().itemsPerPage + 1 }} -
                 {{ Math.min(pagination().currentPage * pagination().itemsPerPage, pagination().totalItems) }}

@@ -8,7 +8,7 @@
     </div>
   </app-page-header>
 
-  <div class="card bg-base-100 shadow-sm border border-base-200 mt-6">
+  <div class="card bg-base-100 shadow-sm border border-base-300 mt-6">
     <div class="overflow-x-auto">
       <table mat-table [dataSource]="state().data" class="w-full">
 
@@ -29,7 +29,7 @@
           <th mat-header-cell *matHeaderCellDef> Título </th>
           <td mat-cell *matCellDef="let slide">
             <div class="font-bold">{{ slide.title }}</div>
-            <div class="text-xs text-slate-500">{{ slide.link }}</div>
+            <div class="text-xs text-base-content/50">{{ slide.link }}</div>
           </td>
         </ng-container>
 
@@ -54,7 +54,7 @@
           <th mat-header-cell *matHeaderCellDef class="text-right"> Acciones </th>
           <td mat-cell *matCellDef="let slide" class="text-right">
             <a [routerLink]="['edit', slide._id]" class="btn btn-sm btn-ghost btn-circle">
-              <mat-icon class="text-slate-500">edit</mat-icon>
+              <mat-icon class="text-base-content/50">edit</mat-icon>
             </a>
             <button (click)="deleteSlide(slide._id!)" class="btn btn-sm btn-ghost btn-circle text-error">
               <mat-icon>delete</mat-icon>
@@ -67,7 +67,7 @@
       </table>
 
       @if (state().data.length === 0) {
-      <div class="p-8 text-center text-slate-500">
+      <div class="p-8 text-center text-base-content/50">
         <mat-icon class="text-4xl mb-2 opacity-50">imagesmode</mat-icon>
         <p>No hay slides configurados.</p>
       </div>
