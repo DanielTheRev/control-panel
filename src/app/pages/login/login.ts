@@ -9,6 +9,7 @@ import {
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LoginCredentials } from '../../interfaces/auth.interfaces';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +20,7 @@ import { LoginCredentials } from '../../interfaces/auth.interfaces';
 export class Login {
   loginForm: FormGroup;
   formB = inject(FormBuilder);
+  brandName = environment.brandName;
 
   // Estado local del componente
   showPassword = signal(false);

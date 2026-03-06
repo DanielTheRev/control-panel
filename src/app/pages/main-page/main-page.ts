@@ -7,6 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SidebarService } from '../../services/sidebar.service';
 import { Navbar } from '../../shared/components/navbar/navbar';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-main-page',
@@ -26,4 +27,5 @@ import { Navbar } from '../../shared/components/navbar/navbar';
 })
 export class MainPage {
   sidebarService = inject(SidebarService);
+  brandName = environment.brandName;
 }

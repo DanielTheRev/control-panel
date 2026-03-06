@@ -13,6 +13,7 @@ import { IProduct, ProductType } from '../../interfaces/product.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
+import { getStoreUrl } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-product-list',
@@ -100,7 +101,7 @@ export class ProductList {
   }
 
   copyLink(product: IProduct) {
-    const url = `${'https://electromix.com.ar'}/products/${product.slug}`;
+    const url = `${getStoreUrl()}/products/${product.slug}`;
     navigator.clipboard.writeText(url).then(() => {
       this.#snackBar.open('Enlace copiado al portapapeles', 'Cerrar', {
         duration: 2000,

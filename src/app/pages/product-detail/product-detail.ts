@@ -8,6 +8,7 @@ import { IProduct, ProductType } from '../../interfaces/product.interface';
 import { ProductStoreService } from '../../states/product.state.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
+import { getStoreUrl } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-product-detail',
@@ -78,7 +79,7 @@ export class ProductDetail implements OnInit {
   copyLink() {
     const p = this.product();
     if (!p) return;
-    const url = `https://electromix.com.ar/products/${p.slug}`;
+    const url = `${getStoreUrl()}/products/${p.slug}`;
     navigator.clipboard.writeText(url).then(() => {
       this.#snackBar.open('Enlace copiado al portapapeles', 'Cerrar', { duration: 2000 });
     });

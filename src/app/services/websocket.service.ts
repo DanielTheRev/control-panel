@@ -9,6 +9,7 @@ import { WebSocketState } from '../interfaces/websocket.interface';
 import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
+import { getTenantSlug } from '../utils/tenant.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -56,9 +57,13 @@ export class WebSocketService {
 
     console.log('🔌 Creando conexión WebSocket:');
 
+    const tenantId = getTenantSlug();
+
     this.socket = io(environment.socket_config.url, {
       withCredentials: true,
       path: environment.socket_config.path,
+      extraHeaders: { 'x-tenant-id': tenantId },
+      query: { tenantId },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       timeout: 5000,
@@ -127,7 +132,7 @@ export class WebSocketService {
       new Notification(title, {
         body,
         icon: '/favicon.ico',
-        tag: 'electro-hub-admin',
+        tag: 'nexocommerce-admin',
       });
     } else {
       this.requestNotificationPermission().then(() => {
@@ -135,7 +140,7 @@ export class WebSocketService {
           new Notification(title, {
             body,
             icon: '/favicon.ico',
-            tag: 'electro-hub-admin',
+            tag: 'nexocommerce-admin',
           });
         }
       });

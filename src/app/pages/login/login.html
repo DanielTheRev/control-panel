@@ -9,7 +9,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       </div>
-      Electromix - Admin
+      {{ brandName }} - Admin
     </a>
     <div
       class="w-full bg-base-100 rounded-2xl shadow-lg border border-base-300 md:mt-0 sm:max-w-md xl:p-0"
@@ -49,7 +49,7 @@
               id="email"
               class="input input-bordered w-full"
               [class.input-error]="isFieldInvalid('email')"
-              placeholder="admin&#64;electromix.com"
+              placeholder="admin@empresa.com"
               formControlName="email"
               autocomplete="email"
             />
@@ -142,7 +142,7 @@
 
         <div class="mt-4 text-center">
           <p class="text-sm text-base-content/50">
-            Panel de administración de Electromix
+            Panel de administración de {{ brandName }}
           </p>
         </div>
       </div>

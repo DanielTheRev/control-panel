@@ -27,7 +27,7 @@ mat-toolbar {
 }
 
 /* Dark mode: use :host-context to reach the html[data-theme] */
-:host-context([data-theme="electromix-dark"]) mat-drawer-container.mat-drawer-container {
+:host-context([data-theme="nexocommerce-dark"]) mat-drawer-container.mat-drawer-container {
   background-color: #1f1f22 !important; /* zinc-900 */
 }
 
