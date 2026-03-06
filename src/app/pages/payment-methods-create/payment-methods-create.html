@@ -2,7 +2,7 @@
     @let title = isEditMode() ? 'Editar Método de Pago' : 'Nuevo Método de Pago';
     @let subtitle = isEditMode() ? 'Modifica los datos del método de pago' : 'Configura una nueva forma de pago';
 
-    <app-page-header [title]="title" [subtitle]="subtitle">
+    <app-page-header header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
             <a routerLink="/home/payment-methods" class="btn btn-ghost text-base-content/50">
                 Cancelar
@@ -13,65 +13,72 @@
         </div>
     </app-page-header>
 
-    <form [formGroup]="form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
-        <!-- Main Info -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-300">
-                <div class="card-body p-6">
-                    <h3 class="card-title text-lg mb-4">Información General</h3>
-                    
-                    <fieldset class="fieldset">
-                        <legend class="fieldset-legend">Nombre</legend>
-                        <input type="text" class="input input-bordered w-full" formControlName="name" placeholder="Ej. Transferencia Bancaria (Banco Galicia)" />
-                    </fieldset>
+    <ng-container content>
+        <form [formGroup]="form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <!-- Main Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="card bg-base-100 shadow-sm border border-base-300">
+                    <div class="card-body p-6">
+                        <h3 class="card-title text-lg mb-4">Información General</h3>
+
                         <fieldset class="fieldset">
-                            <legend class="fieldset-legend">Tipo de Pago</legend>
-                            <select class="select select-bordered w-full" formControlName="type">
-                                @for (type of paymentTypes; track type) {
+                            <legend class="fieldset-legend">Nombre</legend>
+                            <input type="text" class="input input-bordered w-full" formControlName="name"
+                                placeholder="Ej. Transferencia Bancaria (Banco Galicia)" />
+                        </fieldset>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Tipo de Pago</legend>
+                                <select class="select select-bordered w-full" formControlName="type">
+                                    @for (type of paymentTypes; track type) {
                                     <option [value]="type">{{type}}</option>
-                                }
-                            </select>
+                                    }
+                                </select>
+                            </fieldset>
+
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Recargo (%)</legend>
+                                <input type="number" class="input input-bordered w-full" formControlName="processingFee"
+                                    placeholder="0" />
+                            </fieldset>
+                        </div>
+
+                        <fieldset class="fieldset mt-4">
+                            <legend class="fieldset-legend">Descripción / Datos (CBU, Alias, etc.)</legend>
+                            <textarea class="textarea textarea-bordered h-20 w-full" formControlName="description"
+                                placeholder="Ingresa los datos necesarios para el cliente (CBU, Alias, instrucciones...)"></textarea>
                         </fieldset>
 
-                        <fieldset class="fieldset">
-                            <legend class="fieldset-legend">Recargo (%)</legend>
-                            <input type="number" class="input input-bordered w-full" formControlName="processingFee" placeholder="0" />
-                        </fieldset>
-                    </div>
-
-                    <fieldset class="fieldset mt-4">
-                        <legend class="fieldset-legend">Descripción / Datos (CBU, Alias, etc.)</legend>
-                        <textarea class="textarea textarea-bordered h-32 w-full" formControlName="description" placeholder="Ingresa los datos necesarios para el cliente (CBU, Alias, instrucciones...)"></textarea>
-                    </fieldset>
-
-                    <div class="form-control mt-4">
-                        <label class="label cursor-pointer justify-start gap-4">
-                          <input type="checkbox" class="toggle toggle-emerald" formControlName="isActive" />
-                          <span class="label-text">Método de pago Activo</span>
-                        </label>
+                        <div class="form-control mt-4">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox" class="toggle toggle-emerald" formControlName="isActive" />
+                                <span class="label-text">Método de pago Activo</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Help/Side Info -->
-        <div class="lg:col-span-1 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-200">
-                <div class="card-body p-6">
-                    <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
-                    <p class="text-sm text-base-content/60 mb-4">
-                        Configura los métodos de pago que aceptarás.
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
-                        <li><strong>Descripción:</strong> Se mostrará al cliente al finalizar la compra. Úsala para dar instrucciones (ej. enviar comprobante).</li>
-                        <li><strong>Recargo:</strong> Porcentaje extra opcional.</li>
-                    </ul>
+            <!-- Help/Side Info -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="card-body p-6">
+                        <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
+                        <p class="text-sm text-base-content/60 mb-4">
+                            Configura los métodos de pago que aceptarás.
+                        </p>
+                        <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
+                            <li><strong>Descripción:</strong> Se mostrará al cliente al finalizar la compra. Úsala para
+                                dar instrucciones (ej. enviar comprobante).</li>
+                            <li><strong>Recargo:</strong> Porcentaje extra opcional.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
 
-    </form>
+        </form>
+    </ng-container>
+
 </app-page-layout>

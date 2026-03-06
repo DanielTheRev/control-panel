@@ -9,6 +9,7 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ShippingOptionsStateService } from '../../states/shipping-options.state.service';
 import { IShippingOption } from '../../interfaces/shipping.interface';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-shipping-options',
@@ -36,8 +37,15 @@ export class ShippingOptions {
   #shippingOptionsStateService = inject(ShippingOptionsStateService);
   displayedColumns: string[] = ['name', 'cost', 'type', 'isActive', 'isDefaultForCash', 'actions'];
   readonly state = this.#shippingOptionsStateService.state;
+  readonly #SidebarService = inject(SidebarService);
 
   expandedElement = signal<IShippingOption | null>(null);
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Métodos de envío'
+    });
+  }
 
   toggleRow(element: IShippingOption) {
     // Only expand if it has pickup points

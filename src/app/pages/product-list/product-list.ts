@@ -14,6 +14,7 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
 import { getStoreUrl } from '../../utils/tenant.utils';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-product-list',
@@ -37,6 +38,7 @@ import { getStoreUrl } from '../../utils/tenant.utils';
 })
 export class ProductList {
   ProductState = inject(ProductStoreService);
+  #SidebarService = inject(SidebarService)
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
 
@@ -54,6 +56,7 @@ export class ProductList {
   ];
 
   constructor() {
+    this.#SidebarService.navbarTitle.set({ title: 'Productos' })
   }
 
   onPageChange(event: PageEvent) {

@@ -9,6 +9,7 @@ import { ProductStoreService } from '../../states/product.state.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { getStoreUrl } from '../../utils/tenant.utils';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -31,10 +32,17 @@ export class ProductDetail implements OnInit {
   #router = inject(Router);
   #snackBar = inject(MatSnackBar);
   #sanitizer = inject(DomSanitizer);
+  #SidebarService = inject(SidebarService)
 
   product = signal<IProduct | null>(null);
   isLoading = signal(true);
   hasError = signal(false);
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Gestionar producto'
+    })
+  }
 
   async ngOnInit() {
     try {

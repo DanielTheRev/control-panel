@@ -3,7 +3,7 @@
   @let subtitle = isEditMode ? 'Edita cualquier campo para actualizar el banner.'
   : 'Rellena la información para tu nueva sección del Home.';
 
-  <app-page-header [title]="title" [subtitle]="subtitle">
+  <app-page-header header [title]="title" [subtitle]="subtitle">
     <div actions class="flex gap-2">
       <a routerLink="/home/banners" class="btn btn-ghost text-base-content/50">
         Cancelar
@@ -14,183 +14,188 @@
     </div>
   </app-page-header>
 
-  <!-- LIVE PREVIEW SECTION -->
-  @if (bannerForm.value.image) {
-  <div class="mb-8 animate-fade-in-down">
-    <div class="flex items-center gap-2 mb-4 px-1">
-      <mat-icon class="text-primary animate-pulse">visibility</mat-icon>
-      <h3 class="text-lg font-bold">Vista Previa en Vivo</h3>
-      <span class="badge badge-primary badge-outline text-xs">Simulación Frontend</span>
-    </div>
-
-    <!-- Simulated Frontend Banner -->
-    <div class="relative w-full h-[500px] rounded-3xl overflow-hidden shadow-2xl group border border-base-200">
-
-      <!-- Background Image -->
-      <img [src]="bannerForm.value.image"
-        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        alt="Banner Preview" onerror="this.src='https://placehold.co/1200x600?text=Invalid+Image+URL'">
-
-      <!-- Overlay Gradient (matches frontend) -->
-      <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
-
-      <!-- Content Container -->
-      <div
-        class="absolute inset-0 flex flex-col justify-center px-12 sm:px-24 max-w-2xl scale-[0.85] sm:scale-100 origin-left">
-
-        <!-- Brand / Subtitle -->
-        <span class="text-xl font-medium tracking-wide mb-2 uppercase" [ngClass]="bannerForm.value.textClass">
-          {{ bannerForm.value.subtitle || 'Subtítulo' }}
-        </span>
-
-        <!-- Title -->
-        <h2 class="text-5xl sm:text-7xl font-bold mb-6 leading-tight tracking-tight"
-          [ngClass]="bannerForm.value.textClass">
-          {{ bannerForm.value.title || 'Título Principal' }}
-        </h2>
-
-        <!-- Description -->
-        <p class="text-lg sm:text-xl font-light opacity-90 mb-8 max-w-lg leading-relaxed"
-          [ngClass]="bannerForm.value.textClass">
-          {{ bannerForm.value.description || 'Descripción del banner...' }}
-        </p>
-
-        <!-- CTA Button -->
-        <div class="flex gap-4">
-          <button
-            class="px-8 py-3 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl"
-            [ngClass]="bannerForm.value.buttonClass">
-            <span>Ver Detalles</span>
-            <!-- Improved Icon Rendering -->
-            @if (!bannerForm.value.icon) {
-            <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">arrow_forward</mat-icon>
-            }
-          </button>
-        </div>
-
+  <ng-container content>
+    <!-- LIVE PREVIEW SECTION -->
+    @if (bannerForm.value.image) {
+    <div class="mb-8 animate-fade-in-down">
+      <div class="flex items-center gap-2 mb-4 px-1">
+        <mat-icon class="text-primary animate-pulse">visibility</mat-icon>
+        <h3 class="text-lg font-bold">Vista Previa en Vivo</h3>
+        <span class="badge badge-primary badge-outline text-xs">Simulación Frontend</span>
       </div>
 
-      <!-- Monitor Frame Decoration -->
-      <div class="absolute inset-4 border border-white/10 rounded-2xl pointer-events-none"></div>
-    </div>
-  </div>
-  }
+      <!-- Simulated Frontend Banner -->
+      <div class="relative w-full h-[500px] rounded-3xl overflow-hidden shadow-2xl group border border-base-200">
 
-  <form [formGroup]="bannerForm" class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        <!-- Background Image -->
+        <img [src]="bannerForm.value.image"
+          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          alt="Banner Preview" onerror="this.src='https://placehold.co/1200x600?text=Invalid+Image+URL'">
 
-    <!-- LEFT COLUMN (3/5): Main Content -->
-    <div class="lg:col-span-3 space-y-6">
+        <!-- Overlay Gradient (matches frontend) -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
 
-      <!-- Basic Info Card -->
-      <div class="card bg-base-100 shadow-sm border border-base-300">
-        <div class="card-body p-6">
-          <h3 class="card-title text-lg mb-4">Contenido del Banner</h3>
+        <!-- Content Container -->
+        <div
+          class="absolute inset-0 flex flex-col justify-center px-12 sm:px-24 max-w-2xl scale-[0.85] sm:scale-100 origin-left">
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Título Principal</legend>
-              <input type="text" class="input input-bordered w-full" placeholder="Ej. iPhone 16 Pro"
-                formControlName="title" />
-            </fieldset>
+          <!-- Brand / Subtitle -->
+          <span class="text-xl font-medium tracking-wide mb-2 uppercase" [ngClass]="bannerForm.value.textClass">
+            {{ bannerForm.value.subtitle || 'Subtítulo' }}
+          </span>
 
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Marca / ID</legend>
-              <input type="text" class="input input-bordered w-full" placeholder="Ej. Apple" formControlName="brandName"
-                [readonly]="isEditMode" [class.input-disabled]="isEditMode" />
-              @if(isEditMode) {
-              <span class="text-xs text-base-content/40 mt-1">No se puede modificar el ID.</span>
+          <!-- Title -->
+          <h2 class="text-5xl sm:text-7xl font-bold mb-6 leading-tight tracking-tight"
+            [ngClass]="bannerForm.value.textClass">
+            {{ bannerForm.value.title || 'Título Principal' }}
+          </h2>
+
+          <!-- Description -->
+          <p class="text-lg sm:text-xl font-light opacity-90 mb-8 max-w-lg leading-relaxed"
+            [ngClass]="bannerForm.value.textClass">
+            {{ bannerForm.value.description || 'Descripción del banner...' }}
+          </p>
+
+          <!-- CTA Button -->
+          <div class="flex gap-4">
+            <button
+              class="px-8 py-3 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              [ngClass]="bannerForm.value.buttonClass">
+              <span>Ver Detalles</span>
+              <!-- Improved Icon Rendering -->
+              @if (!bannerForm.value.icon) {
+              <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">arrow_forward</mat-icon>
               }
-            </fieldset>
+            </button>
           </div>
 
-          <fieldset class="fieldset mt-4">
-            <legend class="fieldset-legend">Subtítulo (Top)</legend>
-            <input type="text" class="input input-bordered w-full" placeholder="Ej. Titanium Design"
-              formControlName="subtitle" />
-          </fieldset>
-
-          <fieldset class="fieldset mt-4">
-            <legend class="fieldset-legend">Descripción</legend>
-            <textarea class="textarea textarea-bordered w-full h-24" placeholder="Breve descripción de la sección..."
-              formControlName="description"></textarea>
-          </fieldset>
-
-          <!-- Moved Image URL here specifically for content flow -->
-          <fieldset class="fieldset w-full mt-4">
-            <legend class="fieldset-legend">URL de Imagen de Fondo</legend>
-            <input type="text" class="input input-bordered w-full" placeholder="https://..." formControlName="image" />
-            <p class="text-xs text-base-content/50 mt-1">La vista previa oficial aparecerá arriba automáticamente.</p>
-          </fieldset>
         </div>
-      </div>
 
+        <!-- Monitor Frame Decoration -->
+        <div class="absolute inset-4 border border-white/10 rounded-2xl pointer-events-none"></div>
+      </div>
     </div>
+    }
 
-    <!-- RIGHT COLUMN (2/5): Configurations & Styles -->
-    <div class="lg:col-span-2 space-y-6">
+    <form [formGroup]="bannerForm" class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
-      <!-- Styling Configuration -->
-      <div class="card bg-base-100 shadow-sm border border-base-200">
-        <div class="card-body p-6">
-          <h3 class="card-title text-lg mb-4">Personalización Visual</h3>
+      <!-- LEFT COLUMN (3/5): Main Content -->
+      <div class="lg:col-span-3 space-y-6">
 
-          <fieldset class="fieldset w-full">
-            <legend class="fieldset-legend">Clase de Texto (Tailwind)</legend>
-            <div class="join w-full">
-              <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
-                <mat-icon class="text-base text-base-content/50">format_paint</mat-icon>
-              </span>
-              <input type="text" class="input input-bordered join-item w-full" placeholder="ej. text-white"
-                formControlName="textClass" />
+        <!-- Basic Info Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Contenido del Banner</h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Título Principal</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. iPhone 16 Pro"
+                  formControlName="title" />
+              </fieldset>
+
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Marca / ID</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. Apple"
+                  formControlName="brandName" [readonly]="isEditMode" [class.input-disabled]="isEditMode" />
+                @if(isEditMode) {
+                <span class="text-xs text-base-content/40 mt-1">No se puede modificar el ID.</span>
+                }
+              </fieldset>
             </div>
-          </fieldset>
 
-          <fieldset class="fieldset w-full mt-4">
-            <legend class="fieldset-legend">Clase de Botón (Tailwind)</legend>
-            <div class="join w-full">
-              <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
-                <mat-icon class="text-base text-base-content/50">smart_button</mat-icon>
-              </span>
-              <input type="text" class="input input-bordered join-item w-full" placeholder="ej. bg-white text-black"
-                formControlName="buttonClass" />
-            </div>
-          </fieldset>
-
-          <div class="grid grid-cols-2 gap-4 mt-4">
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Icono (Lucide)</legend>
-              <input type="text" class="input input-bordered w-full" placeholder="Smartphone" formControlName="icon" />
+            <fieldset class="fieldset mt-4">
+              <legend class="fieldset-legend">Subtítulo (Top)</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="Ej. Titanium Design"
+                formControlName="subtitle" />
             </fieldset>
 
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Orden</legend>
-              <input type="number" class="input input-bordered w-full" placeholder="0" formControlName="order" />
+            <fieldset class="fieldset mt-4">
+              <legend class="fieldset-legend">Descripción</legend>
+              <textarea class="textarea textarea-bordered w-full h-24" placeholder="Breve descripción de la sección..."
+                formControlName="description"></textarea>
+            </fieldset>
+
+            <!-- Moved Image URL here specifically for content flow -->
+            <fieldset class="fieldset w-full mt-4">
+              <legend class="fieldset-legend">URL de Imagen de Fondo</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="https://..."
+                formControlName="image" />
+              <p class="text-xs text-base-content/50 mt-1">La vista previa oficial aparecerá arriba automáticamente.</p>
             </fieldset>
           </div>
-
         </div>
+
       </div>
 
-      <!-- Status Card -->
-      <div class="card bg-base-100 shadow-sm border border-base-200">
-        <div class="card-body p-6">
-          <h3 class="card-title text-lg mb-4">Visibilidad</h3>
+      <!-- RIGHT COLUMN (2/5): Configurations & Styles -->
+      <div class="lg:col-span-2 space-y-6">
 
-          <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-4">
-              <mat-checkbox formControlName="isActive" color="primary">
-                <span class="text-base font-medium">Banner Visible</span>
-              </mat-checkbox>
-            </label>
-            <p class="text-xs text-base-content/50 pl-2 mt-1">
-              Controla si este banner se muestra o no en la página principal.
-            </p>
+        <!-- Styling Configuration -->
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Personalización Visual</h3>
+
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">Clase de Texto (Tailwind)</legend>
+              <div class="join w-full">
+                <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
+                  <mat-icon class="text-base text-base-content/50">format_paint</mat-icon>
+                </span>
+                <input type="text" class="input input-bordered join-item w-full" placeholder="ej. text-white"
+                  formControlName="textClass" />
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset w-full mt-4">
+              <legend class="fieldset-legend">Clase de Botón (Tailwind)</legend>
+              <div class="join w-full">
+                <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
+                  <mat-icon class="text-base text-base-content/50">smart_button</mat-icon>
+                </span>
+                <input type="text" class="input input-bordered join-item w-full" placeholder="ej. bg-white text-black"
+                  formControlName="buttonClass" />
+              </div>
+            </fieldset>
+
+            <div class="grid grid-cols-2 gap-4 mt-4">
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Icono (Lucide)</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Smartphone"
+                  formControlName="icon" />
+              </fieldset>
+
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Orden</legend>
+                <input type="number" class="input input-bordered w-full" placeholder="0" formControlName="order" />
+              </fieldset>
+            </div>
+
           </div>
-
         </div>
+
+        <!-- Status Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Visibilidad</h3>
+
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-4">
+                <mat-checkbox formControlName="isActive" color="primary">
+                  <span class="text-base font-medium">Banner Visible</span>
+                </mat-checkbox>
+              </label>
+              <p class="text-xs text-base-content/50 pl-2 mt-1">
+                Controla si este banner se muestra o no en la página principal.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
-    </div>
+    </form>
+  </ng-container>
 
-  </form>
 </app-page-layout>

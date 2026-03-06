@@ -1,18 +1,18 @@
-import { Component, ElementRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { PageLayout } from '../../shared/components/page-layout/page-layout';
+import { Router, RouterModule } from '@angular/router';
 import { PageHeader } from '../../shared/components/page-header/page-header';
-import { HeroService } from '../../services/hero.service';
+import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { HeroStateService } from '../../states/hero.state.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-hero-create',
@@ -35,12 +35,18 @@ import { HeroStateService } from '../../states/hero.state.service';
 })
 export class HeroCreateComponent implements OnInit {
   #fb = inject(FormBuilder);
-  #heroService = inject(HeroService);
   #heroStateService = inject(HeroStateService);
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
+  #SidebarService = inject(SidebarService)
+
   readonly slideID = input.required<string>();
 
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Gestionar Slide'
+    });
+  }
 
   heroForm: FormGroup = this.#fb.group({
     title: ['', Validators.required],

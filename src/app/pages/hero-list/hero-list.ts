@@ -6,8 +6,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { RouterModule } from '@angular/router';
-import { IHeroSlide } from '../../core/interfaces/home.interface';
-import { HeroService } from '../../services/hero.service';
+import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { HeroStateService } from '../../states/hero.state.service';
@@ -30,12 +29,18 @@ import { HeroStateService } from '../../states/hero.state.service';
   styleUrl: './hero-list.css',
 })
 export class HeroListComponent {
-  // #heroService = inject(HeroService);
+  #SidebarService = inject(SidebarService);
   #heroStateService = inject(HeroStateService);
   #snackBar = inject(MatSnackBar);
 
   state = this.#heroStateService.state;
   displayedColumns = ['image', 'title', 'order', 'status', 'actions'];
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Sliders'
+    });
+  }
 
 
   async deleteSlide(id: string) {

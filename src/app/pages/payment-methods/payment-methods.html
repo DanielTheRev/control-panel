@@ -1,5 +1,5 @@
 <app-page-layout>
-  <app-page-header header title="Métodos de Pago" subtitle="Gestiona las formas de pago disponibles">
+  <app-page-header header title="Gestiona tus métodos de pago" subtitle="Gestiona las formas de pago disponibles">
     <div actions class="flex">
       <a routerLink="/home/payment-methods/create" class="btn btn-primary">
         <mat-icon>add</mat-icon>
@@ -8,70 +8,75 @@
     </div>
   </app-page-header>
 
-  <div class="table-container rounded-lg overflow-hidden bg-base-100 shadow-sm flex-1 flex flex-col table-fix">
-    <div class="overflow-y-auto flex-1 custom-scrollbar">
-      <table mat-table [dataSource]="state().data" class="w-full">
+  <ng-container content>
+    <div class="table-container rounded-lg overflow-hidden bg-base-100 shadow-sm flex-1 flex flex-col table-fix">
+      <div class="overflow-y-auto flex-1 custom-scrollbar">
+        <table mat-table [dataSource]="state().data" class="w-full">
 
-        <!-- Name Column -->
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef> Nombre </th>
-          <td mat-cell *matCellDef="let element"> 
-            <span class="font-medium text-base-content">{{element.name}}</span>
-          </td>
-        </ng-container>
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef> Nombre </th>
+            <td mat-cell *matCellDef="let element">
+              <span class="font-medium text-base-content">{{element.name}}</span>
+            </td>
+          </ng-container>
 
-        <!-- Status Column -->
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef> Estado </th>
-          <td mat-cell *matCellDef="let element">
-            @if (element.isActive) {
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-                    <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
-                    Activo
-                </span>
-            } @else {
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-base-200 text-base-content/50">
-                    <span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span>
-                    Inactivo
-                </span>
-            }
-          </td>
-        </ng-container>
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Estado </th>
+            <td mat-cell *matCellDef="let element">
+              @if (element.isActive) {
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                Activo
+              </span>
+              } @else {
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-base-200 text-base-content/50">
+                <span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span>
+                Inactivo
+              </span>
+              }
+            </td>
+          </ng-container>
 
-        <!-- Description Column -->
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef> Descripción </th>
-          <td mat-cell *matCellDef="let element">
-            <span class="text-sm text-base-content/50 max-w-[300px] truncate block" [title]="element.description">
-              {{element.description || '-'}}
-            </span>
-          </td>
-        </ng-container>
+          <!-- Description Column -->
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef> Descripción </th>
+            <td mat-cell *matCellDef="let element">
+              <span class="text-sm text-base-content/50 max-w-[300px] truncate block" [title]="element.description">
+                {{element.description || '-'}}
+              </span>
+            </td>
+          </ng-container>
 
-        <!-- Actions Column -->
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef> </th>
-          <td mat-cell *matCellDef="let element" class="text-right">
-            <button mat-icon-button [matMenuTriggerFor]="menu" class="text-base-content/30">
-              <mat-icon>more_horiz</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu" class="modern-row-menu">
-              <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
-                <mat-icon>edit</mat-icon>
-                <span>Editar</span>
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> </th>
+            <td mat-cell *matCellDef="let element" class="text-right">
+              <button mat-icon-button [matMenuTriggerFor]="menu" class="text-base-content/30">
+                <mat-icon>more_horiz</mat-icon>
               </button>
-              <button mat-menu-item class="!text-error" (click)="delete(element._id)">
-                <mat-icon class="!text-error">delete_outline</mat-icon>
-                <span>Eliminar</span>
-              </button>
-            </mat-menu>
-          </td>
-        </ng-container>
+              <mat-menu #menu="matMenu" class="modern-row-menu">
+                <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item class="!text-error" (click)="delete(element._id)">
+                  <mat-icon class="!text-error">delete_outline</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-14 !border-b-0"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-          class="hover:bg-base-200/50 transition-colors !border-b border-base-300"></tr>
-      </table>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-14 !border-b-0"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="hover:bg-base-200/50 transition-colors !border-b border-base-300"></tr>
+        </table>
+      </div>
     </div>
-  </div>
+  </ng-container>
+
 </app-page-layout>

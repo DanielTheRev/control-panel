@@ -7,6 +7,7 @@ import { Component, input } from '@angular/core';
   styleUrl: './page-header.scss',
 })
 export class PageHeader {
-  title = input.required<string>();
+  title = input<string>();
   subtitle = input<string>();
+  withMB = input<boolean>(true);
 }

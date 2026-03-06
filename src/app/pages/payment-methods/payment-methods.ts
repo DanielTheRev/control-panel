@@ -8,6 +8,7 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PaymentMethodsStateService } from '../../states/payment-methods.state.service';
 import { PaymentMethodsService } from '../../services/payment-methods.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-payment-methods',
@@ -27,10 +28,16 @@ export class PaymentMethods {
   readonly #paymentMethodsState = inject(PaymentMethodsStateService);
   readonly #paymentMethodsService = inject(PaymentMethodsService);
   readonly #snackBar = inject(MatSnackBar);
+  readonly #SidebarService = inject(SidebarService);
 
   readonly state = this.#paymentMethodsState.state;
 
   displayedColumns: string[] = ['name', 'status', 'description', 'actions'];
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Métodos de pago'
+    });
+  }
 
   async delete(id: string) {
     if (confirm('¿Estás seguro de eliminar este método de pago?')) {

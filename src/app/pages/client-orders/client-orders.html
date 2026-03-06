@@ -1,13 +1,13 @@
 <app-page-layout>
     <!-- Header stats -->
-    <app-page-header header title="Gestión de Órdenes" [subtitle]="
+    <app-page-header header title="Gestiona tus pedidos" [subtitle]="
       isLoading()
-        ? 'cargando ordenes'
-        : `${pagination().totalItems} órdenes encontradas`
+        ? 'cargando pedidos'
+        : `${pagination().totalItems} pedidos encontrados`
     ">
         <div actions class="flex flex-col sm:flex-row gap-3">
             <select [value]="status()" (change)="updateStatusFilter($any($event.target).value)" [disabled]="isLoading()"
-                class="select select-primary !outline-none">
+                class="select select-primary outline-none!">
                 @for (option of statusOptions; track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
                 }
@@ -31,212 +31,221 @@
         </div>
     </app-page-header>
 
-    <!-- Estado de error -->
-    @if (error()) {
-    <div role="alert" class="alert alert-error mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-            <h3 class="font-bold">Error al cargar datos!</h3>
-            <div class="text-xs">No se pudieron cargar las órdenes. Intenta nuevamente.</div>
-        </div>
-        <button class="btn btn-sm" (click)="refreshData()">Reintentar</button>
-    </div>
-    }
-
-    @if(!isLoading() && !hasData()) {
-    <div class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-4 text-base-content/30">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <ng-container content>
+        <!-- Estado de error -->
+        @if (error()) {
+        <div role="alert" class="alert alert-error mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
+            <div>
+                <h3 class="font-bold">Error al cargar datos!</h3>
+                <div class="text-xs">No se pudieron cargar las órdenes. Intenta nuevamente.</div>
+            </div>
+            <button class="btn btn-sm" (click)="refreshData()">Reintentar</button>
         </div>
-        <h3 class="text-lg font-medium text-base-content mb-2">
-            No hay órdenes
-        </h3>
-        <p class="text-base-content/50">
-            No se encontraron órdenes con los filtros seleccionados.
-        </p>
-    </div>
-    }
+        }
 
-    <!-- Tabla de Órdenes -->
-    <div class="bg-base-100 rounded-xl shadow-sm border border-base-300 overflow-hidden">
-        @if (isLoading() && !hasData()) {
-        <!-- Skeleton Loading -->
-        <div class="p-4 space-y-4">
-            @for (i of [1,2,3,4,5]; track i) {
-            <div class="skeleton w-full h-12"></div>
-            }
+        @if(!isLoading() && !hasData()) {
+        <div class="flex justify-center items-center flex-col w-full h-full text-center py-12">
+            <div class="w-16 h-16 mx-auto mb-4 text-base-content/30">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-medium text-base-content mb-2">
+                No hay órdenes
+            </h3>
+            <p class="text-base-content/50">
+                No se encontraron órdenes con los filtros seleccionados.
+            </p>
         </div>
-        } @else if(!isLoading() && hasData()) {
-        <div class="overflow-x-auto">
-            <table mat-table [dataSource]="orders()" class="w-full">
+        }
 
-                <!-- ID Column -->
-                <ng-container matColumnDef="orderNumber">
-                    <th mat-header-cell *matHeaderCellDef class="!pl-6"> #ID </th>
-                    <td mat-cell *matCellDef="let order" class="!pl-6 font-mono text-xs"> {{order.orderNumber}} </td>
-                </ng-container>
+        <!-- Tabla de Órdenes -->
+        <div class="bg-base-100 rounded-xl shadow-sm border border-base-300 overflow-hidden">
+            @if (isLoading() && !hasData()) {
+            <!-- Skeleton Loading -->
+            <div class="p-4 space-y-4">
+                @for (i of [1,2,3,4,5]; track i) {
+                <div class="skeleton w-full h-12"></div>
+                }
+            </div>
+            } @else if(!isLoading() && hasData()) {
+            <div class="overflow-x-auto">
+                <table mat-table [dataSource]="orders()" class="w-full">
 
-                <!-- User Column -->
-                <ng-container matColumnDef="user">
-                    <th mat-header-cell *matHeaderCellDef> Cliente </th>
-                    <td mat-cell *matCellDef="let order">
-                        <div class="flex items-center gap-3 py-2">
-                            <div class="avatar placeholder">
-                                <div class="bg-neutral text-neutral-content rounded-full w-8">
-                                    <span class="text-xs">{{ order.user.name.charAt(0).toUpperCase() }}</span>
+                    <!-- ID Column -->
+                    <ng-container matColumnDef="orderNumber">
+                        <th mat-header-cell *matHeaderCellDef class="!pl-6"> #ID </th>
+                        <td mat-cell *matCellDef="let order" class="!pl-6 font-mono text-xs"> {{order.orderNumber}}
+                        </td>
+                    </ng-container>
+
+                    <!-- User Column -->
+                    <ng-container matColumnDef="user">
+                        <th mat-header-cell *matHeaderCellDef> Cliente </th>
+                        <td mat-cell *matCellDef="let order">
+                            <div class="flex items-center gap-3 py-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                        <span class="text-xs">{{ order.user.name.charAt(0).toUpperCase() }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-sm">{{order.user.name}}</span>
+                                    <span class="text-xs opacity-60">{{order.user.email}}</span>
                                 </div>
                             </div>
-                            <div class="flex flex-col">
-                                <span class="font-medium text-sm">{{order.user.name}}</span>
-                                <span class="text-xs opacity-60">{{order.user.email}}</span>
-                            </div>
-                        </div>
-                    </td>
-                </ng-container>
+                        </td>
+                    </ng-container>
 
-                <!-- Date Column -->
-                <ng-container matColumnDef="date">
-                    <th mat-header-cell *matHeaderCellDef> Fecha </th>
-                    <td mat-cell *matCellDef="let order" class="text-sm">
-                        {{ order.createdAt | date:'shortDate' }}<br>
-                        <span class="text-xs opacity-60">{{ order.createdAt | date:'shortTime' }}</span>
-                    </td>
-                </ng-container>
+                    <!-- Date Column -->
+                    <ng-container matColumnDef="date">
+                        <th mat-header-cell *matHeaderCellDef> Fecha </th>
+                        <td mat-cell *matCellDef="let order" class="text-sm">
+                            {{ order.createdAt | date:'shortDate' }}<br>
+                            <span class="text-xs opacity-60">{{ order.createdAt | date:'shortTime' }}</span>
+                        </td>
+                    </ng-container>
 
-                <!-- Total Column -->
-                <ng-container matColumnDef="total">
-                    <th mat-header-cell *matHeaderCellDef> Total </th>
-                    <td mat-cell *matCellDef="let order" class="font-bold">
-                        {{ order.total | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </td>
-                </ng-container>
+                    <!-- Total Column -->
+                    <ng-container matColumnDef="total">
+                        <th mat-header-cell *matHeaderCellDef> Total </th>
+                        <td mat-cell *matCellDef="let order" class="font-bold">
+                            {{ order.total | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </td>
+                    </ng-container>
 
-                <!-- Status Column -->
-                <ng-container matColumnDef="status">
-                    <th mat-header-cell *matHeaderCellDef> Estado </th>
-                    <td mat-cell *matCellDef="let order">
-                        <span [class]="getOrderStatusBadgeClass(order.status)">
-                            {{ order.status }}
-                        </span>
-                    </td>
-                </ng-container>
-
-                <!-- Payment Payment Column -->
-                <ng-container matColumnDef="payment">
-                    <th mat-header-cell *matHeaderCellDef> Pago </th>
-                    <td mat-cell *matCellDef="let order">
-                        <div class="flex flex-col items-start gap-1">
-                            <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">
-                                {{ order.paymentInfo.status }}
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef> Estado </th>
+                        <td mat-cell *matCellDef="let order">
+                            <span [class]="getOrderStatusBadgeClass(order.status)">
+                                {{ order.status }}
                             </span>
-                            <span class="text-[10px] opacity-70">{{ order.paymentInfo.method }}</span>
-                        </div>
-                    </td>
-                </ng-container>
+                        </td>
+                    </ng-container>
 
-                <!-- Shipping Column -->
-                <ng-container matColumnDef="shipping">
-                    <th mat-header-cell *matHeaderCellDef> Envío </th>
-                    <td mat-cell *matCellDef="let order" class="text-xs">
-                        {{ getShippingTypeText(order.shippingInfo.type) }}
-                    </td>
-                </ng-container>
+                    <!-- Payment Payment Column -->
+                    <ng-container matColumnDef="payment">
+                        <th mat-header-cell *matHeaderCellDef> Pago </th>
+                        <td mat-cell *matCellDef="let order">
+                            <div class="flex flex-col items-start gap-1">
+                                <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">
+                                    {{ order.paymentInfo.status }}
+                                </span>
+                                <span class="text-[10px] opacity-70">{{ order.paymentInfo.method }}</span>
+                            </div>
+                        </td>
+                    </ng-container>
 
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="!pr-6 text-right"> Acciones </th>
-                    <td mat-cell *matCellDef="let order" class="!pr-6 text-right">
-                        <a [routerLink]="['/home/client-orders', order._id]" class="btn btn-sm btn-ghost btn-square" matTooltip="Ver detalles">
-                            <mat-icon>visibility</mat-icon>
-                        </a>
-                        
-                        <button mat-icon-button [matMenuTriggerFor]="menu" class="btn btn-sm btn-ghost btn-square">
-                            <mat-icon>more_vert</mat-icon>
-                        </button>
-                        
-                        <mat-menu #menu="matMenu">
-                            <!-- Payment Actions -->
-                            @if (canMarkPaymentReceived(order.paymentInfo.status)) {
+                    <!-- Shipping Column -->
+                    <ng-container matColumnDef="shipping">
+                        <th mat-header-cell *matHeaderCellDef> Envío </th>
+                        <td mat-cell *matCellDef="let order" class="text-xs">
+                            {{ getShippingTypeText(order.shippingInfo.type) }}
+                        </td>
+                    </ng-container>
+
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef class="!pr-6 text-right"> Acciones </th>
+                        <td mat-cell *matCellDef="let order" class="!pr-6 text-right">
+                            <a [routerLink]="['/home/client-orders', order._id]" class="btn btn-sm btn-ghost btn-square"
+                                matTooltip="Ver detalles">
+                                <mat-icon>visibility</mat-icon>
+                            </a>
+
+                            <button mat-icon-button [matMenuTriggerFor]="menu" class="btn btn-sm btn-ghost btn-square">
+                                <mat-icon>more_vert</mat-icon>
+                            </button>
+
+                            <mat-menu #menu="matMenu">
+                                <!-- Payment Actions -->
+                                @if (canMarkPaymentReceived(order.paymentInfo.status)) {
                                 <button mat-menu-item (click)="markPaymentReceived(order._id)">
                                     <mat-icon class="text-success">attach_money</mat-icon>
                                     <span>Marcar pago recibido</span>
                                 </button>
-                            }
+                                }
 
-                            <!-- Shipping Actions -->
-                            @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type)) {
+                                <!-- Shipping Actions -->
+                                @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type))
+                                {
                                 <button mat-menu-item (click)="startShipping(order._id)">
                                     <mat-icon class="text-info">local_shipping</mat-icon>
                                     <span>Iniciar envío</span>
                                 </button>
-                            }
+                                }
 
-                            @if (canMarkAsShipped(order.status)) {
+                                @if (canMarkAsShipped(order.status)) {
                                 <button mat-menu-item (click)="markAsShipped(order._id)">
                                     <mat-icon class="text-primary">flight_takeoff</mat-icon>
                                     <span>Marcar como enviado</span>
                                 </button>
-                            }
-
-                            @if (canMarkAsDelivered(order.status, order.shippingInfo.type, order.paymentInfo.status)) {
-                                @if (order.shippingInfo.type === 'pickup') {
-                                    <button mat-menu-item (click)="markAsDeliveredPickup(order._id)">
-                                        <mat-icon class="text-success">check_circle</mat-icon>
-                                        <span>Entregar (Retiro)</span>
-                                    </button>
-                                } @else {
-                                    <button mat-menu-item (click)="markAsDelivered(order._id)">
-                                        <mat-icon class="text-success">check_circle</mat-icon>
-                                        <span>Entregar (Domicilio)</span>
-                                    </button>
                                 }
-                            }
 
-                            <!-- Cancel Action -->
-                            @if (canCancelOrder(order.status)) {
+                                @if (canMarkAsDelivered(order.status, order.shippingInfo.type,
+                                order.paymentInfo.status)) {
+                                @if (order.shippingInfo.type === 'pickup') {
+                                <button mat-menu-item (click)="markAsDeliveredPickup(order._id)">
+                                    <mat-icon class="text-success">check_circle</mat-icon>
+                                    <span>Entregar (Retiro)</span>
+                                </button>
+                                } @else {
+                                <button mat-menu-item (click)="markAsDelivered(order._id)">
+                                    <mat-icon class="text-success">check_circle</mat-icon>
+                                    <span>Entregar (Domicilio)</span>
+                                </button>
+                                }
+                                }
+
+                                <!-- Cancel Action -->
+                                @if (canCancelOrder(order.status)) {
                                 <button mat-menu-item (click)="cancelOrder(order._id)">
                                     <mat-icon class="text-error">cancel</mat-icon>
                                     <span class="text-error">Cancelar orden</span>
                                 </button>
-                            }
-                        </mat-menu>
-                    </td>
-                </ng-container>
+                                }
+                            </mat-menu>
+                        </td>
+                    </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                    class="hover:bg-base-200/50 transition-colors"></tr>
-            </table>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                        class="hover:bg-base-200/50 transition-colors"></tr>
+                </table>
 
-            @if (hasData() && orders().length === 0) {
-            <div class="text-center py-12 text-base-content/30">
-                <mat-icon class="text-6xl !w-16 !h-16 mb-2">inbox</mat-icon>
-                <p>No se encontraron órdenes</p>
+                @if (hasData() && orders().length === 0) {
+                <div class="text-center py-12 text-base-content/30">
+                    <mat-icon class="text-6xl !w-16 !h-16 mb-2">inbox</mat-icon>
+                    <p>No se encontraron órdenes</p>
+                </div>
+                }
+            </div>
+
+            <!-- Paginator (Custom implementation reusing daisyUI/Tailwind styles but connected to logic) -->
+            <div class="p-4 border-t border-base-300 flex justify-between items-center bg-base-100">
+                <div class="text-sm opacity-70">
+                    {{ (pagination().currentPage - 1) * pagination().itemsPerPage + 1 }} -
+                    {{ Math.min(pagination().currentPage * pagination().itemsPerPage, pagination().totalItems) }}
+                    de {{ pagination().totalItems }}
+                </div>
+                <div class="join">
+                    <button class="join-item btn btn-sm" [disabled]="pagination().currentPage === 1"
+                        (click)="changePage(pagination().currentPage - 1)">«</button>
+                    <button class="join-item btn btn-sm">Página {{ pagination().currentPage }}</button>
+                    <button class="join-item btn btn-sm"
+                        [disabled]="pagination().currentPage === pagination().totalPages"
+                        (click)="changePage(pagination().currentPage + 1)">»</button>
+                </div>
             </div>
             }
         </div>
+    </ng-container>
 
-        <!-- Paginator (Custom implementation reusing daisyUI/Tailwind styles but connected to logic) -->
-        <div class="p-4 border-t border-base-300 flex justify-between items-center bg-base-100">
-            <div class="text-sm opacity-70">
-                {{ (pagination().currentPage - 1) * pagination().itemsPerPage + 1 }} -
-                {{ Math.min(pagination().currentPage * pagination().itemsPerPage, pagination().totalItems) }}
-                de {{ pagination().totalItems }}
-            </div>
-            <div class="join">
-                <button class="join-item btn btn-sm" [disabled]="pagination().currentPage === 1"
-                    (click)="changePage(pagination().currentPage - 1)">«</button>
-                <button class="join-item btn btn-sm">Página {{ pagination().currentPage }}</button>
-                <button class="join-item btn btn-sm" [disabled]="pagination().currentPage === pagination().totalPages"
-                    (click)="changePage(pagination().currentPage + 1)">»</button>
-            </div>
-        </div>
-        }
-    </div>
 </app-page-layout>

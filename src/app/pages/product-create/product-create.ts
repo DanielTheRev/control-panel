@@ -15,6 +15,7 @@ import { PricePreview } from '../../shared/components/price-preview/price-previe
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
 import { ProductStoreService } from '../../states/product.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-product-create',
@@ -39,6 +40,7 @@ export class ProductCreate implements OnInit {
   #deletedImages: string[] = [];
   #productState = inject(ProductStoreService);
   #router = inject(Router);
+  #SidebarService = inject(SidebarService)
 
   productID = input.required<string>();
   isEditMode = computed(() => this.productID() !== null);
@@ -136,6 +138,10 @@ export class ProductCreate implements OnInit {
         this.productForm.patchValue({ brand: 'Nike', category: IProductCategories.Remeras });
       }
     });
+
+    this.#SidebarService.navbarTitle.set({
+      title:'Gestionar producto'
+    })
   }
 
   ngOnInit() {
@@ -250,9 +256,9 @@ export class ProductCreate implements OnInit {
     return this.variantsControls.value.map((v: any) => {
       const attributes = v.attributesJson
         ? v.attributesJson.split(',').map((a: string) => {
-            const [key, value] = a.trim().split(':');
-            return { key: key?.trim() || '', value: value?.trim() || '' };
-          }).filter((a: any) => a.key && a.value)
+          const [key, value] = a.trim().split(':');
+          return { key: key?.trim() || '', value: value?.trim() || '' };
+        }).filter((a: any) => a.key && a.value)
         : [];
 
       const variant: any = {

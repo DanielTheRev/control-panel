@@ -8,6 +8,7 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ShippingOptionsStateService } from '../../states/shipping-options.state.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-shipping-options-create',
@@ -27,6 +28,7 @@ export class ShippingOptionsCreate implements OnInit {
   #router = inject(Router);
   #shippingState = inject(ShippingOptionsStateService);
   #snackBar = inject(MatSnackBar);
+  #SidebarService = inject(SidebarService)
 
   shippingOptionID = input.required<string>();
   isEditMode = computed(() => this.shippingOptionID() !== null);
@@ -43,6 +45,12 @@ export class ShippingOptionsCreate implements OnInit {
 
   get pickupPointsControls() {
     return this.form.get('pickupPoints') as FormArray;
+  }
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Gestionar método de envío'
+    });
   }
 
   ngOnInit() {

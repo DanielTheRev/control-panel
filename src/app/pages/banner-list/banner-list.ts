@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { BannerStateService } from '../../states/banner.state.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-banner-list',
@@ -29,8 +30,15 @@ import { BannerStateService } from '../../states/banner.state.service';
 export class BannerList {
   readonly bannerService = inject(BannerStateService);
   #snackBar = inject(MatSnackBar);
+  readonly #SidebarService = inject(SidebarService);
 
   displayedColumns: string[] = ['Portada', 'Marca', 'Titulo', 'Posicion', 'Estado', 'Acciones'];
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Banners de secciones'
+    });
+  }
 
 
   refresh() {

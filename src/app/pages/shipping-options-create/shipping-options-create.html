@@ -2,7 +2,7 @@
     @let title = isEditMode() ? 'Editar Opción de Envío' : 'Nueva Opción de Envío';
     @let subtitle = isEditMode() ? 'Modifica los datos de la opción de envío' : 'Configura una nueva forma de entrega';
 
-    <app-page-header [title]="title" [subtitle]="subtitle">
+    <app-page-header header [title]="title" [subtitle]="subtitle">
         <div actions class="flex gap-2">
             <a routerLink="/home/shipping-options" class="btn btn-ghost text-base-content/50">
                 Cancelar
@@ -13,117 +13,120 @@
         </div>
     </app-page-header>
 
-    <form [formGroup]="form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <ng-container content>
+        <form [formGroup]="form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-        <!-- Main Info -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-300">
-                <div class="card-body p-6">
-                    <h3 class="card-title text-lg mb-4">Información General</h3>
+            <!-- Main Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="card bg-base-100 shadow-sm border border-base-300">
+                    <div class="card-body p-6">
+                        <h3 class="card-title text-lg mb-4">Información General</h3>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <fieldset class="fieldset">
-                            <legend class="fieldset-legend">Tipo de Envío</legend>
-                            <select class="select select-bordered w-full" formControlName="type">
-                                @for (type of shippingTypes; track type) {
-                                <option [value]="type">{{type}}</option>
-                                }
-                            </select>
-                        </fieldset>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Tipo de Envío</legend>
+                                <select class="select select-bordered w-full" formControlName="type">
+                                    @for (type of shippingTypes; track type) {
+                                    <option [value]="type">{{type}}</option>
+                                    }
+                                </select>
+                            </fieldset>
 
-                        <fieldset class="fieldset">
-                            <legend class="fieldset-legend">Costo (ARS)</legend>
-                            <input type="number" class="input input-bordered w-full" formControlName="cost"
-                                placeholder="0" />
-                        </fieldset>
-                    </div>
-
-                    <fieldset class="fieldset mt-4">
-                        <legend class="fieldset-legend">Nombre para mostrar</legend>
-                        <input type="text" class="input input-bordered w-full" formControlName="name"
-                            placeholder="Ej. Envío Express a domicilio" />
-                    </fieldset>
-
-                    <div class="flex flex-row gap-2">
-                        <div class="form-control mt-4">
-                            <label class="label cursor-pointer justify-start gap-4">
-                                <input type="checkbox" class="toggle toggle-primary"
-                                    formControlName="isDefaultForCash" />
-                                <span class="label-text">Seleccionar por defecto para pagos en efectivo</span>
-                            </label>
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Costo (ARS)</legend>
+                                <input type="number" class="input input-bordered w-full" formControlName="cost"
+                                    placeholder="0" />
+                            </fieldset>
                         </div>
-                        <div class="form-control mt-4">
-                            <label class="label cursor-pointer justify-start gap-4">
-                                <input type="checkbox" class="toggle toggle-warning" formControlName="isActive" />
-                                <span class="label-text">Determinar si es elegible este metodo de envio</span>
-                            </label>
+
+                        <fieldset class="fieldset mt-4">
+                            <legend class="fieldset-legend">Nombre para mostrar</legend>
+                            <input type="text" class="input input-bordered w-full" formControlName="name"
+                                placeholder="Ej. Envío Express a domicilio" />
+                        </fieldset>
+
+                        <div class="flex flex-row gap-2">
+                            <div class="form-control mt-4">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    <input type="checkbox" class="toggle toggle-primary"
+                                        formControlName="isDefaultForCash" />
+                                    <span class="label-text">Seleccionar por defecto para pagos en efectivo</span>
+                                </label>
+                            </div>
+                            <div class="form-control mt-4">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    <input type="checkbox" class="toggle toggle-warning" formControlName="isActive" />
+                                    <span class="label-text">Determinar si es elegible este metodo de envio</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Pickup Points Section - Only if type is Pickup -->
-            @if (form.get('type')?.value === 'Punto de encuentro') {
-            <div class="card bg-base-100 shadow-sm border border-base-200">
-                <div class="card-body p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="card-title text-lg">Puntos de Retiro</h3>
-                        <button type="button" class="btn btn-sm btn-ghost text-primary" (click)="addPickupPoint()">
-                            <mat-icon class="text-sm">add</mat-icon> Agregar Punto
-                        </button>
-                    </div>
-
-                    <div formArrayName="pickupPoints" class="space-y-4">
-                        @for (point of pickupPointsControls.controls; track $index; let i = $index) {
-                        <div [formGroupName]="i"
-                            class="flex gap-4 items-start p-4 bg-base-50 rounded-lg border border-base-200 relative group">
-                            <div class="flex-1 space-y-4">
-                                <fieldset class="fieldset m-0">
-                                    <legend class="fieldset-legend">Nombre del Punto</legend>
-                                    <input type="text" class="input input-sm input-bordered w-full"
-                                        formControlName="name" placeholder="Ej. Local Centro" />
-                                </fieldset>
-                                <fieldset class="fieldset m-0">
-                                    <legend class="fieldset-legend">Dirección / Detalles</legend>
-                                    <input type="text" class="input input-sm input-bordered w-full"
-                                        formControlName="address" placeholder="Av. Corrientes 1234" />
-                                </fieldset>
-                            </div>
-                            <button type="button" (click)="removePickupPoint(i)"
-                                class="btn btn-sm btn-square btn-ghost text-error absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <mat-icon>close</mat-icon>
+                <!-- Pickup Points Section - Only if type is Pickup -->
+                @if (form.get('type')?.value === 'Punto de encuentro') {
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="card-body p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title text-lg">Puntos de Retiro</h3>
+                            <button type="button" class="btn btn-sm btn-ghost text-primary" (click)="addPickupPoint()">
+                                <mat-icon class="text-sm">add</mat-icon> Agregar Punto
                             </button>
                         </div>
-                        }
-                        @if (pickupPointsControls.length === 0) {
-                        <div
-                            class="text-center py-8 text-base-content/40 bg-base-200 rounded-lg border border-dashed border-base-300">
-                            <p>No hay puntos de retiro configurados</p>
-                            <button type="button" class="btn btn-sm btn-link no-underline"
-                                (click)="addPickupPoint()">Agregar uno ahora</button>
+
+                        <div formArrayName="pickupPoints" class="space-y-4">
+                            @for (point of pickupPointsControls.controls; track $index; let i = $index) {
+                            <div [formGroupName]="i"
+                                class="flex gap-4 items-start p-4 bg-base-50 rounded-lg border border-base-200 relative group">
+                                <div class="flex-1 space-y-4">
+                                    <fieldset class="fieldset m-0">
+                                        <legend class="fieldset-legend">Nombre del Punto</legend>
+                                        <input type="text" class="input input-sm input-bordered w-full"
+                                            formControlName="name" placeholder="Ej. Local Centro" />
+                                    </fieldset>
+                                    <fieldset class="fieldset m-0">
+                                        <legend class="fieldset-legend">Dirección / Detalles</legend>
+                                        <input type="text" class="input input-sm input-bordered w-full"
+                                            formControlName="address" placeholder="Av. Corrientes 1234" />
+                                    </fieldset>
+                                </div>
+                                <button type="button" (click)="removePickupPoint(i)"
+                                    class="btn btn-sm btn-square btn-ghost text-error absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <mat-icon>close</mat-icon>
+                                </button>
+                            </div>
+                            }
+                            @if (pickupPointsControls.length === 0) {
+                            <div
+                                class="text-center py-8 text-base-content/40 bg-base-200 rounded-lg border border-dashed border-base-300">
+                                <p>No hay puntos de retiro configurados</p>
+                                <button type="button" class="btn btn-sm btn-link no-underline"
+                                    (click)="addPickupPoint()">Agregar uno ahora</button>
+                            </div>
+                            }
                         </div>
-                        }
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- Help/Side Info -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="card-body p-6">
+                        <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
+                        <p class="text-sm text-base-content/60 mb-4">
+                            Configura las opciones de envío disponibles para tus clientes.
+                        </p>
+                        <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
+                            <li><strong>Envío a domicilio:</strong> Requiere dirección del cliente.</li>
+                            <li><strong>Punto de encuentro:</strong> El cliente elige dónde retirar.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
-            }
-        </div>
 
-        <!-- Help/Side Info -->
-        <div class="lg:col-span-1 space-y-6">
-            <div class="card bg-base-100 shadow-sm border border-base-200">
-                <div class="card-body p-6">
-                    <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
-                    <p class="text-sm text-base-content/60 mb-4">
-                        Configura las opciones de envío disponibles para tus clientes.
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
-                        <li><strong>Envío a domicilio:</strong> Requiere dirección del cliente.</li>
-                        <li><strong>Punto de encuentro:</strong> El cliente elige dónde retirar.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        </form>
+    </ng-container>
 
-    </form>
 </app-page-layout>

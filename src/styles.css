@@ -81,7 +81,7 @@
 /* 5. Base Styles */
 @layer base {
   legend {
-    @apply !text-sm;
+    @apply text-sm!;
   }
 }
 
@@ -107,7 +107,7 @@ main::-webkit-scrollbar-thumb {
 /* Sidebar */
 @layer components {
   .icon-sm {
-    @apply text-[18px] w-[18px] h-[18px];
+    @apply text-[18px] w-4.5 h-4.5;
   }
 
   .sidebar-container {
@@ -115,7 +115,7 @@ main::-webkit-scrollbar-thumb {
   }
 
   .expanded {
-    width: 200px !important;
+    width: 240px !important;
   }
 
   .collapsed {
@@ -123,7 +123,7 @@ main::-webkit-scrollbar-thumb {
   }
 
   .margin-expanded {
-    margin-left: 200px !important;
+    margin-left: 240px !important;
   }
 
   .margin-collapsed {
@@ -137,7 +137,7 @@ main::-webkit-scrollbar-thumb {
     white-space: nowrap;
 
     mat-icon {
-      @apply min-w-[20px] text-[20px] w-5 h-5 text-base-content/40;
+      @apply min-w-5 text-[20px] w-5 h-5 text-base-content/40;
       @apply transition-colors duration-200;
     }
 
@@ -149,7 +149,7 @@ main::-webkit-scrollbar-thumb {
       @apply bg-base-200 text-base-content font-medium;
 
       mat-icon {
-        @apply !text-base-content;
+        @apply text-base-content!;
       }
     }
   }

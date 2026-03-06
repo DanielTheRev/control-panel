@@ -1,12 +1,9 @@
 @let Products = ProductState.products();
 
 <app-page-layout>
-  @let subtitle =
-  "Gestión centralizada de productos y precios " +
-  Products.itemsCount +
-  " productos";
+  @let subtitle = Products.itemsCount + " productos en total";
 
-  <app-page-header header title="Gestión de Inventario" [subtitle]="subtitle">
+  <app-page-header header title="Gestiona tus productos" [subtitle]="subtitle">
     <div actions>
       <div class="w-full mb-1">
         <div class="sm:flex">
@@ -14,7 +11,7 @@
           <div class="hidden sm:flex items-center sm:mb-0">
             <form class="lg:pr-3" action="#" method="GET">
               <label for="products-search" class="sr-only">Buscar</label>
-              <div class="relative mt-1 lg:w-64 xl:w-96">
+              <div class="relative lg:w-64 xl:w-96">
                 <input type="text" name="email" id="products-search" class="input input-bordered w-full"
                   placeholder="Buscar productos...">
               </div>
@@ -39,153 +36,157 @@
     </div>
   </app-page-header>
 
-  <div class="flex-1 flex flex-col min-h-0 h-full w-full">
-    @if (Products.hasError) {
-    <div role="alert" class="alert alert-error mb-4">
-      <span>Error al traer los productos</span>
-    </div>
-    }
-
-    @if (Products.isLoading && !Products.hasData) {
-    <div class="flex items-center justify-center w-full h-full">
-      <span class="loading loading-ring loading-xl"></span>
-    </div>
-    }
-
-    @if (Products.itemsCount === 0 && !Products.isLoading) {
-    <div class="flex items-center justify-center w-full h-full">
-      <span class="text-base-content/40">No hay productos</span>
-    </div>
-    }
-
-    <!-- TABLA DE PRODUCTOS -->
-    @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.hasError;
-    @if (showTable) {
-    <div
-      class="table-container rounded-md overflow-hidden border border-base-300 bg-base-100! shadow-md flex-1 flex flex-col relative min-h-0">
-      @if (Products.isLoading) {
-      <div class="absolute inset-0 bg-base-100!/50 z-10 flex items-center justify-center">
-        <span class="loading loading-ring loading-md"></span>
+  <ng-container content>
+    <div class="flex-1 flex flex-col min-h-0 h-full w-full">
+      @if (Products.hasError) {
+      <div role="alert" class="alert alert-error mb-4">
+        <span>Error al traer los productos</span>
       </div>
       }
-      <div class="overflow-y-auto flex-1 custom-scrollbar">
-        <table mat-table [dataSource]="Products.data" class="w-full">
 
-          <!-- Producto (Image + Name) -->
-          <ng-container matColumnDef="image">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Producto
-            </th>
-            <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm text-base-content whitespace-nowrap border-b border-base-300">
-              <div class="flex items-center gap-4 py-1">
-                @let imageURL = p.images.length <= 0 ? "/no-image.jpg": p.images[0].url;
-                <img [src]="imageURL"
-                  class="w-10 h-10 object-cover rounded-lg shadow-md border border-base-content/10 shrink-0" />
-                <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-semibold text-base-content truncate max-w-62.5">{{ p.brand + ' ' + p.model
-                    }}</span>
-                </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Type -->
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Tipo
-            </th>
-            <td mat-cell *matCellDef="let p"
-              class="px-4 py-2 text-sm text-base-content/60 whitespace-nowrap border-b border-base-300">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                [ngClass]="getProductTypeClass(p.productType)">
-                {{ getProductTypeLabel(p.productType) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Category -->
-          <ng-container matColumnDef="category">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Categoría
-            </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
-              <span
-                class="bg-base-200 text-base-content/60 text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded border border-base-300">
-                {{ p.category }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Brand -->
-          <ng-container matColumnDef="brand">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Marca
-            </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
-              <span class="text-xs font-bold text-primary uppercase tracking-widest">
-                {{ p.brand }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Stock -->
-          <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Stock
-            </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
-              @let stock = getTotalStock(p);
-              <span
-                class="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-md shadow-sm border border-primary/20 inline-block text-center min-w-[60px]">
-                {{ stock }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Precio-Costo -->
-          <ng-container matColumnDef="price_cash">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Precio-Costo
-            </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
-              <span class="text-base-content/60 font-medium">
-                {{
-                p.prices.efectivo_transferencia
-                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Precio-Publico -->
-          <ng-container matColumnDef="price_installments">
-            <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-              Precio-Publico
-            </th>
-            <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
-              <span class="text-success font-bold">
-                {{
-                p.prices.tarjeta_credito_debito
-                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                }}
-              </span>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
-            class="bg-base-100! h-10! border-b border-base-300"></tr>
-          <tr mat-row *matRowDef="let element; columns: displayedColumns;"
-            class="border-b border-base-300 hover:bg-base-200/50 transition-colors" (click)="viewProduct(element)">
-          </tr>
-        </table>
+      @if (Products.isLoading && !Products.hasData) {
+      <div class="flex items-center justify-center w-full h-full">
+        <span class="loading loading-ring loading-xl"></span>
       </div>
-      <!-- Paginación -->
-      <mat-paginator [length]="ProductState.pagination().totalItems" [pageSize]="ProductState.pagination().itemsPerPage"
-        [pageIndex]="ProductState.pagination().currentPage - 1" [pageSizeOptions]="[10, 20]"
-        (page)="onPageChange($event)" class="border-t border-base-300 bg-base-100! shrink-0">
-      </mat-paginator>
+      }
+
+      @if (Products.itemsCount === 0 && !Products.isLoading) {
+      <div class="flex items-center justify-center w-full h-full">
+        <span class="text-base-content/40">No hay productos</span>
+      </div>
+      }
+
+      <!-- TABLA DE PRODUCTOS -->
+      @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.hasError;
+      @if (showTable) {
+      <div
+        class="table-container rounded-md overflow-hidden border border-base-300 bg-base-100! shadow-md flex-1 flex flex-col relative min-h-0">
+        @if (Products.isLoading) {
+        <div class="absolute inset-0 bg-base-100!/50 z-10 flex items-center justify-center">
+          <span class="loading loading-ring loading-md"></span>
+        </div>
+        }
+        <div class="overflow-y-auto flex-1 custom-scrollbar">
+          <table mat-table [dataSource]="Products.data" class="w-full">
+
+            <!-- Producto (Image + Name) -->
+            <ng-container matColumnDef="image">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Producto
+              </th>
+              <td mat-cell *matCellDef="let p"
+                class="px-4 py-2 text-sm text-base-content whitespace-nowrap border-b border-base-300">
+                <div class="flex items-center gap-4 py-1">
+                  @let imageURL = p.images.length
+                  <= 0 ? "/no-image.jpg" : p.images[0].url; <img [src]="imageURL"
+                    class="w-10 h-10 object-cover rounded-lg shadow-md border border-base-content/10 shrink-0" />
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-sm font-semibold text-base-content truncate max-w-62.5">{{ p.brand + ' ' + p.model
+                      }}</span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Type -->
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Tipo
+              </th>
+              <td mat-cell *matCellDef="let p"
+                class="px-4 py-2 text-sm text-base-content/60 whitespace-nowrap border-b border-base-300">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  [ngClass]="getProductTypeClass(p.productType)">
+                  {{ getProductTypeLabel(p.productType) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Category -->
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Categoría
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
+                <span
+                  class="bg-base-200 text-base-content/60 text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded border border-base-300">
+                  {{ p.category }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Brand -->
+            <ng-container matColumnDef="brand">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Marca
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
+                <span class="text-xs font-bold text-primary uppercase tracking-widest">
+                  {{ p.brand }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Stock -->
+            <ng-container matColumnDef="stock">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Stock
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
+                @let stock = getTotalStock(p);
+                <span
+                  class="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-md shadow-sm border border-primary/20 inline-block text-center min-w-15">
+                  {{ stock }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Precio-Costo -->
+            <ng-container matColumnDef="price_cash">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Precio-Costo
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                <span class="text-base-content/60 font-medium">
+                  {{
+                  p.prices.efectivo_transferencia
+                  | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                  }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Precio-Publico -->
+            <ng-container matColumnDef="price_installments">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Precio-Publico
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                <span class="text-success font-bold">
+                  {{
+                  p.prices.tarjeta_credito_debito
+                  | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                  }}
+                </span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
+              class="bg-base-100! h-10! border-b border-base-300"></tr>
+            <tr mat-row *matRowDef="let element; columns: displayedColumns;"
+              class="border-b border-base-300 hover:bg-base-200/50 transition-colors" (click)="viewProduct(element)">
+            </tr>
+          </table>
+        </div>
+        <!-- Paginación -->
+        <mat-paginator [length]="ProductState.pagination().totalItems"
+          [pageSize]="ProductState.pagination().itemsPerPage" [pageIndex]="ProductState.pagination().currentPage - 1"
+          [pageSizeOptions]="[10, 20]" (page)="onPageChange($event)"
+          class="border-t border-base-300 bg-base-100! shrink-0">
+        </mat-paginator>
+      </div>
+      }
     </div>
-    }
-  </div>
+  </ng-container>
+
 </app-page-layout>

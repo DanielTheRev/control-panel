@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { SidebarService } from '../../../services/sidebar.service';
 import { WebSocketService } from '../../../services/websocket.service';
 import { Notifications } from './components/notifications/notifications';
 import { UserDropdown } from './components/user-dropdown/user-dropdown';
+import { PageHeader } from "../page-header/page-header";
 
 @Component({
   selector: 'app-navbar',
@@ -15,6 +16,8 @@ import { UserDropdown } from './components/user-dropdown/user-dropdown';
 export class Navbar {
   private wsService = inject(WebSocketService);
   private sidebarService = inject(SidebarService);
+
+  navbarTitle = computed(() => this.sidebarService.navbarTitle());
 
   isDark = document.documentElement.getAttribute('data-theme') === 'nexocommerce-dark';
 

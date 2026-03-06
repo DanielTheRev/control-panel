@@ -10,6 +10,7 @@ import { BannerService } from '../../services/banner.service';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { BannerStateService } from '../../states/banner.state.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-banner-create',
@@ -28,13 +29,15 @@ import { BannerStateService } from '../../states/banner.state.service';
   styleUrl: './banner-create.scss'
 })
 export class BannerCreate implements OnInit {
-  private fb = inject(FormBuilder);
+  #Fb = inject(FormBuilder);
   #bannerStateService = inject(BannerStateService);
-  private router = inject(Router);
-  private snackBar = inject(MatSnackBar);
+  #Router = inject(Router);
+  #SnackBar = inject(MatSnackBar);
+  #SidebarService = inject(SidebarService)
+
   readonly bannerID = input.required<string>();
 
-  bannerForm: FormGroup = this.fb.group({
+  bannerForm: FormGroup = this.#Fb.group({
     brandName: ['', Validators.required],
     title: ['', Validators.required],
     subtitle: ['', Validators.required],
@@ -54,6 +57,12 @@ export class BannerCreate implements OnInit {
     return this.bannerForm.get('image')?.value;
   }
 
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Gestionar Banner'
+    });
+  }
+
   ngOnInit() {
     if (this.bannerID()) {
       this.isEditMode = true;
@@ -71,7 +80,7 @@ export class BannerCreate implements OnInit {
       console.error('Error loading banner', error);
       this.showSnackBar('Error loading banner details');
       this.loading = false;
-      this.router.navigate(['/home/banners']);
+      this.#Router.navigate(['/home/banners']);
     }
   }
 
@@ -86,7 +95,7 @@ export class BannerCreate implements OnInit {
 
         await this.#bannerStateService.updateBanner(this.bannerID(), bannerData);
         this.showSnackBar('Banner updated successfully');
-        this.router.navigate(['/home/banners']);
+        this.#Router.navigate(['/home/banners']);
         this.loading = false;
       } catch (error) {
         console.error('Error updating banner', error);
@@ -97,7 +106,7 @@ export class BannerCreate implements OnInit {
       try {
         await this.#bannerStateService.addBanner(bannerData)
         this.showSnackBar('Banner creado exitosamente');
-        this.router.navigate(['/home/banners']);
+        this.#Router.navigate(['/home/banners']);
         this.loading = false;
       } catch (error) {
         console.error('Error creating banner', error);
@@ -108,7 +117,7 @@ export class BannerCreate implements OnInit {
   }
 
   private showSnackBar(message: string) {
-    this.snackBar.open(message, 'Close', { duration: 3000 });
+    this.#SnackBar.open(message, 'Close', { duration: 3000 });
   }
 
 

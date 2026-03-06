@@ -19,15 +19,16 @@ import { ShippingType } from '../../interfaces/shipping.interface';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../states/order.state.service';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-client-orders',
   standalone: true,
   imports: [
-    CommonModule, 
-    PageLayout, 
-    PageHeader, 
-    CurrencyPipe, 
+    CommonModule,
+    PageLayout,
+    PageHeader,
+    CurrencyPipe,
     DatePipe,
     RouterLink,
     MatTableModule,
@@ -45,6 +46,7 @@ import { OrdersStateService } from '../../states/order.state.service';
 export class ClientOrders {
   // Inyectar el servicio de estado
   private orderStateService = inject(OrdersStateService);
+  #SidebarService = inject(SidebarService);
 
   // Exponer propiedades del servicio para el template
   readonly orders = this.orderStateService.orders;
@@ -72,9 +74,15 @@ export class ClientOrders {
   // Enums para usar en el template
   readonly OrderStatus = OrderStatus;
   readonly PaymentStatus = PaymentStatus;
-  
+
   protected readonly Math = Math;
-  
+
+  constructor() {
+    this.#SidebarService.navbarTitle.set({
+      title: 'Pedidos'
+    });
+  }
+
   // Table Columns
   displayedColumns: string[] = ['orderNumber', 'user', 'date', 'total', 'status', 'payment', 'shipping', 'actions'];
 
@@ -105,7 +113,7 @@ export class ClientOrders {
   refreshData(): void {
     this.orderStateService.refresh();
   }
-  
+
   /**
    * Obtener clases CSS para el badge de estado de orden
    */
@@ -145,7 +153,7 @@ export class ClientOrders {
       default: return 'N/A';
     }
   }
-  
+
   /**
    * Resetear filtros
    */
