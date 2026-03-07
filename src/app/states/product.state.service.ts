@@ -1,7 +1,7 @@
 import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IProduct, ProductType } from '../interfaces/product.interface';
+import { IProduct, ProductType, IProductCategories } from '../interfaces/product.interface';
 import { IPaginatedResult } from '../interfaces/pagination.interface';
 import { ProductService } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
@@ -16,6 +16,8 @@ export class ProductStoreService {
   // Pagination signals — httpResource reacts to these automatically
   private pageNumber = signal(1);
   private pageSize = signal(10);
+  private searchQuery = signal('');
+  private categoryFilter = signal('');
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -26,6 +28,8 @@ export class ProductStoreService {
       params: {
         page: this.pageNumber(),
         limit: this.pageSize(),
+        ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
+        ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
       },
     }));
   }
@@ -55,10 +59,10 @@ export class ProductStoreService {
     (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.CLOTHING)
   );
 
-  readonly categories = computed(() => {
-    const products = this.#fetchedProducts.value()?.data || [];
-    return [...new Set(products.map(p => p.category))];
-  });
+  readonly categories = signal(Object.values(IProductCategories));
+
+  readonly currentSearchQuery = computed(() => this.searchQuery());
+  readonly currentCategoryFilter = computed(() => this.categoryFilter());
 
   // Pagination methods — just update the signals, httpResource handles the rest
   setPage(page: number) {
@@ -68,6 +72,16 @@ export class ProductStoreService {
   setPageSize(size: number) {
     this.pageSize.set(size);
     this.pageNumber.set(1); // Reset to first page when changing size
+  }
+
+  setSearchQuery(query: string) {
+    this.searchQuery.set(query);
+    this.pageNumber.set(1); // Reset page when searching
+  }
+
+  setCategoryFilter(category: string) {
+    this.categoryFilter.set(category);
+    this.pageNumber.set(1); // Reset page when filtering
   }
 
   changePage(page: number, size: number) {
@@ -85,8 +99,8 @@ export class ProductStoreService {
     }
   }
 
-  calculatePrices(costPrice: number) {
-    return this.#productService.calculatePrices(costPrice);
+  calculatePrices(costPrice: number, customProfitMargin?: number | string) {
+    return this.#productService.calculatePrices(costPrice, customProfitMargin);
   }
 
   async createProduct(data: FormData) {

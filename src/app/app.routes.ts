@@ -128,6 +128,10 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'settings',
+        loadComponent: () => import('./pages/store-settings/store-settings').then(c => c.StoreSettings)
+      },
+      {
         path: '**',
         pathMatch: 'full',
         redirectTo: 'products',

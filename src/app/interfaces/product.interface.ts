@@ -66,6 +66,7 @@ export interface IProduct {
   specifications: { key: string; value: string }[];
   variants: IVariant[];
   lowStockThreshold?: number;
+  customProfitMargin?: number;
   // Virtuals
   totalStock?: number;
   hasStock?: boolean;
@@ -123,6 +124,7 @@ export interface IProductCreateDTO {
   largeDescription: string;
   price: number;
   category: IProductCategories;
+  customProfitMargin?: number | string;
   image: { link: string; file: File }[];
   features: string[];
   specifications: { key: string; value: string }[];

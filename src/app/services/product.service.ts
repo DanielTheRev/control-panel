@@ -14,7 +14,6 @@ export class ProductService {
   #apiUrl = `${environment.apiUrl}/products`;
   #http = inject(HttpClient);
   #toast = inject(HotToastService);
-  constructor() { }
 
   getProduct(id: string) {
     return firstValueFrom(this.#http.get<IProduct>(`${this.#apiUrl}/complete/${id}`).pipe(
@@ -27,12 +26,6 @@ export class ProductService {
         }
       })
     ));
-  }
-
-  getProducts(page: number = 1, limit: number = 10, type?: string) {
-    const params: any = { page, limit };
-    if (type) params.type = type;
-    return firstValueFrom(this.#http.get<IPaginatedResult<IProduct>>(`${this.#apiUrl}/list`, { params }));
   }
 
   create(productData: FormData) {
@@ -85,8 +78,12 @@ export class ProductService {
     ));
   }
 
-  calculatePrices(costPrice: number): Observable<IProductPrices> {
-    return this.#http.post<IProductPrices>(`${this.#apiUrl}/calculate-prices`, { costPrice })
+  calculatePrices(costPrice: number, customProfitMargin?: number | string): Observable<IProductPrices> {
+    const payload: any = { costPrice };
+    if (customProfitMargin !== undefined && customProfitMargin !== null && customProfitMargin !== '') {
+      payload.customProfitMargin = Number(customProfitMargin);
+    }
+    return this.#http.post<IProductPrices>(`${this.#apiUrl}/calculate-prices`, payload)
   }
 
   deleteProduct(id: string) {

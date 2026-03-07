@@ -4,11 +4,16 @@
     : 'Rellena la información para tu nuevo artículo.';
 
     <app-page-header header [title]="title" [subtitle]="subtitle">
-        <div actions class="flex gap-2">
+        <div actions class="flex items-center gap-4">
+            <div class="text-xs text-error font-mono font-bold bg-error/10 px-2 py-1 rounded max-w-sm flex flex-col">
+                <span>[DEBUG] Invalid: {{ productForm.invalid }} | HasChanges: {{ hasChanges() }}</span>
+                <span class="text-[10px] break-all">Form Val: {{ productForm.value | json }}</span>
+                <span class="text-[10px] break-all">Prod Status: {{ productForm.status }}</span>
+            </div>
             <a routerLink="/products" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
-            @let disable = productForm.invalid || isEditMode() && hasChanges() || isLoading();
+            @let disable = productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
             <button class="btn btn-primary px-8" (click)="saveProduct()" [disabled]="disable">
                 @if (isLoading()) {
                 <span class="loading loading-spinner"></span>
@@ -98,13 +103,21 @@
                             </fieldset>
                         </div>
 
-                        <div class="mt-4">
-                            <fieldset class="fieldset w-1/2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <fieldset class="fieldset">
                                 <legend class="fieldset-legend">Precio de Costo (USD)</legend>
                                 <div class="join w-full">
-                                    <span class="join-item btn btn-static bg-base-200 border-base-300">$</span>
+                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">$</span>
                                     <input type="number" class="join-item input input-bordered w-full"
                                         placeholder="0.00" formControlName="price" />
+                                </div>
+                            </fieldset>
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Margen de Ganancia Custom (%)</legend>
+                                <div class="join w-full">
+                                    <input type="number" class="join-item input input-bordered w-full"
+                                        placeholder="Global por defecto" formControlName="customProfitMargin" />
+                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
                                 </div>
                             </fieldset>
                         </div>

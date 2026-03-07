@@ -93,6 +93,18 @@
           <span class="menu-text">Hero Slider</span>
           }
         </a>
+
+        @if (isExpanded) {
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
+        }
+        <a routerLink="/home/settings" routerLinkActive="active"
+          class="menu-item text-primary"
+          [matTooltip]="isCollapsed ? 'Configuración de la Tienda' : ''" matTooltipPosition="right">
+          <mat-icon>settings</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Configuración de la Tienda</span>
+          }
+        </a>
       </nav>
 
       <!-- Collapse Toggle at Bottom -->

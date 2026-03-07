@@ -1,3 +1,4 @@
+import { CommonModule, JsonPipe } from '@angular/common';
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -5,7 +6,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
-import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, switchMap, map } from 'rxjs';
 import { IProduct, IProductCategories, IProductPrices, ProductType } from '../../interfaces/product.interface';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
@@ -21,6 +22,8 @@ import { SidebarService } from '../../services/sidebar.service';
   selector: 'app-product-create',
   imports: [
     ReactiveFormsModule,
+    CommonModule,
+    JsonPipe,
     PageLayout,
     PageHeader,
     QuillModule,
@@ -81,6 +84,7 @@ export class ProductCreate implements OnInit {
     brand: ['Apple', Validators.required],
     category: ['Smartphones', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
+    customProfitMargin: [''],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
     images: this.#fb.array<{ link: string; file: File | null }>(
@@ -112,18 +116,36 @@ export class ProductCreate implements OnInit {
   get storageControls() { return this.productForm.get('storage') as FormArray; }
 
   constructor() {
-    // Listen to price changes
-    this.productForm.get('price')?.valueChanges.pipe(
+    // Listen to price and margin changes for calculating visual prices via the backend
+    this.productForm.valueChanges.pipe(
       takeUntilDestroyed(),
       debounceTime(800),
-      distinctUntilChanged(),
-      filter(value => value > 0),
-      switchMap(value => this.#productState.calculatePrices(Number(value)))
+      map(val => ({ price: val.price, margin: val.customProfitMargin })),
+      distinctUntilChanged((prev, curr) => prev.price === curr.price && prev.margin === curr.margin),
+      filter(val => val.price > 0),
+      switchMap(val => this.#productState.calculatePrices(Number(val.price), val.margin))
     ).subscribe({
       next: (prices) => {
         this.calculatedPrices.set(prices);
       },
       error: (err) => console.error('Error calculating prices', err)
+    });
+
+    // Reactively check for changes to enable/disable the save button
+    this.productForm.valueChanges.pipe(
+      takeUntilDestroyed(),
+      debounceTime(300)
+    ).subscribe(value => {
+      if (this.isEditMode() && this.originalProduct()) {
+        const changes = ProductFormUtils.hasChanges(
+          { ...value, variants: this.#parseVariants() },
+          this.originalProduct(),
+          this.#deletedImages
+        );
+        this.hasChanges.set(changes.hasChanges);
+      } else {
+        this.hasChanges.set(this.productForm.dirty);
+      }
     });
 
     // Listen to productType changes
@@ -165,6 +187,7 @@ export class ProductCreate implements OnInit {
         brand: product.brand,
         category: product.category,
         price: product.prices.costPrice.inUSD,
+        customProfitMargin: product.customProfitMargin !== undefined ? product.customProfitMargin : '',
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
         // Tech
@@ -235,6 +258,14 @@ export class ProductCreate implements OnInit {
 
   onImageDeleted(publicId: string) {
     this.#deletedImages.push(publicId);
+    if (this.isEditMode() && this.originalProduct()) {
+      const changes = ProductFormUtils.hasChanges(
+        { ...this.productForm.value, variants: this.#parseVariants() },
+        this.originalProduct(),
+        this.#deletedImages
+      );
+      this.hasChanges.set(changes.hasChanges);
+    }
   }
 
   addVariant() {
@@ -296,7 +327,6 @@ export class ProductCreate implements OnInit {
       if (!changes.hasChanges) {
         return
       }
-      this.hasChanges.set(true);
       this.isLoading.set(true);
       try {
         await this.#productState.updateProduct(this.productID(), changes.formData);
@@ -329,6 +359,11 @@ export class ProductCreate implements OnInit {
     formData.append('brand', data.brand);
     formData.append('category', data.category);
     formData.append('price', data.price);
+    if (data.customProfitMargin !== undefined && data.customProfitMargin !== null && data.customProfitMargin !== '') {
+      formData.append('customProfitMargin', data.customProfitMargin.toString());
+    } else {
+      formData.append('customProfitMargin', '');
+    }
     formData.append('shortDescription', data.shortDescription);
     formData.append('largeDescription', data.largeDescription);
 
