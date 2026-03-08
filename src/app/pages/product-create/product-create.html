@@ -5,11 +5,22 @@
 
     <app-page-header header [title]="title" [subtitle]="subtitle">
         <div actions class="flex items-center gap-4">
-            <div class="text-xs text-error font-mono font-bold bg-error/10 px-2 py-1 rounded max-w-sm flex flex-col">
-                <span>[DEBUG] Invalid: {{ productForm.invalid }} | HasChanges: {{ hasChanges() }}</span>
-                <span class="text-[10px] break-all">Form Val: {{ productForm.value | json }}</span>
-                <span class="text-[10px] break-all">Prod Status: {{ productForm.status }}</span>
+            @if (productForm.invalid) {
+            <div class="text-[11px] text-error font-medium bg-error/5 px-3 py-1.5 border border-error/20 rounded-lg flex items-center gap-1.5 max-w-[200px] leading-tight shadow-sm">
+                <mat-icon class="text-[16px] w-4 h-4 shrink-0">error_outline</mat-icon>
+                <span>Faltan campos: <span class="font-bold">{{ invalidControls.join(', ') }}</span></span>
             </div>
+            } @else if (isEditMode() && !hasChanges()) {
+            <div class="text-[11px] text-base-content/60 font-medium bg-base-200/50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-base-300">
+                <mat-icon class="text-[16px] w-4 h-4">info</mat-icon>
+                <span>Sin cambios</span>
+            </div>
+            } @else {
+            <div class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                <mat-icon class="text-[16px] w-4 h-4">check_circle</mat-icon>
+                <span>Listo p/guardar</span>
+            </div>
+            }
             <a routerLink="/products" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
@@ -76,7 +87,7 @@
                             <fieldset class="fieldset">
                                 <legend class="fieldset-legend">Marca</legend>
                                 <select class="select select-bordered w-full" formControlName="brand">
-                                    @if (selectedType() === 'tech') {
+                                    @if (selectedType() === ProductType.TECH) {
                                     @for (b of techBrands; track b) {
                                     <option [value]="b">{{ b }}</option>
                                     }
@@ -91,7 +102,7 @@
                             <fieldset class="fieldset">
                                 <legend class="fieldset-legend">Categoría</legend>
                                 <select class="select select-bordered w-full" formControlName="category">
-                                    @if (selectedType() === 'tech') {
+                                    @if (selectedType() === ProductType.TECH) {
                                     @for (c of techCategories; track c) {
                                     <option [value]="c">{{ c }}</option>
                                     }
@@ -131,7 +142,7 @@
                 </div>
 
                 <!-- Tech-Specific Fields -->
-                @if (selectedType() === 'tech') {
+                @if (selectedType() === ProductType.TECH) {
                 <div class="card bg-base-100 shadow-sm border border-primary/20">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">
@@ -169,7 +180,7 @@
                 }
 
                 <!-- Clothing-Specific Fields -->
-                @if (selectedType() === 'clothing') {
+                @if (selectedType() === ProductType.CLOTHING) {
                 <div class="card bg-base-100 shadow-sm border border-secondary/20">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">

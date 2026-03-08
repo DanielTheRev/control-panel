@@ -1,4 +1,4 @@
-import { CommonModule, JsonPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,8 +6,9 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
-import { debounceTime, distinctUntilChanged, filter, switchMap, map } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, map, switchMap } from 'rxjs';
 import { IProduct, IProductCategories, IProductPrices, ProductType } from '../../interfaces/product.interface';
+import { SidebarService } from '../../services/sidebar.service';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
 import { PageHeader } from '../../shared/components/page-header/page-header';
@@ -16,14 +17,12 @@ import { PricePreview } from '../../shared/components/price-preview/price-previe
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
 import { ProductStoreService } from '../../states/product.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
-import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-product-create',
   imports: [
     ReactiveFormsModule,
     CommonModule,
-    JsonPipe,
     PageLayout,
     PageHeader,
     QuillModule,
@@ -53,7 +52,7 @@ export class ProductCreate implements OnInit {
   originalImages = computed(() => this.originalProduct()?.images || []);
   hasChanges = signal<boolean>(false);
   isLoading = signal<boolean>(false);
-  selectedType = signal<string>('tech');
+  selectedType = signal<string>('');
 
   ProductType = ProductType;
 
@@ -114,6 +113,31 @@ export class ProductCreate implements OnInit {
   get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
   get variantsControls() { return this.productForm.get('variants') as FormArray; }
   get storageControls() { return this.productForm.get('storage') as FormArray; }
+  
+  get invalidControls(): string[] {
+    const translations: Record<string, string> = {
+      productType: 'Tipo',
+      model: 'Modelo',
+      brand: 'Marca',
+      category: 'Categoría',
+      price: 'Precio',
+      shortDescription: 'Desc. Corta',
+      largeDescription: 'Desc. Larga',
+      images: 'Imágenes',
+      features: 'Características',
+      specifications: 'Especificaciones',
+      variants: 'Variantes',
+    };
+
+    const invalid: string[] = [];
+    const controls = this.productForm.controls;
+    for (const name in controls) {
+      if (controls[name].invalid) {
+        invalid.push(translations[name] || name);
+      }
+    }
+    return invalid;
+  }
 
   constructor() {
     // Listen to price and margin changes for calculating visual prices via the backend
@@ -137,6 +161,12 @@ export class ProductCreate implements OnInit {
       debounceTime(300)
     ).subscribe(value => {
       if (this.isEditMode() && this.originalProduct()) {
+        console.log(
+          'value', value,
+          'originalProduct', this.originalProduct(),
+          'deletedImages', this.#deletedImages,
+          'variants', this.#parseVariants()
+        );
         const changes = ProductFormUtils.hasChanges(
           { ...value, variants: this.#parseVariants() },
           this.originalProduct(),
@@ -197,10 +227,10 @@ export class ProductCreate implements OnInit {
         screenSize: product.screenSize || '',
         os: product.os || '',
         // Clothing
-        gender: product.gender || 'Hombre',
-        fit: product.fit || 'Regular',
+        gender: product.gender || '',
+        fit: product.fit || '',
         material: product.material || '',
-        sizeType: product.sizeType || 'Ropa',
+        sizeType: product.sizeType || '',
       });
 
       this.calculatedPrices.set(product.prices);

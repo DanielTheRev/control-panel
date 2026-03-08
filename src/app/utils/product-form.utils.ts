@@ -10,6 +10,7 @@ export class ProductFormUtils {
     }
 
     if (productData.price !== originalProduct.prices.costPrice.inUSD) {
+      console.warn(`[DEBUG] Change detected in price. New: '${productData.price}', Orig: '${originalProduct.prices.costPrice.inUSD}'`);
       changes.formData.append('price', productData.price);
       changes.hasChanges = true;
     }
@@ -99,6 +100,7 @@ export class ProductFormUtils {
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]).trim() : '';
       
       if (prodVal !== origVal) {
+        console.warn(`[DEBUG] Change detected in tech field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field]);
         changes.hasChanges = true;
       }
@@ -111,6 +113,7 @@ export class ProductFormUtils {
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]).trim() : '';
       
       if (prodVal !== origVal) {
+        console.warn(`[DEBUG] Change detected in clothing field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field]);
         changes.hasChanges = true;
       }
@@ -120,6 +123,7 @@ export class ProductFormUtils {
     const origComp = JSON.stringify(originalProduct.composition || []);
     const newComp = JSON.stringify(productData.composition || []);
     if (newComp !== origComp) {
+      console.warn(`[DEBUG] Change detected in composition. New: '${newComp}', Orig: '${origComp}'`);
       changes.formData.append('composition', newComp);
       changes.hasChanges = true;
     }
@@ -128,6 +132,7 @@ export class ProductFormUtils {
     const origCare = JSON.stringify(originalProduct.careInstructions || []);
     const newCare = JSON.stringify(productData.careInstructions || []);
     if (newCare !== origCare) {
+      console.warn(`[DEBUG] Change detected in careInstructions. New: '${newCare}', Orig: '${origCare}'`);
       changes.formData.append('careInstructions', newCare);
       changes.hasChanges = true;
     }
@@ -136,6 +141,7 @@ export class ProductFormUtils {
     if (productData.images && Array.isArray(productData.images)) {
       const newFiles = productData.images.filter((img: any) => img.file instanceof File);
       if (newFiles.length > 0) {
+        console.warn(`[DEBUG] Change detected in images. ${newFiles.length} new files.`);
         changes.hasChanges = true;
         newFiles.forEach((img: any) => {
           changes.formData.append('images', img.file);
