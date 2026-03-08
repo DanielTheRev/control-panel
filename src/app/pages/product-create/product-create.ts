@@ -79,10 +79,10 @@ export class ProductCreate implements OnInit {
   clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', 'The North Face', 'Topper'];
 
   productForm: FormGroup = this.#fb.group({
-    productType: ['tech', Validators.required],
+    productType: ['', Validators.required],
     model: ['', Validators.required],
-    brand: ['Apple', Validators.required],
-    category: ['Smartphones', Validators.required],
+    brand: ['', Validators.required],
+    category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
     customProfitMargin: [''],
     shortDescription: ['', Validators.required],
@@ -102,10 +102,10 @@ export class ProductCreate implements OnInit {
     screenSize: [''],
     os: [''],
     // Clothing fields
-    gender: ['Hombre'],
-    fit: ['Regular'],
+    gender: [''],
+    fit: [''],
     material: [''],
-    sizeType: ['Ropa'],
+    sizeType: [''],
   });
 
   // Getters for FormArrays
@@ -154,11 +154,11 @@ export class ProductCreate implements OnInit {
     ).subscribe(type => {
       this.selectedType.set(type);
       // Reset brand and category defaults when type changes
-      if (type === 'tech') {
-        this.productForm.patchValue({ brand: 'Apple', category: 'Smartphones' });
-      } else {
-        this.productForm.patchValue({ brand: 'Nike', category: IProductCategories.Remeras });
-      }
+      // if (type === 'tech') {
+      //   this.productForm.patchValue({ brand: 'Apple', category: 'Smartphones' });
+      // } else {
+      //   this.productForm.patchValue({ brand: 'Nike', category: IProductCategories.Remeras });
+      // }
     });
 
     this.#SidebarService.navbarTitle.set({
@@ -177,8 +177,9 @@ export class ProductCreate implements OnInit {
     try {
       const product = await this.#productState.getProduct(id);
       this.originalProduct.set(structuredClone(product));
+      console.log(product);
 
-      const type = product.productType === ProductType.TECH ? 'tech' : 'clothing';
+      const type = product.productType;
       this.selectedType.set(type);
 
       this.productForm.patchValue({

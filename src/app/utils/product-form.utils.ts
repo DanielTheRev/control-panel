@@ -30,6 +30,7 @@ export class ProductFormUtils {
         : (prodVal !== origVal);
 
       if (hasChanged) {
+        console.warn(`[DEBUG] Change detected in simple field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'. Normalized: '${normalizedProdVal}' vs '${normalizedOrigVal}'`);
         changes.formData.append(field, prodVal !== undefined && prodVal !== null ? prodVal : '');
         changes.hasChanges = true;
       }
@@ -42,6 +43,7 @@ export class ProductFormUtils {
       const newArray = productData[field] || [];
 
       if (JSON.stringify(newArray) !== JSON.stringify(originalArray)) {
+        console.warn(`[DEBUG] Change detected in array field: ${field}. New: '${JSON.stringify(newArray)}', Orig: '${JSON.stringify(originalArray)}'`);
         changes.formData.append(field, JSON.stringify(newArray));
         changes.hasChanges = true;
       }
@@ -74,6 +76,7 @@ export class ProductFormUtils {
     });
     
     if (JSON.stringify(newVariants) !== JSON.stringify(originalVariants)) {
+      console.warn(`[DEBUG] Change detected in variants. New: '${JSON.stringify(newVariants)}', Orig: '${JSON.stringify(originalVariants)}'`);
       changes.formData.append('variants', JSON.stringify(productData.variants || []));
       changes.hasChanges = true;
     }
@@ -83,6 +86,7 @@ export class ProductFormUtils {
     const newSpecs = productData.specifications || [];
 
     if (JSON.stringify(newSpecs) !== JSON.stringify(originalSpecs)) {
+      console.warn(`[DEBUG] Change detected in specs. New: '${JSON.stringify(newSpecs)}', Orig: '${JSON.stringify(originalSpecs)}'`);
       changes.formData.append('specifications', JSON.stringify(newSpecs));
       changes.hasChanges = true;
     }
@@ -140,6 +144,7 @@ export class ProductFormUtils {
     }
 
     if (deletedImages.length > 0) {
+      console.warn(`[DEBUG] Change detected in deletedImages.`);
       changes.hasChanges = true;
       changes.formData.append('deletedImages', JSON.stringify(deletedImages));
     }

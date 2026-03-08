@@ -38,7 +38,8 @@
                         <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
                         <div class="flex gap-3">
                             <label class="flex-1 cursor-pointer">
-                                <input type="radio" formControlName="productType" value="tech" class="peer hidden" />
+                                <input type="radio" formControlName="productType" [value]="ProductType.TECH"
+                                    class="peer hidden" />
                                 <div
                                     class="p-4 rounded-xl border-2 border-base-300 peer-checked:border-primary peer-checked:bg-primary/10 transition-all text-center">
                                     <span class="text-2xl">📱</span>
@@ -47,7 +48,7 @@
                                 </div>
                             </label>
                             <label class="flex-1 cursor-pointer">
-                                <input type="radio" formControlName="productType" value="clothing"
+                                <input type="radio" formControlName="productType" [value]="ProductType.CLOTHING"
                                     class="peer hidden" />
                                 <div
                                     class="p-4 rounded-xl border-2 border-base-300 peer-checked:border-secondary peer-checked:bg-secondary/10 transition-all text-center">
