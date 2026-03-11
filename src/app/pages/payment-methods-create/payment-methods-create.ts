@@ -29,7 +29,7 @@ export class PaymentMethodsCreate implements OnInit {
   #snackBar = inject(MatSnackBar);
   readonly paymentMethodID = input.required<string>();
 
-  isEditMode = computed(() => this.paymentMethodID() !== null);
+  isEditMode = computed(() => this.paymentMethodID());
   paymentTypes = Object.values(PaymentType);
 
   form: FormGroup = this.#fb.group({
@@ -43,6 +43,7 @@ export class PaymentMethodsCreate implements OnInit {
   ngOnInit() {
     const id = this.paymentMethodID();
     if (id) {
+      console.log(id);
       this.loadMethod(id);
     }
   }

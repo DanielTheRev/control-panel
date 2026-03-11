@@ -6,17 +6,20 @@
     <app-page-header header [title]="title" [subtitle]="subtitle">
         <div actions class="flex items-center gap-4">
             @if (productForm.invalid) {
-            <div class="text-[11px] text-error font-medium bg-error/5 px-3 py-1.5 border border-error/20 rounded-lg flex items-center gap-1.5 max-w-[200px] leading-tight shadow-sm">
+            <div
+                class="text-[11px] text-error font-medium bg-error/5 px-3 py-1.5 border border-error/20 rounded-lg flex items-center gap-1.5 max-w-50 leading-tight shadow-sm">
                 <mat-icon class="text-[16px] w-4 h-4 shrink-0">error_outline</mat-icon>
                 <span>Faltan campos: <span class="font-bold">{{ invalidControls.join(', ') }}</span></span>
             </div>
             } @else if (isEditMode() && !hasChanges()) {
-            <div class="text-[11px] text-base-content/60 font-medium bg-base-200/50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-base-300">
+            <div
+                class="text-[11px] text-base-content/60 font-medium bg-base-200/50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-base-300">
                 <mat-icon class="text-[16px] w-4 h-4">info</mat-icon>
                 <span>Sin cambios</span>
             </div>
             } @else {
-            <div class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+            <div
+                class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
                 <mat-icon class="text-[16px] w-4 h-4">check_circle</mat-icon>
                 <span>Listo p/guardar</span>
             </div>
@@ -131,6 +134,13 @@
                                         placeholder="Global por defecto" formControlName="customProfitMargin" />
                                     <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
                                 </div>
+                                @if (isUsingGlobalMargin() && !productForm.get('customProfitMargin')?.dirty) {
+                                <div
+                                    class="text-[11px] mt-2 text-info font-medium bg-info/5 px-3 py-1.5 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight shadow-sm">
+                                    <mat-icon class="text-[16px] w-4 h-4 shrink-0">info</mat-icon>
+                                    <span>Usando el Margen Global de la tienda.</span>
+                                </div>
+                                }
                             </fieldset>
                         </div>
 
@@ -261,9 +271,6 @@
                     <div class="card-body p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="card-title text-lg">Variantes</h3>
-                            <button type="button" class="btn btn-sm btn-primary" (click)="addVariant()">
-                                <mat-icon>add</mat-icon> Agregar
-                            </button>
                         </div>
 
                         @if (variantsControls.length === 0) {
@@ -273,9 +280,9 @@
                         </div>
                         }
 
-                        @for (variant of variantsControls.controls; track $index; let i = $index) {
-                        <div class="border border-base-300 rounded-lg p-4 mb-3 relative" [formGroupName]="'variants'">
-                            <div [formGroupName]="i">
+                        <div formArrayName="variants">
+                            @for (variant of variantsControls.controls; track variant; let i = $index) {
+                            <div class="border border-base-300 rounded-lg p-4 mb-3 relative" [formGroupName]="i">
                                 <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2 text-error"
                                     (click)="removeVariant(i)">
                                     <mat-icon>close</mat-icon>
@@ -314,8 +321,14 @@
                                     </fieldset>
                                 </div>
                             </div>
+                            }
                         </div>
-                        }
+
+                        <div class="flex justify-end items-center mb-4">
+                            <button type="button" class="btn btn-sm btn-primary" (click)="addVariant()">
+                                <mat-icon>add</mat-icon> Agregar
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -323,7 +336,8 @@
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">Etiquetas</h3>
-                        <app-tag-input [formArray]="featuresControls" placeholder="Añadir etiqueta (ej. 5G, Oferta)">
+                        <app-tag-input [formArray]="featuresControls"
+                            placeholder="Añadir etiqueta (ej. 5G, Oferta, Tendencia 2026)">
                         </app-tag-input>
                     </div>
                 </div>
@@ -338,6 +352,27 @@
                         <app-key-value-list [formArray]="specificationsControls" keyPlaceholder="Característica"
                             valuePlaceholder="Detalle" entityName="Especificación">
                         </app-key-value-list>
+
+                        <div class="divider my-4"></div>
+
+                        <div class="bg-base-200/50 p-4 rounded-xl border border-base-300">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3 flex items-center gap-2">
+                                <mat-icon class="text-[16px] w-4 h-4">bolt</mat-icon>
+                                Carga Rápida
+                            </h4>
+                            <div class="flex gap-2">
+                                <input #bulkSpecs type="text" class="input input-bordered input-sm flex-1"
+                                    placeholder="Ej: RAM: 15gb, Almacenamiento: 256gb" 
+                                    (keydown.enter)="$event.preventDefault(); addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''" />
+                                <button type="button" class="btn btn-sm btn-secondary" 
+                                    (click)="addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''">
+                                    Cargar
+                                </button>
+                            </div>
+                            <p class="text-[10px] mt-2 text-base-content/40 italic">
+                                Separa cada característica con una coma (,) y su valor con dos puntos (:)
+                            </p>
+                        </div>
                     </div>
                 </div>
 

@@ -18,6 +18,7 @@ export class ConfigStateService {
   readonly isLoading = computed(() => this.loadingSignal());
   readonly hasError = computed(() => this.errorSignal());
 
+
   async loadConfig() {
     this.loadingSignal.set(true);
     this.errorSignal.set(false);

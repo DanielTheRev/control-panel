@@ -114,7 +114,8 @@ export class ProductStoreService {
 
   async updateProduct(id: string, data: FormData) {
     try {
-      await this.#productService.updateProduct(id, data);
+      const response = await this.#productService.updateProduct(id, data);
+      console.log(response);
       this.#fetchedProducts.reload();
     } catch (error) {
       throw error;

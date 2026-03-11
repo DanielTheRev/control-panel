@@ -37,6 +37,7 @@ export class ProductDetail implements OnInit {
   product = signal<IProduct | null>(null);
   isLoading = signal(true);
   hasError = signal(false);
+  isUsingGlobalMargin = signal<boolean>(false);
 
   constructor() {
     this.#SidebarService.navbarTitle.set({
@@ -47,6 +48,7 @@ export class ProductDetail implements OnInit {
   async ngOnInit() {
     try {
       const product = await this.#productState.getProduct(this.productID());
+      this.isUsingGlobalMargin.set(product.customProfitMargin === undefined || product.customProfitMargin === null);
       this.product.set(product);
     } catch {
       this.hasError.set(true);

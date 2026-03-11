@@ -17,6 +17,7 @@ import { PricePreview } from '../../shared/components/price-preview/price-previe
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
 import { ProductStoreService } from '../../states/product.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
+import { ConfigStateService } from '../../states/config.state.service';
 
 @Component({
   selector: 'app-product-create',
@@ -43,6 +44,16 @@ export class ProductCreate implements OnInit {
   #productState = inject(ProductStoreService);
   #router = inject(Router);
   #SidebarService = inject(SidebarService)
+  #CommerceConfigState = inject(ConfigStateService);
+
+  #LastSKU = signal<{
+    productType: string,
+    identifier: number,
+    size: number,
+    colorSuffix?: string,
+    colorName?: string,
+    colorHex?: string
+  } | undefined>(undefined)
 
   productID = input.required<string>();
   isEditMode = computed(() => this.productID() !== null);
@@ -53,6 +64,7 @@ export class ProductCreate implements OnInit {
   hasChanges = signal<boolean>(false);
   isLoading = signal<boolean>(false);
   selectedType = signal<string>('');
+  isUsingGlobalMargin = signal<boolean>(false);
 
   ProductType = ProductType;
 
@@ -75,7 +87,7 @@ export class ProductCreate implements OnInit {
   ];
 
   techBrands = ['Apple', 'Samsung', 'Poco', 'Xiaomi', 'Motorola', 'Sony', 'Microsoft', 'Nintendo', 'LG'];
-  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', 'The North Face', 'Topper'];
+  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', 'The North Face', 'Topper', 'Vans'];
 
   productForm: FormGroup = this.#fb.group({
     productType: ['', Validators.required],
@@ -83,7 +95,7 @@ export class ProductCreate implements OnInit {
     brand: ['', Validators.required],
     category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
-    customProfitMargin: [''],
+    customProfitMargin: [10, Validators.required],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
     images: this.#fb.array<{ link: string; file: File | null }>(
@@ -113,7 +125,7 @@ export class ProductCreate implements OnInit {
   get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
   get variantsControls() { return this.productForm.get('variants') as FormArray; }
   get storageControls() { return this.productForm.get('storage') as FormArray; }
-  
+
   get invalidControls(): string[] {
     const translations: Record<string, string> = {
       productType: 'Tipo',
@@ -161,12 +173,6 @@ export class ProductCreate implements OnInit {
       debounceTime(300)
     ).subscribe(value => {
       if (this.isEditMode() && this.originalProduct()) {
-        console.log(
-          'value', value,
-          'originalProduct', this.originalProduct(),
-          'deletedImages', this.#deletedImages,
-          'variants', this.#parseVariants()
-        );
         const changes = ProductFormUtils.hasChanges(
           { ...value, variants: this.#parseVariants() },
           this.originalProduct(),
@@ -192,22 +198,37 @@ export class ProductCreate implements OnInit {
     });
 
     this.#SidebarService.navbarTitle.set({
-      title:'Gestionar producto'
+      title: 'Gestionar producto'
     })
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.#CommerceConfigState.loadConfig();
+    const defaultProfit = this.#CommerceConfigState.config()?.profit || 10;
+
     const id = this.productID();
     if (id) {
-      this.#loadProduct(id);
+      await this.#loadProduct(id, defaultProfit);
+    } else {
+      // Set the dynamic global profit as default for new products
+      this.isUsingGlobalMargin.set(true);
+      this.productForm.patchValue({
+        customProfitMargin: defaultProfit
+      });
     }
   }
 
-  async #loadProduct(id: string) {
+  async #loadProduct(id: string, defaultProfit: number) {
     try {
       const product = await this.#productState.getProduct(id);
+
+      // Patch undefined customProfitMargin directly into the fetched object first, so it acts as original baseline
+      if (product.customProfitMargin === undefined || product.customProfitMargin === null) {
+        product.customProfitMargin = defaultProfit;
+        this.isUsingGlobalMargin.set(true);
+      }
+
       this.originalProduct.set(structuredClone(product));
-      console.log(product);
 
       const type = product.productType;
       this.selectedType.set(type);
@@ -218,7 +239,7 @@ export class ProductCreate implements OnInit {
         brand: product.brand,
         category: product.category,
         price: product.prices.costPrice.inUSD,
-        customProfitMargin: product.customProfitMargin !== undefined ? product.customProfitMargin : '',
+        customProfitMargin: product.customProfitMargin,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
         // Tech
@@ -275,6 +296,9 @@ export class ProductCreate implements OnInit {
           }));
         });
       }
+
+      console.log(this.productForm.value);
+      console.log(product);
     } catch (error) {
       console.log(error);
     }
@@ -285,6 +309,31 @@ export class ProductCreate implements OnInit {
     if (data && Array.isArray(data)) {
       data.forEach(item => formArray.push(this.#fb.control(item)));
     }
+  }
+
+  addBulkSpecifications(value: string) {
+    if (!value.trim()) return;
+
+    // Split by comma
+    const pairs = value.split(',');
+    
+    pairs.forEach(pair => {
+      // Split by first colon
+      const indexOfColon = pair.indexOf(':');
+      if (indexOfColon !== -1) {
+        const key = pair.substring(0, indexOfColon).trim();
+        const val = pair.substring(indexOfColon + 1).trim();
+        
+        if (key && val) {
+          this.specificationsControls.push(this.#fb.group({
+            key: [key, Validators.required],
+            value: [val, Validators.required]
+          }));
+        }
+      }
+    });
+
+    this.hasChanges.set(true);
   }
 
   onImageDeleted(publicId: string) {
@@ -300,12 +349,54 @@ export class ProductCreate implements OnInit {
   }
 
   addVariant() {
+    const currentVariants = this.variantsControls.value;
+
+    // 1. Sync with the last variant in the form if any
+    if (currentVariants && currentVariants.length > 0) {
+      const lastVariant = currentVariants[currentVariants.length - 1];
+      const parts = (lastVariant.sku || '').split('-');
+
+      this.#LastSKU.set({
+        productType: parts[0] || this.productForm.value.productType || 'PROD',
+        identifier: parseInt(parts[1]) || 0,
+        size: parseInt(parts[2]) || 0,
+        colorSuffix: parts[3] || '',
+        colorName: lastVariant.colorName || '',
+        colorHex: lastVariant.colorHex || ''
+      });
+    }
+    // 2. Otherwise use the signal's current state or initialize from defaults
+    else if (!this.#LastSKU()) {
+      const categoryPrefix = (this.productForm.value.category || 'prod').slice(0, 3).toLowerCase();
+      this.#LastSKU.set({
+        productType: categoryPrefix,
+        identifier: 0,
+        size: 34,
+        colorSuffix: 'BLK',
+        colorName: 'Blanco',
+        colorHex: '#ffffff'
+      });
+    }
+
+    // 3. Increment size and update the signal
+    this.#LastSKU.update(v => ({
+      ...v!,
+      size: v!.size + 1
+    }));
+
+    const last = this.#LastSKU()!;
+    let sku = `${last.productType.toUpperCase()}-${last.identifier}-${last.size}`;
+    if (last.colorSuffix) {
+      sku += `-${last.colorSuffix.toUpperCase()}`;
+    }
+
+    // 4. Push the new FormGroup with inherited values
     this.variantsControls.push(this.#fb.group({
-      sku: ['', Validators.required],
-      attributesJson: [''],
-      colorName: [''],
-      colorHex: [''],
-      stock: [0, [Validators.required, Validators.min(0)]],
+      sku: [sku, Validators.required],
+      attributesJson: [`Talle: ${last.size}`],
+      colorName: [last.colorName || 'Blanco'],
+      colorHex: [last.colorHex || '#ffffff'],
+      stock: [8, [Validators.required, Validators.min(1)]],
       isActive: [true]
     }));
   }
@@ -372,7 +463,6 @@ export class ProductCreate implements OnInit {
       this.isLoading.set(true);
       try {
         this.#buildCreateFormData(formData, productData);
-
         await this.#productState.createProduct(formData);
         this.#revokeBlobUrls();
         this.#router.navigate(['/products']);
@@ -403,7 +493,7 @@ export class ProductCreate implements OnInit {
     formData.append('variants', JSON.stringify(this.#parseVariants()));
 
     // Tech fields
-    if (data.productType === 'tech') {
+    if (data.productType === ProductType.TECH) {
       if (data.storage?.length) formData.append('storage', JSON.stringify(data.storage));
       if (data.ram) formData.append('ram', data.ram);
       if (data.processor) formData.append('processor', data.processor);
@@ -412,7 +502,7 @@ export class ProductCreate implements OnInit {
     }
 
     // Clothing fields
-    if (data.productType === 'clothing') {
+    if (data.productType === ProductType.CLOTHING) {
       if (data.gender) formData.append('gender', data.gender);
       if (data.fit) formData.append('fit', data.fit);
       if (data.material) formData.append('material', data.material);

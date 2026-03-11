@@ -19,9 +19,16 @@ export class TagInputComponent {
     const value = input.value.trim();
     if (!value) return;
 
-    this.formArray().push(new FormControl(value));
-    input.value = '';
-    input.focus();
+    // Split by comma and filter out empty values
+    const tags = value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
+    if (tags.length > 0) {
+      tags.forEach(tag => {
+        this.formArray().push(new FormControl(tag));
+      });
+      input.value = '';
+      input.focus();
+    }
   }
 
   remove(index: number) {

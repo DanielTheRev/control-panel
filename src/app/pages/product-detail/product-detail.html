@@ -58,7 +58,7 @@
             }
             } @else {
             <div class="aspect-square flex items-center justify-center text-base-content/30">
-              <mat-icon class="!text-6xl !w-16 !h-16">image</mat-icon>
+              <mat-icon class="text-6xl! w-16! h-16!">image</mat-icon>
             </div>
             }
           </div>
@@ -129,12 +129,22 @@
               </div>
               <div class="flex flex-col">
                 <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Margen</span>
-                <span class="text-sm font-bold px-2 py-0.5 rounded w-fit"
-                  [class.bg-success/10]="p.prices.profitMargin > 20" [class.text-success]="p.prices.profitMargin > 20"
-                  [class.bg-warning/10]="p.prices.profitMargin <= 20"
-                  [class.text-warning]="p.prices.profitMargin <= 20">
-                  {{ p.prices.profitMargin }}%
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold px-2 py-0.5 rounded w-fit"
+                    [class.bg-success/10]="p.prices.profitMargin > 20" [class.text-success]="p.prices.profitMargin > 20"
+                    [class.bg-warning/10]="p.prices.profitMargin <= 20"
+                    [class.text-warning]="p.prices.profitMargin <= 20">
+                    {{ p.prices.profitMargin }}%
+                  </span>
+                  @if (isUsingGlobalMargin()) {
+                  <div class="tooltip"
+                    data-tip="Se está aplicando el Margen Global al no tener un margen propio definido.">
+                    <span class="badge badge-sm badge-info gap-1 cursor-help">
+                      <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon> Global
+                    </span>
+                  </div>
+                  }
+                </div>
               </div>
               <div class="flex flex-col">
                 <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Dólar</span>
@@ -236,7 +246,7 @@
           <ul class="flex flex-col gap-1.5">
             @for (feature of p.features; track $index) {
             <li class="text-sm text-base-content/70 flex items-start gap-2">
-              <mat-icon class="!text-sm !w-4 !h-4 text-primary mt-0.5">check_circle</mat-icon>
+              <mat-icon class="text-sm! w-4! h-4! text-primary mt-0.5">check_circle</mat-icon>
               {{ feature }}
             </li>
             }

@@ -31,7 +31,7 @@ export class ShippingOptionsCreate implements OnInit {
   #SidebarService = inject(SidebarService)
 
   shippingOptionID = input.required<string>();
-  isEditMode = computed(() => this.shippingOptionID() !== null);
+  isEditMode = computed(() => this.shippingOptionID());
   shippingTypes = Object.values(ShippingType);
 
   form: FormGroup = this.#fb.group({
