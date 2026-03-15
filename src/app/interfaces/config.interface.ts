@@ -30,8 +30,20 @@ export interface IEcommerceConfig {
     mercadopago?: {
       active: boolean;
       baseCommission: number;
+      cft3cuotas: number;
+      cft6Cuotas: number;
       accessToken: string;
       publicKey: string;
+      webhookSecret?: string;
+      maxInstallments: number;
+      excludedPaymentMethods: string[];
+      excludedPaymentTypes: string[];
     };
+    customMethods?: {
+      id: string;
+      name: string;
+      description: string;
+      active: boolean;
+    }[];
   };
 }

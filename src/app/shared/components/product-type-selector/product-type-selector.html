@@ -1,0 +1,46 @@
+<div class="h-full w-full bg-base-200/50 flex items-center justify-center p-6">
+    <div class="max-w-2xl w-full">
+
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-base-content">Nuevo Producto</h1>
+            <p class="text-base-content/50 mt-2">Selecciona el tipo de producto para continuar</p>
+        </div>
+
+        <!-- Type Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            @for (option of productTypes; track option.type) {
+            <button
+                type="button"
+                (click)="selectType(option.type)"
+                class="group card bg-base-100 border-2 border-base-300 shadow-sm cursor-pointer text-left transition-all duration-200"
+                [class]="option.borderClass + ' ' + option.bgClass">
+
+                <div class="card-body p-6 gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all"
+                            [class]="option.iconBg">
+                            <mat-icon class="text-2xl w-7! h-7!">{{ option.icon }}</mat-icon>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-base-content">{{ option.label }}</h3>
+                            <p class="text-sm text-base-content/50 mt-0.5">{{ option.subtitle }}</p>
+                        </div>
+                        <mat-icon class="text-base-content/20 group-hover:text-base-content/50 transition-colors shrink-0 mt-0.5">
+                            arrow_forward_ios
+                        </mat-icon>
+                    </div>
+                </div>
+            </button>
+            }
+        </div>
+
+        <!-- Back link -->
+        <div class="text-center mt-8">
+            <a routerLink="/home/products" class="text-sm text-base-content/40 hover:text-base-content/70 transition-colors">
+                ← Volver a productos
+            </a>
+        </div>
+
+    </div>
+</div>

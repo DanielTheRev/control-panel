@@ -8,6 +8,7 @@ import { PaymentMethods } from './pages/payment-methods/payment-methods';
 import { ProductCreate } from './pages/product-create/product-create';
 import { ProductList } from './pages/product-list/product-list';
 import { ShippingOptions } from './pages/shipping-options/shipping-options';
+import { ProductTypeSelector } from './shared/components/product-type-selector/product-type-selector';
 
 export const routes: Routes = [
   {
@@ -42,7 +43,13 @@ export const routes: Routes = [
             component: ProductList,
           },
           {
+            // Step 1: choose product type
             path: 'create',
+            component: ProductTypeSelector,
+          },
+          {
+            // Step 2: fill form for a specific type
+            path: 'create/:typeParam',
             component: ProductCreate,
           },
           {

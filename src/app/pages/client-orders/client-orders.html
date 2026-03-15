@@ -14,7 +14,7 @@
             </select>
 
             <select [value]="dateRange()" (change)="updateDateFilter($any($event.target).value)"
-                [disabled]="isLoading()" class="select select-primary !outline-none">
+                [disabled]="isLoading()" class="select select-primary outline-none!">
                 @for (option of dateRangeOptions; track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
                 }
@@ -80,8 +80,8 @@
 
                     <!-- ID Column -->
                     <ng-container matColumnDef="orderNumber">
-                        <th mat-header-cell *matHeaderCellDef class="!pl-6"> #ID </th>
-                        <td mat-cell *matCellDef="let order" class="!pl-6 font-mono text-xs"> {{order.orderNumber}}
+                        <th mat-header-cell *matHeaderCellDef class="pl-6!"> #ID </th>
+                        <td mat-cell *matCellDef="let order" class="pl-6! font-mono text-xs"> {{order.orderNumber}}
                         </td>
                     </ng-container>
 
@@ -153,8 +153,8 @@
 
                     <!-- Actions Column -->
                     <ng-container matColumnDef="actions">
-                        <th mat-header-cell *matHeaderCellDef class="!pr-6 text-right"> Acciones </th>
-                        <td mat-cell *matCellDef="let order" class="!pr-6 text-right">
+                        <th mat-header-cell *matHeaderCellDef class="pr-6! text-right"> Acciones </th>
+                        <td mat-cell *matCellDef="let order" class="pr-6! text-right">
                             <a [routerLink]="['/home/client-orders', order._id]" class="btn btn-sm btn-ghost btn-square"
                                 matTooltip="Ver detalles">
                                 <mat-icon>visibility</mat-icon>
@@ -191,7 +191,7 @@
 
                                 @if (canMarkAsDelivered(order.status, order.shippingInfo.type,
                                 order.paymentInfo.status)) {
-                                @if (order.shippingInfo.type === 'pickup') {
+                                @if (order.shippingInfo.type === ShippingType.PICKUP) {
                                 <button mat-menu-item (click)="markAsDeliveredPickup(order._id)">
                                     <mat-icon class="text-success">check_circle</mat-icon>
                                     <span>Entregar (Retiro)</span>
@@ -222,7 +222,7 @@
 
                 @if (hasData() && orders().length === 0) {
                 <div class="text-center py-12 text-base-content/30">
-                    <mat-icon class="text-6xl !w-16 !h-16 mb-2">inbox</mat-icon>
+                    <mat-icon class="text-6xl w-16! h-16! mb-2">inbox</mat-icon>
                     <p>No se encontraron órdenes</p>
                 </div>
                 }

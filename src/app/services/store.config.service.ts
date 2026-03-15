@@ -1,0 +1,32 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+import { IEcommerceConfig } from '../interfaces/config.interface';
+import { IAggregatedPaymentMethodsResponse, IUpdateMPConfigDTO } from '../interfaces/mercadopago.interface';
+import { firstValueFrom } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class StoreConfigService {
+  #http = inject(HttpClient);
+  #apiUrl = `${environment.apiUrl}/config`;
+
+
+  getConfigString() {
+    return this.#apiUrl
+  }
+
+  async updateConfig(config: IEcommerceConfig): Promise<IEcommerceConfig> {
+    return firstValueFrom(this.#http.put<IEcommerceConfig>(this.#apiUrl, config));
+  }
+
+  async updateMPConfig(config: IUpdateMPConfigDTO): Promise<IUpdateMPConfigDTO> {
+    return firstValueFrom(this.#http.put<IUpdateMPConfigDTO>(`${this.#apiUrl}/mercadopago`, config));
+  }
+
+  async getMercadoPagoMethods(): Promise<IAggregatedPaymentMethodsResponse['automaticGateways']['mercadopago']['availableMethods']> {
+    const response = await firstValueFrom(this.#http.get<IAggregatedPaymentMethodsResponse>(`${this.#apiUrl}/mercadopago-methods`));
+    return response.automaticGateways.mercadopago.availableMethods;
+  }
+}

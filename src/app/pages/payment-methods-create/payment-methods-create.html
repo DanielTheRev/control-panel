@@ -14,6 +14,56 @@
     </app-page-header>
 
     <ng-container content>
+        <div class="flex justify-center items-center mb-3 w-full">
+            @if (StoreConfig().isLoading) {
+            <span class="loading loading-dots loading-xl"></span>
+            }
+            @if (StoreConfig().hasError) {
+            <div role="alert" class="alert alert-error">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Error! No se pudo obtener la configuración de la tienda.</span>
+            </div>
+            }
+            @if (!StoreConfig().hasData) {
+            <div role="alert" class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Advertencia: No se pudo cargar la configuración de la tienda y no se pudo cargar pasarelas de
+                    pago</span>
+            </div>
+            }
+            @if (StoreConfig().hasData && !StoreConfig().isLoading) {
+            @if(!StoreConfig().config.paymentGateways){
+            <div role="alert" class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Advertencia: No se pudo cargar las pasarelas de pago de la tienda</span>
+            </div>
+            }
+            @if (!StoreConfig().config.paymentGateways!.mercadopago?.accessToken) {
+            <div role="alert" class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span class="block">Advertencia: No se pudo cargar mercadopago de la configuración de la tienda. <br>
+                    Puede configurar una pasarela presionando <a routerLink="/home/settings" class="underline">aquí</a>.
+                </span>
+            </div>
+            }
+            }
+        </div>
         <form [formGroup]="form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
             <!-- Main Info -->
@@ -28,7 +78,7 @@
                                 placeholder="Ej. Transferencia Bancaria (Banco Galicia)" />
                         </fieldset>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div class="grid grid-cols-1 gap-4 mt-4">
                             <fieldset class="fieldset">
                                 <legend class="fieldset-legend">Tipo de Pago</legend>
                                 <select class="select select-bordered w-full" formControlName="type">
@@ -36,12 +86,6 @@
                                     <option [value]="type">{{type}}</option>
                                     }
                                 </select>
-                            </fieldset>
-
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Recargo (%)</legend>
-                                <input type="number" class="input input-bordered w-full" formControlName="processingFee"
-                                    placeholder="0" />
                             </fieldset>
                         </div>
 
@@ -72,7 +116,6 @@
                         <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
                             <li><strong>Descripción:</strong> Se mostrará al cliente al finalizar la compra. Úsala para
                                 dar instrucciones (ej. enviar comprobante).</li>
-                            <li><strong>Recargo:</strong> Porcentaje extra opcional.</li>
                         </ul>
                     </div>
                 </div>

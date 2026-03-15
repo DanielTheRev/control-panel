@@ -4,7 +4,7 @@ import { computed, Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class SidebarService {
-  private Expanded = signal(false);
+  private Expanded = signal(localStorage.getItem('sidebar-expanded') || false);
 
   navbarTitle = signal({
     title: 'Dashboard',
@@ -17,5 +17,6 @@ export class SidebarService {
 
   public toggleExpanded() {
     this.Expanded.update((state) => !state);
+    localStorage.setItem('sidebar-expanded', this.Expanded().toString());
   }
 }

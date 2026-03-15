@@ -1,25 +1,24 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe, CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 
 import {
   IOrder,
   OrderStatus,
   PaymentStatus,
 } from '../../interfaces/order.interface';
-import { PaymentType } from '../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../interfaces/shipping.interface';
+import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../states/order.state.service';
-import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-client-orders',
@@ -49,11 +48,12 @@ export class ClientOrders {
   #SidebarService = inject(SidebarService);
 
   // Exponer propiedades del servicio para el template
+  /** Uses real API data when available, falls back to mock data for visual testing */
   readonly orders = this.orderStateService.orders;
   readonly pagination = this.orderStateService.pagination;
   readonly isLoading = this.orderStateService.isLoading;
   readonly error = this.orderStateService.error;
-  readonly hasData = this.orderStateService.hasData;
+  readonly hasData = computed(() => this.orders().length > 0);
 
   // Estadísticas (por si se quieren mostrar arriba)
   readonly pendingCount = this.orderStateService.pendingCount;
@@ -74,6 +74,7 @@ export class ClientOrders {
   // Enums para usar en el template
   readonly OrderStatus = OrderStatus;
   readonly PaymentStatus = PaymentStatus;
+  readonly ShippingType = ShippingType;
 
   protected readonly Math = Math;
 

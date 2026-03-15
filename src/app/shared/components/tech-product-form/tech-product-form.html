@@ -1,0 +1,46 @@
+<div class="card bg-base-100 shadow-sm border border-primary/20">
+    <div class="card-body p-6">
+        <h3 class="card-title text-lg mb-4">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" class="w-4 h-4 text-primary">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12" y2="18" />
+                </svg>
+            </span>
+            Campos de Tecnología
+        </h3>
+
+        <form [formGroup]="techForm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">RAM</legend>
+                    <input type="text" class="input input-bordered w-full" placeholder="Ej. 8GB"
+                        formControlName="ram" />
+                </fieldset>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Procesador</legend>
+                    <input type="text" class="input input-bordered w-full"
+                        placeholder="Ej. Snapdragon 8 Gen 3" formControlName="processor" />
+                </fieldset>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Tamaño de Pantalla</legend>
+                    <input type="text" class="input input-bordered w-full" placeholder='Ej. 6.7"'
+                        formControlName="screenSize" />
+                </fieldset>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Sistema Operativo</legend>
+                    <input type="text" class="input input-bordered w-full" placeholder="Ej. Android 14"
+                        formControlName="os" />
+                </fieldset>
+            </div>
+
+            <div class="mt-4">
+                <label class="label font-medium pb-2">Almacenamiento</label>
+                <app-tag-input [formArray]="storageControls"
+                    placeholder="Añadir capacidad (ej. 256GB)">
+                </app-tag-input>
+            </div>
+        </form>
+    </div>
+</div>

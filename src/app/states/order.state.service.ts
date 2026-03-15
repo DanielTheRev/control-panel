@@ -11,10 +11,8 @@ import {
   OrderStatus,
   PaymentStatus,
 } from '../interfaces/order.interface';
-import { PaymentType } from '../interfaces/paymentInfo.interface';
-import { ShippingType } from '../interfaces/shipping.interface';
-import { OrdersService } from '../services/orders.service';
 import { AuthService } from '../services/auth.service';
+import { OrdersService } from '../services/orders.service';
 
 @Injectable({
   providedIn: 'root',
@@ -57,7 +55,6 @@ export class OrdersStateService {
 
     return {
       url: `${environment.apiUrl}/orders?${params.toString()}`,
-      method: 'GET' as const,
     };
   });
 

@@ -46,7 +46,8 @@
             <!-- LEFT COLUMN (3/5): Main Information -->
             <div class="lg:col-span-3 space-y-6">
 
-                <!-- Product Type Selector -->
+                <!-- Product Type Selector (only shown in edit mode since in create mode type is pre-selected from route) -->
+                @if (!typeParam()) {
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
@@ -74,6 +75,7 @@
                         </div>
                     </div>
                 </div>
+                }
 
                 <!-- Basic Info Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
@@ -127,17 +129,29 @@
                                         placeholder="0.00" formControlName="price" />
                                 </div>
                             </fieldset>
+
+                            <!-- Custom Profit Margin -->
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Margen de Ganancia Custom (%)</legend>
+                                <legend class="fieldset-legend">Ganancia</legend>
+                                <!-- Checkbox toggle -->
+                                <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                                        formControlName="useCustomProfit" />
+                                    <span class="text-xs font-medium">Usar Ganancia Personalizada</span>
+                                </label>
+
+                                @if (productForm.get('useCustomProfit')?.value) {
+                                <!-- Custom margin input (enabled) -->
                                 <div class="join w-full">
                                     <input type="number" class="join-item input input-bordered w-full"
-                                        placeholder="Global por defecto" formControlName="customProfitMargin" />
+                                        placeholder="Ej. 35" formControlName="customProfitMargin" />
                                     <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
                                 </div>
-                                @if (isUsingGlobalMargin() && !productForm.get('customProfitMargin')?.dirty) {
+                                } @else {
+                                <!-- Locked: using global margin -->
                                 <div
-                                    class="text-[11px] mt-2 text-info font-medium bg-info/5 px-3 py-1.5 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight shadow-sm">
-                                    <mat-icon class="text-[16px] w-4 h-4 shrink-0">info</mat-icon>
+                                    class="text-[11px] text-info font-medium bg-info/5 px-3 py-2 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight">
+                                    <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
                                     <span>Usando el Margen Global de la tienda.</span>
                                 </div>
                                 }
@@ -151,86 +165,19 @@
                     </div>
                 </div>
 
-                <!-- Tech-Specific Fields -->
+                <!-- Type-Specific Fields via child forms -->
                 @if (selectedType() === ProductType.TECH) {
-                <div class="card bg-base-100 shadow-sm border border-primary/20">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-lg mb-4">
-                            <span class="text-primary">📱</span> Campos de Tecnología
-                        </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">RAM</legend>
-                                <input type="text" class="input input-bordered w-full" placeholder="Ej. 8GB"
-                                    formControlName="ram" />
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Procesador</legend>
-                                <input type="text" class="input input-bordered w-full"
-                                    placeholder="Ej. Snapdragon 8 Gen 3" formControlName="processor" />
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Tamaño de Pantalla</legend>
-                                <input type="text" class="input input-bordered w-full" placeholder="Ej. 6.7&quot;"
-                                    formControlName="screenSize" />
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Sistema Operativo</legend>
-                                <input type="text" class="input input-bordered w-full" placeholder="Ej. Android 14"
-                                    formControlName="os" />
-                            </fieldset>
-                        </div>
-                        <div class="mt-4">
-                            <label class="label font-medium pb-2">Almacenamiento</label>
-                            <app-tag-input [formArray]="storageControls" placeholder="Añadir capacidad (ej. 256GB)">
-                            </app-tag-input>
-                        </div>
-                    </div>
-                </div>
+                <app-tech-product-form
+                    [value]="techInitialValue()"
+                    (formChange)="onTypeSpecificFormChange($event)">
+                </app-tech-product-form>
                 }
 
-                <!-- Clothing-Specific Fields -->
                 @if (selectedType() === ProductType.CLOTHING) {
-                <div class="card bg-base-100 shadow-sm border border-secondary/20">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-lg mb-4">
-                            <span class="text-secondary">👕</span> Campos de Indumentaria
-                        </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Género</legend>
-                                <select class="select select-bordered w-full" formControlName="gender">
-                                    <option value="Hombre">Hombre</option>
-                                    <option value="Mujer">Mujer</option>
-                                    <option value="Unisex">Unisex</option>
-                                    <option value="Niños">Niños</option>
-                                </select>
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Fit / Corte</legend>
-                                <select class="select select-bordered w-full" formControlName="fit">
-                                    <option value="Regular">Regular</option>
-                                    <option value="Slim">Slim</option>
-                                    <option value="Oversized">Oversized</option>
-                                    <option value="Relaxed">Relaxed</option>
-                                </select>
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Material</legend>
-                                <input type="text" class="input input-bordered w-full" placeholder="Ej. Algodón"
-                                    formControlName="material" />
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Tipo de Talle</legend>
-                                <select class="select select-bordered w-full" formControlName="sizeType">
-                                    <option value="Ropa">Ropa (S, M, L, XL)</option>
-                                    <option value="Calzado">Calzado (38-44)</option>
-                                    <option value="Numérico">Numérico</option>
-                                </select>
-                            </fieldset>
-                        </div>
-                    </div>
-                </div>
+                <app-clothing-product-form
+                    [value]="clothingInitialValue()"
+                    (formChange)="onTypeSpecificFormChange($event)">
+                </app-clothing-product-form>
                 }
 
                 <!-- Description Card -->
@@ -253,7 +200,7 @@
 
             </div>
 
-            <!-- RIGHT COLUMN (2/5): Media & Variants -->
+            <!-- RIGHT COLUMN (2/5): Media, Specifications & Tags -->
             <div class="lg:col-span-2 space-y-6">
 
                 <!-- Images Card -->
@@ -263,72 +210,6 @@
                         <app-image-upload [imagesControls]="imagesControls" [originalImages]="originalImages()"
                             (imageDeleted)="onImageDeleted($event)">
                         </app-image-upload>
-                    </div>
-                </div>
-
-                <!-- Variants Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="card-title text-lg">Variantes</h3>
-                        </div>
-
-                        @if (variantsControls.length === 0) {
-                        <div class="text-center py-6 text-base-content/40">
-                            <mat-icon class="text-4xl mb-2">style</mat-icon>
-                            <p class="text-sm">No hay variantes. Cada variante tiene su SKU y stock.</p>
-                        </div>
-                        }
-
-                        <div formArrayName="variants">
-                            @for (variant of variantsControls.controls; track variant; let i = $index) {
-                            <div class="border border-base-300 rounded-lg p-4 mb-3 relative" [formGroupName]="i">
-                                <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2 text-error"
-                                    (click)="removeVariant(i)">
-                                    <mat-icon>close</mat-icon>
-                                </button>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">SKU</legend>
-                                        <input type="text" class="input input-bordered input-sm w-full font-mono"
-                                            placeholder="SAM-001-128" formControlName="sku" />
-                                    </fieldset>
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">Stock</legend>
-                                        <input type="number" class="input input-bordered input-sm w-full"
-                                            formControlName="stock" />
-                                    </fieldset>
-                                </div>
-
-                                <fieldset class="fieldset mt-2">
-                                    <legend class="fieldset-legend text-xs">Atributos (key:value, separados por coma)
-                                    </legend>
-                                    <input type="text" class="input input-bordered input-sm w-full"
-                                        placeholder="Talle:M, Color:Negro" formControlName="attributesJson" />
-                                </fieldset>
-
-                                <div class="grid grid-cols-2 gap-3 mt-2">
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">Color (nombre)</legend>
-                                        <input type="text" class="input input-bordered input-sm w-full"
-                                            placeholder="Negro" formControlName="colorName" />
-                                    </fieldset>
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">Color (hex)</legend>
-                                        <input type="color" class="input input-bordered input-sm w-full h-8"
-                                            formControlName="colorHex" />
-                                    </fieldset>
-                                </div>
-                            </div>
-                            }
-                        </div>
-
-                        <div class="flex justify-end items-center mb-4">
-                            <button type="button" class="btn btn-sm btn-primary" (click)="addVariant()">
-                                <mat-icon>add</mat-icon> Agregar
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -377,6 +258,91 @@
                 </div>
 
             </div>
+
+            <!-- VARIANTS - Full Width Row -->
+            <div class="lg:col-span-5">
+                <div class="card bg-base-100 shadow-sm border border-base-300">
+                    <div class="card-body p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="card-title text-lg">Variantes</h3>
+                                <p class="text-xs text-base-content/40 mt-0.5">
+                                    Cada variante tiene su propio SKU, stock y atributos.
+                                </p>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" (click)="addVariant()">
+                                <mat-icon>add</mat-icon> Agregar Variante
+                            </button>
+                        </div>
+
+                        @if (variantsControls.length === 0) {
+                        <div class="text-center py-10 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl">
+                            <mat-icon class="text-4xl mb-2 w-10! h-10!">style</mat-icon>
+                            <p class="text-sm">No hay variantes aún. Cada variante tiene su SKU y stock.</p>
+                        </div>
+                        }
+
+                        <div formArrayName="variants" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                            @for (variant of variantsControls.controls; track variant; let i = $index) {
+                            <div class="border border-base-300 rounded-xl p-4 relative bg-base-50"
+                                [formGroupName]="i">
+                                <!-- Remove button -->
+                                <button type="button"
+                                    class="btn btn-ghost btn-xs absolute top-2 right-2 text-error/60 hover:text-error"
+                                    (click)="removeVariant(i)">
+                                    <mat-icon class="text-[18px]">close</mat-icon>
+                                </button>
+
+                                <!-- Badge indicator -->
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-base-content/30 mb-3">
+                                    Variante #{{ i + 1 }}
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <fieldset class="fieldset col-span-2">
+                                        <legend class="fieldset-legend text-xs">SKU</legend>
+                                        <input type="text"
+                                            class="input input-bordered input-sm w-full font-mono text-xs"
+                                            placeholder="SAM-001-128" formControlName="sku" />
+                                    </fieldset>
+
+                                    <fieldset class="fieldset col-span-2">
+                                        <legend class="fieldset-legend text-xs">Atributos</legend>
+                                        <input type="text" class="input input-bordered input-sm w-full text-xs"
+                                            placeholder="Talle:M, Color:Negro" formControlName="attributesJson" />
+                                    </fieldset>
+
+                                    <fieldset class="fieldset">
+                                        <legend class="fieldset-legend text-xs">Stock</legend>
+                                        <input type="number" class="input input-bordered input-sm w-full"
+                                            formControlName="stock" />
+                                    </fieldset>
+
+                                    <fieldset class="fieldset">
+                                        <legend class="fieldset-legend text-xs">Color (hex)</legend>
+                                        <input type="color" class="input input-bordered input-sm w-full h-9 p-1"
+                                            formControlName="colorHex" />
+                                    </fieldset>
+
+                                    <fieldset class="fieldset col-span-2">
+                                        <legend class="fieldset-legend text-xs">Color (nombre)</legend>
+                                        <input type="text" class="input input-bordered input-sm w-full"
+                                            placeholder="Negro" formControlName="colorName" />
+                                    </fieldset>
+
+                                    <div class="col-span-2 flex items-center gap-2 mt-1">
+                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-success"
+                                            formControlName="isActive" />
+                                        <span class="text-xs text-base-content/60">Activa</span>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </form>
     </ng-container>
 

@@ -48,6 +48,7 @@ export class ProductDetail implements OnInit {
   async ngOnInit() {
     try {
       const product = await this.#productState.getProduct(this.productID());
+      console.log(product);
       this.isUsingGlobalMargin.set(product.customProfitMargin === undefined || product.customProfitMargin === null);
       this.product.set(product);
     } catch {

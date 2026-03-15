@@ -1,23 +1,34 @@
-import { computed, inject, Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { httpResource } from '@angular/common/http';
+import { computed, inject, Injectable } from '@angular/core';
 import { IPaymentMethod } from '../interfaces/paymentInfo.interface';
 import { PaymentMethodsService } from '../services/payment-methods.service';
+import { IAggregatedPaymentMethodsResponse, IUpdateMPConfigDTO } from '../interfaces/mercadopago.interface';
+import { StoreConfigService } from '../services/store.config.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentMethodsStateService {
   #paymentService = inject(PaymentMethodsService);
-  #state = httpResource<IPaymentMethod[]>(() => {
+  #storeConfigService = inject(StoreConfigService);
+
+  #state = httpResource<IAggregatedPaymentMethodsResponse>(() => {
     return {
-      url: `${this.#paymentService.apiUrl}`,
+      url: `${this.#paymentService.apiUrl}`, // GET /api/payment-methods
       method: 'GET',
     };
   });
 
   readonly state = computed(() => ({
-    data: this.#state.value() || [],
+    manualMethods: this.#state.value()?.manualMethods || [],
+    automaticGateways: this.#state.value()?.automaticGateways || {
+        mercadopago: {
+            active: false,
+            availableMethods: [],
+            excludedPaymentMethods: [],
+            excludedPaymentTypes: []
+        }
+    },
     isLoading: this.#state.isLoading(),
     error: this.#state.error(),
     hasValue: this.#state.hasValue(),
@@ -31,19 +42,19 @@ export class PaymentMethodsStateService {
     return this.#paymentService.getById(id);
   }
 
-  async addPaymentMethod(paymentMethod: IPaymentMethod) {
+  async addPaymentMethod(paymentMethod: any) {
     try {
       const newPaymentMethod = await this.#paymentService.create(paymentMethod);
-      this.#addPaymentMethod(newPaymentMethod);
+      this.refresh(); // Reload to get aggregated state
     } catch (error) {
       throw error
     }
   }
 
-  async updatePaymentMethod(id: string, paymentMethod: Partial<IPaymentMethod>) {
+  async updatePaymentMethod(id: string, paymentMethod: any) {
     try {
-      const updatedPaymentMethod = await this.#paymentService.update(id, paymentMethod);
-      this.#updatePaymentMethod(id, updatedPaymentMethod);
+      await this.#paymentService.update(id, paymentMethod);
+      this.refresh(); // Reload to get aggregated state
     } catch (error) {
       throw error
     }
@@ -52,30 +63,18 @@ export class PaymentMethodsStateService {
   async deletePaymentMethod(id: string) {
     try {
       await this.#paymentService.delete(id);
-      this.#deletePaymentMethod(id);
+      this.refresh(); // Reload to get aggregated state
     } catch (error) {
       throw error
     }
   }
 
-  #addPaymentMethod(paymentMethod: IPaymentMethod) {
-    this.#state.update((oldState) => {
-      if (!oldState) return oldState;
-      return [...oldState, paymentMethod];
-    });
+  async updateMPConfig(config: IUpdateMPConfigDTO) {
+    try {
+      await this.#storeConfigService.updateConfig(config as any); // Sending to /api/ecommerce/config
+      this.refresh();
+    } catch (error) {
+      throw error;
+    }
   }
-
-  #updatePaymentMethod(id: string, paymentMethod: Partial<IPaymentMethod>) {
-    this.#state.update((oldState) => {
-      if (!oldState) return oldState;
-      return oldState.map((p) => (p._id === id ? { ...p, ...paymentMethod } : p));
-    });
-  }
-
-  #deletePaymentMethod(id: string) {
-    this.#state.update((oldState) => {
-      if (!oldState) return oldState;
-      return oldState.filter((p) => p._id !== id);
-    });
-  }
-}
+}

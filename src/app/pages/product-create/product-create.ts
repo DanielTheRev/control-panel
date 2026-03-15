@@ -15,9 +15,11 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PricePreview } from '../../shared/components/price-preview/price-preview';
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
+import { TechProductForm, TechFormValue } from '../../shared/components/tech-product-form/tech-product-form';
+import { ClothingProductForm, ClothingFormValue } from '../../shared/components/clothing-product-form/clothing-product-form';
 import { ProductStoreService } from '../../states/product.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
-import { ConfigStateService } from '../../states/config.state.service';
+import { StoreConfigStateService } from '../../states/store.config.state.service';
 
 @Component({
   selector: 'app-product-create',
@@ -33,7 +35,9 @@ import { ConfigStateService } from '../../states/config.state.service';
     KeyValueListComponent,
     ImageUploadComponent,
     MatIcon,
-    RouterLink
+    RouterLink,
+    TechProductForm,
+    ClothingProductForm,
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
@@ -44,7 +48,7 @@ export class ProductCreate implements OnInit {
   #productState = inject(ProductStoreService);
   #router = inject(Router);
   #SidebarService = inject(SidebarService)
-  #CommerceConfigState = inject(ConfigStateService);
+  #CommerceConfigState = inject(StoreConfigStateService);
 
   #LastSKU = signal<{
     productType: string,
@@ -55,7 +59,11 @@ export class ProductCreate implements OnInit {
     colorHex?: string
   } | undefined>(undefined)
 
+  // Route inputs
   productID = input.required<string>();
+  /** Provided when creating (from type-selector route), e.g. 'TechProduct' | 'ClothingProduct' */
+  typeParam = input<string>('');
+
   isEditMode = computed(() => this.productID() !== null);
   calculatedPrices = signal<IProductPrices | null>(null);
 
@@ -65,6 +73,13 @@ export class ProductCreate implements OnInit {
   isLoading = signal<boolean>(false);
   selectedType = signal<string>('');
   isUsingGlobalMargin = signal<boolean>(false);
+
+  /** Values from the active child form (tech or clothing) */
+  #typeSpecificValues: TechFormValue | ClothingFormValue | null = null;
+
+  /** Pre-load value passed down to child form in edit mode */
+  techInitialValue = signal<Partial<TechFormValue> | null>(null);
+  clothingInitialValue = signal<Partial<ClothingFormValue> | null>(null);
 
   ProductType = ProductType;
 
@@ -95,7 +110,8 @@ export class ProductCreate implements OnInit {
     brand: ['', Validators.required],
     category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
-    customProfitMargin: [10, Validators.required],
+    useCustomProfit: [false],
+    customProfitMargin: [{ value: 10, disabled: true }],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
     images: this.#fb.array<{ link: string; file: File | null }>(
@@ -106,17 +122,6 @@ export class ProductCreate implements OnInit {
     specifications: this.#fb.array<FormGroup>([]),
     // Variants
     variants: this.#fb.array<FormGroup>([]),
-    // Tech fields
-    storage: this.#fb.array<string>([]),
-    ram: [''],
-    processor: [''],
-    screenSize: [''],
-    os: [''],
-    // Clothing fields
-    gender: [''],
-    fit: [''],
-    material: [''],
-    sizeType: [''],
   });
 
   // Getters for FormArrays
@@ -124,7 +129,6 @@ export class ProductCreate implements OnInit {
   get featuresControls() { return this.productForm.get('features') as FormArray; }
   get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
   get variantsControls() { return this.productForm.get('variants') as FormArray; }
-  get storageControls() { return this.productForm.get('storage') as FormArray; }
 
   get invalidControls(): string[] {
     const translations: Record<string, string> = {
@@ -156,7 +160,7 @@ export class ProductCreate implements OnInit {
     this.productForm.valueChanges.pipe(
       takeUntilDestroyed(),
       debounceTime(800),
-      map(val => ({ price: val.price, margin: val.customProfitMargin })),
+      map(val => ({ price: val.price, margin: this.#getEffectiveMargin(val) })),
       distinctUntilChanged((prev, curr) => prev.price === curr.price && prev.margin === curr.margin),
       filter(val => val.price > 0),
       switchMap(val => this.#productState.calculatePrices(Number(val.price), val.margin))
@@ -189,12 +193,19 @@ export class ProductCreate implements OnInit {
       takeUntilDestroyed()
     ).subscribe(type => {
       this.selectedType.set(type);
-      // Reset brand and category defaults when type changes
-      // if (type === 'tech') {
-      //   this.productForm.patchValue({ brand: 'Apple', category: 'Smartphones' });
-      // } else {
-      //   this.productForm.patchValue({ brand: 'Nike', category: IProductCategories.Remeras });
-      // }
+    });
+
+    // Toggle customProfitMargin enabled/disabled based on useCustomProfit checkbox
+    this.productForm.get('useCustomProfit')?.valueChanges.pipe(
+      takeUntilDestroyed()
+    ).subscribe((useCustom: boolean) => {
+      if (useCustom) {
+        this.productForm.get('customProfitMargin')?.enable();
+        this.isUsingGlobalMargin.set(false);
+      } else {
+        this.productForm.get('customProfitMargin')?.disable();
+        this.isUsingGlobalMargin.set(true);
+      }
     });
 
     this.#SidebarService.navbarTitle.set({
@@ -203,18 +214,22 @@ export class ProductCreate implements OnInit {
   }
 
   async ngOnInit() {
-    await this.#CommerceConfigState.loadConfig();
-    const defaultProfit = this.#CommerceConfigState.config()?.profit || 10;
+    const defaultProfit = this.#CommerceConfigState.StoreConfig().config.profit || 10;
 
     const id = this.productID();
     if (id) {
       await this.#loadProduct(id, defaultProfit);
     } else {
-      // Set the dynamic global profit as default for new products
+      // New product: read the type from the route param
+      const type = this.typeParam();
+      if (type) {
+        this.selectedType.set(type);
+        this.productForm.patchValue({ productType: type });
+      }
+      // Default: use global margin
       this.isUsingGlobalMargin.set(true);
-      this.productForm.patchValue({
-        customProfitMargin: defaultProfit
-      });
+      this.productForm.patchValue({ useCustomProfit: false, customProfitMargin: defaultProfit });
+      this.productForm.get('customProfitMargin')?.disable();
     }
   }
 
@@ -222,8 +237,11 @@ export class ProductCreate implements OnInit {
     try {
       const product = await this.#productState.getProduct(id);
 
-      // Patch undefined customProfitMargin directly into the fetched object first, so it acts as original baseline
-      if (product.customProfitMargin === undefined || product.customProfitMargin === null) {
+      const hasCustomMargin =
+        product.customProfitMargin !== undefined &&
+        product.customProfitMargin !== null;
+
+      if (!hasCustomMargin) {
         product.customProfitMargin = defaultProfit;
         this.isUsingGlobalMargin.set(true);
       }
@@ -233,32 +251,48 @@ export class ProductCreate implements OnInit {
       const type = product.productType;
       this.selectedType.set(type);
 
+      // Patch child form values for edit mode
+      if (type === ProductType.TECH) {
+        this.techInitialValue.set({
+          ram: product.ram || '',
+          processor: product.processor || '',
+          screenSize: product.screenSize || '',
+          os: product.os || '',
+          storage: product.storage || [],
+        });
+      } else if (type === ProductType.CLOTHING) {
+        this.clothingInitialValue.set({
+          gender: product.gender || '',
+          fit: product.fit || '',
+          material: product.material || '',
+          sizeType: product.sizeType || '',
+        });
+      }
+
+      const useCustom = hasCustomMargin;
       this.productForm.patchValue({
         productType: type,
         model: product.model,
         brand: product.brand,
         category: product.category,
         price: product.prices.costPrice.inUSD,
+        useCustomProfit: useCustom,
         customProfitMargin: product.customProfitMargin,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
-        // Tech
-        ram: product.ram || '',
-        processor: product.processor || '',
-        screenSize: product.screenSize || '',
-        os: product.os || '',
-        // Clothing
-        gender: product.gender || '',
-        fit: product.fit || '',
-        material: product.material || '',
-        sizeType: product.sizeType || '',
       });
+
+      // Enable/disable margin field based on whether the product had a custom margin
+      if (useCustom) {
+        this.productForm.get('customProfitMargin')?.enable();
+      } else {
+        this.productForm.get('customProfitMargin')?.disable();
+      }
 
       this.calculatedPrices.set(product.prices);
 
       // Patch Arrays
       this.#patchArray(this.featuresControls, product.features);
-      this.#patchArray(this.storageControls, product.storage || []);
 
       // Patch Specifications
       if (product.specifications && Array.isArray(product.specifications)) {
@@ -296,9 +330,6 @@ export class ProductCreate implements OnInit {
           }));
         });
       }
-
-      console.log(this.productForm.value);
-      console.log(product);
     } catch (error) {
       console.log(error);
     }
@@ -311,19 +342,30 @@ export class ProductCreate implements OnInit {
     }
   }
 
+  /** Called by child forms when their values change */
+  onTypeSpecificFormChange(value: TechFormValue | ClothingFormValue) {
+    this.#typeSpecificValues = value;
+    // Mark as having changes if in edit mode
+    if (this.isEditMode()) {
+      this.hasChanges.set(true);
+    } else {
+      this.hasChanges.set(this.productForm.dirty);
+    }
+  }
+
   addBulkSpecifications(value: string) {
     if (!value.trim()) return;
 
     // Split by comma
     const pairs = value.split(',');
-    
+
     pairs.forEach(pair => {
       // Split by first colon
       const indexOfColon = pair.indexOf(':');
       if (indexOfColon !== -1) {
         const key = pair.substring(0, indexOfColon).trim();
         const val = pair.substring(indexOfColon + 1).trim();
-        
+
         if (key && val) {
           this.specificationsControls.push(this.#fb.group({
             key: [key, Validators.required],
@@ -431,12 +473,19 @@ export class ProductCreate implements OnInit {
     });
   }
 
+  #getEffectiveMargin(formValue: any): number | undefined {
+    if (formValue.useCustomProfit) {
+      return formValue.customProfitMargin;
+    }
+    return undefined;
+  }
+
   async saveProduct() {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
       return;
     }
-    const productData = this.productForm.value;
+    const productData = this.productForm.getRawValue();
     const formData = new FormData();
 
     if (this.isEditMode() && this.originalProduct()) {
@@ -480,11 +529,14 @@ export class ProductCreate implements OnInit {
     formData.append('brand', data.brand);
     formData.append('category', data.category);
     formData.append('price', data.price);
-    if (data.customProfitMargin !== undefined && data.customProfitMargin !== null && data.customProfitMargin !== '') {
+
+    // Only send customProfitMargin if the user opted in
+    if (data.useCustomProfit && data.customProfitMargin !== null && data.customProfitMargin !== '') {
       formData.append('customProfitMargin', data.customProfitMargin.toString());
     } else {
       formData.append('customProfitMargin', '');
     }
+
     formData.append('shortDescription', data.shortDescription);
     formData.append('largeDescription', data.largeDescription);
 
@@ -492,21 +544,24 @@ export class ProductCreate implements OnInit {
     formData.append('specifications', JSON.stringify(data.specifications));
     formData.append('variants', JSON.stringify(this.#parseVariants()));
 
-    // Tech fields
-    if (data.productType === ProductType.TECH) {
-      if (data.storage?.length) formData.append('storage', JSON.stringify(data.storage));
-      if (data.ram) formData.append('ram', data.ram);
-      if (data.processor) formData.append('processor', data.processor);
-      if (data.screenSize) formData.append('screenSize', data.screenSize);
-      if (data.os) formData.append('os', data.os);
-    }
+    // Append type-specific fields from child form
+    if (this.#typeSpecificValues) {
+      if (data.productType === ProductType.TECH) {
+        const techVals = this.#typeSpecificValues as TechFormValue;
+        if (techVals.storage?.length) formData.append('storage', JSON.stringify(techVals.storage));
+        if (techVals.ram) formData.append('ram', techVals.ram);
+        if (techVals.processor) formData.append('processor', techVals.processor);
+        if (techVals.screenSize) formData.append('screenSize', techVals.screenSize);
+        if (techVals.os) formData.append('os', techVals.os);
+      }
 
-    // Clothing fields
-    if (data.productType === ProductType.CLOTHING) {
-      if (data.gender) formData.append('gender', data.gender);
-      if (data.fit) formData.append('fit', data.fit);
-      if (data.material) formData.append('material', data.material);
-      if (data.sizeType) formData.append('sizeType', data.sizeType);
+      if (data.productType === ProductType.CLOTHING) {
+        const clothingVals = this.#typeSpecificValues as ClothingFormValue;
+        if (clothingVals.gender) formData.append('gender', clothingVals.gender);
+        if (clothingVals.fit) formData.append('fit', clothingVals.fit);
+        if (clothingVals.material) formData.append('material', clothingVals.material);
+        if (clothingVals.sizeType) formData.append('sizeType', clothingVals.sizeType);
+      }
     }
 
     data.images.forEach((img: any) => {

@@ -1,82 +1,228 @@
 <app-page-layout>
-  <app-page-header header title="Gestiona tus métodos de pago" subtitle="Gestiona las formas de pago disponibles">
+  <app-page-header header title="Métodos de Pago" subtitle="Configura cómo tus clientes pueden pagar">
     <div actions class="flex">
-      <a routerLink="/home/payment-methods/create" class="btn btn-primary">
+      @if (activeTab() === 'manual') {
+      <a routerLink="/home/payment-methods/create" class="btn btn-primary btn-sm md:btn-md shadow-lg">
         <mat-icon>add</mat-icon>
         Nuevo Método
       </a>
+      }
     </div>
   </app-page-header>
 
   <ng-container content>
-    <div class="table-container rounded-lg overflow-hidden bg-base-100 shadow-sm flex-1 flex flex-col table-fix">
-      <div class="overflow-y-auto flex-1 custom-scrollbar">
-        <table mat-table [dataSource]="state().data" class="w-full">
-
-          <!-- Name Column -->
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef> Nombre </th>
-            <td mat-cell *matCellDef="let element">
-              <span class="font-medium text-base-content">{{element.name}}</span>
-            </td>
-          </ng-container>
-
-          <!-- Status Column -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef> Estado </th>
-            <td mat-cell *matCellDef="let element">
-              @if (element.isActive) {
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-                <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
-                Activo
-              </span>
-              } @else {
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-base-200 text-base-content/50">
-                <span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span>
-                Inactivo
-              </span>
-              }
-            </td>
-          </ng-container>
-
-          <!-- Description Column -->
-          <ng-container matColumnDef="description">
-            <th mat-header-cell *matHeaderCellDef> Descripción </th>
-            <td mat-cell *matCellDef="let element">
-              <span class="text-sm text-base-content/50 max-w-[300px] truncate block" [title]="element.description">
-                {{element.description || '-'}}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Actions Column -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef> </th>
-            <td mat-cell *matCellDef="let element" class="text-right">
-              <button mat-icon-button [matMenuTriggerFor]="menu" class="text-base-content/30">
-                <mat-icon>more_horiz</mat-icon>
-              </button>
-              <mat-menu #menu="matMenu" class="modern-row-menu">
-                <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
-                  <mat-icon>edit</mat-icon>
-                  <span>Editar</span>
-                </button>
-                <button mat-menu-item class="!text-error" (click)="delete(element._id)">
-                  <mat-icon class="!text-error">delete_outline</mat-icon>
-                  <span>Eliminar</span>
-                </button>
-              </mat-menu>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!h-14 !border-b-0"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-            class="hover:bg-base-200/50 transition-colors !border-b border-base-300"></tr>
-        </table>
+    <div class="flex flex-col h-full gap-6">
+      <!-- Tabs Navigation -->
+      <div
+        class="flex items-center gap-2 p-1.5 bg-base-100 rounded-2xl shadow-inner border border-base-content/10 self-start">
+        <button class="flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-300 font-bold text-sm"
+          [class.bg-primary]="activeTab() === 'manual'" [class.text-primary-content]="activeTab() === 'manual'"
+          [class.shadow-lg]="activeTab() === 'manual'" [class.hover:bg-base-200]="activeTab() !== 'manual'"
+          (click)="activeTab.set('manual')">
+          <mat-icon class="text-lg">home_repair_service</mat-icon>
+          Métodos Manuales
+        </button>
+        <button class="flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-300 font-bold text-sm"
+          [class.bg-primary]="activeTab() === 'mercadopago'"
+          [class.text-primary-content]="activeTab() === 'mercadopago'" [class.shadow-lg]="activeTab() === 'mercadopago'"
+          [class.hover:bg-base-200]="activeTab() !== 'mercadopago'" (click)="activeTab.set('mercadopago')">
+          <mat-icon class="text-lg">bolt</mat-icon>
+          Mercado Pago (Checkout)
+        </button>
       </div>
+
+      <!-- Tab Content: Manual Methods -->
+      @if (activeTab() === 'manual') {
+      <div class="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div class="table-container rounded-2xl overflow-hidden bg-base-100 shadow-xl border border-base-content/5">
+          <table mat-table [dataSource]="state().manualMethods" class="w-full">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef> Nombre </th>
+              <td mat-cell *matCellDef="let element">
+                <div class="flex flex-col">
+                  <span class="font-bold text-base-content">{{element.name}}</span>
+                  <span class="text-xs opacity-50">{{element.type}}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef> Estado </th>
+              <td mat-cell *matCellDef="let element">
+                @if (element.isActive) {
+                <div class="badge badge-success badge-outline gap-2 py-3 px-4">
+                  <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                  Activo
+                </div>
+                } @else {
+                <div class="badge badge-ghost opacity-50 gap-2 py-3 px-4">
+                  <span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span>
+                  Inactivo
+                </div>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef> Descripción </th>
+              <td mat-cell *matCellDef="let element">
+                <span class="text-sm opacity-60 italic max-w-62.5 truncate block">
+                  {{element.description || 'Sin descripción'}}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef> </th>
+              <td mat-cell *matCellDef="let element" class="text-right">
+                <button mat-icon-button [matMenuTriggerFor]="menu" class="hover:bg-base-200 transition-colors">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu" class="modern-menu">
+                  <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar Detalles</span>
+                  </button>
+                  <div class="divider my-0"></div>
+                  <button mat-menu-item class="!text-error" (click)="delete(element._id)">
+                    <mat-icon class="!text-error">delete_outline</mat-icon>
+                    <span>Eliminar Método</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="h-16! bg-base-200/50!"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+              class="hover:bg-primary/5 transition-all duration-200 cursor-pointer"></tr>
+          </table>
+
+          @if (state().manualMethods.length === 0) {
+          <div class="p-12 text-center">
+            <mat-icon class="text-6xl mb-4 opacity-20">payments</mat-icon>
+            <p class="text-lg font-medium opacity-50">No hay métodos manuales configurados</p>
+            <button class="btn btn-ghost btn-sm mt-4" routerLink="/home/payment-methods/create">Agregar el
+              primero</button>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Tab Content: Mercado Pago -->
+      @if (activeTab() === 'mercadopago') {
+      <div class="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
+
+          <!-- Sidebar Settings -->
+          <div class="lg:col-span-4 flex flex-col gap-6">
+            <div class="card bg-base-100 shadow-xl border-2 border-primary/10 p-6 pt-2">
+              <!-- <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-blue-500/10 rounded-lg">
+                    <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/6.7.0/mercadopago/favicon.svg" class="w-6 h-6" alt="MP">
+                  </div>
+                  <h3 class="font-black text-lg tracking-tight">Estado Global</h3>
+                </div>
+                <input type="checkbox" class="toggle toggle-primary toggle-lg shadow-sm" 
+                       [checked]="state().automaticGateways.mercadopago.active" 
+                       (change)="toggleMPActive(!state().automaticGateways.mercadopago.active)">
+              </div>
+              <p class="text-sm opacity-70 mb-4 leading-relaxed">
+                Activa o desactiva Mercado Pago como pasarela de pago principal en tu ecommerce.
+              </p> -->
+
+              <div
+                class="divider before:bg-base-300 after:bg-base-300 font-bold uppercase text-[10px] tracking-widest opacity-40">
+                Exclusiones de Efectivo</div>
+              <div
+                class="flex items-center justify-between p-3 bg-base-200/50 rounded-xl border border-base-content/5 transition-all hover:border-primary/20">
+                <div>
+                  <span class="font-bold text-sm">Rapipago / Pagofácil</span>
+                  <p class="text-[10px] opacity-50">Permitir pagos en efectivo vía cupón</p>
+                </div>
+                <input type="checkbox" class="toggle toggle-sm"
+                  [checked]="!state().automaticGateways.mercadopago.excludedPaymentTypes.includes('ticket')"
+                  (change)="toggleTypeExclusion('ticket', state().automaticGateways.mercadopago.excludedPaymentTypes.includes('ticket'))">
+              </div>
+            </div>
+
+            <div class="card bg-primary text-primary-content p-6 shadow-xl relative overflow-hidden">
+              <div class="absolute -right-4 -bottom-4 opacity-10 rotate-12 scale-150">
+                <mat-icon class="text-8xl">bolt</mat-icon>
+              </div>
+              <h4 class="font-bold flex items-center gap-2 mb-2 relative z-10">
+                <mat-icon>info</mat-icon>
+                Información
+              </h4>
+              <p class="text-xs relative z-10 opacity-90 leading-relaxed">
+                Las exclusiones se aplican instantáneamente en el checkout de tus clientes. Asegúrate de tener
+                configuradas tus credenciales en Ajustes de la Tienda.
+              </p>
+            </div>
+          </div>
+
+          <!-- Main Grid -->
+          <div class="lg:col-span-8">
+            <div class="card bg-base-100 shadow-xl border border-base-content/10 h-full">
+              <div class="p-6 border-b border-base-content/5 bg-base-200/20">
+                <h3 class="font-black text-lg">Métodos Disponibles</h3>
+                <p class="text-sm opacity-50">Selecciona qué tarjetas/medios habilitar</p>
+              </div>
+
+              <div class="p-8">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                  @for (method of state().automaticGateways.mercadopago.availableMethods; track method) {
+                  <div
+                    class="group relative flex flex-col items-center p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden"
+                    [class.border-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    [class.bg-primary/5]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    [class.border-base-content/10]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    [class.opacity-60]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    (click)="toggleMethodExclusion(method.id, state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id))">
+
+                    <div class="w-14 h-10 mb-3 flex items-center justify-center">
+                      <img [src]="method.thumbnail" [alt]="method.name"
+                        class="max-w-full max-h-full object-contain transition-all duration-500"
+                        [class.grayscale]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)">
+                    </div>
+
+                    <span
+                      class="text-[11px] font-black uppercase tracking-tighter text-center mb-3 line-clamp-1">{{method.name}}</span>
+
+                    <div class="mt-auto">
+                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                        [class.bg-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                        [class.border-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                        [class.border-base-content/20]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)">
+                        @if (!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)) {
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5! flex items-center justify-center text-primary-content">check</mat-icon>
+                        }
+                      </div>
+                    </div>
+
+                    @if (state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)) {
+                    <div class="absolute inset-0 bg-base-300/5 backdrop-blur-[0.5px] pointer-events-none"></div>
+                    }
+                  </div>
+                  } @empty {
+                  <div class="col-span-full py-12 text-center opacity-30">
+                    <mat-icon class="text-4xl mb-2">sync</mat-icon>
+                    <p>Sincronizando métodos disponibles...</p>
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      }
     </div>
   </ng-container>
-
 </app-page-layout>

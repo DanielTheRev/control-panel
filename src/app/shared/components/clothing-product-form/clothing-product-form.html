@@ -1,0 +1,55 @@
+<div class="card bg-base-100 shadow-sm border border-secondary/20">
+    <div class="card-body p-6">
+        <h3 class="card-title text-lg mb-4">
+            <span class="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" class="w-4 h-4 text-secondary">
+                    <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57
+                             a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0
+                             00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z" />
+                </svg>
+            </span>
+            Campos de Indumentaria
+        </h3>
+
+        <form [formGroup]="clothingForm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Género</legend>
+                    <select class="select select-bordered w-full" formControlName="gender">
+                        <option value="">Seleccionar...</option>
+                        @for (opt of genderOptions; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                        }
+                    </select>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Fit / Corte</legend>
+                    <select class="select select-bordered w-full" formControlName="fit">
+                        <option value="">Seleccionar...</option>
+                        @for (opt of fitOptions; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                        }
+                    </select>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Material</legend>
+                    <input type="text" class="input input-bordered w-full" placeholder="Ej. Algodón"
+                        formControlName="material" />
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Tipo de Talle</legend>
+                    <select class="select select-bordered w-full" formControlName="sizeType">
+                        <option value="">Seleccionar...</option>
+                        @for (opt of sizeTypeOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </fieldset>
+            </div>
+        </form>
+    </div>
+</div>

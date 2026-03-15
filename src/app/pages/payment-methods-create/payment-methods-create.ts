@@ -1,12 +1,13 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IPaymentMethod, PaymentType } from '../../interfaces/paymentInfo.interface';
-import { PaymentMethodsService } from '../../services/payment-methods.service';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router, RouterLink } from '@angular/router';
+import { PaymentType } from '../../interfaces/paymentInfo.interface';
+import { NotificationsService } from '../../services/notifications.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
+import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { PaymentMethodsStateService } from '../../states/payment-methods.state.service'; // Assuming this exists or I should check.
 
 @Component({
@@ -26,24 +27,24 @@ export class PaymentMethodsCreate implements OnInit {
   #fb = inject(FormBuilder);
   #router = inject(Router);
   #paymentMethodsState = inject(PaymentMethodsStateService);
-  #snackBar = inject(MatSnackBar);
+  #NotificationService = inject(NotificationsService);
+  #StoreConfig = inject(StoreConfigStateService)
   readonly paymentMethodID = input.required<string>();
 
   isEditMode = computed(() => this.paymentMethodID());
-  paymentTypes = Object.values(PaymentType);
+  paymentTypes = Object.values(PaymentType).filter(type => type !== PaymentType.CARD);
+  readonly StoreConfig = this.#StoreConfig.StoreConfig;
 
   form: FormGroup = this.#fb.group({
     name: ['', Validators.required],
     type: ['', Validators.required],
-    description: [''],
-    processingFee: [0, [Validators.min(0)]],
+    description: ['', Validators.required],
     isActive: [true]
   });
 
   ngOnInit() {
     const id = this.paymentMethodID();
     if (id) {
-      console.log(id);
       this.loadMethod(id);
     }
   }
@@ -55,12 +56,11 @@ export class PaymentMethodsCreate implements OnInit {
         name: method.name,
         type: method.type,
         description: method.description,
-        processingFee: method.processingFee || 0,
         isActive: method.isActive
       });
     } catch (error) {
       console.error('Error loading payment method', error);
-      this.#snackBar.open('Error al cargar el método de pago', 'Cerrar', { duration: 3000 });
+      this.#NotificationService.error('Error al cargar el método de pago');
     }
   }
 
@@ -75,20 +75,20 @@ export class PaymentMethodsCreate implements OnInit {
     if (this.isEditMode()) {
       try {
         await this.#paymentMethodsState.updatePaymentMethod(this.paymentMethodID()!, value)
-        this.#snackBar.open('Método de pago actualizado', 'Cerrar', { duration: 3000 });
+        this.#NotificationService.info('Método de pago actualizado');
         this.#router.navigate(['/home/payment-methods']);
       } catch (error) {
         console.error('Error updating', error);
-        this.#snackBar.open('Error al actualizar', 'Cerrar', { duration: 3000 });
+        this.#NotificationService.error('Error al actualizar');
       }
     } else {
       try {
         await this.#paymentMethodsState.addPaymentMethod(value)
-        this.#snackBar.open('Método de pago creado', 'Cerrar', { duration: 3000 });
+        this.#NotificationService.success('Método de pago creado');
         this.#router.navigate(['/home/payment-methods']);
       } catch (error) {
         console.error('Error creating', error);
-        this.#snackBar.open('Error al crear', 'Cerrar', { duration: 3000 });
+        this.#NotificationService.error('Error al crear');
       }
     }
   }
