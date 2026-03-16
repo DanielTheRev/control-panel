@@ -3,7 +3,7 @@
     @let subtitle = productID() ? 'Edita cualquier campo para actualizar el producto.'
     : 'Rellena la información para tu nuevo artículo.';
 
-    <app-page-header header [title]="title" [subtitle]="subtitle">
+    <app-page-header header [title]="title" [subtitle]="subtitle" [withMB]="false">
         <div actions class="flex items-center gap-4">
             @if (productForm.invalid) {
             <div
@@ -38,14 +38,19 @@
                 }
             </button>
         </div>
+        <div role="tablist" class="tabs tabs-box rounded-none bg-blue-100" sub-menu>
+            @for (tab of tabs(); track tab.label) {
+            <span role="tab" class="tab" [class.tab-active]="tabSelected() === tab.label"
+                (click)="setActiveTab(tab.label)">{{ tab.label }}</span>
+            }
+        </div>
     </app-page-header>
 
     <ng-container content>
-        <form [formGroup]="productForm" class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-
-            <!-- LEFT COLUMN (3/5): Main Information -->
-            <div class="lg:col-span-3 space-y-6">
-
+        <form [formGroup]="productForm" class="flex w-full">
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Información Principal'"
+                [class.hidden]="tabSelected() !== 'Información Principal'">
                 <!-- Product Type Selector (only shown in edit mode since in create mode type is pre-selected from route) -->
                 @if (!typeParam()) {
                 <div class="card bg-base-100 shadow-sm border border-base-300">
@@ -165,21 +170,26 @@
                     </div>
                 </div>
 
+            </div>
+
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Especificaciones principales'"
+                [class.hidden]="tabSelected() !== 'Especificaciones principales'">
                 <!-- Type-Specific Fields via child forms -->
                 @if (selectedType() === ProductType.TECH) {
-                <app-tech-product-form
-                    [value]="techInitialValue()"
-                    (formChange)="onTypeSpecificFormChange($event)">
+                <app-tech-product-form [value]="techInitialValue()" (formChange)="onTypeSpecificFormChange($event)">
                 </app-tech-product-form>
                 }
 
                 @if (selectedType() === ProductType.CLOTHING) {
-                <app-clothing-product-form
-                    [value]="clothingInitialValue()"
+                <app-clothing-product-form [value]="clothingInitialValue()"
                     (formChange)="onTypeSpecificFormChange($event)">
                 </app-clothing-product-form>
                 }
+            </div>
 
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Descripciones'" [class.hidden]="tabSelected() !== 'Descripciones'">
                 <!-- Description Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
@@ -197,12 +207,10 @@
                         </fieldset>
                     </div>
                 </div>
-
             </div>
 
-            <!-- RIGHT COLUMN (2/5): Media, Specifications & Tags -->
-            <div class="lg:col-span-2 space-y-6">
-
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Imágenes'" [class.hidden]="tabSelected() !== 'Imágenes'">
                 <!-- Images Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
@@ -212,7 +220,11 @@
                         </app-image-upload>
                     </div>
                 </div>
+            </div>
 
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Etiquetas(tags)'"
+                [class.hidden]="tabSelected() !== 'Etiquetas(tags)'">
                 <!-- Features Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
@@ -222,10 +234,13 @@
                         </app-tag-input>
                     </div>
                 </div>
+            </div>
 
-                <!-- Specifications Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Especificaciones técnicas'"
+                [class.hidden]="tabSelected() !== 'Especificaciones técnicas'">
+                <div class="card rounded-sm bg-base-100 shadow-sm border border-base-300">
+                    <div class="card-body">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="card-title text-lg">Especificaciones</h3>
                         </div>
@@ -237,15 +252,16 @@
                         <div class="divider my-4"></div>
 
                         <div class="bg-base-200/50 p-4 rounded-xl border border-base-300">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3 flex items-center gap-2">
+                            <h4
+                                class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3 flex items-center gap-2">
                                 <mat-icon class="text-[16px] w-4 h-4">bolt</mat-icon>
                                 Carga Rápida
                             </h4>
                             <div class="flex gap-2">
                                 <input #bulkSpecs type="text" class="input input-bordered input-sm flex-1"
-                                    placeholder="Ej: RAM: 15gb, Almacenamiento: 256gb" 
+                                    placeholder="Ej: RAM: 15gb, Almacenamiento: 256gb"
                                     (keydown.enter)="$event.preventDefault(); addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''" />
-                                <button type="button" class="btn btn-sm btn-secondary" 
+                                <button type="button" class="btn btn-sm btn-secondary"
                                     (click)="addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''">
                                     Cargar
                                 </button>
@@ -256,88 +272,209 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            <!-- VARIANTS - Full Width Row -->
-            <div class="lg:col-span-5">
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="card-title text-lg">Variantes</h3>
-                                <p class="text-xs text-base-content/40 mt-0.5">
-                                    Cada variante tiene su propio SKU, stock y atributos.
-                                </p>
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" (click)="addVariant()">
-                                <mat-icon>add</mat-icon> Agregar Variante
-                            </button>
-                        </div>
-
-                        @if (variantsControls.length === 0) {
-                        <div class="text-center py-10 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl">
-                            <mat-icon class="text-4xl mb-2 w-10! h-10!">style</mat-icon>
-                            <p class="text-sm">No hay variantes aún. Cada variante tiene su SKU y stock.</p>
-                        </div>
-                        }
-
-                        <div formArrayName="variants" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                            @for (variant of variantsControls.controls; track variant; let i = $index) {
-                            <div class="border border-base-300 rounded-xl p-4 relative bg-base-50"
-                                [formGroupName]="i">
-                                <!-- Remove button -->
-                                <button type="button"
-                                    class="btn btn-ghost btn-xs absolute top-2 right-2 text-error/60 hover:text-error"
-                                    (click)="removeVariant(i)">
-                                    <mat-icon class="text-[18px]">close</mat-icon>
-                                </button>
-
-                                <!-- Badge indicator -->
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-base-content/30 mb-3">
-                                    Variante #{{ i + 1 }}
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'Variantes'" [class.hidden]="tabSelected() !== 'Variantes'">
+                <div class="lg:col-span-5">
+                    <div class="card bg-base-100 shadow-sm border border-base-300">
+                        <div class="card-body p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="card-title text-lg">Variantes</h3>
+                                    <p class="text-md text-base-content/80 mt-0.5">
+                                        Cada variante tiene su propio SKU, stock y atributos.
+                                    </p>
                                 </div>
+                                <button type="button" class="btn btn-primary btn-sm" (click)="addVariant()">
+                                    <mat-icon>add</mat-icon> Agregar Variante
+                                </button>
+                            </div>
 
-                                <div class="grid grid-cols-2 gap-2">
-                                    <fieldset class="fieldset col-span-2">
-                                        <legend class="fieldset-legend text-xs">SKU</legend>
-                                        <input type="text"
-                                            class="input input-bordered input-sm w-full font-mono text-xs"
-                                            placeholder="SAM-001-128" formControlName="sku" />
-                                    </fieldset>
+                            @if (variantsControls.length === 0) {
+                            <div
+                                class="text-center py-10 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl">
+                                <mat-icon class="text-4xl mb-2 w-10! h-10!">style</mat-icon>
+                                <p class="text-sm">No hay variantes aún. Cada variante tiene su SKU y stock.</p>
+                            </div>
+                            }
 
-                                    <fieldset class="fieldset col-span-2">
-                                        <legend class="fieldset-legend text-xs">Atributos</legend>
-                                        <input type="text" class="input input-bordered input-sm w-full text-xs"
-                                            placeholder="Talle:M, Color:Negro" formControlName="attributesJson" />
-                                    </fieldset>
+                            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+                                <table class="table">
+                                    <!-- head -->
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Sku</th>
+                                            <th>Atributos</th>
+                                            <th>Stock</th>
+                                            <th>Color(nombre)</th>
+                                            <th>Color(hex)</th>
+                                            <th>Activo</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody formArrayName="variants">
+                                        @for (variant of variantsControls.controls; track variant; let i = $index) {
 
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">Stock</legend>
-                                        <input type="number" class="input input-bordered input-sm w-full"
-                                            formControlName="stock" />
-                                    </fieldset>
+                                        <tr [formGroupName]="i">
+                                            <th>{{ i + 1 }}</th>
+                                            <th>
+                                                <input type="text"
+                                                    class="input input-bordered input-sm w-full font-mono text-xs"
+                                                    placeholder="SAM-001-128" formControlName="sku" />
+                                            </th>
+                                            <td>
+                                                <input type="text" class="input input-bordered input-sm w-full text-xs"
+                                                    placeholder="Talle:M, Color:Negro"
+                                                    formControlName="attributesJson" />
 
-                                    <fieldset class="fieldset">
-                                        <legend class="fieldset-legend text-xs">Color (hex)</legend>
-                                        <input type="color" class="input input-bordered input-sm w-full h-9 p-1"
-                                            formControlName="colorHex" />
-                                    </fieldset>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="input input-bordered input-sm w-full"
+                                                    formControlName="stock" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="input input-bordered input-sm w-full"
+                                                    placeholder="Negro" formControlName="colorName" />
 
-                                    <fieldset class="fieldset col-span-2">
-                                        <legend class="fieldset-legend text-xs">Color (nombre)</legend>
-                                        <input type="text" class="input input-bordered input-sm w-full"
-                                            placeholder="Negro" formControlName="colorName" />
-                                    </fieldset>
+                                            </td>
+                                            <td>
+                                                <input type="color" class="input input-bordered input-sm w-full h-9 p-1"
+                                                    formControlName="colorHex" />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" class="toggle toggle-primary"
+                                                    formControlName="isActive" />
+                                            </td>
+                                            <td>
+                                                <button type="button"
+                                                    class="btn btn-ghost btn-xs text-error/60 hover:text-error"
+                                                    (click)="removeVariant(i)">
+                                                    <mat-icon class="text-[18px]">delete</mat-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                    <div class="col-span-2 flex items-center gap-2 mt-1">
-                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-success"
-                                            formControlName="isActive" />
-                                        <span class="text-xs text-base-content/60">Activa</span>
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+                [class.block]="tabSelected() === 'SEO & Social'" [class.hidden]="tabSelected() !== 'SEO & Social'">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8" formGroupName="seo">
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-bold flex items-center gap-2">
+                                <mat-icon class="text-primary">troubleshoot</mat-icon>
+                                Technical SEO Inspector
+                            </h3>
+                            <p class="text-sm text-base-content/60">Optimiza cómo se verá este producto en los
+                                buscadores y
+                                redes sociales.</p>
+                        </div>
+
+                        <fieldset class="fieldset bg-base-200/40 p-5 rounded-2xl border border-base-300">
+                            <legend class="fieldset-legend font-bold text-base-content/80">Meta Title</legend>
+                            <input type="text" class="input input-bordered w-full bg-base-100"
+                                placeholder="Título para buscadores..." formControlName="metaTitle" />
+                            <div class="flex justify-between mt-2">
+                                <span class="text-[10px] uppercase font-bold text-base-content/40">Recomendado: 50-60
+                                    caracteres.</span>
+                                <span
+                                    [class]="productForm.get('seo.metaTitle')?.value?.length > 60 ? 'text-error' : 'text-success'"
+                                    class="text-xs font-mono font-bold">
+                                    {{ productForm.get('seo.metaTitle')?.value?.length || 0 }}/60
+                                </span>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="fieldset bg-base-200/40 p-5 rounded-2xl border border-base-300">
+                            <legend class="fieldset-legend font-bold text-base-content/80">Meta Description</legend>
+                            <textarea class="textarea textarea-bordered w-full h-28 bg-base-100 leading-relaxed"
+                                placeholder="Resumen para atraer clics..." formControlName="metaDescription"></textarea>
+                            <div class="flex justify-between mt-2">
+                                <span class="text-[10px] uppercase font-bold text-base-content/40">Recomendado: 120-160
+                                    caracteres.</span>
+                                <span
+                                    [class]="productForm.get('seo.metaDescription')?.value?.length > 160 ? 'text-error' : 'text-success'"
+                                    class="text-xs font-mono font-bold">
+                                    {{ productForm.get('seo.metaDescription')?.value?.length || 0 }}/160
+                                </span>
+                            </div>
+                        </fieldset>
+
+                        <!-- <fieldset class="fieldset bg-base-200/40 p-5 rounded-2xl border border-base-300">
+                        <legend class="fieldset-legend font-bold text-base-content/80">Slug de URL</legend>
+                        <div class="join w-full shadow-sm">
+                            <span
+                                class="join-item btn btn-static btn-sm bg-base-300 border-base-300 lowercase italic text-xs">vura.com/p/</span>
+                            <input type="text"
+                                class="join-item input input-bordered input-sm w-full font-mono text-primary"
+                                formControlName="slug" />
+                        </div>
+                    </fieldset> -->
+                    </div>
+
+                    <div class="space-y-8 bg-base-200/30 p-8 rounded-md border border-dashed border-base-400">
+                        <h4
+                            class="text-xs font-black uppercase tracking-widest text-base-content/30 border-b border-base-300 pb-2">
+                            Vura Live Preview</h4>
+
+                        <div class="group">
+                            <span
+                                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-3">
+                                <mat-icon class="text-[14px] w-3.5 h-3.5">search</mat-icon> Google Search Result
+                            </span>
+                            <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 font-sans max-w-150">
+                                <div class="text-[14px] text-[#202124] flex items-center gap-1 mb-1 truncate">
+                                    vura.com <span class="text-gray-400">› productos › {{
+                                        productForm.get('seo.slug')?.value
+                                        || 'url-slug' }}</span>
+                                </div>
+                                <div
+                                    class="text-[20px] text-[#1a0dab] hover:underline cursor-pointer leading-tight mb-1 font-medium">
+                                    {{ productForm.get('seo.metaTitle')?.value || productForm.get('model')?.value }}
+                                </div>
+                                <div class="text-[14px] text-[#4d5156] line-clamp-2 leading-relaxed">
+                                    {{ productForm.get('seo.metaDescription')?.value }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group">
+                            <span
+                                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-3">
+                                <mat-icon class="text-[14px] w-3.5 h-3.5">share</mat-icon> Social Media Share (Open
+                                Graph)
+                            </span>
+                            <div class="bg-white rounded-xl overflow-hidden border border-gray-300 shadow-lg max-w-150">
+                                <div class="aspect-video bg-base-300 flex items-center justify-center relative group">
+                                    @if (imagesControls.length > 0 && imagesControls.at(0).get('link')?.value) {
+                                    <img [src]="imagesControls.at(0).get('link')?.value"
+                                        class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                    } @else {
+                                    <div class="flex flex-col items-center opacity-20">
+                                        <mat-icon class="text-6xl h-15! w-15!">image</mat-icon>
+                                        <span class="text-xs font-bold">Sin Imagen</span>
+                                    </div>
+                                    }
+                                </div>
+                                <div class="p-4 bg-[#f2f3f5] border-t border-gray-200">
+                                    <div class="text-[12px] text-gray-500 uppercase tracking-tight">VURA.COM</div>
+                                    <div class="text-[17px] font-bold text-[#1c1e21] leading-tight mt-1 truncate">
+                                        {{ productForm.get('seo.metaTitle')?.value || productForm.get('model')?.value }}
+                                    </div>
+                                    <div class="text-[14px] text-[#606770] line-clamp-1 mt-1 font-normal">
+                                        {{ productForm.get('seo.metaDescription')?.value }}
                                     </div>
                                 </div>
                             </div>
-                            }
                         </div>
                     </div>
                 </div>

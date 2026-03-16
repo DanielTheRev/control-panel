@@ -49,7 +49,7 @@ export class ProductDetail implements OnInit {
     try {
       const product = await this.#productState.getProduct(this.productID());
       console.log(product);
-      this.isUsingGlobalMargin.set(product.customProfitMargin === undefined || product.customProfitMargin === null);
+      this.isUsingGlobalMargin.set(product.prices.profitMargin === undefined || product.prices.profitMargin === null);
       this.product.set(product);
     } catch {
       this.hasError.set(true);

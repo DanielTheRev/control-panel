@@ -1,5 +1,6 @@
 /* 1. Load Tailwind */
 @import "tailwindcss";
+@import 'tailwind-animations';
 
 /* 2. Load DaisyUI */
 @plugin "daisyui" {

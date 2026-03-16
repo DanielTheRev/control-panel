@@ -19,14 +19,15 @@ export class ProductFormUtils {
     const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'customProfitMargin'];
     simpleFields.forEach(field => {
       const prodVal = productData[field];
-      const origVal = originalProduct[field];
-
+      const origVal = field === 'customProfitMargin'
+        ? originalProduct?.prices?.profitMargin
+        : originalProduct[field];
       // Normalize string/undefined comparison to avoid false positives
       const normalizedProdVal = prodVal !== undefined && prodVal !== null ? String(prodVal).trim() : '';
       const normalizedOrigVal = origVal !== undefined && origVal !== null ? String(origVal).trim() : '';
 
       const isCustomMargin = field === 'customProfitMargin';
-      const hasChanged = isCustomMargin 
+      const hasChanged = isCustomMargin
         ? (normalizedProdVal !== normalizedOrigVal)
         : (prodVal !== origVal);
 
@@ -75,7 +76,7 @@ export class ProductFormUtils {
       }
       return variant;
     });
-    
+
     if (JSON.stringify(newVariants) !== JSON.stringify(originalVariants)) {
       console.warn(`[DEBUG] Change detected in variants. New: '${JSON.stringify(newVariants)}', Orig: '${JSON.stringify(originalVariants)}'`);
       changes.formData.append('variants', JSON.stringify(productData.variants || []));
@@ -98,7 +99,7 @@ export class ProductFormUtils {
     techFields.forEach(field => {
       const prodVal = productData[field] !== undefined && productData[field] !== null ? String(productData[field]).trim() : '';
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]).trim() : '';
-      
+
       if (prodVal !== origVal) {
         console.warn(`[DEBUG] Change detected in tech field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field]);
@@ -111,7 +112,7 @@ export class ProductFormUtils {
     clothingSimple.forEach(field => {
       const prodVal = productData[field] !== undefined && productData[field] !== null ? String(productData[field]).trim() : '';
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]).trim() : '';
-      
+
       if (prodVal !== origVal) {
         console.warn(`[DEBUG] Change detected in clothing field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field]);
@@ -153,6 +154,29 @@ export class ProductFormUtils {
       console.warn(`[DEBUG] Change detected in deletedImages.`);
       changes.hasChanges = true;
       changes.formData.append('deletedImages', JSON.stringify(deletedImages));
+    }
+
+    // 8. Compare SEO (Normalizado para evitar falsos positivos)
+    const originalSeo = originalProduct.seo || {};
+    const newSeo = productData.seo || {};
+
+    // Normalizamos para que null, undefined o '' sean tratados igual
+    const normalizedOrigSeo = {
+      metaTitle: (originalSeo.metaTitle || '').trim(),
+      metaDescription: (originalSeo.metaDescription || '').trim(),
+      metaKeywords: (originalSeo.metaKeywords || '').trim()
+    };
+
+    const normalizedNewSeo = {
+      metaTitle: (newSeo.metaTitle || '').trim(),
+      metaDescription: (newSeo.metaDescription || '').trim(),
+      metaKeywords: (newSeo.metaKeywords || '').trim()
+    };
+
+    if (JSON.stringify(normalizedNewSeo) !== JSON.stringify(normalizedOrigSeo)) {
+      console.warn(`[DEBUG] Change detected in SEO. New: '${JSON.stringify(normalizedNewSeo)}', Orig: '${JSON.stringify(normalizedOrigSeo)}'`);
+      changes.formData.append('seo', JSON.stringify(newSeo));
+      changes.hasChanges = true;
     }
 
     return changes;

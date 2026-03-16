@@ -66,7 +66,6 @@ export interface IProduct {
   specifications: { key: string; value: string }[];
   variants: IVariant[];
   lowStockThreshold?: number;
-  customProfitMargin?: number;
   // Virtuals
   totalStock?: number;
   hasStock?: boolean;

@@ -90,9 +90,18 @@ export class ProductStoreService {
   }
 
   async getProduct(id: string) {
+    // 1. Buscamos en el estado local de la lista
+    const localProduct = this.products().data.find(p => p._id === id);
+
+    if (localProduct) {
+      console.log('Cargado desde caché local 🚀');
+      return localProduct;
+    }
+
+    // 2. Si no está (ej: refresh de página), vamos a buscarlo
     try {
-      const product = await this.#productService.getProduct(id);
-      return product;
+      console.log('Viajando a Dubai por el producto... ✈️');
+      return await this.#productService.getProduct(id);
     } catch (error) {
       this.#notificationService.error('Error al obtener el producto');
       throw error;
@@ -105,8 +114,8 @@ export class ProductStoreService {
 
   async createProduct(data: FormData) {
     try {
-      await this.#productService.create(data);
-      this.#fetchedProducts.reload();
+      const product = await this.#productService.create(data);
+      this.#addProduct(product);
     } catch (error) {
       throw error;
     }
@@ -115,19 +124,66 @@ export class ProductStoreService {
   async updateProduct(id: string, data: FormData) {
     try {
       const response = await this.#productService.updateProduct(id, data);
-      console.log(response);
-      this.#fetchedProducts.reload();
+      this.#updateProduct(response);
     } catch (error) {
       throw error;
     }
   }
 
   async deleteProduct(id: string) {
+    // 1. Guardamos una copia del estado actual por si algo falla (Back up)
+    const previousState = this.#fetchedProducts.value();
+
+    // 2. Optimistic Update: Borramos de la UI antes de que el server responda
+    this.#deleteProductLocal(id);
+
     try {
       await this.#productService.deleteProduct(id);
+      // 3. Si sale bien, podemos hacer un reload opcional para rellenar la paginación
       this.#fetchedProducts.reload();
+      this.#notificationService.success('Producto eliminado con éxito');
     } catch (error) {
-      throw error;
+      // 4. ROLLBACK: Si falla, restauramos el estado anterior
+      this.#notificationService.error('No se pudo eliminar el producto, restaurando...');
+      this.#fetchedProducts.set(previousState); // Reinstalamos la data vieja
     }
+  }
+
+  #addProduct(product: IProduct) {
+    this.#fetchedProducts.update(state => {
+      if (!state) return state;
+      return {
+        ...state,
+        data: [...state.data, product],
+        pagination: {
+          ...state.pagination,
+          totalItems: state.pagination.totalItems + 1,
+        },
+      };
+    });
+  }
+
+  #updateProduct(product: Partial<IProduct>) {
+    this.#fetchedProducts.update(state => {
+      if (!state) return state;
+      return {
+        ...state,
+        data: state.data.map(p => p._id === product._id ? { ...p, ...product } : p),
+      };
+    });
+  }
+
+  #deleteProductLocal(id: string) {
+    this.#fetchedProducts.update(state => {
+      if (!state) return state;
+      return {
+        ...state,
+        data: state.data.filter(p => p._id !== id),
+        pagination: {
+          ...state.pagination,
+          totalItems: state.pagination.totalItems - 1,
+        },
+      };
+    });
   }
 }

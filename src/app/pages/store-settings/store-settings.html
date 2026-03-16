@@ -176,25 +176,32 @@
             </div>
 
             <div class="p-5 flex flex-col gap-6">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span
-                      class="label-text text-[10px] uppercase font-bold opacity-50">Access Token</span></label>
-                  <input type="password" formControlName="accessToken"
-                    class="input input-sm input-bordered font-mono text-xs" placeholder="APP_USR-..." />
+              <div
+                class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-base-200/50 rounded-lg border border-base-300">
+                <div>
+                  <h4 class="font-bold text-sm text-base-content">Vinculación de Cuenta</h4>
+                  <p class="text-xs text-base-content/60">Conecta tu cuenta de Mercado Pago de forma automática y
+                    segura.</p>
                 </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span
-                      class="label-text text-[10px] uppercase font-bold opacity-50">Public Key</span></label>
-                  <input type="text" formControlName="publicKey" class="input input-sm input-bordered"
-                    placeholder="APP_USR-..." />
+
+                @if (configForm.get('paymentGateways.mercadopago.accessToken')?.value) {
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                  <div class="badge badge-success gap-1 text-xs py-3">
+                    <mat-icon class="text-[14px] w-3.5 h-3.5">check_circle</mat-icon>
+                    Cuenta Vinculada
+                  </div>
+                  <button type="button" (click)="syncMercadoPago()" class="btn btn-outline btn-sm text-xs">
+                    <mat-icon class="text-[14px] w-3.5 h-3.5">autorenew</mat-icon>
+                    Actualizar conexión
+                  </button>
                 </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span
-                      class="label-text text-[10px] uppercase font-bold opacity-50">Webhook Secret</span></label>
-                  <input type="password" formControlName="webhookSecret"
-                    class="input input-sm input-bordered font-mono text-xs" placeholder="Clave secreta..." />
-                </div>
+                } @else {
+                <button type="button" (click)="syncMercadoPago()"
+                  class="btn btn-sm bg-[#009ee3] hover:bg-[#008bcb] text-white border-none">
+                  <mat-icon class="text-sm">link</mat-icon>
+                  Vincular con Mercado Pago
+                </button>
+                }
               </div>
 
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">

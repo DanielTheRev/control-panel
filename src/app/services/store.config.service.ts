@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment';
 import { IEcommerceConfig } from '../interfaces/config.interface';
 import { IAggregatedPaymentMethodsResponse, IUpdateMPConfigDTO } from '../interfaces/mercadopago.interface';
 import { firstValueFrom } from 'rxjs';
+import { getTenantSlug } from '../utils/tenant.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +12,20 @@ import { firstValueFrom } from 'rxjs';
 export class StoreConfigService {
   #http = inject(HttpClient);
   #apiUrl = `${environment.apiUrl}/config`;
+  #tenantID = getTenantSlug()
+  #masterClientID = environment.MP_MASTER_CLIENT_ID;
 
 
   getConfigString() {
     return this.#apiUrl
+  }
+
+  getTenantID() {
+    return this.#tenantID
+  }
+
+  getMasterClientID() {
+    return this.#masterClientID
   }
 
   async updateConfig(config: IEcommerceConfig): Promise<IEcommerceConfig> {

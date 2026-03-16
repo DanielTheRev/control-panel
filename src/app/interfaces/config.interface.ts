@@ -1,22 +1,22 @@
 export interface IEcommerceConfig {
-  name?: string;
-  profit?: number;
-  taxes?: {
+  name: string;
+  profit: number;
+  taxes: {
     iva: number;
   };
-  contact?: {
-    email?: string;
-    phone?: string;
-    address?: string;
+  contact: {
+    email: string;
+    phone: string;
+    address: string;
   };
-  social?: {
-    instagram?: string;
-    facebook?: string;
-    twitter?: string;
-    tiktok?: string;
+  social: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+    tiktok: string;
   };
-  paymentGateways?: {
-    uala?: {
+  paymentGateways: {
+    uala: {
       active: boolean;
       baseCommission: number;
       cft3cuotas: number;
@@ -27,7 +27,7 @@ export interface IEcommerceConfig {
         clientSecret: string;
       };
     };
-    mercadopago?: {
+    mercadopago: {
       active: boolean;
       baseCommission: number;
       cft3cuotas: number;
@@ -39,7 +39,7 @@ export interface IEcommerceConfig {
       excludedPaymentMethods: string[];
       excludedPaymentTypes: string[];
     };
-    customMethods?: {
+    customMethods: {
       id: string;
       name: string;
       description: string;
