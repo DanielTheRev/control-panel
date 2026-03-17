@@ -33,6 +33,7 @@ export class AuthService {
   public loading = computed(() => this._authState().loading);
   public error = computed(() => this._authState().error);
   public isAdmin = computed(() => this._authState().user?.role === 'admin');
+  public isStaff = computed(() => this._authState().user?.role === 'admin' || this._authState().user?.role === 'employee');
 
   constructor(
     private http: HttpClient,

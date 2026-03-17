@@ -95,4 +95,16 @@ export class ProductService {
       })
     ));
   }
+
+  searchProducts(query: string): Observable<any[]> {
+    return this.#http.get<any[]>(`${this.#apiUrl}/search`, {
+      params: { q: query },
+    });
+  }
+
+  getSuggestions(query: string): Observable<any[]> {
+    return this.#http.get<any[]>(`${this.#apiUrl}/suggestions`, {
+      params: { q: query },
+    });
+  }
 }

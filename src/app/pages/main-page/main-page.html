@@ -51,60 +51,95 @@
         </a>
 
         @if (isExpanded) {
-        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Punto de Venta</span>
         }
 
-        <a routerLink="/home/payment-methods" routerLinkActive="active"
+        <a routerLink="/home/pos" routerLinkActive="active"
           class="menu-item"
-          [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
-          <mat-icon>payments</mat-icon>
+          [matTooltip]="isCollapsed ? 'Ventas' : ''" matTooltipPosition="right">
+          <mat-icon>point_of_sale</mat-icon>
           @if (isExpanded) {
-          <span class="menu-text">Pagos</span>
+          <span class="menu-text">Mostrador (POS)</span>
           }
         </a>
 
-        <a routerLink="/home/shipping-options" routerLinkActive="active"
+        <a routerLink="/home/cash-register" routerLinkActive="active"
           class="menu-item"
-          [matTooltip]="isCollapsed ? 'Opciones de Envío' : ''" matTooltipPosition="right">
-          <mat-icon>local_shipping</mat-icon>
+          [matTooltip]="isCollapsed ? 'Caja' : ''" matTooltipPosition="right">
+          <mat-icon>account_balance_wallet</mat-icon>
           @if (isExpanded) {
-          <span class="menu-text">Envíos</span>
+          <span class="menu-text">Caja Registradora</span>
           }
         </a>
 
-        @if (isExpanded) {
-        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Contenido</span>
+        <a routerLink="/home/daily-reports" routerLinkActive="active"
+          class="menu-item"
+          [matTooltip]="isCollapsed ? 'Reportes' : ''" matTooltipPosition="right">
+          <mat-icon>bar_chart</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Resumen Diario</span>
+          }
+        </a>
+
+        @if (authService.isAdmin()) {
+          @if (isExpanded) {
+          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
+          }
+
+          <a routerLink="/home/payment-methods" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
+            <mat-icon>payments</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Pagos</span>
+            }
+          </a>
+
+          <a routerLink="/home/shipping-options" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Opciones de Envío' : ''" matTooltipPosition="right">
+            <mat-icon>local_shipping</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Envíos</span>
+            }
+          </a>
         }
 
-        <a routerLink="/home/banners" routerLinkActive="active"
-          class="menu-item"
-          [matTooltip]="isCollapsed ? 'Banners & Secciones' : ''" matTooltipPosition="right">
-          <mat-icon>view_carousel</mat-icon>
+        @if (authService.isAdmin()) {
           @if (isExpanded) {
-          <span class="menu-text">Banners</span>
+          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Contenido</span>
           }
-        </a>
 
-        <a routerLink="/home/hero" routerLinkActive="active"
-          class="menu-item"
-          [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
-          <mat-icon>view_day</mat-icon>
+          <a routerLink="/home/banners" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Banners & Secciones' : ''" matTooltipPosition="right">
+            <mat-icon>view_carousel</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Banners</span>
+            }
+          </a>
+
+          <a routerLink="/home/hero" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
+            <mat-icon>view_day</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Hero Slider</span>
+            }
+          </a>
+
           @if (isExpanded) {
-          <span class="menu-text">Hero Slider</span>
+          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
           }
-        </a>
-
-        @if (isExpanded) {
-        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
+          <a routerLink="/home/settings" routerLinkActive="active"
+            class="menu-item text-primary"
+            [matTooltip]="isCollapsed ? 'Configuración de la Tienda' : ''" matTooltipPosition="right">
+            <mat-icon>settings</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Configuración de la Tienda</span>
+            }
+          </a>
         }
-        <a routerLink="/home/settings" routerLinkActive="active"
-          class="menu-item text-primary"
-          [matTooltip]="isCollapsed ? 'Configuración de la Tienda' : ''" matTooltipPosition="right">
-          <mat-icon>settings</mat-icon>
-          @if (isExpanded) {
-          <span class="menu-text">Configuración de la Tienda</span>
-          }
-        </a>
       </nav>
 
       <!-- Collapse Toggle at Bottom -->

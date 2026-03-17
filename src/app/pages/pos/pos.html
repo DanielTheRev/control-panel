@@ -1,0 +1,381 @@
+@let session = cashStore.session();
+@let isLoadingSession = cashStore.isLoading();
+
+<app-page-layout>
+  <app-page-header title="Punto de Venta" [subtitle]="cart().length + ' productos en el carrito'">
+    <div actions>
+      @if (session) {
+        <div class="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-full border border-success/20">
+          <mat-icon class="text-sm">check_circle</mat-icon>
+          <span class="text-xs font-bold uppercase tracking-wider">Caja Abierta</span>
+        </div>
+      } @else if (!isLoadingSession) {
+        <div class="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-full border border-error/20">
+          <mat-icon class="text-sm">warning</mat-icon>
+          <span class="text-xs font-bold uppercase tracking-wider">Caja Cerrada</span>
+        </div>
+      }
+    </div>
+  </app-page-header>
+
+  <div content class="flex h-full flex-col lg:flex-row overflow-hidden gap-6">
+    
+    <!-- Left Side: Product Discovery -->
+    <div class="flex-1 flex flex-col min-w-0 space-y-4">
+      
+      <!-- Search Bar -->
+      <div class="relative group">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
+          <mat-icon>search</mat-icon>
+        </div>
+        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event); onSearchInput()"
+          placeholder="Buscar producto por nombre, modelo o código..."
+          class="input input-lg w-full pl-12 bg-base-100 border-base-300 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all rounded-2xl shadow-sm text-lg" />
+      </div>
+
+      <!-- Inventory Grid -->
+      <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        
+        @if (loadingProducts()) {
+          <div class="flex flex-col items-center justify-center py-24 space-y-4">
+            <span class="loading loading-ring loading-lg text-primary"></span>
+            <p class="text-base-content/40 font-medium animate-pulse">Buscando en el inventario...</p>
+          </div>
+        } @else if (products().length === 0) {
+          <div class="flex flex-col items-center justify-center py-24 opacity-30 text-center">
+            <div class="w-24 h-24 mb-6 rounded-full bg-base-300 flex items-center justify-center">
+              <mat-icon class="text-5xl!">inventory_2</mat-icon>
+            </div>
+            <h3 class="text-xl font-bold">Sin resultados</h3>
+            <p class="max-w-xs mt-2">Prueba buscando por marca, modelo o descripción del producto.</p>
+          </div>
+        } @else {
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+            @for (product of products(); track product._id) {
+              <div class="group relative bg-base-100 rounded-3xl overflow-hidden border border-base-300 hover:border-primary shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                (click)="addToCart(product)">
+                
+                <div class="aspect-square bg-white relative overflow-hidden flex items-center justify-center p-4">
+                  @if (product.images?.length) {
+                    <img [src]="product.images[0].url" [alt]="product.model" 
+                      class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                  } @else {
+                    <div class="w-full h-full flex items-center justify-center bg-base-200 opacity-20">
+                      <mat-icon class="text-5xl!">image_not_supported</mat-icon>
+                    </div>
+                  }
+                  
+                  @if (product.variants?.length) {
+                    <div class="absolute top-3 right-3 badge badge-primary border-none text-[10px] h-5 font-black">
+                      {{ product.variants.length }} VAR
+                    </div>
+                  }
+                </div>
+                
+                <div class="p-5 space-y-2 bg-gradient-to-b from-transparent to-base-200/30">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-primary/60">{{ product.brand || 'Electromix' }}</span>
+                    <h2 class="text-sm font-bold truncate group-hover:text-primary transition-colors">{{ product.model }}</h2>
+                  </div>
+                  <div class="flex items-center justify-between pt-2 border-t border-base-content/5">
+                    <span class="text-lg font-black">${{ product.price | number }}</span>
+                    <button class="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <mat-icon class="text-sm!">add</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right Side: Cart Summary -->
+    <div class="w-full lg:w-[450px] bg-base-100 rounded-3xl border border-base-300 flex flex-col shadow-xl overflow-hidden relative border-t-4 border-t-primary">
+      
+      <!-- Cart Header -->
+      <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-200/50">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary text-primary-content flex items-center justify-center shadow-lg shadow-primary/20">
+            <mat-icon>shopping_bag</mat-icon>
+          </div>
+          <div>
+            <h2 class="text-xl font-black">Carrito</h2>
+            <p class="text-xs font-bold opacity-40 uppercase tracking-widest">Sucursal Central</p>
+          </div>
+        </div>
+        <button [disabled]="cart().length === 0" (click)="cart.set([])" class="btn btn-ghost btn-circle text-error hover:bg-error/10">
+          <mat-icon>delete_sweep</mat-icon>
+        </button>
+      </div>
+
+      <!-- Cart Items -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        @if (cart().length === 0) {
+          <div class="h-full flex flex-col items-center justify-center bg-base-200/30 rounded-3xl border-2 border-dashed border-base-300 p-8 text-center space-y-4">
+            <div class="w-16 h-16 rounded-full bg-base-300 flex items-center justify-center text-base-content/20">
+              <mat-icon class="text-4xl!">shopping_cart_checkout</mat-icon>
+            </div>
+            <div>
+              <p class="font-bold">Tu carrito está vacío</p>
+              <p class="text-xs opacity-50 max-w-xs mt-1">Busca productos a la izquierda para agregarlos a la venta actual.</p>
+            </div>
+          </div>
+        }
+
+        @for (item of cart(); track item.cartItemId; let i = $index) {
+          <div class="bg-base-200/50 rounded-2xl p-4 flex gap-4 border border-transparent hover:border-primary/20 hover:bg-base-200 transition-all group">
+            
+            <div class="w-16 h-16 bg-white rounded-xl border border-base-300 overflow-hidden shrink-0 shadow-sm flex items-center justify-center p-1">
+              @if (item.product.images?.length) {
+                <img [src]="item.product.images[0].url" 
+                  class="w-full h-full object-contain mix-blend-multiply" />
+              } @else {
+                <mat-icon class="opacity-20">image</mat-icon>
+              }
+            </div>
+
+            <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
+              <div>
+                <div class="flex justify-between items-start">
+                  <h3 class="text-sm font-bold line-clamp-1 group-hover:text-primary transition-colors">{{ item.product.model }}</h3>
+                  <span class="text-sm font-black ml-2">${{ (item.price * item.quantity) | number }}</span>
+                </div>
+                @if (item.variant) {
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider mt-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-current"></div>
+                    {{ item.variant.size }} | {{ item.variant.color?.name }}
+                  </span>
+                }
+              </div>
+              
+              <div class="flex items-center justify-between mt-3">
+                <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">${{ item.price | number }} c/u</p>
+                <div class="flex items-center gap-1 bg-base-100 rounded-xl p-1 border border-base-300 shadow-sm">
+                  <button class="w-8 h-8 rounded-lg bg-base-200 hover:bg-primary hover:text-primary-content transition-all flex items-center justify-center" (click)="updateQuantity(i, -1)">
+                    <mat-icon class="text-sm!">remove</mat-icon>
+                  </button>
+                  <span class="w-10 text-center text-sm font-black">{{ item.quantity }}</span>
+                  <button class="w-8 h-8 rounded-lg bg-base-200 hover:bg-primary hover:text-primary-content transition-all flex items-center justify-center" (click)="updateQuantity(i, 1)">
+                    <mat-icon class="text-sm!">add</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Summary & Checkout -->
+      <div class="p-8 bg-base-100 border-t-2 border-base-200 space-y-6 shadow-[0_-20px_50px_rgba(0,0,0,0.1)] rounded-t-3xl">
+        
+        @if (!session && !isLoadingSession) {
+          <div class="flex flex-col gap-4 p-4 rounded-2xl bg-error/10 border border-error/20 text-error">
+            <div class="flex items-center gap-3">
+              <mat-icon>warning</mat-icon>
+              <span class="text-xs font-black uppercase tracking-wider">Requiere apertura de caja</span>
+            </div>
+            <p class="text-xs opacity-80 leading-relaxed font-medium">Debes abrir tu sesión de caja diaria para poder procesar ventas y tickets.</p>
+          </div>
+        }
+
+        <div class="space-y-3">
+          <div class="flex justify-between items-center opacity-40">
+            <span class="text-sm font-black uppercase tracking-widest">Base Imponible</span>
+            <span class="text-sm font-bold">${{ total() * 0.8 | number }}</span>
+          </div>
+          <div class="flex justify-between items-center opacity-40">
+            <span class="text-sm font-black uppercase tracking-widest">IVA (21%)</span>
+            <span class="text-sm font-bold">${{ total() * 0.2 | number }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-base-content/5">
+            <span class="text-lg font-black uppercase tracking-wider">Total Venta</span>
+            <span class="text-3xl font-black text-primary">${{ total() | number }}</span>
+          </div>
+        </div>
+
+        <button [disabled]="cart().length === 0 || !session || isProcessing()"
+          class="btn btn-primary btn-lg w-full font-black text-xl h-20 rounded-2xl shadow-2xl shadow-primary/30 relative overflow-hidden group" (click)="openCheckout()">
+          <span class="relative z-10 flex items-center gap-3">
+            @if (isProcessing()) {
+              <span class="loading loading-spinner"></span>
+              PROCESANDO...
+            } @else {
+              FINALIZAR VENTA
+              <mat-icon class="group-hover:translate-x-1 transition-transform">arrow_forward</mat-icon>
+            }
+          </span>
+          <div class="absolute inset-x-0 bottom-0 h-1 bg-white/20 group-hover:h-full transition-all duration-300 opacity-0 group-hover:opacity-10"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant Selection Modal -->
+  <input type="checkbox" [checked]="showVariantModal()" class="modal-toggle" />
+  <div class="modal modal-bottom sm:modal-middle" role="dialog">
+    <div class="modal-box p-0 overflow-hidden max-w-2xl bg-base-100 rounded-3xl border border-base-300">
+      <div class="bg-primary p-8 text-primary-content flex justify-between items-center">
+        <div>
+          <h3 class="text-2xl font-black">Escoge tu variante</h3>
+          <p class="text-sm font-bold opacity-60 uppercase tracking-widest">{{ selectedProduct()?.model }}</p>
+        </div>
+        <button class="btn btn-circle btn-sm bg-white/20 border-none text-white hover:bg-white/40" (click)="showVariantModal.set(false)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        @for (variant of selectedProduct()?.variants; track variant._id) {
+          <div class="flex items-center gap-4 p-5 rounded-2xl border-2 border-base-200 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all group"
+            (click)="addVariantToCart(selectedProduct(), variant)">
+            @if (variant.color) {
+              <div class="w-14 h-14 rounded-full border-4 border-white shadow-xl group-hover:rotate-12 transition-transform" [style.background]="variant.color.hex"></div>
+            }
+            <div class="flex-1">
+              <p class="font-black text-lg group-hover:text-primary transition-colors">Talle: {{ variant.size }}</p>
+              <p class="text-xs font-bold opacity-40 uppercase tracking-tight">{{ variant.color?.name || 'Estándar' }}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-black text-xl text-primary">${{ (variant.price || selectedProduct().price) | number }}</p>
+              <span class="inline-flex items-center px-2 py-0.5 rounded bg-success/10 text-success text-[10px] font-black uppercase" [class.bg-error/10]="variant.stock <= 0" [class.text-error]="variant.stock <= 0">
+                Stock: {{ variant.stock }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment / Split Modal -->
+  <input type="checkbox" [checked]="showPaymentModal()" class="modal-toggle" />
+  <div class="modal modal-bottom sm:modal-middle" role="dialog">
+    <div class="modal-box p-0 overflow-hidden max-w-4xl h-[700px] flex flex-col bg-base-100 rounded-3xl border border-base-300">
+      <div class="bg-neutral p-8 text-neutral-content flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+            <mat-icon class="text-3xl!">account_balance_wallet</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-2xl font-black tracking-tight">Caja Administrador</h3>
+            <p class="text-xs font-bold opacity-50 uppercase tracking-widest">Generación de Comprobante Interno</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] uppercase font-black opacity-40 mb-1">Total a cobrar</p>
+          <p class="text-4xl font-black text-primary">${{ total() | number }}</p>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Left: Split Payments List -->
+        <div class="w-full md:w-1/2 p-8 overflow-y-auto space-y-6 border-r border-base-200 bg-base-200/20 custom-scrollbar">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black uppercase tracking-widest text-base-content/40">Desglose de Pago</h4>
+            <span class="badge badge-neutral font-black text-[10px]">{{ splitPayments().length }} PARTES</span>
+          </div>
+          
+          @if (splitPayments().length === 0) {
+            <div class="py-20 text-center space-y-4 opacity-20">
+              <mat-icon class="text-6xl!">payments</mat-icon>
+              <p class="font-bold italic">Agrega pagos a la derecha...</p>
+            </div>
+          }
+
+          <div class="space-y-3">
+            @for (p of splitPayments(); track $index; let i = $index) {
+              <div class="group flex items-center justify-between bg-base-100 p-5 rounded-3xl border border-base-300 shadow-sm hover:shadow-md transition-all">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <mat-icon class="text-sm!">credit_card</mat-icon>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-black opacity-40">{{ p.method }}</p>
+                    <p class="font-black text-xl">${{ p.amount | number }}</p>
+                  </div>
+                </div>
+                <button class="btn btn-circle btn-sm btn-ghost text-error opacity-0 group-hover:opacity-100 transition-opacity" (click)="removePayment(i)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (splitPayments().length > 0) {
+            <div class="p-6 rounded-3xl bg-primary/5 border-2 border-dashed border-primary/20 space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-black opacity-40 uppercase tracking-widest">Ya acreditado</span>
+                <span class="text-lg font-bold">${{ getPaidAmount() | number }}</span>
+              </div>
+              <div class="flex justify-between items-center pt-3 border-t border-primary/10">
+                <span class="text-sm font-black text-primary uppercase tracking-widest">Saldo Restante</span>
+                <span class="text-3xl font-black text-primary">${{ getRemainingAmount() | number }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Right: Add Payment Form -->
+        <div class="w-full md:w-1/2 p-8 flex flex-col gap-6 bg-base-100">
+          
+          <div class="space-y-2">
+            <label class="text-xs font-black uppercase tracking-widest opacity-40">Método de Cobro</label>
+            <div class="grid grid-cols-2 gap-2">
+              @for (m of paymentMethods; track m.id) {
+                <button 
+                  (click)="currentPaymentMethod.set(m.id)"
+                  [class.btn-primary]="currentPaymentMethod() === m.id"
+                  [class.btn-outline]="currentPaymentMethod() !== m.id"
+                  class="btn btn-md font-bold text-[10px] rounded-xl border-2">
+                  {{ m.name }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="text-xs font-black uppercase tracking-widest opacity-40 mb-2">Monto del Pago</label>
+            <div class="relative group">
+              <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-2xl text-base-content/20 group-focus-within:text-primary transition-colors">$</span>
+              <input type="number" [ngModel]="paymentAmount()" (ngModelChange)="paymentAmount.set($event)" 
+                class="input input-lg input-bordered w-full pl-12 font-black text-3xl h-20 rounded-2xl bg-base-200/30 focus:bg-base-100" />
+            </div>
+          </div>
+
+          <button class="btn btn-neutral btn-lg w-full h-16 rounded-2xl font-black uppercase shadow-xl" (click)="addPayment()">
+            <mat-icon>add_card</mat-icon>
+            ADJUNTAR AL COBRO
+          </button>
+
+          <div class="form-control mt-auto">
+            <label class="text-xs font-black uppercase tracking-widest opacity-40 mb-2">Observaciones Internas</label>
+            <textarea class="textarea textarea-bordered h-24 rounded-2xl font-medium focus:ring-4 focus:ring-neutral/10" 
+              [ngModel]="notes()" (ngModelChange)="notes.set($event)" 
+              placeholder="Ej: Cliente retira por sucursal, cambio por talle..."></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="p-8 border-t border-base-200 bg-base-100 flex gap-4 shrink-0 shadow-[0_-20px_50px_rgba(0,0,0,0.05)]">
+        <button class="btn btn-ghost btn-lg flex-1 rounded-2xl font-black uppercase" (click)="showPaymentModal.set(false)">VOVER ATRÁS</button>
+        <button class="btn btn-primary btn-lg flex-[2] font-black text-xl h-20 rounded-2xl shadow-2xl relative overflow-hidden group" 
+          [disabled]="getRemainingAmount() > 0 || isProcessing()"
+          (click)="processSale()">
+          @if (isProcessing()) {
+            <span class="loading loading-spinner"></span>
+            PROCESANDO...
+          } @else {
+            CONFIRMAR VENTA
+            <mat-icon class="group-hover:scale-125 transition-transform">verified</mat-icon>
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</app-page-layout>

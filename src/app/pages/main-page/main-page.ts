@@ -5,9 +5,10 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { Navbar } from '../../shared/components/navbar/navbar';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-main-page',
@@ -27,5 +28,6 @@ import { environment } from '../../../environments/environment';
 })
 export class MainPage {
   sidebarService = inject(SidebarService);
+  authService = inject(AuthService);
   brandName = environment.brandName;
 }

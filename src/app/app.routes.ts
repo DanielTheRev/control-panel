@@ -139,6 +139,21 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/store-settings/store-settings').then(c => c.StoreSettings)
       },
       {
+        path: 'cash-register',
+        title: 'Caja Registradora',
+        loadComponent: () => import('./pages/cash-register/cash-register').then(c => c.CashRegisterComponent)
+      },
+      {
+        path: 'pos',
+        title: 'Punto de Venta',
+        loadComponent: () => import('./pages/pos/pos').then(c => c.PosComponent)
+      },
+      {
+        path: 'daily-reports',
+        title: 'Resumen del Día',
+        loadComponent: () => import('./pages/daily-reports/daily-reports').then(c => c.DailyReportsComponent)
+      },
+      {
         path: '**',
         pathMatch: 'full',
         redirectTo: 'products',

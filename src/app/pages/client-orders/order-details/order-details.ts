@@ -9,6 +9,7 @@ import { IOrder, OrderStatus } from '../../../interfaces/order.interface';
 import { PageHeader } from "../../../shared/components/page-header/page-header";
 import { PageLayout } from "../../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../../states/order.state.service';
+import { OrdersService } from '../../../services/orders.service';
 import { PaymentType } from '../../../interfaces/paymentInfo.interface';
 
 @Component({
@@ -32,6 +33,7 @@ import { PaymentType } from '../../../interfaces/paymentInfo.interface';
 export class OrderDetails implements OnInit {
   private route = inject(ActivatedRoute);
   private orderState = inject(OrdersStateService);
+  private ordersService = inject(OrdersService);
   private location = inject(Location);
   public paymentType = PaymentType;
 
@@ -112,6 +114,13 @@ export class OrderDetails implements OnInit {
       case OrderStatus.DELIVERED: return `${baseClasses} bg-green-100 text-green-800`;
       case OrderStatus.CANCELLED: return `${baseClasses} bg-red-100 text-red-800`;
       default: return `${baseClasses} bg-gray-100 text-gray-800`;
+    }
+  }
+
+  async printTicket() {
+    const currentOrder = this.order();
+    if (currentOrder) {
+      await this.ordersService.downloadTicket(currentOrder._id);
     }
   }
 }

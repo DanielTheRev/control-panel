@@ -1,0 +1,186 @@
+@if(reportState(); as state){
+<app-page-layout>
+  <app-page-header header title="Reportes Diarios" subtitle="Analiza el rendimiento y métricas de tus unidades de negocio">
+    <div actions class="flex items-center gap-4 bg-base-100 p-2 rounded-2xl border border-base-300 shadow-sm">
+      <div class="flex items-center gap-3 px-2">
+        <mat-icon class="text-primary/60">calendar_today</mat-icon>
+        <span class="text-xs font-black uppercase tracking-widest opacity-40">Fecha:</span>
+      </div>
+      <input type="date" [ngModel]="state.stats?.date" (ngModelChange)="reportStore.setDate($event)"
+        class="input input-sm bg-transparent border-none focus:ring-0 font-black text-sm cursor-pointer">
+    </div>
+  </app-page-header>
+
+  <div content class="flex flex-col gap-8 max-w-7xl mx-auto w-full pb-12">
+
+    @if (state.isLoading) {
+    <div class="flex flex-col items-center justify-center py-24 space-y-4">
+      <span class="loading loading-ring loading-lg text-primary"></span>
+      <p class="text-base-content/40 font-bold animate-pulse">Compilando datos del día...</p>
+    </div>
+    }
+
+    @if (!state.isLoading && state.hasData && state.stats) {
+    <!-- KPI Dashboard -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <!-- Total Revenue -->
+      <div
+        class="group bg-base-100 rounded-3xl p-6 border border-base-300 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+        <div
+          class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-8 -mt-8 group-hover:bg-primary/10 transition-colors">
+        </div>
+        <div class="space-y-4 relative">
+          <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Ingresos Brutos</p>
+            <h3 class="text-3xl font-black tracking-tight">${{ state.stats.totalRevenue | number }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Earnings -->
+      <div
+        class="group bg-neutral rounded-3xl p-6 border border-neutral shadow-xl hover:shadow-2xl transition-all duration-300 relative overflow-hidden text-neutral-content">
+        <div
+          class="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-bl-full -mr-8 -mt-8 group-hover:bg-white/10 transition-colors">
+        </div>
+        <div class="space-y-4 relative">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 text-primary flex items-center justify-center">
+            <mat-icon class="text-white">trending_up</mat-icon>
+          </div>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Ganancia Estimada</p>
+            <h3 class="text-3xl font-black tracking-tight text-primary">${{ state.stats.totalEarnings | number }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Mix -->
+      <div class="bg-base-100 rounded-3xl p-6 border border-base-300 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+            <mat-icon class="text-sm!">storefront</mat-icon>
+          </div>
+          <span class="text-2xl font-black">{{ state.stats.salesCount.local }}</span>
+        </div>
+        <div class="mt-4">
+          <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Ventas Mostrador</p>
+          <div class="w-full bg-base-200 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div class="bg-secondary h-full rounded-full"
+              [style.width.%]="(state.stats.salesCount.local / state.stats.salesCount.total) * 100"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Online Mix -->
+      <div class="bg-base-100 rounded-3xl p-6 border border-base-300 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
+            <mat-icon class="text-sm!">public</mat-icon>
+          </div>
+          <span class="text-2xl font-black">{{ state.stats.salesCount.online }}</span>
+        </div>
+        <div class="mt-4">
+          <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Ventas Online</p>
+          <div class="w-full bg-base-200 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div class="bg-accent h-full rounded-full"
+              [style.width.%]="(state.stats.salesCount.online / state.stats.salesCount.total) * 100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Breakdown -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Payment Methods Intensity -->
+      <div class="card bg-base-100 border border-base-300 rounded-3xl shadow-xl overflow-hidden">
+        <div class="p-8 border-b border-base-200 bg-base-200/30 flex items-center justify-between">
+          <h3 class="text-lg font-black tracking-tight flex items-center gap-3">
+            <mat-icon class="text-primary">donut_large</mat-icon>
+            Distribución de Ingresos
+          </h3>
+          <span class="badge badge-neutral font-black text-[10px]">{{ (state.stats.incomeByMethod | keyvalue).length }}
+            MÉTODOS</span>
+        </div>
+        <div class="p-8 space-y-8">
+          @if (!state.stats.incomeByMethod || (state.stats.incomeByMethod | keyvalue).length === 0) {
+          <div class="py-12 text-center opacity-20 space-y-4">
+            <mat-icon class="text-5xl!">no_sim</mat-icon>
+            <p class="font-bold italic">Sin transacciones registradas</p>
+          </div>
+          } @else {
+          @for (item of state.stats.incomeByMethod | keyvalue; track item.key) {
+          <div class="space-y-3 group">
+            <div class="flex justify-between items-end">
+              <div class="space-y-1">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40">{{
+                  getPaymentMethodLabel(item.key) }}</p>
+                <p class="font-black text-xl group-hover:text-primary transition-colors">${{ item.value | number }}</p>
+              </div>
+              <span class="text-xs font-black opacity-30">{{ (item.value / state.stats.totalRevenue) | percent:'1.1-1'
+                }}</span>
+            </div>
+            <div class="w-full bg-base-200 h-3 rounded-full overflow-hidden shadow-inner">
+              <div class="bg-primary h-full rounded-full group-hover:brightness-110 transition-all duration-500"
+                [style.width.%]="(item.value / state.stats.totalRevenue) * 100"></div>
+            </div>
+          </div>
+          }
+          }
+        </div>
+      </div>
+
+      <!-- Consolidated Activity -->
+      <div
+        class="card bg-base-100 border border-base-300 rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center text-center p-12 relative">
+        <div
+          class="absolute inset-0 opacity-[0.03] pointer-events-none overflow-hidden flex items-center justify-center">
+          <mat-icon class="text-[300px]! scale-150">analytics</mat-icon>
+        </div>
+
+        <div class="relative z-10 space-y-8">
+          <div
+            class="w-32 h-32 bg-primary/10 rounded-[40px] flex items-center justify-center text-primary mx-auto shadow-2xl shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
+            <mat-icon class="text-6xl!">bar_chart</mat-icon>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-2xl font-black uppercase tracking-tighter opacity-40">Volumen Consolidado</h3>
+            <p class="text-[120px] font-black text-primary leading-none tracking-tighter">{{
+              state.stats.salesCount.total }}</p>
+            <p class="text-sm font-bold uppercase tracking-[0.2em] opacity-60">Operaciones Totales</p>
+          </div>
+
+          <div class="flex gap-4 pt-4">
+            <div class="px-6 py-3 rounded-2xl bg-base-200 font-black text-xs uppercase tracking-widest">
+              {{ state.stats.date | date:'fullDate' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    }
+    @if (!state.isLoading && !state.hasData && !state.hasError) {
+    <div class="flex flex-col items-center justify-center py-32 opacity-20 text-center space-y-4">
+      <mat-icon class="text-8xl!">search_off</mat-icon>
+      <h3 class="text-2xl font-black">No hay datos disponibles</h3>
+      <p class="max-w-xs mx-auto">No se encontraron registros de ventas para la fecha seleccionada. Intenta con un día
+        diferente.</p>
+    </div>
+    }
+    @if(!state.isLoading &&state.hasError) {
+    <div class="flex flex-col items-center justify-center py-32 opacity-20 text-center space-y-4">
+      <mat-icon class="text-8xl!">error</mat-icon>
+      <h3 class="text-2xl font-black">Error al cargar los datos</h3>
+      <p class="max-w-xs mx-auto">Intenta recargar la página o verifica tu conexión a internet.</p>
+    </div>
+    }
+
+  </div>
+</app-page-layout>
+}
