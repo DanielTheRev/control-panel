@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IHeroSlide } from '../core/interfaces/home.interface';
 import { firstValueFrom } from 'rxjs';
+import { IHeroSlide } from '../interfaces/HeroSlide.interface';
 
 @Injectable({
   providedIn: 'root'

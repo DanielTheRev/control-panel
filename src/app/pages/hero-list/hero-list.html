@@ -19,7 +19,7 @@
             <td mat-cell *matCellDef="let slide">
               <div class="avatar my-2">
                 <div class="w-24 h-12 rounded bg-base-200">
-                  <img [src]="slide.imageDesktop" [alt]="slide.title" class="object-cover" />
+                  <img [src]="slide.imageDesktop.url" [alt]="slide.title" class="object-cover" />
                 </div>
               </div>
             </td>
@@ -30,14 +30,8 @@
             <th mat-header-cell *matHeaderCellDef> Título </th>
             <td mat-cell *matCellDef="let slide">
               <div class="font-bold">{{ slide.title }}</div>
-              <div class="text-xs text-base-content/50">{{ slide.link }}</div>
+              <div class="text-xs text-base-content/50">{{ slide.ctaLink }}</div>
             </td>
-          </ng-container>
-
-          <!-- Order Column -->
-          <ng-container matColumnDef="order">
-            <th mat-header-cell *matHeaderCellDef> Orden </th>
-            <td mat-cell *matCellDef="let slide"> {{ slide.order }} </td>
           </ng-container>
 
           <!-- Status Column -->

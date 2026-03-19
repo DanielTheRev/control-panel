@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CashRegisterStoreService } from '../../states/cash-register.state.service';
@@ -25,16 +25,22 @@ export class CashRegisterComponent {
   actualCloseBalance = signal(0);
   closeNotes = signal('');
 
+  constructor() {
+    effect(() => {
+      console.log(this.cashStore.session());
+    })
+  }
+
   async openSession() {
     try {
       await this.cashStore.openSession(this.initialBalance());
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async closeSession() {
     if (!confirm('¿Estás seguro de que querés cerrar la caja?')) return;
     try {
       await this.cashStore.closeSession(this.actualCloseBalance(), this.closeNotes());
-    } catch (err) {}
+    } catch (err) { }
   }
 }

@@ -1,0 +1,41 @@
+<div class="bg-base-100 border border-base-300 rounded-xl p-6 mb-6" (paste)="onPasteImg($event)">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-sm font-semibold text-base-content">{{ title() }}</h3>
+    <span class="badge badge-outline text-[10px] tracking-widest uppercase opacity-70">
+      {{ ratioBadge() }}
+    </span>
+  </div>
+
+  <div class="mb-4">
+    <input type="text" placeholder="Pegá una URL de imagen..."
+      class="input input-bordered w-full text-sm disabled:opacity-50" [value]="isUrlMode() ? control().value : ''"
+      (input)="onUrlChange($event)" [disabled]="isFileMode()" />
+  </div>
+
+  <div class="relative w-full rounded-lg border-2 border-dashed transition-all"
+    [ngClass]="aspectClass()"
+    [class.border-base-300]="!previewUrl()"
+    [class.border-transparent]="previewUrl()"
+    [class.opacity-50]="isUrlMode() && !previewUrl()" [class.pointer-events-none]="isUrlMode()"
+    [class]="aspectClass()">
+
+    @if (!previewUrl()) {
+    <label
+      class="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg">
+      <mat-icon class="text-4xl text-base-content/30 mb-2">image</mat-icon>
+      <p class="text-sm text-base-content/60">Click para subir archivo o pegá una imagen</p>
+      <input type="file" class="hidden" accept="image/*" (change)="onFileSelected($event)" />
+    </label>
+    } @else {
+    <div class="group w-full h-full relative rounded-lg overflow-hidden bg-base-200">
+      <img [src]="previewUrl()" class="w-full h-full object-contain" alt="Preview" />
+      <div
+        class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+        <button type="button" class="btn btn-circle btn-error shadow-lg" (click)="clearAll()">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+</div>

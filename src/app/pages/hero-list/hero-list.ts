@@ -34,7 +34,7 @@ export class HeroListComponent {
   #snackBar = inject(MatSnackBar);
 
   state = this.#heroStateService.state;
-  displayedColumns = ['image', 'title', 'order', 'status', 'actions'];
+  displayedColumns = ['image', 'title', 'status', 'actions'];
 
   constructor() {
     this.#SidebarService.navbarTitle.set({

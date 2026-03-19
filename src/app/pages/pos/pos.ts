@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
@@ -31,6 +31,9 @@ export class PosComponent implements OnInit {
   loadingProducts = signal(false);
   private searchSubject = new Subject<string>();
 
+  // Payment type (determines price)
+  selectedPaymentType = signal<'cash' | 'card'>('cash');
+
   // Cart
   cart = signal<any[]>([]);
   total = computed(() => this.cart().reduce((sum, item) => sum + (item.price * item.quantity), 0));
@@ -46,7 +49,7 @@ export class PosComponent implements OnInit {
     { id: 'Tarjeta', name: 'Tarjeta' },
     { id: 'mercadopago_gateway', name: 'Mercado Pago' }
   ];
-  
+
   splitPayments = signal<{ method: string, amount: number }[]>([]);
   currentPaymentMethod = signal('Efectivo');
   paymentAmount = signal(0);
@@ -54,6 +57,21 @@ export class PosComponent implements OnInit {
 
   // Status
   isProcessing = signal(false);
+
+  constructor() {
+    // Removed infinite loop effect
+  }
+
+  setPaymentType(type: 'cash' | 'card') {
+    this.selectedPaymentType.set(type);
+    const currentCart = this.cart();
+    if (currentCart.length > 0) {
+      this.cart.set(currentCart.map(item => ({
+        ...item,
+        price: this.getProductPrice(item.product, type)
+      })));
+    }
+  }
 
   ngOnInit() {
     this.setupSearch();
@@ -72,6 +90,14 @@ export class PosComponent implements OnInit {
     this.searchSubject.next(this.searchQuery());
   }
 
+  getProductPrice(product: any, paymentType?: string): number {
+    const type = paymentType || this.selectedPaymentType();
+    if (type === 'card') {
+      return product.prices?.tarjeta_credito_debito || 0;
+    }
+    return product.prices?.efectivo_transferencia || 0;
+  }
+
   async performSearch(query: string) {
     if (!query || query.length < 2) {
       this.products.set([]);
@@ -80,20 +106,11 @@ export class PosComponent implements OnInit {
     this.loadingProducts.set(true);
     this.productService.searchProducts(query).subscribe({
       next: (res) => {
-        this.products.set(res);
+        this.products.set(res.data);
         this.loadingProducts.set(false);
       },
       error: () => this.loadingProducts.set(false)
     });
-  }
-
-  addToCart(product: any) {
-    if (product.variants && product.variants.length > 0) {
-      this.selectedProduct.set(product);
-      this.showVariantModal.set(true);
-    } else {
-      this.addVariantToCart(product, null);
-    }
   }
 
   addVariantToCart(product: any, variant: any) {
@@ -103,7 +120,10 @@ export class PosComponent implements OnInit {
 
     if (existingIndex > -1) {
       const updatedCart = [...currentCart];
-      updatedCart[existingIndex].quantity += 1;
+      updatedCart[existingIndex] = {
+        ...updatedCart[existingIndex],
+        quantity: updatedCart[existingIndex].quantity + 1
+      };
       this.cart.set(updatedCart);
     } else {
       this.cart.set([...currentCart, {
@@ -111,7 +131,7 @@ export class PosComponent implements OnInit {
         product,
         variant,
         quantity: 1,
-        price: variant ? variant.price : product.price
+        price: this.getProductPrice(product)
       }]);
     }
     this.showVariantModal.set(false);
@@ -120,9 +140,11 @@ export class PosComponent implements OnInit {
 
   updateQuantity(index: number, delta: number) {
     const currentCart = [...this.cart()];
-    currentCart[index].quantity += delta;
-    if (currentCart[index].quantity <= 0) {
+    const newQty = currentCart[index].quantity + delta;
+    if (newQty <= 0) {
       currentCart.splice(index, 1);
+    } else {
+      currentCart[index] = { ...currentCart[index], quantity: newQty };
     }
     this.cart.set(currentCart);
   }
@@ -168,7 +190,7 @@ export class PosComponent implements OnInit {
     }
 
     this.isProcessing.set(true);
-    
+
     const saleData = {
       items: this.cart().map(item => ({
         product: item.product._id,

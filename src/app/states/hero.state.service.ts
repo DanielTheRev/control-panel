@@ -1,8 +1,8 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { httpResource } from '@angular/common/http';
-import { IHeroSlide } from '../core/interfaces/home.interface';
 import { HeroService } from '../services/hero.service';
+import { IHeroSlide } from '../interfaces/HeroSlide.interface';
 
 @Injectable({
   providedIn: 'root'

@@ -2,163 +2,172 @@
 @let isLoading = cashStore.isLoading();
 
 <app-page-layout>
-  <app-page-header title="Gestión de Caja" subtitle="Control de apertura y cierre de sucursal">
+  <app-page-header header title="Gestión de Caja" subtitle="Control de apertura y cierre de sucursal">
     <div actions>
       @if (session) {
-      <div class="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-full border border-success/20">
-        <mat-icon class="text-sm">check_circle</mat-icon>
-        <span class="text-xs font-black uppercase tracking-wider">Sesión Activa</span>
-      </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-success/10 text-success rounded-full border border-success/20">
+          <mat-icon class="text-sm">check_circle</mat-icon>
+          <span class="text-[10px] font-bold uppercase tracking-wider">Sesión Activa</span>
+        </div>
       } @else if (!isLoading) {
-      <div class="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-full border border-error/20">
-        <mat-icon class="text-sm">lock</mat-icon>
-        <span class="text-xs font-black uppercase tracking-wider">Caja Cerrada</span>
-      </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-error/10 text-error rounded-full border border-error/20">
+          <mat-icon class="text-sm">lock</mat-icon>
+          <span class="text-[10px] font-bold uppercase tracking-wider">Caja Cerrada</span>
+        </div>
       }
     </div>
   </app-page-header>
 
-  <div content class="flex flex-col gap-8 max-w-6xl mx-auto w-full pb-12">
-    
+  <div content class="flex flex-col gap-4 max-w-4xl mx-auto w-full pb-6">
+
     <!-- Loading State -->
     @if (isLoading) {
-    <div class="flex flex-col items-center justify-center py-24 space-y-4">
-      <span class="loading loading-ring loading-lg text-primary"></span>
-      <p class="text-base-content/40 font-bold animate-pulse">Sincronizando con el servidor...</p>
-    </div>
+      <div class="flex flex-col items-center justify-center py-20 space-y-3">
+        <span class="loading loading-ring loading-md text-primary"></span>
+        <p class="text-sm text-base-content/40 font-bold">Sincronizando con el servidor...</p>
+      </div>
     }
 
-    <!-- Open Box Form -->
+    <!-- Open Box Form (no session) -->
     @if (!isLoading && !session) {
-    <div class="card bg-base-100 shadow-2xl overflow-hidden border border-base-300 rounded-3xl relative">
-      <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
-      <div class="card-body p-8 md:p-12">
-        <div class="flex flex-col md:flex-row gap-8 items-center">
-          <div class="w-full md:w-1/3 text-center md:text-left space-y-4">
-            <div class="w-20 h-20 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto md:mx-0 shadow-inner">
-              <mat-icon class="text-4xl!">keys</mat-icon>
-            </div>
-            <h2 class="text-3xl font-black tracking-tight">Apertura de Turno</h2>
-            <p class="text-base-content/50 leading-relaxed font-medium">
-              Para registrar ventas presenciales, primero debes declarar el efectivo inicial disponible en el cajón de dinero.
-            </p>
+      <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3 bg-base-200/30">
+          <div class="w-9 h-9 rounded-sm bg-primary/10 text-primary flex items-center justify-center">
+            <mat-icon>point_of_sale</mat-icon>
           </div>
-
-          <div class="flex-1 w-full space-y-6 bg-base-200/50 p-8 rounded-3xl border border-base-300/50">
-            <div class="form-control w-full">
-              <label class="label mb-2">
-                <span class="text-xs font-black uppercase tracking-widest opacity-40">Monto Inicial en Efectivo (ARS)</span>
-              </label>
-              <div class="relative group">
-                <span class="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-black text-base-content/20 group-focus-within:text-primary transition-colors">$</span>
-                <input type="number" [ngModel]="initialBalance()" (ngModelChange)="initialBalance.set($event)"
-                  class="input input-lg w-full pl-12 h-24 text-4xl font-black bg-base-100 border-base-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl transition-all"
-                  placeholder="0.00" />
-              </div>
-            </div>
-
-            <button class="btn btn-primary btn-lg w-full h-20 rounded-2xl font-black text-xl shadow-xl shadow-primary/20 group" (click)="openSession()">
-              EMPEZAR JORNADA
-              <mat-icon class="group-hover:translate-x-1 transition-transform">play_arrow</mat-icon>
-            </button>
+          <div>
+            <h2 class="text-sm font-bold">Apertura de Turno</h2>
+            <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">Declara el saldo inicial para iniciar</p>
           </div>
         </div>
+
+        <div class="p-5 space-y-4">
+          <p class="text-xs text-base-content/50 leading-relaxed max-w-md">
+            Para registrar ventas presenciales, primero debes declarar el efectivo inicial disponible en el cajón de dinero.
+          </p>
+
+          <div class="form-control">
+            <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Monto Inicial en Efectivo (ARS)</label>
+            <div class="relative group">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-xl text-base-content/20 group-focus-within:text-primary transition-colors">$</span>
+              <input type="number" [ngModel]="initialBalance()" (ngModelChange)="initialBalance.set($event)"
+                class="input input-bordered w-full pl-10 h-14 text-2xl font-black rounded-sm"
+                placeholder="0" />
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-full h-11 rounded-sm font-bold text-sm group" (click)="openSession()">
+            Empezar Jornada
+            <mat-icon class="group-hover:translate-x-0.5 transition-transform">play_arrow</mat-icon>
+          </button>
+        </div>
       </div>
-    </div>
     }
 
     <!-- Current Session State -->
     @if (!isLoading && session) {
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- Session Sidebar -->
-      <div class="lg:col-span-1 space-y-6">
-        <div class="card bg-base-100 border border-base-300 rounded-3xl shadow-xl overflow-hidden">
-          <div class="p-8 space-y-6">
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl bg-success/10 text-success flex items-center justify-center">
-                <mat-icon>schedule</mat-icon>
-              </div>
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Inicio de Sesión</p>
-                <p class="text-sm font-bold">{{ session.openDate | date:'fullDate' }}</p>
-                <p class="text-xs font-medium opacity-60">{{ session.openDate | date:'shortTime' }}hs</p>
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+        <!-- Session Info (left sidebar) -->
+        <div class="lg:col-span-2">
+          <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden h-full flex flex-col">
+            <div class="px-5 py-3 border-b border-base-200 bg-base-200/30 shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-sm bg-success/10 text-success flex items-center justify-center">
+                  <mat-icon>schedule</mat-icon>
+                </div>
+                <div>
+                  <h2 class="text-sm font-bold">Sesión Activa</h2>
+                  <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">{{ session.openDate | date:'fullDate' }}</p>
+                </div>
               </div>
             </div>
 
-            <div class="divider opacity-5"></div>
+            <div class="p-4 flex-1 space-y-3">
+              <!-- Open Time -->
+              <div class="flex items-center gap-3 p-3 rounded-sm bg-base-200/40">
+                <mat-icon class="text-base-content/30">access_time</mat-icon>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Hora de Apertura</p>
+                  <p class="text-sm font-bold">{{ session.openDate | date:'shortTime' }}hs</p>
+                </div>
+              </div>
 
-            <div class="space-y-4">
-              <div class="flex justify-between items-center bg-base-200/50 p-4 rounded-2xl">
-                <span class="text-xs font-black uppercase tracking-widest opacity-40">Saldo Inicial</span>
-                <span class="font-black text-lg">${{ session.initialBalance | number }}</span>
+              <!-- Initial Balance -->
+              <div class="flex justify-between items-center p-3 rounded-sm bg-base-200/40">
+                <span class="text-[10px] font-bold uppercase tracking-widest opacity-35">Saldo Inicial</span>
+                <span class="font-black text-sm tabular-nums">${{ session.initialBalance | number:'1.0-0' }}</span>
               </div>
-              <div class="flex justify-between items-center bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                <span class="text-xs font-black uppercase tracking-widest text-primary/60">Ventas Registradas</span>
-                <span class="font-black text-lg text-primary">+ ${{ (session.expectedCloseBalance - session.initialBalance) | number }}</span>
+
+              <!-- Sales -->
+              <div class="flex justify-between items-center p-3 rounded-sm bg-primary/5 border border-primary/10">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-primary/60">Ventas Registradas</span>
+                <span class="font-black text-sm text-primary tabular-nums">+ ${{ (session.expectedCloseBalance - session.initialBalance) | number:'1.0-0' }}</span>
               </div>
-              <div class="flex justify-between items-center bg-neutral text-neutral-content p-6 rounded-2xl shadow-lg">
-                <span class="text-xs font-black uppercase tracking-widest opacity-60">Total Esperado</span>
-                <span class="text-2xl font-black">${{ session.expectedCloseBalance | number }}</span>
+
+              <!-- Expected Total -->
+              <div class="flex justify-between items-center p-4 rounded-sm bg-neutral text-neutral-content">
+                <span class="text-[10px] font-bold uppercase tracking-widest opacity-50">Total Esperado</span>
+                <span class="text-xl font-black tabular-nums">${{ session.expectedCloseBalance | number:'1.0-0' }}</span>
               </div>
             </div>
-          </div>
-          <div class="bg-base-200/50 p-6 text-center">
-            <p class="text-[10px] font-black uppercase tracking-widest opacity-30">Responsable: {{ session.openedBy?.name || 'Administrador' }}</p>
+
+            <div class="px-5 py-2.5 bg-base-200/30 border-t border-base-200 shrink-0">
+              <p class="text-[10px] font-bold uppercase tracking-widest opacity-25 text-center">Responsable: {{ session.openedBy?.name || 'Administrador' }}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Close Form -->
-      <div class="lg:col-span-2">
-        <div class="card bg-base-100 shadow-2xl border border-base-300 rounded-3xl overflow-hidden relative">
-          <div class="absolute top-0 left-0 w-full h-2 bg-error"></div>
-          <div class="card-body p-8 md:p-12">
-            <h2 class="text-2xl font-black mb-8 flex items-center gap-3">
-              <span class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center">
-                <mat-icon>lock_open</mat-icon>
-              </span>
-              Cierre de Jornada
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div class="form-control w-full space-y-3">
-                <label class="label p-0">
-                  <span class="text-xs font-black uppercase tracking-widest opacity-40">Efectivo Físico en Caja</span>
-                </label>
-                <div class="relative group">
-                  <span class="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-base-content/20 group-focus-within:text-error transition-colors">$</span>
-                  <input type="number" [ngModel]="actualCloseBalance()" (ngModelChange)="actualCloseBalance.set($event)"
-                    class="input input-lg w-full pl-12 h-20 text-3xl font-black bg-base-200/50 border-base-300 focus:border-error focus:ring-4 focus:ring-error/10 rounded-2xl transition-all"
-                    placeholder="Contar efectivo..." />
+        <!-- Close Form (right) -->
+        <div class="lg:col-span-3">
+          <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden h-full flex flex-col">
+            <div class="px-5 py-3 border-b border-base-200 bg-error/5 shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-sm bg-error/10 text-error flex items-center justify-center">
+                  <mat-icon>lock_open</mat-icon>
                 </div>
-                <div class="p-4 rounded-xl bg-base-200/30 border border-base-300/50">
-                  <p class="text-[10px] font-bold opacity-50 uppercase leading-relaxed">
-                    Suma todo el efectivo físico presente en el cajón antes de cerrar. Los descuadres serán notificados.
+                <div>
+                  <h2 class="text-sm font-bold">Cierre de Jornada</h2>
+                  <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">Registra el efectivo y cerrá la caja</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 flex-1 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cash input -->
+                <div class="form-control">
+                  <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Efectivo Físico en Caja</label>
+                  <div class="relative group">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-base-content/20 group-focus-within:text-error transition-colors">$</span>
+                    <input type="number" [ngModel]="actualCloseBalance()" (ngModelChange)="actualCloseBalance.set($event)"
+                      class="input input-bordered w-full pl-10 h-14 text-xl font-black rounded-sm"
+                      placeholder="Contar efectivo..." />
+                  </div>
+                  <p class="text-[10px] font-medium opacity-40 mt-1.5 leading-relaxed">
+                    Suma todo el efectivo físico presente en el cajón antes de cerrar.
                   </p>
                 </div>
+
+                <!-- Notes -->
+                <div class="form-control">
+                  <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Notas de Cierre</label>
+                  <textarea [ngModel]="closeNotes()" (ngModelChange)="closeNotes.set($event)"
+                    class="textarea textarea-bordered h-full min-h-[100px] rounded-sm text-sm"
+                    placeholder="Detalles sobre faltantes, sobrantes o novedades del día..."></textarea>
+                </div>
               </div>
 
-              <div class="form-control w-full space-y-3">
-                <label class="label p-0">
-                  <span class="text-xs font-black uppercase tracking-widest opacity-40">Notas de Cierre</span>
-                </label>
-                <textarea [ngModel]="closeNotes()" (ngModelChange)="closeNotes.set($event)" 
-                  class="textarea textarea-bordered h-full min-h-[140px] rounded-2xl bg-base-200/50 border-base-300 focus:border-neutral focus:ring-4 focus:ring-neutral/10 font-medium text-sm"
-                  placeholder="Detalles sobre faltantes, sobrantes o novedades del día..."></textarea>
+              <div class="pt-3 border-t border-base-200">
+                <button class="btn btn-error w-full h-11 rounded-sm font-bold text-sm text-white group" (click)="closeSession()">
+                  Cerrar Caja y Terminar Turno
+                  <mat-icon class="group-hover:translate-x-0.5 transition-transform">exit_to_app</mat-icon>
+                </button>
               </div>
-            </div>
-
-            <div class="card-actions justify-end mt-12 pt-8 border-t border-base-200">
-              <button class="btn btn-error btn-lg w-full md:w-auto h-16 px-12 rounded-2xl font-black text-white shadow-xl shadow-error/20 group" (click)="closeSession()">
-                CERRAR CAJA Y TERMINAR TURNO
-                <mat-icon class="group-hover:rotate-12 transition-transform">exit_to_app</mat-icon>
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
     }
 
   </div>
