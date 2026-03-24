@@ -1,10 +1,11 @@
 import { Component, input, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
+import { CdkDragDrop, CdkDropList, CdkDrag, CdkDragPlaceholder } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-image-upload',
-  imports: [ReactiveFormsModule, MatIcon],
+  imports: [ReactiveFormsModule, MatIcon, CdkDropList, CdkDrag, CdkDragPlaceholder],
   templateUrl: './image-upload.component.html'
 })
 export class ImageUploadComponent {
@@ -14,6 +15,18 @@ export class ImageUploadComponent {
   imageDeleted = output<string>();
 
   private fb = new FormBuilder();
+
+  drop(event: CdkDragDrop<any[]>) {
+    const from = event.previousIndex;
+    const to = event.currentIndex;
+
+    if (from === to) return;
+
+    const formArray = this.imagesControls();
+    const control = formArray.at(from);
+    formArray.removeAt(from);
+    formArray.insert(to, control);
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;

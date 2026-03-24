@@ -55,6 +55,9 @@ export class HeroCreateComponent implements OnInit {
   selectedProducts = signal<any[]>([]);
   isSearching = signal(false);
 
+  previewDesktop = signal<string | null>(null);
+  previewMobile = signal<string | null>(null);
+
   constructor() {
     this.#SidebarService.navbarTitle.set({
       title: 'Gestionar Slide'
@@ -86,6 +89,9 @@ export class HeroCreateComponent implements OnInit {
       this.loadSlide(id);
     }
 
+    this.imageDesktopValue.valueChanges.subscribe(val => this.updatePreview(val, this.previewDesktop));
+    this.imageMobileValue.valueChanges.subscribe(val => this.updatePreview(val, this.previewMobile));
+
     this.searchQuery.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -107,6 +113,25 @@ export class HeroCreateComponent implements OnInit {
         this.isSearching.set(false);
       }
     });
+  }
+
+  updatePreview(val: any, targetSignal: import('@angular/core').WritableSignal<string | null>) {
+    if (val && typeof val === 'object' && val instanceof File) {
+      targetSignal.set(URL.createObjectURL(val));
+    } else if (typeof val === 'string' && val.trim() !== '') {
+      targetSignal.set(val);
+    } else {
+      targetSignal.set(null);
+    }
+  }
+
+  formatTitle(title: string): string {
+    if (!title) return '';
+    const parts = title.split('\n');
+    if (parts.length > 1) {
+      return `${parts[0]}<br><span class="text-gray-400 italic font-light">${parts.slice(1).join('<br>')}</span>`;
+    }
+    return title;
   }
 
   async loadSlide(id: string) {
@@ -135,7 +160,7 @@ export class HeroCreateComponent implements OnInit {
 
     const formData = new FormData();
 
-    // 1. Agregamos los textos (los sacás de tu FormGroup o Signal)
+    // 1. Agregamos los textos (los sacas de tu FormGroup o Signal)
     formData.append('title', this.heroForm.value.title);
     formData.append('sub_title', this.heroForm.value.sub_title);
     formData.append('description', this.heroForm.value.description);
@@ -143,7 +168,7 @@ export class HeroCreateComponent implements OnInit {
     formData.append('ctaLink', this.heroForm.value.ctaLink);
     formData.append('isActive', this.heroForm.value.isActive);
 
-    // Ojo con el array de productos (Shop The Look), a veces hay que mandarlo como JSON stringificado
+    // Ojo con el array de productos (Shop The Look), a veces hay que mandarlo como JSON stringified
     formData.append('featuredProducts', JSON.stringify(this.heroForm.value.featuredProducts));
 
     // 2. Agregamos los archivos con LOS MISMOS NOMBRES que pusimos en upload.fields()

@@ -117,6 +117,10 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'bento',
+        loadComponent: () => import('./pages/bento-editor/bento-editor').then(c => c.BentoEditorComponent)
+      },
+      {
         path: 'hero',
         children: [
             {
@@ -131,6 +135,24 @@ export const routes: Routes = [
             {
                 path: 'edit/:slideID',
                 loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
+            }
+        ]
+      },
+      {
+        path: 'shop-the-look',
+        children: [
+            {
+                path: '',
+                pathMatch: 'full',
+                loadComponent: () => import('./pages/shop-the-look/shop-the-look-list/shop-the-look-list').then(c => c.ShopTheLookListComponent)
+            },
+            {
+                path: 'create',
+                loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
+            },
+            {
+                path: 'edit/:lookID',
+                loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
             }
         ]
       },

@@ -163,6 +163,36 @@
                             </fieldset>
                         </div>
 
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <!-- isFeatured Toggle -->
+                            <fieldset class="fieldset bg-base-200/40 p-4 rounded-xl border border-base-300">
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" class="toggle toggle-primary mt-1"
+                                        formControlName="isFeatured" />
+                                    <div>
+                                        <span class="text-sm font-bold block">Destacar en Inicio</span>
+                                        <span class="text-xs text-base-content/60">Este check activa el producto para
+                                            que aparezca en la sección de Novedades de la página principal.</span>
+                                    </div>
+                                </label>
+                            </fieldset>
+
+                            <!-- isActive Toggle (Only in edit mode) -->
+                            @if (isEditMode()) {
+                            <fieldset class="fieldset bg-base-200/40 p-4 rounded-xl border border-base-300">
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" class="toggle toggle-success mt-1"
+                                        formControlName="isActive" />
+                                    <div>
+                                        <span class="text-sm font-bold block">Producto Activo</span>
+                                        <span class="text-xs text-base-content/60">Usa este control para pausar la
+                                            publicación temporalmente en lugar de eliminar el producto.</span>
+                                    </div>
+                                </label>
+                            </fieldset>
+                            }
+                        </div>
+
                         <!-- Price Calculator Preview -->
                         @if (calculatedPrices()) {
                         <app-price-preview [prices]="calculatedPrices()!"></app-price-preview>
@@ -409,6 +439,9 @@
                             </div>
                         </fieldset>
 
+                        <app-single-image-upload [control]="seoImageControl" [title]="'Imagen SEO'"
+                            [ratioBadge]="'1.91:1'" (previewChange)="onSeoImagePreviewChange($event)" [showPreview]="false" />
+
                         <!-- <fieldset class="fieldset bg-base-200/40 p-5 rounded-2xl border border-base-300">
                         <legend class="fieldset-legend font-bold text-base-content/80">Slug de URL</legend>
                         <div class="join w-full shadow-sm">
@@ -455,13 +488,13 @@
                             </span>
                             <div class="bg-white rounded-xl overflow-hidden border border-gray-300 shadow-lg max-w-150">
                                 <div class="aspect-video bg-base-300 flex items-center justify-center relative group">
-                                    @if (imagesControls.length > 0 && imagesControls.at(0).get('link')?.value) {
-                                    <img [src]="imagesControls.at(0).get('link')?.value"
+                                    @if (seoImagePreview()) {
+                                    <img [src]="seoImagePreview()"
                                         class="w-full h-full object-cover transition-transform group-hover:scale-105" />
                                     } @else {
                                     <div class="flex flex-col items-center opacity-20">
                                         <mat-icon class="text-6xl h-15! w-15!">image</mat-icon>
-                                        <span class="text-xs font-bold">Sin Imagen</span>
+                                        <span class="text-xs font-bold">Sin Imagen SEO</span>
                                     </div>
                                     }
                                 </div>

@@ -1,0 +1,75 @@
+<app-page-layout>
+  <app-page-header header title="Campañas Shop The Look" subtitle="Gestiona las imágenes interactivas con productos asociados">
+    <div actions>
+      <a routerLink="create" class="btn btn-primary">
+        <mat-icon>add</mat-icon>
+        Nueva Campaña
+      </a>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <div class="card bg-base-100 shadow-sm border border-base-300">
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>Imagen</th>
+              <th>Título</th>
+              <th>Looks</th>
+              <th>Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (campaign of campaigns().data; track campaign._id) {
+              <tr class="hover">
+                <td>
+                  <div class="avatar my-2">
+                    <div class="w-24 h-16 rounded bg-base-200">
+                      <img [src]="campaign.looks[0]?.mainImage?.url || ''" [alt]="campaign.title" class="object-cover w-full h-full rounded" />
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="font-bold">{{ campaign.title }}</div>
+                  @if(campaign.subtitle) {
+                    <div class="text-xs text-base-content/50">{{ campaign.subtitle }}</div>
+                  }
+                </td>
+                  <span class="badge badge-neutral badge-sm">{{ campaign.looks.length || 0 }} looks</span>
+                <td>
+                  <span class="badge" [class.badge-success]="campaign.isActive" [class.badge-ghost]="!campaign.isActive">
+                    {{ campaign.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <a [routerLink]="['edit', campaign._id]" class="btn btn-sm btn-ghost btn-circle">
+                    <mat-icon class="text-base-content/50">edit</mat-icon>
+                  </a>
+                  <button (click)="deleteCampaign(campaign._id!)" class="btn btn-sm btn-ghost btn-circle text-error">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (campaigns().data.length === 0 && !campaigns().isLoading) {
+          <div class="p-8 text-center text-base-content/50">
+            <mat-icon class="text-4xl mb-2 opacity-50">style</mat-icon>
+            <p>No hay campañas configuradas.</p>
+          </div>
+        }
+
+        @if (campaigns().isLoading) {
+          <div class="p-8 text-center text-base-content/50">
+            <span class="loading loading-spinner loading-md"></span>
+            <p>Cargando campañas...</p>
+          </div>
+        }
+      </div>
+    </div>
+  </ng-container>
+</app-page-layout>

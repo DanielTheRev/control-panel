@@ -16,12 +16,15 @@ export class ProductFormUtils {
     }
 
     // 1. Compare Simple Fields
-    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'customProfitMargin'];
+    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'customProfitMargin', 'isActive', 'isFeatured'];
     simpleFields.forEach(field => {
       const prodVal = productData[field];
-      const origVal = field === 'customProfitMargin'
+      let origVal = field === 'customProfitMargin'
         ? originalProduct?.prices?.profitMargin
         : originalProduct[field];
+
+      if (field === 'isActive' && origVal === undefined) origVal = true;
+      if (field === 'isFeatured' && origVal === undefined) origVal = false;
       // Normalize string/undefined comparison to avoid false positives
       const normalizedProdVal = prodVal !== undefined && prodVal !== null ? String(prodVal).trim() : '';
       const normalizedOrigVal = origVal !== undefined && origVal !== null ? String(origVal).trim() : '';
@@ -148,6 +151,15 @@ export class ProductFormUtils {
           changes.formData.append('images', img.file);
         });
       }
+
+      const originalImageUrls = (originalProduct.images || []).map((img: any) => img.url);
+      const currentImageUrls = productData.images.map((img: any) => img.link);
+      
+      if (JSON.stringify(originalImageUrls) !== JSON.stringify(currentImageUrls)) {
+        console.warn(`[DEBUG] Change detected in image order/content.`);
+        changes.hasChanges = true;
+        changes.formData.append('imagesOrder', JSON.stringify(currentImageUrls));
+      }
     }
 
     if (deletedImages.length > 0) {
@@ -156,26 +168,50 @@ export class ProductFormUtils {
       changes.formData.append('deletedImages', JSON.stringify(deletedImages));
     }
 
-    // 8. Compare SEO (Normalizado para evitar falsos positivos)
+    // 8. Compare SEO
     const originalSeo = originalProduct.seo || {};
     const newSeo = productData.seo || {};
 
-    // Normalizamos para que null, undefined o '' sean tratados igual
+    const originalImageUrl = originalSeo.metaImage?.url || '';
+    const newSeoImage = newSeo.metaImage;
+
+    const seoImageChanged = 
+      newSeoImage instanceof File || 
+      (typeof newSeoImage === 'string' && newSeoImage !== originalImageUrl) ||
+      (newSeoImage === null && originalImageUrl !== '');
+
     const normalizedOrigSeo = {
       metaTitle: (originalSeo.metaTitle || '').trim(),
       metaDescription: (originalSeo.metaDescription || '').trim(),
-      metaKeywords: (originalSeo.metaKeywords || '').trim()
     };
 
     const normalizedNewSeo = {
       metaTitle: (newSeo.metaTitle || '').trim(),
       metaDescription: (newSeo.metaDescription || '').trim(),
-      metaKeywords: (newSeo.metaKeywords || '').trim()
     };
 
-    if (JSON.stringify(normalizedNewSeo) !== JSON.stringify(normalizedOrigSeo)) {
-      console.warn(`[DEBUG] Change detected in SEO. New: '${JSON.stringify(normalizedNewSeo)}', Orig: '${JSON.stringify(normalizedOrigSeo)}'`);
-      changes.formData.append('seo', JSON.stringify(newSeo));
+    const seoTextsChanged = JSON.stringify(normalizedNewSeo) !== JSON.stringify(normalizedOrigSeo);
+
+    if (seoTextsChanged || seoImageChanged) {
+      console.warn(`[DEBUG] Change detected in SEO. Texts: ${seoTextsChanged}, Image: ${seoImageChanged}`);
+      
+      const seoData: any = {
+        metaTitle: newSeo.metaTitle || '',
+        metaDescription: newSeo.metaDescription || '',
+      };
+
+      // Si la imagen actual es una URL, la incluimos
+      if (typeof newSeoImage === 'string' && newSeoImage.startsWith('http')) {
+        seoData.metaImage = { url: newSeoImage, public_id: originalSeo.metaImage?.public_id || '' };
+      }
+
+      changes.formData.append('seo', JSON.stringify(seoData));
+
+      // Si la imagen es un archivo, lo mandamos aparte
+      if (newSeoImage instanceof File) {
+        changes.formData.append('seoImage', newSeoImage);
+      }
+
       changes.hasChanges = true;
     }
 

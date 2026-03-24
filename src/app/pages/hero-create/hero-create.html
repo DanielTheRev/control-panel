@@ -1,6 +1,6 @@
 <app-page-layout>
   <app-page-header header [title]="isEditMode() ? 'Editar Slide' : 'Nuevo Slide'"
-    [subtitle]="isEditMode() ? 'Modificá los datos del slide principal' : 'Subí una nueva imagen al carrusel para impactar a tus clientes'">
+    [subtitle]="isEditMode() ? 'Modifica los datos del slide principal' : 'Subí una nueva imagen al carrusel para impactar a tus clientes'">
     <div actions class="flex items-center gap-3">
       <a routerLink="/home/hero" class="btn btn-ghost hover:bg-base-200 text-base-content/60 font-medium">Cancelar</a>
       <button class="btn btn-neutral shadow-lg hover:shadow-xl transition-all" (click)="saveSlide()"
@@ -164,5 +164,85 @@
       </div>
 
     </form>
+
+    <div class="divider my-8 text-base-content/50 font-medium tracking-widest uppercase text-sm">Vista Previa del Slide</div>
+
+    <div class="bg-base-200 rounded-xl p-4 lg:p-6 border border-base-300">
+      <div class="max-w-300 mx-auto overflow-hidden relative bg-white shadow-xl rounded-sm">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center h-full p-4 lg:p-6">
+
+          <!-- Columna Imagen -->
+          <div class="lg:col-span-7 rounded-sm relative h-87.5 md:h-112.5 lg:h-137.5 overflow-hidden group-slide bg-base-300/30">
+            @if (previewDesktop() || previewMobile()) {
+            <picture class="w-full h-full block">
+              <source media="(min-width: 1024px)" [srcset]="previewDesktop() || previewMobile()">
+              <source media="(max-width: 1023px)" [srcset]="previewMobile() || previewDesktop()">
+              <img [src]="previewDesktop() || previewMobile()" [alt]="heroForm.value.title"
+                class="w-full h-full object-cover object-top transition-transform duration-6000 ease-out rounded-sm scale-100 group-hover:scale-[1.03]">
+            </picture>
+            } @else {
+            <div class="w-full h-full flex flex-col items-center justify-center text-base-content/30 gap-4">
+              <mat-icon class="text-6xl text-base-content/20">wallpaper</mat-icon>
+              <span class="font-medium tracking-widest uppercase text-xs">Subí tus imágenes para previsualizar</span>
+            </div>
+            }
+
+            @if (heroForm.value.sub_title) {
+            <div
+              class="absolute top-6 left-6 border-l-2 pl-3 py-1 z-20 border-black bg-white/60 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-none transition-all duration-700 delay-300 opacity-100 translate-y-0">
+              <span class="block text-[8px] lg:text-[10px] uppercase font-sans tracking-[0.4em] font-bold text-black">
+                {{ heroForm.value.sub_title }}
+              </span>
+            </div>
+            }
+          </div>
+
+          <!-- Columna Textos -->
+          <div class="lg:col-span-5 flex flex-col h-full justify-center lg:pr-8 px-4 lg:px-0 py-6 lg:py-0">
+            <div class="transition-all duration-700 delay-200 transform opacity-100 translate-x-0">
+
+              <div class="inline-flex items-center gap-2 mb-4">
+                <span
+                  class="text-[8px] lg:text-[9px] font-bold tracking-[0.3em] text-green-600 uppercase font-sans bg-green-50 px-2.5 py-1 rounded-full border border-green-200/50">
+                  6 Cuotas Sin Interés
+                </span>
+                <span class="text-[8px] font-medium text-gray-300 uppercase tracking-widest">|</span>
+                <span class="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">
+                  15% OFF Efectivo/Transf.
+                </span>
+              </div>
+
+              <h1 class="text-5xl md:text-6xl lg:text-7xl font-serif text-black leading-[0.85] mb-6 tracking-tighter"
+                [innerHTML]="formatTitle(heroForm.value.title || 'Título\nPrincipal')"></h1>
+
+              <p class="text-gray-500 font-sans text-xs lg:text-sm max-w-70 lg:max-w-80 leading-relaxed mb-8 border-l border-gray-200 pl-6">
+                {{ heroForm.value.description || 'Escribí una breve descripción del slide para atrapar la atención de tus clientes y destacar el valor de tu marca.' }}
+              </p>
+
+              <a class="group relative flex items-center justify-between text-[11px] bg-black text-white px-6 py-4 lg:py-5 rounded-sm transition-all duration-300 hover:bg-gray-900 w-full lg:w-[80%] cursor-default">
+                <span class="font-bold tracking-[0.4em] uppercase text-center w-full">{{ heroForm.value.ctaText || 'Comprar Ahora' }}</span>
+                <svg class="w-4 h-4 absolute right-5 transform group-hover:translate-x-1.5 transition-transform text-orange-200" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+
+              <div class="mt-10 lg:mt-12 grid grid-cols-2 gap-6 opacity-40">
+                <div class="space-y-1">
+                  <p class="text-[8px] font-bold uppercase tracking-[0.2em] text-black">Envíos a todo el país</p>
+                  <div class="h-px w-6 bg-black"></div>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-[8px] font-bold uppercase tracking-[0.2em] text-black">Cambios sin cargo</p>
+                  <div class="h-px w-6 bg-black"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </ng-container>
 </app-page-layout>

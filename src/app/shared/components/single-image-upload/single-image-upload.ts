@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, effect, input, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatIcon } from "@angular/material/icon";
 
@@ -10,12 +10,11 @@ import { MatIcon } from "@angular/material/icon";
   styleUrl: './single-image-upload.css',
 })
 export class SingleImageUpload {
-  // Inputs desde el padre
   title = input.required<string>();
   ratioBadge = input.required<string>();
-
-  // ¡El control reactivo que pidió el rey!
   control = input.required<FormControl>();
+  showPreview = input<boolean>(true);
+  previewChange = output<string | null>();
 
   // Estado interno para la UI
   previewUrl = signal<string | null>(null);
@@ -45,6 +44,7 @@ export class SingleImageUpload {
     if (url.trim() !== '') {
       this.isUrlMode.set(true);
       this.previewUrl.set(url);
+      this.previewChange.emit(url);
 
       // Actualizamos el formControl del padre directamente
       this.control().setValue(url);
@@ -57,6 +57,7 @@ export class SingleImageUpload {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length <= 0) return;
+    console.log(input.files);
     this.processFile(input.files[0]);
     input.value = ''; // Reseteamos el input del DOM
   }
@@ -80,6 +81,7 @@ export class SingleImageUpload {
 
     this.isFileMode.set(true);
     this.previewUrl.set(blobURL);
+    this.previewChange.emit(blobURL);
 
     // Le mandamos el archivo físico al formControl del padre
     this.control().setValue(file);
@@ -90,6 +92,7 @@ export class SingleImageUpload {
       this.previewUrl.set(val);
       this.isUrlMode.set(true);
       this.isFileMode.set(false);
+      this.previewChange.emit(val);
     }
   }
 
@@ -101,6 +104,7 @@ export class SingleImageUpload {
     this.previewUrl.set(null);
     this.isFileMode.set(false);
     this.isUrlMode.set(false);
+    this.previewChange.emit(null);
 
     // Vaciamos el formControl del padre (vuelve a ser inválido si era required)
     this.control().setValue(null);

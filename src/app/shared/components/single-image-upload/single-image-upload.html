@@ -12,6 +12,7 @@
       (input)="onUrlChange($event)" [disabled]="isFileMode()" />
   </div>
 
+  @if (showPreview()) {
   <div class="relative w-full rounded-lg border-2 border-dashed transition-all"
     [ngClass]="aspectClass()"
     [class.border-base-300]="!previewUrl()"
@@ -38,4 +39,6 @@
     </div>
     }
   </div>
+  }
+
 </div>

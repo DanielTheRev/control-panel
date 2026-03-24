@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
@@ -20,6 +20,7 @@ import { TechFormValue, TechProductForm } from '../../shared/components/tech-pro
 import { ProductStoreService } from '../../states/product.state.service';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
+import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 
 @Component({
   selector: 'app-product-create',
@@ -38,6 +39,7 @@ import { ProductFormUtils } from '../../utils/product-form.utils';
     RouterLink,
     TechProductForm,
     ClothingProductForm,
+    SingleImageUpload
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
@@ -51,6 +53,7 @@ export class ProductCreate {
   #SidebarService = inject(SidebarService)
   #CommerceConfigState = inject(StoreConfigStateService);
   #storeConfig = this.#CommerceConfigState.StoreConfig;
+  seoImagePreview = signal<string | null>(null);
 
   productForm: FormGroup = this.#fb.group({
     productType: ['', Validators.required],
@@ -60,6 +63,8 @@ export class ProductCreate {
     price: [0, [Validators.required, Validators.min(1)]],
     useCustomProfit: [false],
     customProfitMargin: [{ value: 10, disabled: true }],
+    isActive: [true],
+    isFeatured: [false],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
     images: this.#fb.array<{ link: string; file: File | null }>(
@@ -73,7 +78,7 @@ export class ProductCreate {
     seo: this.#fb.group({
       metaTitle: [''],
       metaDescription: [''],
-      metaKeywords: [''],
+      metaImage: [null as string | File | null]
     }),
   });
   readonly #formStatus = toSignal(this.productForm.statusChanges, { initialValue: 'INVALID' });
@@ -82,10 +87,13 @@ export class ProductCreate {
     this.productForm.valueChanges,
     { initialValue: this.productForm.getRawValue() }
   );
+
   readonly formCategory = toSignal<IProductCategories>(
     this.productForm.get('category')!.valueChanges,
     { initialValue: this.productForm.get('category')?.value || '' }
   );
+
+
   #getFullProductData() {
     const currentFormValue = this.productForm.getRawValue();
     let typeSpecific = this.#typeSpecificValues();
@@ -107,7 +115,7 @@ export class ProductCreate {
   hasChanges = computed(() => {
     this.#formStatus();
     this.#formTrigger();
-    const watcher = this.#formValueWatcher();
+    this.#formValueWatcher();
     if (!this.isFormReady()) return false;
 
     // ✅ Leemos la verdad absoluta y síncrona del form:
@@ -123,18 +131,11 @@ export class ProductCreate {
 
     if (this.isEditMode() && this.#originalProduct()) {
       const fullProductData = this.#getFullProductData();
-      // 🕵️ LOG CHISMOSO 1: Si tipeás algo en el modelo, ESTO DEBE IMPRIMIRSE
-      console.log('🔄 Evaluando cambios... Modelo actual:', fullProductData.model);
-
       const changes = ProductFormUtils.hasChanges(
         fullProductData,
         this.#originalProduct(),
         deleted
       );
-
-      // 🕵️ LOG CHISMOSO 2: Vemos qué devuelve tu utilidad
-      console.log('📊 ¿Detectó cambios tu Utils?', changes.hasChanges);
-
       return changes.hasChanges;
     }
 
@@ -203,7 +204,7 @@ export class ProductCreate {
   ];
 
   techBrands = ['Apple', 'Samsung', 'Poco', 'Xiaomi', 'Motorola', 'Sony', 'Microsoft', 'Nintendo', 'LG'];
-  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', 'The North Face', 'Topper', 'Vans'];
+  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', "Wanama", "Tucci", 'The North Face', 'Topper', 'Vans'];
 
 
   // Getters for FormArrays
@@ -211,6 +212,7 @@ export class ProductCreate {
   get featuresControls() { return this.productForm.get('features') as FormArray; }
   get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
   get variantsControls() { return this.productForm.get('variants') as FormArray; }
+  get seoImageControl() { return this.productForm.get('seo.metaImage') as FormControl<string | File | null>; }
 
   get invalidControls(): string[] {
     const translations: Record<string, string> = {
@@ -309,10 +311,9 @@ export class ProductCreate {
   }
 
   async #loadProduct(id: string, defaultProfit: number) {
-    console.log(defaultProfit);
     try {
       const product = await this.#productState.getProduct(id);
-
+      console.log(product);
       const hasCustomMargin =
         product.prices.profitMargin !== undefined &&
         product.prices.profitMargin !== null;
@@ -354,9 +355,17 @@ export class ProductCreate {
         price: product.prices.costPrice.inUSD,
         useCustomProfit: useCustom,
         customProfitMargin: product.prices.profitMargin,
+        isActive: product.isActive !== false,
+        isFeatured: !!product.isFeatured,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
+        seo: {
+          ...product.seo,
+          metaImage: product.seo && product.seo.metaImage ? product.seo.metaImage.url : ''
+        }
       });
+
+      this.seoImagePreview.set(product.seo && product.seo.metaImage ? product.seo.metaImage.url : '')
 
       // Enable/disable margin field based on whether the product had a custom margin
       if (useCustom) {
@@ -447,6 +456,11 @@ export class ProductCreate {
 
   onImageDeleted(publicId: string) {
     this.#deletedImages.update(imgs => [...imgs, publicId]);
+  }
+
+  /** Recibe la URL de preview desde SingleImageUpload y actualiza el signal local */
+  onSeoImagePreviewChange(url: string | null) {
+    this.seoImagePreview.set(url);
   }
 
   #LastSKU = linkedSignal<IProductCategories | undefined,
@@ -598,6 +612,7 @@ export class ProductCreate {
       // Create Mode
       this.isLoading.set(true);
       try {
+        console.log(this.productForm.value);
         // Le pasamos el fullProductData a tu armador de POST
         this.#buildCreateFormData(formData, fullProductData);
 
@@ -629,6 +644,9 @@ export class ProductCreate {
       formData.append('customProfitMargin', '');
     }
 
+    formData.append('isActive', String(data.isActive));
+    formData.append('isFeatured', String(data.isFeatured));
+
     formData.append('shortDescription', data.shortDescription);
     formData.append('largeDescription', data.largeDescription);
 
@@ -659,6 +677,25 @@ export class ProductCreate {
     data.images.forEach((img: any) => {
       if (img.file) formData.append('images', img.file);
     });
+    if (data.seo) {
+      const seoImageValue = this.seoImageControl.value;
+
+      // Armamos el objeto tal cual lo espera el backend
+      const seoData: any = {
+        metaTitle: data.seo.metaTitle || '',
+        metaDescription: data.seo.metaDescription || '',
+      };
+      // Si la imagen actual es una URL (ej: modo edición), la incluimos en el JSON
+      if (typeof seoImageValue === 'string' && seoImageValue.startsWith('http')) {
+        seoData.metaImage = { url: seoImageValue, public_id: '' };
+      }
+      // Enviamos el objeto SEO como un único string JSON
+      formData.append('seo', JSON.stringify(seoData));
+      // Si el valor es un archivo nuevo, lo mandamos en el campo 'seoImage' que definimos en Multer
+      if (seoImageValue instanceof File) {
+        formData.append('seoImage', seoImageValue);
+      }
+    }
   }
 
   #revokeBlobUrls() {

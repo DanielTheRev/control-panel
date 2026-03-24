@@ -66,6 +66,8 @@ export interface IProduct {
   specifications: { key: string; value: string }[];
   variants: IVariant[];
   lowStockThreshold?: number;
+  isActive?: boolean;
+  isFeatured?: boolean;
   // Virtuals
   totalStock?: number;
   hasStock?: boolean;
@@ -84,6 +86,7 @@ export interface IProduct {
   sizeType?: 'Ropa' | 'Calzado' | 'Numérico';
   careInstructions?: string[];
   season?: string;
+  seo: IProductSeo
 }
 
 export interface IProductPrices {
@@ -108,6 +111,15 @@ export interface IProductPrices {
   };
 }
 
+export interface IProductSeo {
+  metaTitle: string;
+  metaDescription: string;
+  metaImage: {
+    url: string,
+    public_id: string
+  }
+}
+
 export interface IProductImage {
   url: string;
   public_id: string;
@@ -124,6 +136,8 @@ export interface IProductCreateDTO {
   price: number;
   category: IProductCategories;
   customProfitMargin?: number | string;
+  isActive?: boolean;
+  isFeatured?: boolean;
   image: { link: string; file: File }[];
   features: string[];
   specifications: { key: string; value: string }[];
@@ -141,6 +155,7 @@ export interface IProductCreateDTO {
   composition?: { material: string; percentage: number }[];
   sizeType?: string;
   careInstructions?: string[];
+  seo?: IProductSeo
 }
 
 export interface IProductUpdateDTO extends Partial<IProductCreateDTO> {

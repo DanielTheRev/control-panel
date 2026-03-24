@@ -119,6 +119,15 @@
             }
           </a>
 
+          <a routerLink="/home/bento" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Bento Editor' : ''" matTooltipPosition="right">
+            <mat-icon>dashboard_customize</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Editor Bento</span>
+            }
+          </a>
+
           <a routerLink="/home/hero" routerLinkActive="active"
             class="menu-item"
             [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
@@ -128,15 +137,24 @@
             }
           </a>
 
+          <a routerLink="/home/shop-the-look" routerLinkActive="active"
+            class="menu-item"
+            [matTooltip]="isCollapsed ? 'Shop The Look' : ''" matTooltipPosition="right">
+            <mat-icon>style</mat-icon>
+            @if (isExpanded) {
+            <span class="menu-text">Shop The Look</span>
+            }
+          </a>
+
           @if (isExpanded) {
           <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
           }
           <a routerLink="/home/settings" routerLinkActive="active"
             class="menu-item text-primary"
-            [matTooltip]="isCollapsed ? 'Configuración de la Tienda' : ''" matTooltipPosition="right">
+            [matTooltip]="isCollapsed ? 'Tienda' : ''" matTooltipPosition="right">
             <mat-icon>settings</mat-icon>
             @if (isExpanded) {
-            <span class="menu-text">Configuración de la Tienda</span>
+            <span class="menu-text">Tienda</span>
             }
           </a>
         }

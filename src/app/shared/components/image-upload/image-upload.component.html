@@ -15,14 +15,24 @@
 
   <!-- Preview Grid -->
   @if(imagesControls().length > 0){
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-    @for (control of imagesControls().controls; track $index) {
-    <div class="relative group aspect-square bg-base-200 rounded-lg overflow-hidden border border-base-300">
-      <img [src]="control.value.link" class="w-full h-full object-cover" alt="Product preview" />
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4" cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="drop($event)">
+    @for (control of imagesControls().controls; track control) {
+    <div cdkDrag class="relative group aspect-square bg-base-200 rounded-lg overflow-hidden border border-base-300 cursor-move shadow-sm filter hover:brightness-95 transition-all">
+      
+      <!-- Order Number -->
+      <div
+        class="absolute top-2 left-2 bg-black/70 text-white font-bold text-[11px] w-6 h-6 flex items-center justify-center rounded-md z-10 border border-white/10 backdrop-blur-sm pointer-events-none">
+        {{ $index + 1 }}
+      </div>
+
+      <!-- Placeholder during drag -->
+      <div *cdkDragPlaceholder class="w-full h-full bg-base-300/50 rounded-lg border-2 border-dashed border-base-content/20"></div>
+
+      <img [src]="control.value.link" class="w-full h-full object-cover pointer-events-none" alt="Product preview" />
 
       <div
-        class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        <button type="button" class="btn btn-circle btn-error btn-sm" (click)="removeImage($index)">
+        class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+        <button type="button" class="btn btn-circle btn-error btn-sm pointer-events-auto" (click)="removeImage($index)">
           <mat-icon>delete</mat-icon>
         </button>
       </div>

@@ -1,0 +1,240 @@
+<app-page-layout>
+  <app-page-header header [title]="isEditMode() ? 'Editar Campaña' : 'Nueva Campaña VIP'"
+    subtitle="Comienza armando la campaña base y luego crea múltiples looks para la misma">
+    <div actions class="flex gap-3">
+      <button class="btn btn-ghost" routerLink="/home/shop-the-look" [disabled]="loading()">Cancelar</button>
+      <button class="btn btn-primary shadow-lg shadow-primary/30" (click)="save()"
+        [disabled]="form.invalid || loading()">
+        @if(loading()) { <span class="loading loading-spinner loading-sm"></span> }
+        Guardar Campaña
+      </button>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+
+    <div class="card bg-base-100 shadow-sm border border-base-200 mb-8 w-full rounded-2xl">
+      <div class="card-body p-6 lg:p-8">
+        <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
+          <mat-icon class="text-primary">campaign</mat-icon> Información de Campaña
+        </h3>
+
+        <form [formGroup]="form" class="flex flex-col lg:flex-row gap-6 items-start">
+          <label class="form-control w-full lg:w-2/5">
+            <span class="label-text font-medium mb-2 text-base-content/70">Título de la Campaña</span>
+            <input type="text" formControlName="title" placeholder="Ej: Look Verano 2026"
+              class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors"
+              [class.input-error]="form.get('title')?.invalid && form.get('title')?.touched" />
+          </label>
+
+          <label class="form-control w-full lg:w-2/5">
+            <span class="label-text font-medium mb-2 text-base-content/70">Subtítulo (Opcional)</span>
+            <input type="text" formControlName="subtitle" placeholder="Ej: Especial Ropa Ligera"
+              class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors" />
+          </label>
+
+          <div class="form-control w-full lg:w-1/5 lg:mt-9">
+            <label
+              class="label cursor-pointer justify-center gap-3 bg-base-200/50 hover:bg-base-200 px-4 py-3 rounded-xl border border-base-200 transition-colors">
+              <span class="label-text font-bold">Visible</span>
+              <input type="checkbox" class="toggle toggle-primary" formControlName="isActive" />
+            </label>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    @if(looks().length === 0) {
+    <div class="card bg-base-100 shadow-sm border border-dashed border-base-300 text-center py-16 rounded-2xl">
+      <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+        <mat-icon class="text-4xl text-primary">collections</mat-icon>
+      </div>
+      <h3 class="text-2xl font-bold font-serif mb-2">Aún no hay Looks</h3>
+      <p class="text-base-content/60 max-w-md mx-auto mb-8">Crea el primer Look, sube la foto de la modelo y comienza a
+        etiquetar los productos del catálogo.</p>
+      <button class="btn btn-primary mx-auto shadow-lg shadow-primary/30" (click)="addLook()">
+        <mat-icon>add</mat-icon> Añadir Primer Look
+      </button>
+    </div>
+    } @else {
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <div class="lg:col-span-3 space-y-4">
+        <div class="bg-base-100 rounded-2xl p-4 border border-base-200 shadow-sm sticky top-6">
+          <div class="flex items-center justify-between mb-4 px-2">
+            <span class="font-bold text-xs tracking-widest text-base-content/50 uppercase">Tus Looks</span>
+            <button class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" (click)="addLook()">
+              <mat-icon class="text-[16px]">add</mat-icon> Añadir
+            </button>
+          </div>
+
+          <ul class="menu w-full p-0 gap-2">
+            @for (draft of looks(); track draft.internalId; let i = $index) {
+            <li class="relative group">
+              <a [class.bg-primary]="activeTabIndex() === i" [class.text-primary-content]="activeTabIndex() === i"
+                [class.hover:bg-base-200]="activeTabIndex() !== i" (click)="setActiveTab(i)"
+                class="flex justify-between items-center rounded-xl p-2 transition-all cursor-pointer">
+
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-10 h-10 rounded-lg shadow-sm bg-base-200 flex items-center justify-center overflow-hidden border border-base-300">
+                    @if (draft.previewImage) {
+                    <img [src]="draft.previewImage" class="w-full h-full object-cover object-top" />
+                    } @else {
+                    <mat-icon class="opacity-30 text-[20px]">image</mat-icon>
+                    }
+                  </div>
+                  <span class="font-medium">Look {{ i + 1 }}</span>
+                </div>
+
+                <button
+                  class="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  (click)="$event.stopPropagation(); removeLook(i)" title="Eliminar look">
+                  <mat-icon class="text-[18px]">delete_outline</mat-icon>
+                </button>
+              </a>
+            </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 space-y-6">
+
+        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl">
+          <div class="card-body p-6">
+            <div class="flex items-center justify-between mb-4 border-b border-base-200 pb-4">
+              <h3 class="font-bold text-lg">Portada del Look</h3>
+              <label class="cursor-pointer flex items-center gap-2">
+                <span class="label-text text-xs font-bold uppercase text-base-content/50">Habilitado</span>
+                <input type="checkbox" class="toggle toggle-primary toggle-sm" [checked]="activeLook!.isActive"
+                  (change)="toggleActiveLookStatus()" />
+              </label>
+            </div>
+
+            <app-single-image-upload [control]="activeLook!.imageControl" folder="shop-the-look"
+              title="Sube este Outfit" ratioBadge="Vertical: 3:4">
+            </app-single-image-upload>
+          </div>
+        </div>
+
+        @if (activeLook) {
+        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl">
+          <div class="card-body p-6">
+            <div class="mb-4">
+              <h3 class="font-bold text-lg flex items-center gap-2">
+                <mat-icon class="text-primary">push_pin</mat-icon> Pines de Producto
+              </h3>
+              <p class="text-xs text-base-content/50 mt-1">Haz click en la imagen lateral para clavar un nuevo pin.</p>
+            </div>
+
+            @if (activeLook.hotspots.length === 0) {
+            <div
+              class="text-center py-8 text-base-content/40 border border-dashed border-base-300 rounded-xl bg-base-50">
+              <mat-icon class="opacity-50 text-4xl mb-2">touch_app</mat-icon>
+              <p class="text-sm font-medium">Aún no hay pines en este look.</p>
+            </div>
+            }
+
+            <div class="space-y-3">
+              @for (hotspot of activeLook!.hotspots; track $index) {
+              <div class="p-4 border rounded-xl transition-all relative"
+                [ngClass]="activeHotspotIndex() === $index ? 'border-primary bg-primary/5 shadow-sm' : 'border-base-200 hover:border-base-300'">
+
+                <div class="flex justify-between items-center mb-3">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-xs font-bold">{{$index
+                      + 1}}</span>
+                    <span class="text-xs font-bold tracking-widest uppercase text-base-content/50">Pin Activo</span>
+                  </div>
+                  <button class="btn btn-circle btn-ghost btn-xs text-error hover:bg-error/10"
+                    (click)="removeHotspot($index)">
+                    <mat-icon class="text-[18px]">close</mat-icon>
+                  </button>
+                </div>
+
+                @let product = hotspot.product;
+                @if (product) {
+                <div class="flex items-center gap-3 bg-base-100 p-2 rounded-lg border border-base-200">
+                  <div class="w-12 h-12 rounded bg-base-200 shrink-0">
+                    <img [src]="product?.images?.[0]?.url || ''" class="w-full h-full object-cover rounded" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold truncate text-base-content">{{ product?.model || 'Producto' }}</p>
+                    <p class="text-xs text-base-content/50 truncate">{{ product?.brand }}</p>
+                  </div>
+                </div>
+                } @else {
+                <div class="form-control relative">
+                  <input type="text" placeholder="Buscar marca o modelo..."
+                    class="input input-bordered input-sm w-full bg-base-100" (input)="onSearchChange($event)" />
+
+                  @if (activeHotspotIndex() === $index && suggestions().length > 0) {
+                  <ul
+                    class="list bg-base-100 w-full mt-1 rounded-lg border border-base-300 max-h-48 overflow-y-auto text-sm z-50 shadow-2xl absolute top-full left-0">
+                    @for (prod of suggestions(); track prod._id) {
+                    <li class="list-row">
+                      <div>
+                        <img class="size-10 rounded-box" [src]="prod.images[0].url" />
+                      </div>
+                      <a (click)="assignProductToHotspot(prod, $index)">
+                        <div>{{ prod.brand }}</div>
+                        <div class="text-xs uppercase font-semibold opacity-60">{{prod.model}}</div>
+                      </a>
+                    </li>
+                    }
+                  </ul>
+                  }
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+
+      <div class="lg:col-span-5">
+        <div
+          class="bg-base-200/50 rounded-3xl border border-base-200 h-full min-h-150 flex items-center justify-center p-6 sticky top-6 shadow-inner">
+
+          @if (activeLook && activeLook.previewImage) {
+          <div class="relative inline-flex mx-auto shadow-2xl rounded-2xl overflow-hidden group">
+            <img [src]="activeLook.previewImage" #imageContainer (click)="onImageClick($event)"
+              class="w-auto max-w-full h-auto max-h-[70vh] block cursor-crosshair transition-transform duration-700"
+              alt="Preview" />
+
+            @for (hotspot of activeLook.hotspots; track $index) {
+            @let product = hotspot.product;
+
+            <button
+              class="absolute w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center border-2 transition-all cursor-pointer z-10"
+              [ngClass]="activeHotspotIndex() === $index ? 'border-primary text-primary scale-110' : 'border-base-300 text-base-content hover:scale-105'"
+              [style.left.%]="hotspot.position.x" [style.top.%]="hotspot.position.y"
+              style="transform: translate(-50%, -50%);" (click)="$event.stopPropagation(); selectHotspot($index)"
+              [title]="product?.model || 'Sin producto'">
+
+              <span class="font-bold text-xs">{{$index + 1}}</span>
+
+              @if (activeHotspotIndex() === $index) {
+              <span class="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping z-[-1]"></span>
+              }
+            </button>
+            }
+          </div>
+          } @else {
+          <div class="text-center text-base-content/30 flex flex-col items-center">
+            <mat-icon class="text-6xl mb-4 opacity-30">portrait</mat-icon>
+            <p class="font-medium text-lg">Editor Visual Inactivo</p>
+            <p class="text-sm">Sube la foto del look para comenzar a etiquetar.</p>
+          </div>
+          }
+        </div>
+      </div>
+
+    </div>
+    }
+  </ng-container>
+</app-page-layout>
