@@ -14,10 +14,11 @@ export enum OrderStatus {
 
 // Enum para estados de pago
 export enum PaymentStatus {
-  PENDING = 'Pendiente',
-  APPROVED = 'Aprobado',
-  REJECTED = 'Rechazado',
-  CANCELLED = 'Cancelado',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+  WAITING_CONFIRMATION = 'waiting_confirmation'
 }
 
 // Interface para items de la orden
@@ -73,11 +74,20 @@ export interface IOrder {
   paymentInfo: IPaymentInfo;
   status: OrderStatus;
   shippingCost: number;
+  buyerData: IFormPayerData;
   total: number;
   orderNumber: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IFormPayerData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  identificationType: string;
+  identificationNumber: string;
 }
 
 export interface OrdersApiResponse {

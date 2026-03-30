@@ -204,7 +204,7 @@ export class ProductCreate {
   ];
 
   techBrands = ['Apple', 'Samsung', 'Poco', 'Xiaomi', 'Motorola', 'Sony', 'Microsoft', 'Nintendo', 'LG'];
-  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', "Wanama", "Tucci", 'The North Face', 'Topper', 'Vans'];
+  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', "Wanama", "Tucci", 'The North Face', 'Topper', 'Vans', 'Rapsodia'];
 
 
   // Getters for FormArrays

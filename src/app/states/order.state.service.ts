@@ -193,12 +193,10 @@ export class OrdersStateService {
   }
 
   // Método para obtener una orden específica (del estado o API)
-  async getOrderById(orderId: string): Promise<IOrder | undefined> {
-    // const existingOrder = this.orders().find((o) => o._id === orderId);
-    // if (existingOrder) return existingOrder;
-
+  async getOrderById(orderId: string): Promise<IOrder> {
     try {
       const order = await firstValueFrom(this.orderService.getOrderById(orderId));
+      console.log('order from api');
       return order;
     } catch (err) {
       console.error('Error fetching order', err);

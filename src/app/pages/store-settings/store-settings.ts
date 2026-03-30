@@ -71,6 +71,11 @@ export class StoreSettings {
             clientId: [''],
             clientSecret: ['']
           })
+        }),
+        transfer: this.#fb.group({
+          active: [false],
+          cbu: [''],
+          alias: ['']
         })
       })
     });

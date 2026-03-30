@@ -41,6 +41,7 @@ export class ClothingProductForm implements OnInit, OnChanges {
     { value: 'Ropa', label: 'Ropa (S, M, L, XL)' },
     { value: 'Calzado', label: 'Calzado (38-44)' },
     { value: 'Numérico', label: 'Numérico' },
+    { value: 'Talle Único', label: 'Talle Único' },
   ];
 
   constructor(private fb: FormBuilder) {

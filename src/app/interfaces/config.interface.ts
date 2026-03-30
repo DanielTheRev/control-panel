@@ -39,6 +39,11 @@ export interface IEcommerceConfig {
       excludedPaymentMethods: string[];
       excludedPaymentTypes: string[];
     };
+    bankTransfer: {
+      active: boolean;
+      cbu: string;
+      alias: string;
+    };
     customMethods: {
       id: string;
       name: string;

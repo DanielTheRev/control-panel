@@ -1,11 +1,11 @@
 import { CommonModule, CurrencyPipe, DatePipe, DecimalPipe, Location } from '@angular/common';
-import { Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, Input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
-import { IOrder, OrderStatus } from '../../../interfaces/order.interface';
+import { IOrder, OrderStatus, PaymentStatus } from '../../../interfaces/order.interface';
 import { PageHeader } from "../../../shared/components/page-header/page-header";
 import { PageLayout } from "../../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../../states/order.state.service';
@@ -36,16 +36,27 @@ export class OrderDetails implements OnInit {
   private ordersService = inject(OrdersService);
   private location = inject(Location);
   public paymentType = PaymentType;
+  public paymentStatus = PaymentStatus;
 
-  // Input id from router (withUnboundInputConfig: false in strict mode, but we use route params usually)
-  // Angular 16+ can bind route params to inputs if enabled, effectively "input.required" logic if configured.
-  // But standard way is route.snapshot or paramMap.
-  // User asked "input.required(id)". This implies "withComponentInputBinding".
-  @Input({ required: true }) id!: string;
+  id = input.required<string>()
 
-  order = signal<IOrder | undefined>(undefined);
+  order = signal<IOrder | null>(null);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.loading.set(true)
+    this.orderState.getOrderById(this.id())
+      .then(order => {
+        this.order.set(order);
+        console.log(order);
+      }).catch(error => {
+        this.error.set('Error al cargar la orden');
+      })
+      .finally(() => {
+        this.loading.set(false)
+      })
+  }
 
   // Computed properties for UI
   items = computed(() => this.order()?.items || []);
@@ -87,19 +98,6 @@ export class OrderDetails implements OnInit {
 
   displayedColumns: string[] = ['image', 'product', 'variant', 'quantity', 'price', 'cost', 'profit', 'total'];
 
-  async ngOnInit() {
-    if (this.id) {
-      this.loading.set(true);
-      const order = await this.orderState.getOrderById(this.id);
-      console.log(order);
-      if (order) {
-        this.order.set(order);
-      } else {
-        this.error.set('Orden no encontrada');
-      }
-      this.loading.set(false);
-    }
-  }
 
   goBack() {
     this.location.back();
