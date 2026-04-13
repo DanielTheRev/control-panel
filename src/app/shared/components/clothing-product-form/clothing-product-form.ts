@@ -19,6 +19,7 @@ export interface ClothingFormValue {
   fit: string;
   material: string;
   sizeType: string;
+  season: string;
 }
 
 @Component({
@@ -50,6 +51,7 @@ export class ClothingProductForm implements OnInit, OnChanges {
       fit: [''],
       material: [''],
       sizeType: [''],
+      season: ['']
     });
 
     this.clothingForm.valueChanges.subscribe(() => {
@@ -75,6 +77,7 @@ export class ClothingProductForm implements OnInit, OnChanges {
       fit: v.fit || '',
       material: v.material || '',
       sizeType: v.sizeType || '',
+      season: v.season || '',
     });
   }
 

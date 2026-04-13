@@ -7,7 +7,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { combineLatest, debounceTime, distinctUntilChanged, filter, map, switchMap } from 'rxjs';
-import { IProduct, IProductCategories, IProductPrices, ProductType } from '../../interfaces/product.interface';
+import { IProduct, IProductPrices, isClothingVariant, isTechVariant, ProductType } from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
 import { ClothingFormValue, ClothingProductForm } from '../../shared/components/clothing-product-form/clothing-product-form';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
@@ -21,6 +21,10 @@ import { ProductStoreService } from '../../states/product.state.service';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
+import { MatDialog } from '@angular/material/dialog';
+import { AddBrandCategory } from '../../share/components/add-brand-category/add-brand-category';
+import { ProviderStateService } from '../../states/provider.state.service';
+import { ProviderCreate } from '../provider-create/provider-create';
 
 @Component({
   selector: 'app-product-create',
@@ -45,24 +49,45 @@ import { SingleImageUpload } from '../../shared/components/single-image-upload/s
   styleUrl: './product-create.css',
 })
 export class ProductCreate {
-  isFormReady = signal<boolean>(false);
+  #SidebarService = inject(SidebarService)
   #fb = inject(FormBuilder);
-  #deletedImages = signal<string[]>([]);
   #productState = inject(ProductStoreService);
   #router = inject(Router);
-  #SidebarService = inject(SidebarService)
   #CommerceConfigState = inject(StoreConfigStateService);
+  #dialog = inject(MatDialog);
+  #ProviderState = inject(ProviderStateService)
+
   #storeConfig = this.#CommerceConfigState.StoreConfig;
+  isFormReady = signal<boolean>(false);
+  #deletedImages = signal<string[]>([]);
   seoImagePreview = signal<string | null>(null);
+
+  brands = computed(() => {
+    if (this.#CommerceConfigState.StoreConfig().hasError) return [];
+    if (this.#CommerceConfigState.StoreConfig().isLoading) return [];
+    if (this.#CommerceConfigState.StoreConfig().hasError) return []
+    return this.#CommerceConfigState.StoreConfig().config.brands;
+  })
+  categories = computed(() => {
+    if (this.#CommerceConfigState.StoreConfig().hasError) return [];
+    if (this.#CommerceConfigState.StoreConfig().isLoading) return [];
+    if (this.#CommerceConfigState.StoreConfig().hasError) return []
+    return this.#CommerceConfigState.StoreConfig().config.categories;
+  })
+
+  providers = this.#ProviderState.ProviderState;
 
   productForm: FormGroup = this.#fb.group({
     productType: ['', Validators.required],
+    provider: ['', Validators.required],
     model: ['', Validators.required],
     brand: ['', Validators.required],
     category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
-    useCustomProfit: [false],
-    customProfitMargin: [{ value: 10, disabled: true }],
+    useCustomProfit1Pay: [false],
+    useCustomProfitInstallments: [false],
+    customProfitMargin1Pay: [{ value: 10, disabled: true }],
+    customProfitMarginInstallments: [{ value: 10, disabled: true }],
     isActive: [true],
     isFeatured: [false],
     shortDescription: ['', Validators.required],
@@ -88,7 +113,7 @@ export class ProductCreate {
     { initialValue: this.productForm.getRawValue() }
   );
 
-  readonly formCategory = toSignal<IProductCategories>(
+  readonly formCategory = toSignal<string>(
     this.productForm.get('category')!.valueChanges,
     { initialValue: this.productForm.get('category')?.value || '' }
   );
@@ -185,28 +210,6 @@ export class ProductCreate {
 
   ProductType = ProductType;
 
-  // Category options per type
-  techCategories = [
-    IProductCategories.Smartphones,
-    IProductCategories.Electrodomesticos,
-    IProductCategories.Pantallas,
-    IProductCategories.PC,
-    IProductCategories.Consolas,
-  ];
-  clothingCategories = [
-    IProductCategories.Remeras,
-    IProductCategories.Pantalones,
-    IProductCategories.Buzos,
-    IProductCategories.Camperas,
-    IProductCategories.Zapatillas,
-    IProductCategories.Shorts,
-    IProductCategories.Accesorios,
-  ];
-
-  techBrands = ['Apple', 'Samsung', 'Poco', 'Xiaomi', 'Motorola', 'Sony', 'Microsoft', 'Nintendo', 'LG'];
-  clothingBrands = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Levi\'s', 'Wrangler', 'Champion', "Wanama", "Tucci", 'The North Face', 'Topper', 'Vans', 'Rapsodia'];
-
-
   // Getters for FormArrays
   get imagesControls() { return this.productForm.get('images') as FormArray; }
   get featuresControls() { return this.productForm.get('features') as FormArray; }
@@ -227,6 +230,7 @@ export class ProductCreate {
       features: 'Características',
       specifications: 'Especificaciones',
       variants: 'Variantes',
+      provider: 'Proveedor / Vendedor',
     };
 
     const invalid: string[] = [];
@@ -244,10 +248,10 @@ export class ProductCreate {
     this.productForm.valueChanges.pipe(
       takeUntilDestroyed(),
       debounceTime(800),
-      map(val => ({ price: val.price, margin: this.#getEffectiveMargin(val) })),
-      distinctUntilChanged((prev, curr) => prev.price === curr.price && prev.margin === curr.margin),
-      filter(val => val.price > 0),
-      switchMap(val => this.#productState.calculatePrices(Number(val.price), val.margin))
+      map(val => ({ costPrice: val.price, customProfitMargin1Pay: val.customProfitMargin1Pay || '', customProfitMarginInstallments: val.customProfitMarginInstallments || '' })),
+      distinctUntilChanged((prev, curr) => prev.costPrice === curr.costPrice && prev.customProfitMargin1Pay === curr.customProfitMargin1Pay && prev.customProfitMarginInstallments === curr.customProfitMarginInstallments),
+      filter(val => val.costPrice > 0),
+      switchMap(val => this.#productState.calculatePrices(val))
     ).subscribe({
       next: (prices) => {
         this.calculatedPrices.set(prices);
@@ -256,14 +260,26 @@ export class ProductCreate {
     });
 
     // Toggle customProfitMargin enabled/disabled based on useCustomProfit checkbox
-    this.productForm.get('useCustomProfit')?.valueChanges.pipe(
+    this.productForm.get('useCustomProfit1Pay')?.valueChanges.pipe(
       takeUntilDestroyed()
     ).subscribe((useCustom: boolean) => {
       if (useCustom) {
-        this.productForm.get('customProfitMargin')?.enable();
+        this.productForm.get('customProfitMargin1Pay')?.enable();
         this.isUsingGlobalMargin.set(false);
       } else {
-        this.productForm.get('customProfitMargin')?.disable();
+        this.productForm.get('customProfitMargin1Pay')?.disable();
+        this.isUsingGlobalMargin.set(true);
+      }
+    });
+
+    this.productForm.get('useCustomProfitInstallments')?.valueChanges.pipe(
+      takeUntilDestroyed()
+    ).subscribe((useCustom: boolean) => {
+      if (useCustom) {
+        this.productForm.get('customProfitMarginInstallments')?.enable();
+        this.isUsingGlobalMargin.set(false);
+      } else {
+        this.productForm.get('customProfitMarginInstallments')?.disable();
         this.isUsingGlobalMargin.set(true);
       }
     });
@@ -314,16 +330,21 @@ export class ProductCreate {
     try {
       const product = await this.#productState.getProduct(id);
       console.log(product);
-      const hasCustomMargin =
-        product.prices.profitMargin !== undefined &&
-        product.prices.profitMargin !== null;
+      const hasCustomMargin1Pay =
+        product.prices.profitMargin1Pay !== undefined &&
+        product.prices.profitMargin1Pay !== null;
+      const hasCustomMarginInstallments =
+        product.prices.profitMarginInstallments !== undefined &&
+        product.prices.profitMarginInstallments !== null;
 
-      if (!hasCustomMargin) {
-        product.prices.profitMargin = defaultProfit;
+      // ⚠️ Clonamos ANTES de mutar, así originalProduct refleja el estado real de la DB
+      this.#originalProduct.set(structuredClone(product));
+
+      if (!hasCustomMargin1Pay && !hasCustomMarginInstallments) {
+        product.prices.profitMargin1Pay = defaultProfit;
+        product.prices.profitMarginInstallments = defaultProfit;
         this.isUsingGlobalMargin.set(true);
       }
-
-      this.#originalProduct.set(structuredClone(product));
 
       const type = product.productType;
       this.selectedType.set(type);
@@ -343,18 +364,23 @@ export class ProductCreate {
           fit: product.fit || '',
           material: product.material || '',
           sizeType: product.sizeType || '',
+          season: product.season || '',
         });
       }
 
-      const useCustom = hasCustomMargin;
+      const useCustom1Pay = hasCustomMargin1Pay;
+      const useCustomInstallments = hasCustomMarginInstallments;
       this.productForm.patchValue({
         productType: type,
+        provider: product.provider ? product.provider._id : '',
         model: product.model,
         brand: product.brand,
         category: product.category,
         price: product.prices.costPrice.inUSD,
-        useCustomProfit: useCustom,
-        customProfitMargin: product.prices.profitMargin,
+        useCustomProfit1Pay: useCustom1Pay,
+        useCustomProfitInstallments: useCustomInstallments,
+        customProfitMargin1Pay: useCustom1Pay ? product.prices.profitMargin1Pay : '',
+        customProfitMarginInstallments: useCustomInstallments ? product.prices.profitMarginInstallments : '',
         isActive: product.isActive !== false,
         isFeatured: !!product.isFeatured,
         shortDescription: product.shortDescription,
@@ -368,10 +394,16 @@ export class ProductCreate {
       this.seoImagePreview.set(product.seo && product.seo.metaImage ? product.seo.metaImage.url : '')
 
       // Enable/disable margin field based on whether the product had a custom margin
-      if (useCustom) {
-        this.productForm.get('customProfitMargin')?.enable();
+      if (useCustom1Pay) {
+        this.productForm.get('customProfitMargin1Pay')?.enable();
       } else {
-        this.productForm.get('customProfitMargin')?.disable();
+        this.productForm.get('customProfitMargin1Pay')?.disable();
+      }
+
+      if (useCustomInstallments) {
+        this.productForm.get('customProfitMarginInstallments')?.enable();
+      } else {
+        this.productForm.get('customProfitMarginInstallments')?.disable();
       }
 
       this.calculatedPrices.set(product.prices);
@@ -393,15 +425,42 @@ export class ProductCreate {
       // Patch Variants
       if (product.variants && Array.isArray(product.variants)) {
         this.variantsControls.clear();
+
+
         product.variants.forEach(v => {
-          this.variantsControls.push(this.#fb.group({
-            sku: [v.sku, Validators.required],
-            attributesJson: [v.attributes.map(a => `${a.key}:${a.value}`).join(', ')],
-            colorName: [v.color?.name || ''],
-            colorHex: [v.color?.hex || ''],
-            stock: [v.stock, [Validators.required, Validators.min(0)]],
-            isActive: [v.isActive]
-          }));
+          let imgIdx = null;
+          if (v.imageReference?.url) {
+            imgIdx = product.images.findIndex((img: any) => (img.url || img) === v.imageReference.url);
+          }
+
+          // CASO TECH: Usamos la función guardiana
+          if (product.productType === ProductType.TECH && isTechVariant(v)) {
+            this.variantsControls.push(this.#fb.group({
+              sku: [v.sku, Validators.required],
+              // ¡TS ya no se queja porque sabe que 'v' es ITechVariant!
+              attributesJson: [v.attributes.map(a => `${a.key}:${a.value}`).join(', ')],
+              colorName: [v.color?.name || ''],
+              colorHex: [v.color?.hex || ''],
+              stock: [v.stock, [Validators.required, Validators.min(0)]],
+              isActive: [v.isActive],
+              imageIndex: [imgIdx !== -1 ? imgIdx : 0]
+            }));
+          }
+
+          // CASO ROPA: Usamos la otra función guardiana
+          else if (product.productType === ProductType.CLOTHING && isClothingVariant(v)) {
+            this.variantsControls.push(this.#fb.group({
+              sku: [v.sku, Validators.required],
+              // ¡TS te va a autocompletar 'v.size' acá!
+              size: [v.size, Validators.required],
+              colorName: [v.color?.name || ''],
+              colorHex: [v.color?.hex || ''],
+              stock: [v.stock, [Validators.required, Validators.min(0)]],
+              isActive: [v.isActive],
+              imageIndex: [imgIdx !== -1 ? imgIdx : 0]
+            }));
+          }
+
         });
       }
 
@@ -463,7 +522,7 @@ export class ProductCreate {
     this.seoImagePreview.set(url);
   }
 
-  #LastSKU = linkedSignal<IProductCategories | undefined,
+  #LastSKU = linkedSignal<string | undefined,
     {
       productType: string,
       identifier: string,
@@ -487,10 +546,10 @@ export class ProductCreate {
         return {
           productType: newPrefix,
           identifier: '00',
-          size: 34, // Tu talle base
+          size: 38, // Tu talle base
           colorSuffix: 'BLK',
-          colorName: 'Blanco',
-          colorHex: '#ffffff'
+          colorName: 'Negro',
+          colorHex: '#000000'
         };
       }
     });
@@ -499,7 +558,7 @@ export class ProductCreate {
   addVariant() {
     const currentVariants = this.variantsControls.value;
 
-    // 1. Sincronizamos con la última variante cargada en el form (por si el usuario borró alguna)
+    // 1. Sincronizamos con la última variante cargada en el form
     if (currentVariants && currentVariants.length > 0) {
       const lastVariant = currentVariants[currentVariants.length - 1];
       const parts = (lastVariant.sku || '').split('-');
@@ -515,7 +574,6 @@ export class ProductCreate {
     }
 
     // 2. Incrementamos el talle para la NUEVA variante
-    // (Fíjate que mutamos el linkedSignal sin problemas usando .update)
     this.#LastSKU.update(v => ({
       ...v!,
       size: v!.size + 1
@@ -528,15 +586,29 @@ export class ProductCreate {
       sku += `-${last.colorSuffix.toUpperCase()}`;
     }
 
-    // 4. Pusheamos la nueva variante al FormArray
-    this.variantsControls.push(this.#fb.group({
-      sku: [sku, Validators.required],
-      attributesJson: [`Talle: ${last.size}`],
-      colorName: [last.colorName || 'Blanco'],
-      colorHex: [last.colorHex || '#ffffff'],
-      stock: [8, [Validators.required, Validators.min(1)]],
-      isActive: [true]
-    }));
+    // 4. Pusheamos la nueva variante al FormArray DEPENDIENDO DEL TIPO
+    if (this.selectedType() === ProductType.TECH) {
+      this.variantsControls.push(this.#fb.group({
+        sku: [sku, Validators.required],
+        attributesJson: [`Talle: ${last.size}`], // En Tech seguimos usando attributes
+        colorName: [last.colorName || 'Blanco'],
+        colorHex: [last.colorHex || '#ffffff'],
+        stock: [8, [Validators.required, Validators.min(1)]],
+        isActive: [true],
+        imageIndex: [0],
+      }));
+    } else {
+      // ES CLOTHING (ROPA)
+      this.variantsControls.push(this.#fb.group({
+        sku: [sku, Validators.required],
+        size: [last.size.toString(), Validators.required], // <--- AHORA SÍ LE PASAMOS SIZE
+        colorName: [last.colorName || 'Blanco'],
+        colorHex: [last.colorHex || '#ffffff'],
+        stock: [8, [Validators.required, Validators.min(1)]],
+        isActive: [true],
+        imageIndex: [0],
+      }));
+    }
   }
 
   removeVariant(index: number) {
@@ -544,23 +616,32 @@ export class ProductCreate {
   }
 
   #parseVariants(): any[] {
-    return this.variantsControls.value.map((v: any) => {
-      const attributes = v.attributesJson
-        ? v.attributesJson.split(',').map((a: string) => {
-          const [key, value] = a.trim().split(':');
-          return { key: key?.trim() || '', value: value?.trim() || '' };
-        }).filter((a: any) => a.key && a.value)
-        : [];
+    const currentType = this.selectedType(); // Le preguntamos al form qué tipo es
 
+    return this.variantsControls.value.map((v: any) => {
+      // 1. Armamos la base compartida
       const variant: any = {
         sku: v.sku,
-        attributes,
         stock: Number(v.stock),
         reservedStock: 0,
         isActive: v.isActive !== false,
-        images: []
+        images: [],
+        imageIndex: v.imageIndex
       };
 
+      // 2. Le inyectamos lo específico
+      if (currentType === ProductType.TECH) {
+        variant.attributes = v.attributesJson
+          ? v.attributesJson.split(',').map((a: string) => {
+            const [key, value] = a.trim().split(':');
+            return { key: key?.trim() || '', value: value?.trim() || '' };
+          }).filter((a: any) => a.key && a.value)
+          : [];
+      } else if (currentType === ProductType.CLOTHING) {
+        variant.size = String(v.size).trim(); // ¡Mandamos el talle obligatorio!
+      }
+
+      // 3. El color
       if (v.colorName) {
         variant.color = { name: v.colorName, hex: v.colorHex || '#000000' };
       }
@@ -570,10 +651,38 @@ export class ProductCreate {
   }
 
   #getEffectiveMargin(formValue: any): number | undefined {
-    if (formValue.useCustomProfit) {
-      return formValue.customProfitMargin;
+    if (formValue.useCustomProfit1Pay) {
+      return formValue.customProfit1Pay;
+    }
+    if (formValue.useCustomProfitInstallments) {
+      return formValue.customProfitInstallments;
     }
     return undefined;
+  }
+
+  /* Add new brand or category */
+  addBrandCategory(type: 'brand' | 'category') {
+    const dialogRef = this.#dialog.open(AddBrandCategory, {
+      width: '400px',
+      data: { type, actuallyData: type === 'brand' ? this.brands() : this.categories() }
+    });
+
+    dialogRef.afterClosed().subscribe((result: string) => {
+      if (result) {
+        if (type === 'brand') {
+          this.#CommerceConfigState.saveConfig({ brands: [...this.brands(), result] });
+        } else {
+          this.#CommerceConfigState.saveConfig({ categories: [...this.categories(), result] });
+        }
+      }
+    });
+  }
+
+  addProvider() {
+    const dialogRef = this.#dialog.open(ProviderCreate, {
+      minWidth: '60dvw',
+      minHeight: '60dvh',
+    });
   }
 
   async saveProduct() {
@@ -602,7 +711,7 @@ export class ProductCreate {
         changes.formData.forEach((value, key) => console.log(`${key}:`, value));
 
         await this.#productState.updateProduct(this.productID(), changes.formData);
-        this.#router.navigate(['/products']);
+        this.#router.navigate(['/home/products', this.productID()]);
       } catch (error) {
         console.error('Error updating product', error);
       } finally {
@@ -619,9 +728,9 @@ export class ProductCreate {
         console.log('=== DATOS QUE SE VAN AL BACKEND (POST) ===');
         formData.forEach((value, key) => console.log(`${key}:`, value));
 
-        await this.#productState.createProduct(formData);
+        const id = await this.#productState.createProduct(formData);
         this.#revokeBlobUrls();
-        this.#router.navigate(['/products']);
+        this.#router.navigate(['/home/products', id]);
       } catch (error) {
         console.error('Error creating product', error);
       } finally {
@@ -632,16 +741,18 @@ export class ProductCreate {
 
   #buildCreateFormData(formData: FormData, data: any) {
     formData.append('productType', data.productType);
+    formData.append('provider', data.provider);
     formData.append('model', data.model);
     formData.append('brand', data.brand);
     formData.append('category', data.category);
     formData.append('price', data.price);
 
     // Only send customProfitMargin if the user opted in
-    if (data.useCustomProfit && data.customProfitMargin !== null && data.customProfitMargin !== '') {
-      formData.append('customProfitMargin', data.customProfitMargin.toString());
-    } else {
-      formData.append('customProfitMargin', '');
+    if (data.customProfitMargin1Pay !== null && data.customProfitMargin1Pay !== '') {
+      formData.append('customProfitMargin1Pay', data.customProfitMargin1Pay.toString());
+    }
+    if (data.customProfitMarginInstallments !== null && data.customProfitMarginInstallments !== '') {
+      formData.append('customProfitMarginInstallments', data.customProfitMarginInstallments.toString());
     }
 
     formData.append('isActive', String(data.isActive));
@@ -671,6 +782,7 @@ export class ProductCreate {
         if (clothingVals.fit) formData.append('fit', clothingVals.fit);
         if (clothingVals.material) formData.append('material', clothingVals.material);
         if (clothingVals.sizeType) formData.append('sizeType', clothingVals.sizeType);
+        if (clothingVals.season) formData.append('season', clothingVals.season);
       }
     }
 

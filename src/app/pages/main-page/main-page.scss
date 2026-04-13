@@ -2,24 +2,19 @@
 
 /* Force the container background - Material overrides tailwind classes */
 mat-drawer-container.mat-drawer-container {
-  background-color: #ede9fe !important; /* violet-100 */
+  background-color: #ede9fe !important;
+  /* violet-100 */
 }
 
 mat-drawer {
-  @include mat.sidenav-overrides(
-    (
-      container-shape: "",
+  @include mat.sidenav-overrides((container-shape: "",
       container-background-color: transparent,
-    )
-  );
+    ));
 }
 
 mat-drawer-content {
-  @include mat.sidenav-overrides(
-    (
-      content-background-color: transparent,
-    )
-  );
+  @include mat.sidenav-overrides((content-background-color: transparent,
+    ));
 }
 
 mat-toolbar {
@@ -27,14 +22,30 @@ mat-toolbar {
 }
 
 /* Dark mode: use :host-context to reach the html[data-theme] */
-:host-context([data-theme="nexocommerce-dark"]) mat-drawer-container.mat-drawer-container {
-  background-color: #1f1f22 !important; /* zinc-900 */
+:host-context([data-theme="dark"]) mat-drawer-container.mat-drawer-container {
+  background-color: #1f1f22 !important;
+  /* zinc-900 */
+}
+
+:host-context([data-theme="luxury"]) mat-drawer-container.mat-drawer-container {
+  background-color: #1f1f22 !important;
+  /* zinc-900 */
 }
 
 /* Make routed components fill the full workspace height */
-main > :not(router-outlet) {
+main> :not(router-outlet) {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+
+mat-drawer-content.mat-drawer-content {
+  margin-left: 0 !important;
+}
+
+@media (max-width: 767px) {
+  mat-drawer.sidebar-container {
+    display: none !important;
+  }
 }

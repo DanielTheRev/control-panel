@@ -1,5 +1,5 @@
 import { CurrencyPipe, NgClass } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
@@ -17,6 +17,7 @@ import { getStoreUrl } from '../../utils/tenant.utils';
 import { SidebarService } from '../../services/sidebar.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { StoreConfigStateService } from '../../states/store.config.state.service';
 
 @Component({
   selector: 'app-product-list',
@@ -40,6 +41,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 })
 export class ProductList {
   ProductState = inject(ProductStoreService);
+  #StoreConfigState = inject(StoreConfigStateService)
   #SidebarService = inject(SidebarService)
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
@@ -47,7 +49,7 @@ export class ProductList {
   activeFilter = signal<string>('all');
   dataSource = new MatTableDataSource<IProduct>([]);
   private searchSubject = new Subject<string>();
-  
+
   // Selection state
   selectedProducts = signal<string[]>([]);
 
@@ -55,6 +57,7 @@ export class ProductList {
     'select',
     'image',
     'brand',
+    'provider',
     'type',
     'category',
     'stock',
@@ -62,6 +65,12 @@ export class ProductList {
     'price_cash',
     'price_installments',
   ];
+
+  Categories = computed(() => {
+    if (this.#StoreConfigState.StoreConfig().hasError) return []
+    if (this.#StoreConfigState.StoreConfig().isLoading) return []
+    return this.#StoreConfigState.StoreConfig().config.categories || []
+  });
 
   constructor() {
     this.#SidebarService.navbarTitle.set({ title: 'Productos' });
@@ -102,13 +111,13 @@ export class ProductList {
   }
 
   getProductTypeLabel(type: string): string {
-    return type === ProductType.TECH ? '📱 Tech' : '👕 Ropa';
+    return type === ProductType.TECH ? 'Tecnología' : 'Indumentaria';
   }
 
   getProductTypeClass(type: string): string {
     return type === ProductType.TECH
-      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-      : 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300';
+      ? 'badge badge-primary'
+      : 'badge badge-success';
   }
 
   getTotalStock(product: IProduct): number {
@@ -201,9 +210,9 @@ export class ProductList {
         // En la vida real harías una llamada a un endpoint bulk-delete.
         // Simulamos llamando uno por uno o podés pedirle a Cortix un endpoint.
         for (const id of this.selectedProducts()) {
-            await this.ProductState.deleteProduct(id);
+          await this.ProductState.deleteProduct(id);
         }
-        
+
         this.#snackBar.open(`${selectedCount} productos eliminados correctamente`, 'Cerrar', {
           duration: 3000,
         });

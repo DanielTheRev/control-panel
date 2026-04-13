@@ -137,7 +137,7 @@
             }
 
             <div class="space-y-3">
-              @for (hotspot of activeLook!.hotspots; track $index) {
+              @for (hotspot of activeLook!.hotspots; track hotspot._id) {
               <div class="p-4 border rounded-xl transition-all relative"
                 [ngClass]="activeHotspotIndex() === $index ? 'border-primary bg-primary/5 shadow-sm' : 'border-base-200 hover:border-base-300'">
 
@@ -154,7 +154,7 @@
                   </button>
                 </div>
 
-                @let product = hotspot.product;
+                @let product = hotspot?.product;
                 @if (product) {
                 <div class="flex items-center gap-3 bg-base-100 p-2 rounded-lg border border-base-200">
                   <div class="w-12 h-12 rounded bg-base-200 shrink-0">
@@ -166,27 +166,9 @@
                   </div>
                 </div>
                 } @else {
-                <div class="form-control relative">
-                  <input type="text" placeholder="Buscar marca o modelo..."
-                    class="input input-bordered input-sm w-full bg-base-100" (input)="onSearchChange($event)" />
-
-                  @if (activeHotspotIndex() === $index && suggestions().length > 0) {
-                  <ul
-                    class="list bg-base-100 w-full mt-1 rounded-lg border border-base-300 max-h-48 overflow-y-auto text-sm z-50 shadow-2xl absolute top-full left-0">
-                    @for (prod of suggestions(); track prod._id) {
-                    <li class="list-row">
-                      <div>
-                        <img class="size-10 rounded-box" [src]="prod.images[0].url" />
-                      </div>
-                      <a (click)="assignProductToHotspot(prod, $index)">
-                        <div>{{ prod.brand }}</div>
-                        <div class="text-xs uppercase font-semibold opacity-60">{{prod.model}}</div>
-                      </a>
-                    </li>
-                    }
-                  </ul>
-                  }
-                </div>
+                <button class="btn btn-outline btn-sm w-full gap-2" (click)="openProductSearch($index)">
+                  <mat-icon class="text-[18px]">search</mat-icon> Asignar Producto
+                </button>
                 }
               </div>
               }
@@ -206,8 +188,8 @@
               class="w-auto max-w-full h-auto max-h-[70vh] block cursor-crosshair transition-transform duration-700"
               alt="Preview" />
 
-            @for (hotspot of activeLook.hotspots; track $index) {
-            @let product = hotspot.product;
+            @for (hotspot of activeLook.hotspots; track hotspot._id) {
+            @let product = hotspot?.product;
 
             <button
               class="absolute w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center border-2 transition-all cursor-pointer z-10"

@@ -102,7 +102,7 @@ export class OrdersStateService {
   // Computed signals para estadísticas
   readonly pendingCount = computed(
     () =>
-      this.orders().filter((order) => order.status === OrderStatus.PENDING)
+      this.orders().filter((order) => order.status === OrderStatus.PENDING_PAYMENT)
         .length,
   );
 
@@ -213,7 +213,7 @@ export class OrdersStateService {
   getStatusOptions() {
     return [
       { value: 'all', label: 'Todas las órdenes' },
-      { value: OrderStatus.PENDING, label: 'Pendientes' },
+      { value: OrderStatus.PENDING_PAYMENT, label: 'Pendientes' },
       { value: OrderStatus.PROCESSING_SHIPPING, label: 'En proceso' },
       { value: OrderStatus.SHIPPED, label: 'Enviadas' },
       { value: OrderStatus.DELIVERED, label: 'Entregadas' },

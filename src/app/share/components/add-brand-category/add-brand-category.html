@@ -1,0 +1,25 @@
+<form (ngSubmit)="save()" [formGroup]="form">
+
+  <h2 mat-dialog-title>Agregar {{ data.type === 'brand' ? 'Marca' : 'Categoría' }}</h2>
+
+  <mat-dialog-content class="mat-typography">
+    <fieldset class="fieldset w-full">
+      <legend class="fieldset-legend">Nombre</legend>
+      <input type="text" class="input input-bordered w-full" formControlName="name" />
+      @if (form.get('name')?.hasError('alreadyExists') && form.get('name')?.touched) {
+      <p class="text-error">Ya existe una {{ data.type }} con ese nombre</p>
+      }
+      @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+      <p class="text-error">El nombre es requerido</p>
+      }
+      @if (form.get('name')?.hasError('minlength') && form.get('name')?.touched) {
+      <p class="text-error">El nombre debe tener al menos 3 caracteres</p>
+      }
+    </fieldset>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button class="btn btn-ghost mr-2" mat-dialog-close>Cancelar</button>
+    <button class="btn btn-primary" type="submit" [disabled]="form.invalid">Guardar</button>
+  </mat-dialog-actions>
+</form>

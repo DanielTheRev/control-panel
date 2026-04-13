@@ -9,19 +9,19 @@
         <div class="sm:flex">
           <!-- Search & Filters -->
           <div class="hidden sm:flex items-center sm:mb-0">
-            <form class="lg:pr-3" action="#" method="GET">
+            <div class="lg:pr-3">
               <label for="products-search" class="sr-only">Buscar</label>
               <div class="relative lg:w-64 xl:w-96">
-                <input type="text" name="search" id="products-search" class="input input-bordered w-full"
+                <input type="search" name="search" id="products-search" class="input input-bordered w-full"
                   placeholder="Buscar productos..." [value]="ProductState.currentSearchQuery()"
-                  (input)="onSearch($event)">
+                  (input)="$event.preventDefault();onSearch($event)">
               </div>
-            </form>
+            </div>
             <div class="flex pl-0 mt-3 space-x-1 sm:pl-2 sm:mt-0">
               <select class="select select-bordered" [value]="ProductState.currentCategoryFilter()"
                 (change)="onCategoryChange($event)">
                 <option value="">Todas las categorías</option>
-                @for (cat of ProductState.categories(); track cat) {
+                @for (cat of Categories(); track cat) {
                 <option [value]="cat">{{cat}}</option>
                 }
               </select>
@@ -77,7 +77,7 @@
   </app-page-header>
 
   <ng-container content>
-    <div class="flex-1 flex flex-col min-h-0 h-full w-full">
+    <div class="flex-1 flex flex-col min-h-0 w-full">
       @if (Products.hasError) {
       <div role="alert" class="alert alert-error mb-4">
         <span>Error al traer los productos</span>
@@ -109,31 +109,31 @@
 
         <!-- Batch Actions Toolbar (Always in DOM to prevent layout shift) -->
         <div class="border-b transition-all duration-300 px-4 py-2 flex items-center justify-between"
-             [ngClass]="selectedProducts().length > 0 ? 'bg-primary/10 border-primary/20 opacity-100' : 'bg-base-200/50 border-base-200 opacity-50 grayscale pointer-events-none'">
-          <div class="flex items-center gap-2 text-sm font-medium" 
-               [ngClass]="selectedProducts().length > 0 ? 'text-primary' : 'text-base-content/50'">
+          [ngClass]="selectedProducts().length > 0 ? 'bg-primary/10 border-primary/20 opacity-100' : 'bg-base-200/50 border-base-200 opacity-50 grayscale pointer-events-none'">
+          <div class="flex items-center gap-2 text-sm font-medium"
+            [ngClass]="selectedProducts().length > 0 ? 'text-primary' : 'text-base-content/50'">
             <span class="rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
-                  [ngClass]="selectedProducts().length > 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content/70'">
+              [ngClass]="selectedProducts().length > 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content/70'">
               {{ selectedProducts().length }}
             </span>
             <span>producto(s) seleccionado(s)</span>
           </div>
           <div class="flex items-center gap-2">
-            <button class="btn btn-sm btn-ghost text-error hover:bg-error/10" 
-                    [disabled]="selectedProducts().length === 0"
-                    (click)="deleteSelected()">
+            <button class="btn btn-sm btn-ghost text-error hover:bg-error/10"
+              [disabled]="selectedProducts().length === 0" (click)="deleteSelected()">
               <mat-icon class="text-sm">delete</mat-icon>
               Eliminar
             </button>
-            <button class="btn btn-sm btn-ghost" 
-                    [disabled]="selectedProducts().length === 0"
-                    (click)="clearSelection()">
+            <button class="btn btn-sm btn-ghost" [disabled]="selectedProducts().length === 0"
+              (click)="clearSelection()">
               Cancelar
             </button>
           </div>
         </div>
 
-        <div class="overflow-y-auto flex-1 custom-scrollbar">
+        <!-- ====== TABLA: visible solo en md+ ====== -->
+        <div class="hidden md:flex flex-col flex-1 min-h-0">
+          <div class="overflow-y-auto flex-1 custom-scrollbar">
           <table mat-table [dataSource]="Products.data" class="w-full">
 
             <!-- Checkbox Column -->
@@ -149,6 +149,17 @@
                   <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md"
                     [checked]="selectedProducts().includes(p._id)" (change)="toggleSelection(p._id, $event)" />
                 </label>
+              </td>
+            </ng-container>
+            <!-- Brand -->
+            <ng-container matColumnDef="brand">
+              <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                Marca
+              </th>
+              <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
+                <span class="text-xs font-bold text-primary uppercase tracking-widest">
+                  {{ p.brand }}
+                </span>
               </td>
             </ng-container>
 
@@ -201,17 +212,18 @@
               </td>
             </ng-container>
 
-            <!-- Brand -->
-            <ng-container matColumnDef="brand">
+            <!-- Proveedor -->
+            <ng-container matColumnDef="provider">
               <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
-                Marca
+                Proveedor
               </th>
               <td mat-cell *matCellDef="let p" class="px-4 py-2 text-sm whitespace-nowrap border-b border-base-300">
-                <span class="text-xs font-bold text-primary uppercase tracking-widest">
-                  {{ p.brand }}
+                <span class="text-xs font-bold text-amber-600 uppercase tracking-widest">
+                  {{ p.provider ? p.provider.name : 'Sin proveedor' }}
                 </span>
               </td>
             </ng-container>
+
 
             <!-- Stock -->
             <ng-container matColumnDef="stock">
@@ -298,7 +310,61 @@
           [pageSize]="ProductState.pagination().itemsPerPage" [pageIndex]="ProductState.pagination().currentPage - 1"
           [pageSizeOptions]="[10, 20]" (page)="onPageChange($event)"
           class="border-t border-base-300 bg-base-100! shrink-0">
-        </mat-paginator>
+          </mat-paginator>
+        </div>
+
+        <!-- ====== CARDS: visible solo en < md ====== -->
+        <div class="flex md:hidden flex-col flex-1 min-h-0 bg-base-200">
+          <!-- Separar Scroll de Grid -->
+          <div class="overflow-y-auto flex-1 min-h-0">
+            <div class="p-2 grid grid-cols-1 gap-2">
+              @for (p of Products.data; track p._id) {
+              @let imageURL = p.images.length <= 0 ? "/no-image.jpg" : p.images[0].url;
+              @let stock = getTotalStock(p);
+              <div class="flex items-center gap-3 p-3 rounded-xl border border-base-300 bg-base-100 shadow-sm hover:border-primary/30 transition-colors cursor-pointer"
+                (click)="viewProduct(p)">
+                <img [src]="imageURL" class="w-14 h-14 object-cover rounded-lg shrink-0 border border-base-content/10" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-[10px] font-bold text-primary uppercase tracking-widest">{{ p.brand }}</span>
+                    <span class="text-[10px] text-base-content/30">·</span>
+                    <span class="text-[10px] text-base-content/40 uppercase">{{ p.category }}</span>
+                  </div>
+                  <p class="text-sm font-semibold text-base-content truncate">{{ p.model }}</p>
+                  <p class="text-xs text-success font-bold mt-0.5">
+                    {{ p.prices.efectivo_transferencia | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                  </p>
+                </div>
+                <div class="flex flex-col items-end gap-2 shrink-0">
+                  <span
+                    class="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-md border border-primary/20">
+                    {{ stock }} uds
+                  </span>
+                  <mat-icon class="text-[16px] w-4 h-4 text-base-content/30">chevron_right</mat-icon>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          <!-- Mobile Pagination -->
+          <div class="shrink-0 px-3 py-2 flex justify-between items-center border-t border-base-300 bg-base-100">
+            <span class="text-xs text-base-content/40">
+              Pág. {{ ProductState.pagination().currentPage }} / {{ ProductState.pagination().totalPages }}
+            </span>
+            <div class="join">
+              <button class="join-item btn btn-xs btn-ghost"
+                [disabled]="ProductState.pagination().currentPage === 1"
+                (click)="onPageChange({pageIndex: ProductState.pagination().currentPage - 2, pageSize: ProductState.pagination().itemsPerPage, length: ProductState.pagination().totalItems, previousPageIndex: ProductState.pagination().currentPage - 1})">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
+              </button>
+              <button class="join-item btn btn-xs btn-ghost"
+                [disabled]="ProductState.pagination().currentPage === ProductState.pagination().totalPages"
+                (click)="onPageChange({pageIndex: ProductState.pagination().currentPage, pageSize: ProductState.pagination().itemsPerPage, length: ProductState.pagination().totalItems, previousPageIndex: ProductState.pagination().currentPage - 1})">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       }
     </div>

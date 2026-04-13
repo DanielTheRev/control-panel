@@ -4,25 +4,26 @@
 
 /* 2. Load DaisyUI */
 @plugin "daisyui" {
-  themes: nexocommerce-light --default, nexocommerce-dark;
+  themes: luxury --default, dark --prefersdark;
+  /* themes: nexocommerce-light --default, nexocommerce-dark; */
 }
 
 /* 3. Custom Themes */
 @plugin "daisyui/theme" {
-  name: "nexocommerce-light";
+  name: "light";
   default: true;
   color-scheme: light;
-  --color-base-100: oklch(100% 0 0);           /* white - cards */
-  --color-base-200: oklch(97% 0.005 260);       /* off-white - sidebar */
-  --color-base-300: oklch(92% 0.01 260);        /* borders */
-  --color-base-content: oklch(25% 0.02 260);    /* text */
-  --color-primary: oklch(55% 0.27 293);         /* violet #8B5CF6 */
-  --color-primary-content: oklch(100% 0 0);     /* white */
-  --color-secondary: oklch(65% 0.15 260);       /* muted violet */
+  --color-base-100: oklch(100% 0 0);           
+  --color-base-200: oklch(97% 0.005 260);       
+  --color-base-300: oklch(92% 0.01 260);        
+  --color-base-content: oklch(25% 0.02 260);    
+  /* --color-primary: oklch(55% 0.27 293);         
+  --color-primary-content: oklch(100% 0 0);     
+  --color-secondary: oklch(65% 0.15 260);       
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(70% 0.18 200);          /* cyan accent */
+  --color-accent: oklch(70% 0.18 200);          
   --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(40% 0.02 260);         /* dark neutral */
+  --color-neutral: oklch(40% 0.02 260);         
   --color-neutral-content: oklch(95% 0.01 260);
   --color-info: oklch(70% 0.15 230);
   --color-info-content: oklch(100% 0 0);
@@ -39,18 +40,18 @@
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
-  --noise: 0;
+  --noise: 0; */
 }
 
 @plugin "daisyui/theme" {
-  name: "nexocommerce-dark";
+  name: "dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(21% 0.006 285);      /* zinc-900 - cards */
-  --color-base-200: oklch(17% 0.005 285);       /* zinc-950 - sidebar/bg */
-  --color-base-300: oklch(30% 0.01 285);        /* borders */
-  --color-base-content: oklch(93% 0.01 260);    /* light text */
-  --color-primary: oklch(55% 0.27 293);         /* violet */
+  --color-base-100: oklch(21% 0.006 285);       
+  --color-base-200: oklch(17% 0.005 285);       
+  --color-base-300: oklch(30% 0.01 285);        
+  --color-base-content: oklch(93% 0.01 260);     
+  /* --color-primary: oklch(55% 0.27 293);         
   --color-primary-content: oklch(100% 0 0);
   --color-secondary: oklch(65% 0.15 260);
   --color-secondary-content: oklch(100% 0 0);
@@ -73,7 +74,7 @@
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
-  --noise: 0;
+  --noise: 0; */
 }
 
 /* 4. Fonts */
@@ -87,7 +88,8 @@
 }
 
 /* Dark variant for Tailwind */
-@custom-variant dark (&:where([data-theme=nexocommerce-dark], [data-theme=nexocommerce-dark] *));
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant luxury (&:where([data-theme=luxury], [data-theme=luxury] *));
 
 body {
   font-family: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -115,20 +117,22 @@ main::-webkit-scrollbar-thumb {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
-  .expanded {
-    width: 240px !important;
-  }
+  @media (min-width: 768px) {
+    .expanded {
+      width: 240px !important;
+    }
 
-  .collapsed {
-    width: 80px !important;
-  }
+    .collapsed {
+      width: 80px !important;
+    }
 
-  .margin-expanded {
-    margin-left: 240px !important;
-  }
+    .margin-expanded {
+      margin-left: 240px !important;
+    }
 
-  .margin-collapsed {
-    margin-left: 80px !important;
+    .margin-collapsed {
+      margin-left: 80px !important;
+    }
   }
 
   .menu-item {

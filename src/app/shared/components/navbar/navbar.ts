@@ -5,7 +5,6 @@ import { SidebarService } from '../../../services/sidebar.service';
 import { WebSocketService } from '../../../services/websocket.service';
 import { Notifications } from './components/notifications/notifications';
 import { UserDropdown } from './components/user-dropdown/user-dropdown';
-import { PageHeader } from "../page-header/page-header";
 
 @Component({
   selector: 'app-navbar',
@@ -19,7 +18,7 @@ export class Navbar {
 
   navbarTitle = computed(() => this.sidebarService.navbarTitle());
 
-  isDark = document.documentElement.getAttribute('data-theme') === 'nexocommerce-dark';
+  isDark = document.documentElement.getAttribute('data-theme') === 'luxury';
 
   get wsConnected() {
     return this.wsService.connected();
@@ -31,7 +30,7 @@ export class Navbar {
 
   toggleTheme() {
     this.isDark = !this.isDark;
-    const theme = this.isDark ? 'nexocommerce-dark' : 'nexocommerce-light';
+    const theme = this.isDark ? 'luxury' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }

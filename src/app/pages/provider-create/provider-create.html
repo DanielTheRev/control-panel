@@ -1,0 +1,82 @@
+<app-page-layout>
+  @let title = providerID() ? 'Editar Proveedor' : 'Crear Nuevo Proveedor';
+  @let subtitle = providerID() ? 'Edita cualquier campo para actualizar el proveedor.'
+  : 'Rellena la información para tu nuevo proveedor.';
+  <app-page-header header [title]="title" [subtitle]="subtitle">
+    <div actions class="flex gap-2">
+      <a routerLink="/home/providers" class="btn btn-ghost text-base-content/50">
+        Cancelar
+      </a>
+      <button class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="providerForm.invalid || isLoading()">
+        @if (isLoading()) {
+        <span class="loading loading-spinner"></span>
+        Guardando...
+        } @else {
+        <mat-icon>save</mat-icon>
+        {{ providerID() ? 'Actualizar' : 'Guardar' }} Proveedor
+        }
+      </button>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <form [formGroup]="providerForm" class="flex w-full">
+      <div class="w-full min-h-full bg-base-100 border-base-300 animate-slide-in-left duration-300">
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Información Principal</h3>
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">Nombre</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="Ej. Juan Perez"
+                formControlName="name" />
+            </fieldset>
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">CUIT</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="Ej. 20-12345678-9"
+                formControlName="cuit" />
+            </fieldset>
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">Email</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="Ej. [EMAIL_ADDRESS]"
+                formControlName="contactEmail" />
+            </fieldset>
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">Teléfono</legend>
+              <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789"
+                formControlName="phone" />
+            </fieldset>
+            <div class="grid grid-cols-2 gap-4" formGroupName="address">
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Dirección</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. Calle 123"
+                  formControlName="street" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Número</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123"
+                  formControlName="number" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Ciudad</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. Buenos Aires"
+                  formControlName="city" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Provincia</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. Buenos Aires"
+                  formControlName="province" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Código Postal</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 1234"
+                  formControlName="zipCode" />
+              </fieldset>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+
+
+</app-page-layout>

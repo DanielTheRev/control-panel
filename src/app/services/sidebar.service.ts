@@ -4,11 +4,16 @@ import { computed, Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class SidebarService {
-  private Expanded = signal(localStorage.getItem('sidebar-expanded') || false);
+  private Expanded = signal(false);
 
   navbarTitle = signal({
     title: 'Dashboard',
   });
+
+  constructor() {
+    const isExpanded = localStorage.getItem('sidebar-expanded');
+    this.Expanded.set(isExpanded === 'true');
+  }
 
   SidebarStatus = computed(() => ({
     isExpanded: this.Expanded(),
@@ -16,7 +21,11 @@ export class SidebarService {
   }));
 
   public toggleExpanded() {
-    this.Expanded.update((state) => !state);
-    localStorage.setItem('sidebar-expanded', this.Expanded().toString());
+    this.Expanded.update((state) => {
+      const newState = !state;
+      localStorage.setItem('sidebar-expanded', newState.toString());
+      return newState;
+    });
+
   }
 }

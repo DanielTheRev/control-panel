@@ -1,18 +1,19 @@
-import { CommonModule, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, ElementRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterModule } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
-import { IShopTheLookHotspot, IShopTheLook, ILookItem, IShopTheLookImage } from '../../../interfaces/shop-the-look.interface';
+import { IProduct } from '../../../interfaces/product.interface';
+import { ILookItem, IShopTheLook, IShopTheLookHotspot, IShopTheLookImage } from '../../../interfaces/shop-the-look.interface';
 import { NotificationsService } from '../../../services/notifications.service';
 import { ProductService } from '../../../services/product.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { PageLayout } from '../../../shared/components/page-layout/page-layout';
+import { ProductSearchDialogComponent } from '../../../shared/components/product-search-dialog/product-search-dialog';
 import { SingleImageUpload } from '../../../shared/components/single-image-upload/single-image-upload';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
-import { IProduct } from '../../../interfaces/product.interface';
 
 interface ILookDraft {
   internalId: string;
@@ -70,17 +71,13 @@ export class ShopTheLookCreateComponent implements OnInit {
 
   @ViewChild('imageContainer') imageContainer!: ElementRef<HTMLDivElement>;
 
-  // Product Search
-  searchQuery = new Subject<string>();
-  suggestions = signal<IProduct[]>([]);
-  isSearching = signal(false);
+  #dialog = inject(MatDialog);
 
   constructor() {
     this.#sidebarService.navbarTitle.set({ title: 'Gestionar Shop The Look' });
   }
 
   ngOnInit() {
-    this.setupSearch();
     const id = this.lookID();
     if (id) {
       this.isEditMode.set(true);
@@ -88,28 +85,6 @@ export class ShopTheLookCreateComponent implements OnInit {
     } else {
       // Comenzamos con 0 looks por decisión de negocio
     }
-  }
-
-  setupSearch() {
-    this.searchQuery.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(query => {
-        if (!query || query.trim().length === 0) {
-          this.suggestions.set([]);
-          this.isSearching.set(false);
-          return [];
-        }
-        this.isSearching.set(true);
-        return this.#productService.getSuggestions(query);
-      })
-    ).subscribe({
-      next: (results) => {
-        this.suggestions.set(results);
-        this.isSearching.set(false);
-      },
-      error: () => this.isSearching.set(false)
-    });
   }
 
   generateInternalId() { return Math.random().toString(36).substring(2, 9); }
@@ -207,6 +182,7 @@ export class ShopTheLookCreateComponent implements OnInit {
     const y = ((event.clientY - bounds.top) / bounds.height) * 100;
 
     const newHotspot: IShopTheLookHotspot = {
+      _id: Math.random().toString(36).substring(2, 9),
       position: { x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2)) },
       product: null as any,
       isActive: true
@@ -214,7 +190,7 @@ export class ShopTheLookCreateComponent implements OnInit {
 
     this.looks.update(drafts => {
       const updated = [...drafts];
-      const current = updated[this.activeTabIndex()];
+      const current = { ...updated[this.activeTabIndex()] };
       current.hotspots = [...current.hotspots, newHotspot];
       updated[this.activeTabIndex()] = current;
       return updated;
@@ -228,7 +204,7 @@ export class ShopTheLookCreateComponent implements OnInit {
   removeHotspot(index: number) {
     this.looks.update(drafts => {
       const updated = [...drafts];
-      const current = updated[this.activeTabIndex()];
+      const current = { ...updated[this.activeTabIndex()] };
       current.hotspots = current.hotspots.filter((_, i) => i !== index);
       updated[this.activeTabIndex()] = current;
       return updated;
@@ -236,28 +212,36 @@ export class ShopTheLookCreateComponent implements OnInit {
     if (this.activeHotspotIndex() === index) this.activeHotspotIndex.set(null);
   }
 
-  onSearchChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.searchQuery.next(input.value);
+  openProductSearch(index: number) {
+    const dialogRef = this.#dialog.open(ProductSearchDialogComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      panelClass: 'bg-transparent'
+    });
+
+    dialogRef.afterClosed().subscribe((product: IProduct) => {
+      if (product) {
+        this.assignProductToHotspot(product, index);
+      }
+    });
   }
 
   assignProductToHotspot(product: IProduct, index: number) {
     this.looks.update(drafts => {
       const updated = [...drafts];
-      const current = updated[this.activeTabIndex()];
+      const current = { ...updated[this.activeTabIndex()] };
       const updatedHotspots = [...current.hotspots];
       updatedHotspots[index] = { ...updatedHotspots[index], product };
       current.hotspots = updatedHotspots;
       updated[this.activeTabIndex()] = current;
       return updated;
     });
-    this.suggestions.set([]);
   }
 
   toggleActiveLookStatus() {
     this.looks.update(drafts => {
       const updated = [...drafts];
-      const current = updated[this.activeTabIndex()];
+      const current = { ...updated[this.activeTabIndex()] };
       current.isActive = !current.isActive;
       updated[this.activeTabIndex()] = current;
       return updated;
@@ -295,10 +279,18 @@ export class ShopTheLookCreateComponent implements OnInit {
 
       // JSON Array construction
       const finalLooksData = currentLooks.map((draft, index) => {
-        const hData = draft.hotspots.map(h => ({
-          ...h,
-          product: h.product._id || (h.product as any)
-        }));
+        const hData = draft.hotspots.map(h => {
+          const mapped: any = {
+            ...h,
+            product: h.product._id || (h.product as any)
+          };
+          // Eliminamos el _id temporal generado en frontend (7 caracteres) 
+          // para evitar que Mongoose falle al parsearlo como ObjectId
+          if (mapped._id && mapped._id.length < 24) {
+             delete mapped._id;
+          }
+          return mapped;
+        });
 
         const lookPayload: any = {
           isActive: draft.isActive,

@@ -65,37 +65,37 @@ export const routes: Routes = [
       {
         path: 'payment-methods',
         children: [
-            {
-                path: '',
-                pathMatch: 'full',
-                component: PaymentMethods
-            },
-            {
-                path: 'create',
-                loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
-            },
-            {
-                path: 'edit/:paymentMethodID',
-                loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
-            }
+          {
+            path: '',
+            pathMatch: 'full',
+            component: PaymentMethods
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
+          },
+          {
+            path: 'edit/:paymentMethodID',
+            loadComponent: () => import('./pages/payment-methods-create/payment-methods-create').then(c => c.PaymentMethodsCreate)
+          }
         ]
       },
       {
         path: 'shipping-options',
         children: [
-            {
-                path: '',
-                pathMatch: 'full',
-                component: ShippingOptions
-            },
-            {
-                path: 'create',
-                loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
-            },
-            {
-                path: 'edit/:shippingOptionID',
-                loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
-            }
+          {
+            path: '',
+            pathMatch: 'full',
+            component: ShippingOptions
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
+          },
+          {
+            path: 'edit/:shippingOptionID',
+            loadComponent: () => import('./pages/shipping-options-create/shipping-options-create').then(c => c.ShippingOptionsCreate)
+          }
         ]
       },
       {
@@ -123,37 +123,37 @@ export const routes: Routes = [
       {
         path: 'hero',
         children: [
-            {
-                path: '',
-                pathMatch: 'full',
-                loadComponent: () => import('./pages/hero-list/hero-list').then(c => c.HeroListComponent)
-            },
-            {
-                path: 'create',
-                loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
-            },
-            {
-                path: 'edit/:slideID',
-                loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
-            }
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/hero-list/hero-list').then(c => c.HeroListComponent)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
+          },
+          {
+            path: 'edit/:slideID',
+            loadComponent: () => import('./pages/hero-create/hero-create').then(c => c.HeroCreateComponent)
+          }
         ]
       },
       {
         path: 'shop-the-look',
         children: [
-            {
-                path: '',
-                pathMatch: 'full',
-                loadComponent: () => import('./pages/shop-the-look/shop-the-look-list/shop-the-look-list').then(c => c.ShopTheLookListComponent)
-            },
-            {
-                path: 'create',
-                loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
-            },
-            {
-                path: 'edit/:lookID',
-                loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
-            }
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/shop-the-look/shop-the-look-list/shop-the-look-list').then(c => c.ShopTheLookListComponent)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
+          },
+          {
+            path: 'edit/:lookID',
+            loadComponent: () => import('./pages/shop-the-look/shop-the-look-create/shop-the-look-create').then(c => c.ShopTheLookCreateComponent)
+          }
         ]
       },
       {
@@ -174,6 +174,24 @@ export const routes: Routes = [
         path: 'daily-reports',
         title: 'Resumen del Día',
         loadComponent: () => import('./pages/daily-reports/daily-reports').then(c => c.DailyReportsComponent)
+      },
+      {
+        path: 'providers',
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/provider-list/provider-list').then(c => c.ProviderList)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/provider-create/provider-create').then(c => c.ProviderCreate)
+          },
+          {
+            path: 'edit/:providerID',
+            loadComponent: () => import('./pages/provider-create/provider-create').then(c => c.ProviderCreate)
+          }
+        ]
       },
       {
         path: '**',

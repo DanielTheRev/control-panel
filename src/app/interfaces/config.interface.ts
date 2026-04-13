@@ -15,6 +15,8 @@ export interface IEcommerceConfig {
     twitter: string;
     tiktok: string;
   };
+  brands: string[],
+  categories: string[],
   paymentGateways: {
     uala: {
       active: boolean;

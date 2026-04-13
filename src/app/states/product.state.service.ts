@@ -1,7 +1,7 @@
 import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IProduct, ProductType, IProductCategories } from '../interfaces/product.interface';
+import { IProduct, ProductType } from '../interfaces/product.interface';
 import { IPaginatedResult } from '../interfaces/pagination.interface';
 import { ProductService } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
@@ -24,7 +24,7 @@ export class ProductStoreService {
 
   constructor() {
     this.#fetchedProducts = httpResource<IPaginatedResult<IProduct>>(() => ({
-      url: `${environment.apiUrl}/products/list`,
+      url: `${environment.apiUrl}/products/admin/list`,
       params: {
         page: this.pageNumber(),
         limit: this.pageSize(),
@@ -59,7 +59,7 @@ export class ProductStoreService {
     (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.CLOTHING)
   );
 
-  readonly categories = signal(Object.values(IProductCategories));
+  // readonly categories = signal(Object.values(IProductCategories));
 
   readonly currentSearchQuery = computed(() => this.searchQuery());
   readonly currentCategoryFilter = computed(() => this.categoryFilter());
@@ -91,12 +91,12 @@ export class ProductStoreService {
 
   async getProduct(id: string) {
     // 1. Buscamos en el estado local de la lista
-    const localProduct = this.products().data.find(p => p._id === id);
+    // const localProduct = this.products().data.find(p => p._id === id);
 
-    if (localProduct) {
-      console.log('Cargado desde caché local 🚀');
-      return localProduct;
-    }
+    // if (localProduct) {
+    //   console.log('Cargado desde caché local 🚀');
+    //   return localProduct;
+    // }
 
     // 2. Si no está (ej: refresh de página), vamos a buscarlo
     try {
@@ -108,14 +108,22 @@ export class ProductStoreService {
     }
   }
 
-  calculatePrices(costPrice: number, customProfitMargin?: number | string) {
-    return this.#productService.calculatePrices(costPrice, customProfitMargin);
+  /**
+   * @description Calcula los precios del producto
+   * @param data
+   * @param data.costPrice Precio de costo del producto
+   * @param data.useCustomProfit1Pay Ganancia personalizada para pago en 1 cuota
+   * @param data.useCustomProfitInstallments Ganancia personalizada para pago en cuotas
+   */
+  calculatePrices(data: { costPrice: number, customProfitMargin1Pay: number | string, customProfitMarginInstallments: number | string }) {
+    return this.#productService.calculatePrices(data);
   }
 
   async createProduct(data: FormData) {
     try {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
+      return product._id
     } catch (error) {
       throw error;
     }
@@ -124,6 +132,7 @@ export class ProductStoreService {
   async updateProduct(id: string, data: FormData) {
     try {
       const response = await this.#productService.updateProduct(id, data);
+
       this.#updateProduct(response);
     } catch (error) {
       throw error;

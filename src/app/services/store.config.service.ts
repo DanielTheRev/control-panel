@@ -28,11 +28,11 @@ export class StoreConfigService {
     return this.#masterClientID
   }
 
-  async updateConfig(config: IEcommerceConfig): Promise<IEcommerceConfig> {
+  async updateConfig(config: Partial<IEcommerceConfig>) {
     return firstValueFrom(this.#http.put<IEcommerceConfig>(this.#apiUrl, config));
   }
 
-  async updateMPConfig(config: IUpdateMPConfigDTO): Promise<IUpdateMPConfigDTO> {
+  async updateMPConfig(config: Partial<IUpdateMPConfigDTO>) {
     return firstValueFrom(this.#http.put<IUpdateMPConfigDTO>(`${this.#apiUrl}/mercadopago`, config));
   }
 

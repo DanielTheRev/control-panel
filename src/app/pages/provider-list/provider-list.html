@@ -1,0 +1,120 @@
+<app-page-layout>
+  <app-page-header header title="Proveedores" subtitle="Lista de proveedores">
+    <div actions class="flex gap-2">
+      <button class="btn btn-sm btn-ghost" (click)="reload()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <a routerLink="/home/providers/create" class="btn btn-sm btn-primary">
+        <mat-icon>add</mat-icon>
+        Nuevo Proveedor
+      </a>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <!-- Loading -->
+    @if (ProviderState().isLoading) {
+    <div class="flex items-center justify-center w-full h-64">
+      <span class="loading loading-ring loading-xl"></span>
+    </div>
+    }
+
+    <!-- Error -->
+    @if (ProviderState().hasError) {
+    <div class="flex flex-col items-center justify-center py-20 gap-4">
+      <div class="bg-error/10 rounded-full p-4">
+        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
+      </div>
+      <h2 class="text-lg font-bold text-base-content">Error al cargar los proveedores</h2>
+      <p class="text-sm text-base-content/50">Ocurrió un problema al obtener la lista. Intentá de nuevo.</p>
+      <button class="btn btn-sm btn-primary" (click)="reload()">
+        <mat-icon>refresh</mat-icon> Reintentar
+      </button>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!ProviderState().hasData && !ProviderState().isLoading && !ProviderState().hasError) {
+    <div class="flex flex-col items-center justify-center py-20 gap-4">
+      <div class="bg-base-200 rounded-full p-6">
+        <mat-icon class="text-5xl! w-12! h-12! text-base-content/30">groups</mat-icon>
+      </div>
+      <h2 class="text-lg font-bold text-base-content">Sin proveedores</h2>
+      <p class="text-sm text-base-content/50 max-w-xs text-center">
+        Todavía no tenés proveedores registrados. Creá el primero para empezar.
+      </p>
+      <a routerLink="/home/providers/create" class="btn btn-sm btn-primary">
+        <mat-icon>add</mat-icon> Crear proveedor
+      </a>
+    </div>
+    }
+
+    <!-- Provider Cards -->
+    @if (ProviderState().hasData && !ProviderState().isLoading && !ProviderState().hasError) {
+    <div class="p-4">
+      <!-- Stats bar -->
+      <div class="flex items-center gap-3 mb-5">
+        <span class="bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-md border border-primary/20">
+          {{ ProviderState().data.length }} proveedor{{ ProviderState().data.length === 1 ? '' : 'es' }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        @for (provider of ProviderState().data; track provider._id) {
+        <div class="bg-base-100 rounded-xl border border-base-300 p-5 flex flex-col gap-4 hover:border-primary/30 transition-colors">
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="bg-amber-500/10 rounded-lg p-2.5 shrink-0">
+                <mat-icon class="text-[20px]! w-5! h-5! text-amber-600">storefront</mat-icon>
+              </div>
+              <div>
+                <h3 class="font-bold text-base-content text-sm leading-tight">{{ provider.name }}</h3>
+                @if (provider.cuit) {
+                <span class="font-mono text-[11px] text-base-content/40">CUIT: {{ provider.cuit }}</span>
+                }
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase shrink-0"
+              [class.bg-success/10]="provider.active" [class.text-success]="provider.active"
+              [class.bg-base-200]="!provider.active" [class.text-base-content/40]="!provider.active">
+              {{ provider.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <!-- Details -->
+          <div class="flex flex-col gap-2 text-sm">
+            @if (provider.contactEmail) {
+            <div class="flex items-center gap-2 text-base-content/60">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/30">email</mat-icon>
+              <span class="truncate text-xs">{{ provider.contactEmail }}</span>
+            </div>
+            }
+            @if (provider.phone) {
+            <div class="flex items-center gap-2 text-base-content/60">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/30">phone</mat-icon>
+              <span class="text-xs">{{ provider.phone }}</span>
+            </div>
+            }
+            @if (provider.address?.street) {
+            <div class="flex items-center gap-2 text-base-content/60">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/30">location_on</mat-icon>
+              <span class="text-xs truncate">{{ provider.address?.street }} {{ provider.address?.number }}, {{ provider.address?.city }}</span>
+            </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end pt-2 border-t border-base-200/60 mt-auto">
+            <a [routerLink]="['/home/providers/edit', provider._id]" class="btn btn-xs btn-ghost text-primary gap-1">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon>
+              Editar
+            </a>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+  </ng-container>
+</app-page-layout>

@@ -2,19 +2,14 @@
   @let isExpanded = sidebarService.SidebarStatus().isExpanded;
   @let isCollapsed = sidebarService.SidebarStatus().isCollapsed;
 
-  <mat-drawer
-    mode="side"
-    opened="true"
-    [class.expanded]="isExpanded"
-    [class.collapsed]="isCollapsed"
+  <mat-drawer mode="side" opened="true" [class.expanded]="isExpanded" [class.collapsed]="isCollapsed"
     class="sidebar-container overflow-hidden border-none">
-
     <!-- Sidebar Card -->
     <div class="flex flex-col h-[calc(100%-16px)] m-2 mr-0 rounded-md bg-base-100 overflow-hidden">
       <!-- Logo Area -->
-      <div class="h-14 flex items-center justify-center shrink-0 overflow-hidden mt-1"
-        [class.px-4]="isExpanded">
-        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary shrink-0 cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+      <div class="h-14 flex items-center justify-center shrink-0 overflow-hidden mt-1" [class.px-4]="isExpanded">
+        <div
+          class="flex items-center justify-center w-8 h-8 rounded-full bg-primary shrink-0 cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.3)]"
           (click)="sidebarService.toggleExpanded()">
           <svg class="w-5 h-5 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z">
@@ -32,8 +27,7 @@
         <span class="px-4 text-[11px] font-bold mb-1 uppercase tracking-widest text-base-content/40">Panel</span>
         }
 
-        <a routerLink="/home/products" routerLinkActive="active"
-          class="menu-item"
+        <a routerLink="/home/products" routerLinkActive="active" class="menu-item"
           [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
           <mat-icon>inventory_2</mat-icon>
           @if (isExpanded) {
@@ -41,8 +35,7 @@
           }
         </a>
 
-        <a routerLink="/home/client-orders" routerLinkActive="active"
-          class="menu-item"
+        <a routerLink="/home/client-orders" routerLinkActive="active" class="menu-item"
           [matTooltip]="isCollapsed ? 'Pedidos' : ''" matTooltipPosition="right">
           <mat-icon>shopping_cart</mat-icon>
           @if (isExpanded) {
@@ -51,20 +44,19 @@
         </a>
 
         @if (isExpanded) {
-        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Punto de Venta</span>
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Punto de
+          Venta</span>
         }
 
-        <a routerLink="/home/pos" routerLinkActive="active"
-          class="menu-item"
-          [matTooltip]="isCollapsed ? 'Ventas' : ''" matTooltipPosition="right">
+        <a routerLink="/home/pos" routerLinkActive="active" class="menu-item" [matTooltip]="isCollapsed ? 'Ventas' : ''"
+          matTooltipPosition="right">
           <mat-icon>point_of_sale</mat-icon>
           @if (isExpanded) {
           <span class="menu-text">Mostrador (POS)</span>
           }
         </a>
 
-        <a routerLink="/home/cash-register" routerLinkActive="active"
-          class="menu-item"
+        <a routerLink="/home/cash-register" routerLinkActive="active" class="menu-item"
           [matTooltip]="isCollapsed ? 'Caja' : ''" matTooltipPosition="right">
           <mat-icon>account_balance_wallet</mat-icon>
           @if (isExpanded) {
@@ -72,8 +64,7 @@
           }
         </a>
 
-        <a routerLink="/home/daily-reports" routerLinkActive="active"
-          class="menu-item"
+        <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
           [matTooltip]="isCollapsed ? 'Reportes' : ''" matTooltipPosition="right">
           <mat-icon>bar_chart</mat-icon>
           @if (isExpanded) {
@@ -82,81 +73,84 @@
         </a>
 
         @if (authService.isAdmin()) {
+        @if (isExpanded) {
+        <span
+          class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
+        }
+
+        <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
+          <mat-icon>payments</mat-icon>
           @if (isExpanded) {
-          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
+          <span class="menu-text">Pagos</span>
           }
+        </a>
 
-          <a routerLink="/home/payment-methods" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
-            <mat-icon>payments</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Pagos</span>
-            }
-          </a>
+        <a routerLink="/home/shipping-options" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Opciones de Envío' : ''" matTooltipPosition="right">
+          <mat-icon>local_shipping</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Envíos</span>
+          }
+        </a>
 
-          <a routerLink="/home/shipping-options" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Opciones de Envío' : ''" matTooltipPosition="right">
-            <mat-icon>local_shipping</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Envíos</span>
-            }
-          </a>
+        <a routerLink="/home/providers" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Proveedores' : ''" matTooltipPosition="right">
+          <mat-icon>local_shipping</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Proveedores</span>
+          }
+        </a>
         }
 
         @if (authService.isAdmin()) {
+        @if (isExpanded) {
+        <span
+          class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Contenido</span>
+        }
+
+        <a routerLink="/home/banners" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Banners & Secciones' : ''" matTooltipPosition="right">
+          <mat-icon>view_carousel</mat-icon>
           @if (isExpanded) {
-          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Contenido</span>
+          <span class="menu-text">Banners</span>
           }
+        </a>
 
-          <a routerLink="/home/banners" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Banners & Secciones' : ''" matTooltipPosition="right">
-            <mat-icon>view_carousel</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Banners</span>
-            }
-          </a>
-
-          <a routerLink="/home/bento" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Bento Editor' : ''" matTooltipPosition="right">
-            <mat-icon>dashboard_customize</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Editor Bento</span>
-            }
-          </a>
-
-          <a routerLink="/home/hero" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
-            <mat-icon>view_day</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Hero Slider</span>
-            }
-          </a>
-
-          <a routerLink="/home/shop-the-look" routerLinkActive="active"
-            class="menu-item"
-            [matTooltip]="isCollapsed ? 'Shop The Look' : ''" matTooltipPosition="right">
-            <mat-icon>style</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Shop The Look</span>
-            }
-          </a>
-
+        <a routerLink="/home/bento" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Bento Editor' : ''" matTooltipPosition="right">
+          <mat-icon>dashboard_customize</mat-icon>
           @if (isExpanded) {
-          <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
+          <span class="menu-text">Editor Bento</span>
           }
-          <a routerLink="/home/settings" routerLinkActive="active"
-            class="menu-item text-primary"
-            [matTooltip]="isCollapsed ? 'Tienda' : ''" matTooltipPosition="right">
-            <mat-icon>settings</mat-icon>
-            @if (isExpanded) {
-            <span class="menu-text">Tienda</span>
-            }
-          </a>
+        </a>
+
+        <a routerLink="/home/hero" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
+          <mat-icon>view_day</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Hero Slider</span>
+          }
+        </a>
+
+        <a routerLink="/home/shop-the-look" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Shop The Look' : ''" matTooltipPosition="right">
+          <mat-icon>style</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Shop The Look</span>
+          }
+        </a>
+
+        @if (isExpanded) {
+        <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
+        }
+        <a routerLink="/home/settings" routerLinkActive="active" class="menu-item text-primary"
+          [matTooltip]="isCollapsed ? 'Tienda' : ''" matTooltipPosition="right">
+          <mat-icon>settings</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Tienda</span>
+          }
+        </a>
         }
       </nav>
 
@@ -176,22 +170,44 @@
     </div>
   </mat-drawer>
 
-  <mat-drawer-content
-    class="flex! flex-col! h-full overflow-hidden"
+  <mat-drawer-content class="flex! flex-col! h-full overflow-hidden"
     [class.margin-expanded]="sidebarService.SidebarStatus().isExpanded"
     [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded">
-
     <!-- Main Content Card -->
     <div class="flex-1 flex flex-col m-2 ml-1 rounded-md bg-base-100 overflow-hidden">
       <!-- Topbar -->
-      <div class="shrink-0 ">
+      <div class="shrink-0">
         <app-navbar class="w-full" />
       </div>
 
       <!-- Main Workspace -->
-      <main class="flex-1 w-full overflow-y-auto flex flex-col">
+      <main class="flex-1 w-full overflow-y-auto flex flex-col pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pb-0">
         <router-outlet />
       </main>
     </div>
   </mat-drawer-content>
 </mat-drawer-container>
+
+<!-- Dock mobile: solo visible en < md -->
+<nav class="dock md:hidden z-50 fixed bottom-0 left-0 right-0 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]" style="padding-bottom: env(safe-area-inset-bottom);">
+  <a routerLink="/home/products" routerLinkActive="dock-active">
+    <mat-icon>inventory_2</mat-icon>
+    <span class="dock-label">Productos</span>
+  </a>
+  <a routerLink="/home/client-orders" routerLinkActive="dock-active">
+    <mat-icon>shopping_cart</mat-icon>
+    <span class="dock-label">Pedidos</span>
+  </a>
+  <a routerLink="/home/pos" routerLinkActive="dock-active">
+    <mat-icon>point_of_sale</mat-icon>
+    <span class="dock-label">POS</span>
+  </a>
+  <a routerLink="/home/cash-register" routerLinkActive="dock-active">
+    <mat-icon>account_balance_wallet</mat-icon>
+    <span class="dock-label">Caja</span>
+  </a>
+  <a routerLink="/home/settings" routerLinkActive="dock-active">
+    <mat-icon>settings</mat-icon>
+    <span class="dock-label">Config</span>
+  </a>
+</nav>

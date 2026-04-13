@@ -1,17 +1,17 @@
 import { PaymentType } from './paymentInfo.interface';
-import { IProduct } from './product.interface';
+import { IProduct, IProductPrices } from './product.interface';
+import { IProvider } from './provider.interface';
 import { ShippingType } from './shipping.interface';
 import { IUser } from './User.interface';
 
 // Enum para estados de orden
 export enum OrderStatus {
-  PENDING = 'Pendiente de encuentro',
-  PROCESSING_SHIPPING = 'En proceso de envío',
-  SHIPPED = 'Enviado',
-  DELIVERED = 'Entregado',
-  CANCELLED = 'Cancelado',
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
+  PROCESSING_SHIPPING = 'PROCESSING_SHIPPING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
 }
-
 // Enum para estados de pago
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -21,18 +21,27 @@ export enum PaymentStatus {
   WAITING_CONFIRMATION = 'waiting_confirmation'
 }
 
-// Interface para items de la orden
 export interface IOrderItem {
-  product: IProduct;
-  variantSku: string;
-  variantLabel: string;
-  quantity: number;
-  price: number;
+  // Snapshot del producto al momento de la compra (con _id para stock ops)
   productSnapshot: {
+    _id: string;
     brand: string;
     model: string;
     image?: string;
+    slug: string;
+    // Precios al momento de la compra — necesarios para calcular ganancias post-pago
+    prices: IProductPrices;
+    providerSnapshot: IProvider;
   };
+  // Snapshot de la variante al momento de la compra
+  variantSnapshot: {
+    sku: string;
+    size?: string;                                  // ClothingProduct (talle)
+    attributes?: { key: string; value: string }[];   // TechProduct
+    color?: { name: string; hex: string };
+  };
+  quantity: number;
+  price: number;
 }
 
 // Interface para dirección de envío
@@ -67,7 +76,7 @@ export interface IPaymentInfo {
 // Interface principal de la orden
 export interface IOrder {
   _id: string;
-  user: IUser;
+  user?: IUser;
   items: IOrderItem[];
   history: { status: OrderStatus; timestamp: Date; note?: string }[];
   shippingInfo: IShippingInfo;
@@ -129,6 +138,7 @@ export interface IPaymentInfo {
   transactionId?: string;
   paymentDate?: Date;
   amount: number;
+  mercadopagoData?: any
 }
 
 // Interface para filtros

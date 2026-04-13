@@ -1,12 +1,8 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
-import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 
 import {
@@ -30,13 +26,9 @@ import { OrdersStateService } from '../../states/order.state.service';
     CurrencyPipe,
     DatePipe,
     RouterLink,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
-    MatChipsModule
   ],
   templateUrl: './client-orders.html',
   styleUrl: './client-orders.scss',
@@ -78,14 +70,38 @@ export class ClientOrders {
 
   protected readonly Math = Math;
 
+  /** Opciones para los badges de filtro rápido en el sub-menu */
+  readonly statusFilterOptions = [
+    { value: OrderStatus.PENDING_PAYMENT,             label: 'Pendientes',   dotColor: '#f59e0b', bgColor: '#fef3c7', textColor: '#92400e' },
+    { value: OrderStatus.PROCESSING_SHIPPING, label: 'Procesando',   dotColor: '#3b82f6', bgColor: '#dbeafe', textColor: '#1e40af' },
+    { value: OrderStatus.SHIPPED,             label: 'Enviados',     dotColor: '#8b5cf6', bgColor: '#ede9fe', textColor: '#4c1d95' },
+    { value: OrderStatus.DELIVERED,           label: 'Entregados',   dotColor: '#22c55e', bgColor: '#dcfce7', textColor: '#14532d' },
+    { value: OrderStatus.CANCELLED,           label: 'Cancelados',   dotColor: '#ef4444', bgColor: '#fee2e2', textColor: '#7f1d1d' },
+  ];
+
+  /** Mapa de etiquetas legibles para el estado de la orden */
+  private readonly orderStatusLabels: Record<string, string> = {
+    [OrderStatus.PENDING_PAYMENT]:             'Pendiente de pago',
+    [OrderStatus.PROCESSING_SHIPPING]: 'Procesando envío',
+    [OrderStatus.SHIPPED]:             'Pedido Enviado',
+    [OrderStatus.DELIVERED]:           'Pedido Entregado',
+    [OrderStatus.CANCELLED]:           'Pedido Cancelado',
+  };
+
+  /** Mapa de etiquetas legibles para el estado del pago */
+  private readonly paymentStatusLabels: Record<string, string> = {
+    [PaymentStatus.PENDING]:              'Pendiente',
+    [PaymentStatus.APPROVED]:             'Aprobado',
+    [PaymentStatus.REJECTED]:             'Rechazado',
+    [PaymentStatus.CANCELLED]:            'Cancelado',
+    [PaymentStatus.WAITING_CONFIRMATION]: 'En revisión',
+  };
+
   constructor() {
     this.#SidebarService.navbarTitle.set({
       title: 'Pedidos'
     });
   }
-
-  // Table Columns
-  displayedColumns: string[] = ['orderNumber', 'user', 'date', 'total', 'status', 'payment', 'shipping', 'actions'];
 
   /**
    * Actualizar filtro de estado
@@ -118,29 +134,69 @@ export class ClientOrders {
   /**
    * Obtener clases CSS para el badge de estado de orden
    */
-  getOrderStatusBadgeClass(status: OrderStatus): string {
+  getOrderStatusBadgeClass(status: string): string {
     const baseClasses = 'badge badge-sm border-0 font-medium';
     switch (status) {
-      case OrderStatus.PENDING: return `${baseClasses} bg-amber-100 text-amber-800`;
-      case OrderStatus.PROCESSING_SHIPPING: return `${baseClasses} bg-blue-100 text-blue-800`;
-      case OrderStatus.SHIPPED: return `${baseClasses} bg-purple-100 text-purple-800`;
-      case OrderStatus.DELIVERED: return `${baseClasses} bg-green-100 text-green-800`;
-      case OrderStatus.CANCELLED: return `${baseClasses} bg-red-100 text-red-800`;
-      default: return `${baseClasses} bg-gray-100 text-gray-800`;
+      case OrderStatus.PENDING_PAYMENT:             return `${baseClasses} bg-amber-100  text-amber-800`;
+      case OrderStatus.PROCESSING_SHIPPING: return `${baseClasses} bg-blue-100   text-blue-800`;
+      case OrderStatus.SHIPPED:             return `${baseClasses} bg-purple-100 text-purple-800`;
+      case OrderStatus.DELIVERED:           return `${baseClasses} bg-green-100  text-green-800`;
+      case OrderStatus.CANCELLED:           return `${baseClasses} bg-red-100    text-red-800`;
+      // Valores crudos del backend (por si el enum no matchea todavía)
+      case 'PROCESSING_SHIPPING':           return `${baseClasses} bg-blue-100   text-blue-800`;
+      case 'PENDING':                       return `${baseClasses} bg-amber-100  text-amber-800`;
+      case 'PENDING_PAYMENT':               return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case 'SHIPPED':                       return `${baseClasses} bg-purple-100 text-purple-800`;
+      case 'DELIVERED':                     return `${baseClasses} bg-green-100  text-green-800`;
+      case 'CANCELLED':                     return `${baseClasses} bg-red-100    text-red-800`;
+      default:                              return `${baseClasses} bg-base-200   text-base-content/60`;
     }
+  }
+
+  /** Devuelve la etiqueta legible del estado de la orden */
+  getOrderStatusLabel(status: string): string {
+    return this.orderStatusLabels[status] ?? status;
+  }
+
+  /** Devuelve la etiqueta legible del estado del pago */
+  getPaymentStatusLabel(status: string): string {
+    return this.paymentStatusLabels[status] ?? status;
+  }
+
+  /** Cuenta de ordenes por estado para los badges del sub-menu */
+  getStatusCount(statusValue: string): number {
+    switch (statusValue) {
+      case OrderStatus.PENDING_PAYMENT:             return this.pendingCount();
+      case OrderStatus.PROCESSING_SHIPPING: return this.processingCount();
+      case OrderStatus.SHIPPED:             return this.shippedCount();
+      case OrderStatus.DELIVERED:           return this.deliveredCount();
+      case OrderStatus.CANCELLED:           return this.cancelledCount();
+      default: return 0;
+    }
+  }
+
+  /** Páginas a mostrar en el paginador (ventana de 5 páginas) */
+  getPageNumbers(): number[] {
+    return this.orderStateService.getPageNumbers();
   }
 
   /**
    * Obtener clases CSS para el badge de estado de pago
    */
-  getPaymentStatusBadgeClass(status: PaymentStatus): string {
+  getPaymentStatusBadgeClass(status: string): string {
     const baseClasses = 'badge badge-xs border-0';
     switch (status) {
-      case PaymentStatus.PENDING: return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case PaymentStatus.APPROVED: return `${baseClasses} bg-green-100 text-green-800`;
-      case PaymentStatus.REJECTED: return `${baseClasses} bg-red-100 text-red-800`;
-      case PaymentStatus.CANCELLED: return `${baseClasses} bg-gray-100 text-gray-800`;
-      default: return `${baseClasses} bg-gray-100 text-gray-800`;
+      case PaymentStatus.PENDING:
+      case 'PENDING':              return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case PaymentStatus.APPROVED:
+      case 'APPROVED':             return `${baseClasses} bg-green-100  text-green-800`;
+      case PaymentStatus.REJECTED:
+      case 'REJECTED':             return `${baseClasses} bg-red-100    text-red-800`;
+      case PaymentStatus.CANCELLED:
+      case 'CANCELLED':            return `${baseClasses} bg-base-200   text-base-content/50`;
+      case PaymentStatus.WAITING_CONFIRMATION:
+      case 'waiting_confirmation': return `${baseClasses} bg-blue-100   text-blue-800`;
+      default:                     return `${baseClasses} bg-base-200   text-base-content/50`;
     }
   }
 
@@ -268,7 +324,7 @@ export class ClientOrders {
    */
   canCancelOrder(status: OrderStatus): boolean {
     return (
-      status === OrderStatus.PENDING ||
+      status === OrderStatus.PENDING_PAYMENT ||
       status === OrderStatus.PROCESSING_SHIPPING
     );
   }
@@ -285,7 +341,7 @@ export class ClientOrders {
    */
   canStartShipping(status: OrderStatus, paymentInfo: PaymentStatus, shippingInfo: ShippingType): boolean {
     return (
-      status === OrderStatus.PENDING &&
+      status === OrderStatus.PENDING_PAYMENT &&
       paymentInfo === PaymentStatus.APPROVED &&
       shippingInfo === ShippingType.HOME_DELIVERY
     );
@@ -297,7 +353,7 @@ export class ClientOrders {
   canMarkAsShipped(status: OrderStatus): boolean {
     return (
       status === OrderStatus.PROCESSING_SHIPPING ||
-      status === OrderStatus.PENDING
+      status === OrderStatus.PENDING_PAYMENT
     );
   }
 
@@ -307,7 +363,7 @@ export class ClientOrders {
   canMarkAsDelivered(status: OrderStatus, shippingType: ShippingType, paymentStatus: PaymentStatus): boolean {
     return (
       status === OrderStatus.SHIPPED ||
-      (status === OrderStatus.PENDING &&
+      (status === OrderStatus.PENDING_PAYMENT &&
         shippingType === ShippingType.PICKUP &&
         paymentStatus === PaymentStatus.APPROVED)
     );

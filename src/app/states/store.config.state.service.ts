@@ -46,7 +46,7 @@ export class StoreConfigStateService {
   }
 
 
-  async saveConfig(newConfig: IEcommerceConfig) {
+  async saveConfig(newConfig: Partial<IEcommerceConfig>) {
     try {
       await this.#configService.updateConfig(newConfig);
       this.#notificationService.success('Configuración guardada correctamente');

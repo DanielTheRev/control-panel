@@ -1,289 +1,385 @@
 <app-page-layout>
   <app-page-header header [title]="'Orden #' + (order()?.orderNumber || '...')"
     [subtitle]="loading() ? 'Cargando detalles...' : 'Detalles de la orden'">
-    <div actions class="flex gap-2">
-      <button class="btn btn-neutral" (click)="printTicket()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-          class="w-5 h-5 mr-2">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231a1.125 1.125 0 01-1.122-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0V4.5A2.25 2.25 0 0015 2.25h-6a2.25 2.25 0 00-2.25 2.25v1.53m10.5 0a48.108 48.108 0 00-10.5 0m10.5 0v.45m-10.5 0v.45" />
-        </svg>
-        Imprimir Ticket
+    <div actions class="flex items-center gap-2 flex-wrap">
+      <button class="btn btn-sm btn-ghost" (click)="goBack()">
+        <mat-icon class="text-[16px]! w-4! h-4!">arrow_back</mat-icon> Volver
       </button>
-      <button class="btn btn-primary" (click)="goBack()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-          class="w-5 h-5 mr-2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-        </svg>
-        Volver
+
+      @if (order() && !loading()) {
+      <!-- Completed states: just show badge -->
+      @if (isDelivered()) {
+      <span class="badge badge-success gap-1">
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon> Entregado
+      </span>
+      } @else if (isCancelled()) {
+      <span class="badge badge-error gap-1">
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">cancel</mat-icon> Cancelado
+      </span>
+      } @else {
+      <!-- Action buttons -->
+      @if (canMarkPaymentReceived()) {
+      <button class="btn btn-sm btn-success btn-soft" (click)="markPaymentReceived()" [disabled]="updating()">
+        <mat-icon class="text-[16px]! w-4! h-4!">attach_money</mat-icon> Pago recibido
       </button>
+      }
+
+      @if (canStartShipping()) {
+      <button class="btn btn-sm btn-info btn-soft" (click)="startShipping()" [disabled]="updating()">
+        <mat-icon class="text-[16px]! w-4! h-4!">local_shipping</mat-icon> Iniciar envío
+      </button>
+      }
+
+      @if (canMarkAsShipped()) {
+      <button class="btn btn-sm btn-primary btn-soft" (click)="markAsShipped()" [disabled]="updating()">
+        <mat-icon class="text-[16px]! w-4! h-4!">flight_takeoff</mat-icon> Enviado
+      </button>
+      }
+
+      @if (canMarkAsDelivered()) {
+      <button class="btn btn-sm btn-success" (click)="markAsDelivered()" [disabled]="updating()">
+        <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Entregado
+      </button>
+      }
+
+      @if (canCancelOrder()) {
+      <button class="btn btn-sm btn-ghost text-error" (click)="cancelOrder()" [disabled]="updating()">
+        <mat-icon class="text-[16px]! w-4! h-4!">cancel</mat-icon>
+      </button>
+      }
+      }
+
+      <button class="btn btn-sm btn-neutral" (click)="printTicket()">
+        <mat-icon class="text-[16px]! w-4! h-4!">print</mat-icon> Ticket
+      </button>
+      }
     </div>
   </app-page-header>
 
   <ng-container content>
+    <!-- Loading -->
     @if (loading()) {
-    <div class="flex justify-center items-center h-64">
-      <span class="loading loading-spinner loading-lg text-primary"></span>
+    <div class="flex items-center justify-center w-full h-64">
+      <span class="loading loading-ring loading-xl"></span>
     </div>
     }
-    @if (order() && order() !== null && !loading() && !error()) {
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left Column: Order Info -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- Order Stats Card -->
-        <mat-card class="rounded-xl! shadow-sm! border border-base-300">
-          <mat-card-header>
-            <mat-card-title class="text-lg font-bold">Estado del Pedido</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="pt-4">
-            <div class="flex flex-wrap gap-4">
-              <div class="badge badge-lg p-3" [ngClass]="getOrderStatusBadgeClass(order()!.status)">
-                {{ order()!.status }}
-              </div>
-              <div class="text-sm text-base-content/50 flex items-center">
-                <mat-icon class="mr-1 text-sm">calendar_today</mat-icon>
+
+    <!-- Error -->
+    @if (error()) {
+    <div class="flex flex-col items-center justify-center py-20 gap-4">
+      <div class="bg-error/10 rounded-full p-4">
+        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
+      </div>
+      <h2 class="text-lg font-bold text-base-content">Error al cargar la orden</h2>
+      <p class="text-sm text-base-content/50">{{ error() }}</p>
+      <button class="btn btn-sm btn-primary" (click)="goBack()">Volver</button>
+    </div>
+    }
+
+    <!-- Order Content -->
+    @if (order() && !loading() && !error()) {
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left Column -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+
+          <!-- Status Card -->
+          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Estado del Pedido</h3>
+              <span class="text-xs text-base-content/40">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! align-middle mr-0.5">calendar_today</mat-icon>
                 {{ order()!.createdAt | date:'medium' }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-3 mb-5">
+              <span [ngClass]="getOrderStatusBadgeClass(order()!.status)">
+                {{ order()!.status }}
+              </span>
+            </div>
+
+            <!-- Timeline -->
+            @if (order()!.history && order()!.history.length > 0) {
+            <div class="border-t border-base-300 pt-4">
+              <div class="flex flex-wrap gap-0">
+                @for (entry of order()!.history; track entry.timestamp; let i = $index; let last = $last) {
+                <div class="flex items-center gap-2">
+                  <div class="flex flex-col items-center">
+                    <div class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary/20"></div>
+                  </div>
+                  <div class="flex flex-col py-1">
+                    <span class="text-xs font-bold text-base-content">{{ entry.status }}</span>
+                    <span class="text-[10px] text-base-content/40">{{ entry.timestamp | date:'short' }}</span>
+                  </div>
+                  @if (!last) {
+                  <div class="w-6 h-px bg-base-300 mx-1"></div>
+                  }
+                </div>
+                }
               </div>
             </div>
+            }
+          </div>
 
-            <!-- Timeline (Simple representation) -->
-            <div class="mt-6">
-              <ul class="steps steps-vertical lg:steps-horizontal w-full">
-                @for (entry of order()!.history; track entry.timestamp) {
-                <li class="step step-primary" [attr.data-content]="'✓'">
-                  <span class="font-medium">{{ entry.status }}</span>
-                  <span class="text-xs opacity-60 block">{{ entry.timestamp | date:'short' }}</span>
-                </li>
-                }
-              </ul>
+          <!-- Products Cards -->
+          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Productos</h3>
+              <span class="bg-base-200 text-base-content/50 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                {{ items().length }} item{{ items().length === 1 ? '' : 's' }}
+              </span>
             </div>
-          </mat-card-content>
-        </mat-card>
 
-        <!-- Items Table -->
-        <mat-card class="rounded-xl! shadow-sm! border border-base-300 overflow-hidden">
-          <mat-card-header>
-            <mat-card-title class="text-lg font-bold">Productos</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-0">
-            <div class="overflow-x-auto">
-              <table mat-table [dataSource]="items()" class="w-full">
-                <!-- Image Column -->
-                <ng-container matColumnDef="image">
-                  <th mat-header-cell *matHeaderCellDef> Producto </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="flex items-center gap-3 py-2">
-                      <div class="avatar">
-                        <div class="mask mask-squircle w-12 h-12 bg-base-200">
-                          @if (element.product?.images?.length) {
-                          <img [src]="element.product.images[0].url" [alt]="element.product.model" />
-                          } @else if (element.productSnapshot?.image) {
-                          <img [src]="element.productSnapshot.image" alt="Product" />
-                          } @else {
-                          <span class="text-xs">No img</span>
-                          }
-                        </div>
-                      </div>
+            <div class="flex flex-col gap-3">
+              @for (item of items(); track $index) {
+              <div class="border border-base-300 rounded-lg p-4 hover:border-primary/20 transition-colors">
+                <!-- Top row: image + product info -->
+                <div class="flex gap-3 mb-3">
+                  <!-- Image -->
+                  <a [routerLink]="['/home/products', item.productSnapshot._id]"
+                    class="w-14 h-14 rounded-lg overflow-hidden bg-base-200 shrink-0">
+                    @if (item.productSnapshot.image) {
+                    <img [src]="item.productSnapshot.image" [alt]="item.productSnapshot.model"
+                      class="w-full h-full object-cover" />
+                    } @else {
+                    <div class="w-full h-full flex items-center justify-center">
+                      <mat-icon class="text-[20px]! w-5! h-5! text-base-content/20">image</mat-icon>
                     </div>
-                  </td>
-                </ng-container>
+                    }
+                  </a>
 
-                <!-- Product Name Column -->
-                <ng-container matColumnDef="product">
-                  <th mat-header-cell *matHeaderCellDef> Nombre </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="flex flex-col">
-                      <span class="font-medium">
-                        {{ element.productSnapshot?.brand || element.product?.brand }}
-                        {{ element.productSnapshot?.model || element.product?.model }}
+                  <!-- Name + variant + provider -->
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-sm text-base-content leading-tight">
+                      {{ item.productSnapshot.brand }}
+                      {{ item.productSnapshot.model }}
+                    </h4>
+
+                    <!-- Variant badges -->
+                    @let variant = item.variantSnapshot;
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                      @if (variant.size) {
+                      <span class="badge badge-xs badge-ghost h-auto py-0.5 font-mono">{{ variant.size }}</span>
+                      }
+                      @if (variant.color) {
+                      <span class="inline-flex items-center gap-1 badge badge-xs badge-ghost h-auto py-0.5">
+                        <span class="w-2 h-2 rounded-full border" [style.background-color]="variant.color.hex"></span>
+                        {{ variant.color.name }}
                       </span>
-                      @if (element.variantLabel) {
-                      <span class="text-xs text-base-content/40">{{ element.variantLabel }}</span>
+                      }
+                      @if (variant.attributes) {
+                      @for (attr of variant.attributes; track attr.key) {
+                      <span class="badge badge-xs badge-ghost h-auto py-0.5 font-mono">{{ attr.key }}: {{ attr.value
+                        }}</span>
+                      }
                       }
                     </div>
-                  </td>
-                </ng-container>
 
-                <!-- Variant SKU Column -->
-                <ng-container matColumnDef="variant">
-                  <th mat-header-cell *matHeaderCellDef> Variante </th>
-                  <td mat-cell *matCellDef="let element">
-                    @if (element.variantSku) {
-                    <span class="badge badge-ghost badge-sm font-mono">{{ element.variantSku }}</span>
-                    } @else {
-                    <span class="text-xs text-base-content/40">—</span>
+                    <!-- Provider -->
+                    @if (item.productSnapshot.providerSnapshot) {
+                    <div class="mt-1.5">
+                      <span
+                        class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">storefront</mat-icon>
+                        {{ item.productSnapshot.providerSnapshot.name }}
+                      </span>
+                    </div>
                     }
-                  </td>
-                </ng-container>
+                  </div>
 
-                <!-- Quantity Column -->
-                <ng-container matColumnDef="quantity">
-                  <th mat-header-cell *matHeaderCellDef> Cant. </th>
-                  <td mat-cell *matCellDef="let element"> {{element.quantity}} </td>
-                </ng-container>
+                  <!-- Quantity badge -->
+                  <div class="shrink-0 flex flex-col items-end">
+                    <span class="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-md">
+                      ×{{ item.quantity }}
+                    </span>
+                  </div>
+                </div>
 
-                <!-- Price Column -->
-                <ng-container matColumnDef="price">
-                  <th mat-header-cell *matHeaderCellDef> Precio Unit. </th>
-                  @if (order()?.paymentInfo?.method === paymentType.CARD){
-                  <td mat-cell *matCellDef="let element"> {{element.product.prices.tarjeta_credito_debito |
-                    currency:'ARS':'symbol-narrow':'1.0-0'}}
-                  </td>
-                  } @else {
-                  <td mat-cell *matCellDef="let element"> {{element.product.prices.efectivo_transferencia |
-                    currency:'ARS':'symbol-narrow':'1.0-0'}}
-                  </td>
-                  }
-                </ng-container>
-
-                <!-- Cost Column -->
-                <ng-container matColumnDef="cost">
-                  <th mat-header-cell *matHeaderCellDef> Costo Unit. </th>
-                  <td mat-cell *matCellDef="let element" class="text-base-content/50">
-                    {{ (element.product.prices.costPrice.inUSD || 0) | currency:'USD':'symbol-narrow':'1.0-0' }}
-                  </td>
-                </ng-container>
-
-                <!-- Profit Column -->
-                <ng-container matColumnDef="profit">
-                  <th mat-header-cell *matHeaderCellDef> Ganancia </th>
-                  @if (order()?.paymentInfo?.method === paymentType.CARD){
-                  <td mat-cell *matCellDef="let element" class="text-success font-medium">
-                    {{ (element.product.prices.earnings.card_6_installments * element.quantity) |
-                    currency:'ARS':'symbol-narrow':'1.0-0'
-                    }}
-
-                  </td>
-                  } @else {
-                  <td mat-cell *matCellDef="let element" class="text-success font-medium">
-                    {{ (element.product.prices.earnings.cash_transfer * element.quantity) |
-                    currency:'ARS':'symbol-narrow':'1.0-0'
-                    }}
-                  </td>
-                  }
-                </ng-container>
-
-                <!-- Total Column -->
-                <ng-container matColumnDef="total">
-                  <th mat-header-cell *matHeaderCellDef> Total </th>
-                  @if (order()?.paymentInfo?.method === paymentType.CARD){
-                  <td mat-cell *matCellDef="let element" class="font-bold"> {{
-                    (element.product.prices.card_6_installments * element.quantity) |
-                    currency:'ARS':'symbol-narrow':'1.0-0' }} </td>
-                  } @else {
-                  <td mat-cell *matCellDef="let element" class="font-bold"> {{
-                    (element.product.prices.cash_transfer * element.quantity) |
-                    currency:'ARS':'symbol-narrow':'1.0-0' }} </td>
-                  }
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-              </table>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <!-- Right Column: Financials & Customer -->
-      <div class="space-y-6">
-        <!-- Financial Summary -->
-        <mat-card class="rounded-xl! shadow-sm! border border-base-300">
-          <mat-card-header>
-            <mat-card-title class="text-lg font-bold text-success">Resumen Financiero</mat-card-title>
-          </mat-card-header>
-          <div class="divider m-0"></div>
-          <mat-card-content class="pt-4 space-y-3">
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-base-content/50">Ingresos Totales (Prod):</span>
-              <span class="font-medium">{{ productsSubtotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-base-content/50">Costo de Ventas (COGS):</span>
-              <span class="font-medium text-error">- {{ totalCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-base-content/50">Envío (Cobrado):</span>
-              <span class="font-medium text-info">+ {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-            </div>
-            <div class="divider my-2"></div>
-            <div class="flex justify-between items-center text-lg font-bold">
-              <span>Ganancia Bruta:</span>
-              <span class="text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-xs text-base-content/50">
-              <span>Margen:</span>
-              <span>{{ margin() | number:'1.1-2' }}%</span>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Customer Info -->
-        <mat-card class="rounded-xl! shadow-sm! border border-base-300">
-          <mat-card-header>
-            <mat-card-title class="text-lg font-bold">Cliente</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="pt-4">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="avatar placeholder">
-                <div class="flex items-center justify-center bg-primary text-primary-content rounded-full w-10">
-                  <span class="text-xl">{{ order()!.user.name.charAt(0).toUpperCase() }}</span>
+                <!-- Bottom row: price details -->
+                <div class="grid grid-cols-4 gap-2 pt-3 border-t border-base-200/60">
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Precio</span>
+                    <span class="text-sm font-bold text-base-content">
+                      {{ getItemPrice(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Costo</span>
+                    <span class="text-sm text-base-content/50">
+                      En USD: {{ (item.productSnapshot.prices.costPrice.inUSD || 0) | currency:'USD':'symbol-narrow':'1.0-0' }}
+                    </span>
+                    <span class="text-sm text-base-content/50">
+                      En ARS: {{ (item.productSnapshot.prices.costPrice.inARS || 0) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Ganancia</span>
+                    <span class="text-sm font-bold text-success">
+                      {{ getItemEarnings(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col items-end">
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Total</span>
+                    <span class="text-sm font-bold text-base-content">
+                      {{ (getItemPrice(item) * item.quantity) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <p class="font-bold">{{ order()!.user.name }}</p>
-                <p class="text-xs text-base-content/50">{{ order()!.user.email }}</p>
+              }
+            </div>
+
+            <!-- Order total footer -->
+            <div class="mt-4 pt-4 border-t border-base-300 flex items-center justify-between">
+              <span class="text-xs text-base-content/40 uppercase tracking-wider font-bold">Total de la orden</span>
+              <span class="text-xl font-bold text-base-content">
+                {{ order()!.total | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="flex flex-col gap-6">
+
+          <!-- Financial Summary -->
+          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <mat-icon class="text-[16px]! w-4! h-4! text-success">trending_up</mat-icon>
+              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Resumen Financiero</h3>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-base-content/50 text-xs">Ingresos (Productos)</span>
+                <span class="font-bold text-base-content">{{ productsSubtotal() | currency:'ARS':'symbol-narrow':'1.0-0'
+                  }}</span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-base-content/50 text-xs">Costo de Ventas</span>
+                <span class="font-bold text-error">- {{ totalCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-base-content/50 text-xs">Envío (Cobrado)</span>
+                <span class="font-bold text-info">+ {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+              <div class="border-t border-base-300 pt-3 mt-1">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-bold text-base-content">Ganancia Bruta</span>
+                  <span class="text-lg font-bold text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0'
+                    }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="text-[10px] text-base-content/40 uppercase tracking-wider">Margen</span>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded" [class.bg-success/10]="margin() > 0"
+                    [class.text-success]="margin() > 0" [class.bg-error/10]="margin() <= 0"
+                    [class.text-error]="margin() <= 0">
+                    {{ margin() | number:'1.1-2' }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
+            <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Cliente</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center shrink-0">
+                <span class="text-lg font-bold text-primary">
+                  {{ order()!.user?.name?.charAt(0)?.toUpperCase() ||
+                  order()!.buyerData.firstName.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-bold text-sm text-base-content">
+                  {{ order()!.user?.name || order()!.buyerData.firstName }} {{ order()!.buyerData.lastName }}
+                </span>
+                <span class="text-[11px] text-base-content/40">{{ order()!.user?.email || order()!.buyerData.email
+                  }}</span>
               </div>
             </div>
 
-            <div class="divider my-2"></div>
-
-            <h4 class="font-semibold text-sm mb-2 mt-4">Envío</h4>
-            <div class="text-sm text-base-content/60 space-y-1">
-              <p><span class="font-medium">Tipo:</span> {{ order()!.shippingInfo.type }}</p>
-              @if (order()!.shippingInfo.pickupPoint) {
-              <p><span class="font-medium">Punto de retiro:</span> {{ order()!.shippingInfo.pickupPoint?.name }}</p>
-              <p class="text-xs">{{ order()!.shippingInfo.pickupPoint?.address }}</p>
-              }
+            <!-- Shipping -->
+            <div class="border-t border-base-300 pt-4 mt-3">
+              <div class="flex items-center gap-2 mb-3">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">local_shipping</mat-icon>
+                <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Envío</h4>
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Tipo</span>
+                  <span class="text-xs text-base-content/70 font-medium">{{ order()!.shippingInfo.type }}</span>
+                </div>
+                @if (order()!.shippingInfo.pickupPoint) {
+                <div class="flex justify-between items-start gap-4">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Punto</span>
+                  <div class="text-right">
+                    <span class="text-xs text-base-content/70 font-medium block">{{
+                      order()!.shippingInfo.pickupPoint?.name }}</span>
+                    <span class="text-[10px] text-base-content/40">{{ order()!.shippingInfo.pickupPoint?.address
+                      }}</span>
+                  </div>
+                </div>
+                }
+              </div>
             </div>
 
-            <h4 class="font-semibold text-sm mb-2 mt-4">Pago</h4>
-            <div class="text-sm text-base-content/60 space-y-1">
-              <p><span class="font-medium">Método:</span> {{ order()!.paymentInfo.method }}</p>
-              @if(paymentType.ALIAS_TRANSFER || paymentType.BANK_TRANSFER){
-              @let payerData = order()?.buyerData;
-              {{
-              order()?.paymentInfo?.status === paymentStatus.PENDING ? 'Se espera que el pago lo realice la siguiente persona:.' : 'El pago fue realizado por la siguiente persona:' }}
-              <p>
-                <span class="font-medium">Nombre:</span> {{ payerData?.firstName }}<br>
-                <span class="font-medium">Apellido:</span> {{ payerData?.lastName }}<br>
-                <span class="font-medium">Email:</span> {{ payerData?.email }}<br>
-                <span class="font-medium">{{ payerData?.identificationType }}:</span> {{ payerData?.identificationNumber
-                }}<br>
-              </p>
-              }
-              <p><span class="font-medium">Estado:</span> <span class="badge badge-sm"
-                  [ngClass]="{
-                    'badge-success': order()!.paymentInfo.status === paymentStatus.APPROVED,
-                    'badge-warning': order()!.paymentInfo.status === paymentStatus.PENDING,
-                    'badge-error': order()!.paymentInfo.status === paymentStatus.REJECTED,
-                    'badge-info': order()!.paymentInfo.status === paymentStatus.CANCELLED || order()!.paymentInfo.status === paymentStatus.WAITING_CONFIRMATION}">{{
-                  order()!.paymentInfo.status }}</span></p>
+            <!-- Payment -->
+            <div class="border-t border-base-300 pt-4 mt-3">
+              <div class="flex items-center gap-2 mb-3">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">payments</mat-icon>
+                <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Pago</h4>
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Método</span>
+                  <span class="text-xs text-base-content/70 font-medium">{{ order()!.paymentInfo.method }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Estado</span>
+                  <span class="badge badge-sm" [ngClass]="{
+                      'badge-success': order()!.paymentInfo.status === paymentStatus.APPROVED,
+                      'badge-warning': order()!.paymentInfo.status === paymentStatus.PENDING,
+                      'badge-error': order()!.paymentInfo.status === paymentStatus.REJECTED,
+                      'badge-info': order()!.paymentInfo.status === paymentStatus.CANCELLED || order()!.paymentInfo.status === paymentStatus.WAITING_CONFIRMATION
+                    }">
+                    {{ order()!.paymentInfo.status }}
+                  </span>
+                </div>
+
+                @if (paymentType.ALIAS_TRANSFER || paymentType.BANK_TRANSFER) {
+                @let payerData = order()?.buyerData;
+                <div class="border-t border-base-200/60 pt-3 mt-2">
+                  <p class="text-[10px] text-base-content/40 mb-2">
+                    {{ order()?.paymentInfo?.status === paymentStatus.PENDING
+                    ? 'Se espera que el pago lo realice:'
+                    : 'Pago realizado por:' }}
+                  </p>
+                  <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between">
+                      <span class="text-[10px] text-base-content/40">Nombre</span>
+                      <span class="text-xs text-base-content/70">{{ payerData?.firstName }} {{ payerData?.lastName
+                        }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-[10px] text-base-content/40">Email</span>
+                      <span class="text-xs text-base-content/70">{{ payerData?.email }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-[10px] text-base-content/40">{{ payerData?.identificationType }}</span>
+                      <span class="text-xs text-base-content/70 font-mono">{{ payerData?.identificationNumber }}</span>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       </div>
-    </div>
-    }
-    @if (error()) {
-    <div class="alert alert-error mt-4">
-      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span>Error! No se pudo cargar la orden.</span>
     </div>
     }
   </ng-container>
-
 </app-page-layout>

@@ -1,7 +1,7 @@
 <section class="flex flex-col w-full h-full overflow-hidden bg-base-100">
   <ng-content select="[header]"/>
 
-  <main class="flex-1 flex flex-col overflow-auto p-2">
+  <main class="flex-1 flex flex-col min-h-0 p-2 overflow-auto">
     <ng-content select="[content]"></ng-content>
   </main>
 </section>

@@ -24,7 +24,7 @@
                 <span>Listo p/guardar</span>
             </div>
             }
-            <a routerLink="/products" class="btn btn-ghost text-base-content/50">
+            <a routerLink="/home/products/{{productID()}}" class="btn btn-ghost text-base-content/50">
                 Cancelar
             </a>
             @let disable = productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
@@ -38,7 +38,7 @@
                 }
             </button>
         </div>
-        <div role="tablist" class="tabs tabs-box rounded-none bg-blue-100" sub-menu>
+        <div role="tablist" class="tabs tabs-box rounded-none" sub-menu>
             @for (tab of tabs(); track tab.label) {
             <span role="tab" class="tab" [class.tab-active]="tabSelected() === tab.label"
                 (click)="setActiveTab(tab.label)">{{ tab.label }}</span>
@@ -48,11 +48,11 @@
 
     <ng-container content>
         <form [formGroup]="productForm" class="flex w-full">
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Información Principal'"
                 [class.hidden]="tabSelected() !== 'Información Principal'">
                 <!-- Product Type Selector (only shown in edit mode since in create mode type is pre-selected from route) -->
-                @if (!typeParam()) {
+                <!-- @if (!typeParam()) {
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
@@ -80,12 +80,31 @@
                         </div>
                     </div>
                 </div>
-                }
+                } -->
 
                 <!-- Basic Info Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">Información Principal</h3>
+
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend w-full">
+                                <div class="flex justify-between items-center w-full gap-2">
+                                    Proveedor / Vendedor
+                                    <!-- <button class="btn btn-success btn-soft btn-sm" (click)="addProvider()">
+                                        <mat-icon>add</mat-icon>
+                                        Agregar
+                                    </button> -->
+                                </div>
+                            </legend>
+                            <select class="select select-bordered w-full" formControlName="provider">
+                                @for (provider of providers().data; track provider._id) {
+                                <option [value]="provider._id" id="provider-{{ provider._id }}">{{ provider.name }}
+                                </option>
+                                }
+                            </select>
+                        </fieldset>
+
 
                         <fieldset class="fieldset w-full">
                             <legend class="fieldset-legend">Modelo</legend>
@@ -95,36 +114,44 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Marca</legend>
+                                <legend class="fieldset-legend w-full">
+                                    <div class="flex justify-between items-center w-full gap-2">
+                                        Marca
+                                        <button class="btn btn-success btn-soft btn-sm"
+                                            (click)="addBrandCategory('brand')">
+                                            <mat-icon>add</mat-icon>
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </legend>
                                 <select class="select select-bordered w-full" formControlName="brand">
-                                    @if (selectedType() === ProductType.TECH) {
-                                    @for (b of techBrands; track b) {
-                                    <option [value]="b">{{ b }}</option>
-                                    }
-                                    } @else {
-                                    @for (b of clothingBrands; track b) {
-                                    <option [value]="b">{{ b }}</option>
-                                    }
+                                    @for (b of brands(); track b) {
+                                    <option [value]="b" id="brand-{{ b }}">{{ b }}</option>
                                     }
                                 </select>
                             </fieldset>
 
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Categoría</legend>
+                                <legend class="fieldset-legend w-full">
+                                    <div class="flex justify-between items-center w-full gap-2">
+                                        Categoría
+                                        <button class="btn btn-success btn-soft btn-sm"
+                                            (click)="addBrandCategory('category')">
+                                            <mat-icon>add</mat-icon>
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </legend>
                                 <select class="select select-bordered w-full" formControlName="category">
-                                    @if (selectedType() === ProductType.TECH) {
-                                    @for (c of techCategories; track c) {
-                                    <option [value]="c">{{ c }}</option>
-                                    }
-                                    } @else {
-                                    @for (c of clothingCategories; track c) {
-                                    <option [value]="c">{{ c }}</option>
-                                    }
+                                    @for (c of categories(); track c) {
+                                    <option [value]="c" id="category-{{ c }}">{{ c }}</option>
                                     }
                                 </select>
                             </fieldset>
                         </div>
 
+                        <!-- Prices -->
+                        <!-- Precio de costo -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <fieldset class="fieldset">
                                 <legend class="fieldset-legend">Precio de Costo (USD)</legend>
@@ -136,31 +163,74 @@
                             </fieldset>
 
                             <!-- Custom Profit Margin -->
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Ganancia</legend>
-                                <!-- Checkbox toggle -->
-                                <label class="flex items-center gap-2 mb-2 cursor-pointer">
-                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
-                                        formControlName="useCustomProfit" />
-                                    <span class="text-xs font-medium">Usar Ganancia Personalizada</span>
-                                </label>
+                            <div class="flex flex-col items-center gap-3">
+                                <!-- transferencia, débito y 1 pago crédito -->
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend">
+                                        Ganancia transferencia, débito y 1 pago crédito
+                                    </legend>
 
-                                @if (productForm.get('useCustomProfit')?.value) {
-                                <!-- Custom margin input (enabled) -->
-                                <div class="join w-full">
-                                    <input type="number" class="join-item input input-bordered w-full"
-                                        placeholder="Ej. 35" formControlName="customProfitMargin" />
-                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
-                                </div>
-                                } @else {
-                                <!-- Locked: using global margin -->
-                                <div
-                                    class="text-[11px] text-info font-medium bg-info/5 px-3 py-2 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight">
-                                    <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
-                                    <span>Usando el Margen Global de la tienda.</span>
-                                </div>
-                                }
-                            </fieldset>
+                                    <div class="flex items-center justify-between gap-3">
+                                        @if (productForm.get('useCustomProfit1Pay')?.value) {
+                                        <!-- Custom margin input (enabled) -->
+                                        <div class="join w-full items-center">
+                                            <input type="number" class="join-item input input-bordered w-full"
+                                                placeholder="Ej. 35" formControlName="customProfitMargin1Pay" />
+                                            <span
+                                                class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
+                                        </div>
+                                        } @else {
+                                        <!-- Locked: using global margin -->
+                                        <div
+                                            class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight">
+                                            <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
+                                            <span>Usando el Margen Global de la tienda.</span>
+                                        </div>
+                                        }
+
+                                        <!-- Checkbox toggle -->
+                                        <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                                                formControlName="useCustomProfit1Pay" />
+                                            <span class="text-xs font-medium">Usar Ganancia Personalizada</span>
+                                        </label>
+                                    </div>
+
+                                </fieldset>
+                                <!-- tarjeta crédito cuotas -->
+                                <fieldset class="fieldset">
+                                    <legend class="fieldset-legend">
+                                        Ganancia tarjeta crédito cuotas
+                                    </legend>
+
+                                    <div class="flex items-center justify-between gap-3">
+                                        @if (productForm.get('useCustomProfitInstallments')?.value) {
+                                        <!-- Custom margin input (enabled) -->
+                                        <div class="join w-full items-center">
+                                            <input type="number" class="join-item input input-bordered w-full"
+                                                placeholder="Ej. 35" formControlName="customProfitMarginInstallments" />
+                                            <span
+                                                class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
+                                        </div>
+                                        } @else {
+                                        <!-- Locked: using global margin -->
+                                        <div
+                                            class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 border border-info/20 rounded-lg flex items-center gap-1.5 leading-tight">
+                                            <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
+                                            <span>Usando el Margen Global de la tienda.</span>
+                                        </div>
+                                        }
+
+                                        <!-- Checkbox toggle -->
+                                        <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                                                formControlName="useCustomProfitInstallments" />
+                                            <span class="text-xs font-medium">Usar Ganancia Personalizada</span>
+                                        </label>
+                                    </div>
+
+                                </fieldset>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
@@ -193,6 +263,8 @@
                             }
                         </div>
 
+
+
                         <!-- Price Calculator Preview -->
                         @if (calculatedPrices()) {
                         <app-price-preview [prices]="calculatedPrices()!"></app-price-preview>
@@ -200,9 +272,10 @@
                     </div>
                 </div>
 
+
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Especificaciones principales'"
                 [class.hidden]="tabSelected() !== 'Especificaciones principales'">
                 <!-- Type-Specific Fields via child forms -->
@@ -218,7 +291,7 @@
                 }
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Descripciones'" [class.hidden]="tabSelected() !== 'Descripciones'">
                 <!-- Description Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
@@ -239,7 +312,7 @@
                 </div>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Imágenes'" [class.hidden]="tabSelected() !== 'Imágenes'">
                 <!-- Images Card -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
@@ -252,7 +325,7 @@
                 </div>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Etiquetas(tags)'"
                 [class.hidden]="tabSelected() !== 'Etiquetas(tags)'">
                 <!-- Features Card -->
@@ -266,7 +339,7 @@
                 </div>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Especificaciones técnicas'"
                 [class.hidden]="tabSelected() !== 'Especificaciones técnicas'">
                 <div class="card rounded-sm bg-base-100 shadow-sm border border-base-300">
@@ -304,7 +377,7 @@
                 </div>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Variantes'" [class.hidden]="tabSelected() !== 'Variantes'">
                 <div class="lg:col-span-5">
                     <div class="card bg-base-100 shadow-sm border border-base-300">
@@ -336,9 +409,15 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Sku</th>
+                                            @if (selectedType() === ProductType.TECH) {
                                             <th>Atributos</th>
+                                            }
+                                            @if (selectedType() === ProductType.CLOTHING) {
+                                            <th>Talle</th>
+                                            }
                                             <th>Stock</th>
                                             <th>Color(nombre)</th>
+                                            <th>Imagen</th>
                                             <th>Color(hex)</th>
                                             <th>Activo</th>
                                             <th></th>
@@ -355,10 +434,17 @@
                                                     placeholder="SAM-001-128" formControlName="sku" />
                                             </th>
                                             <td>
+                                                @if (selectedType() === ProductType.TECH) {
                                                 <input type="text" class="input input-bordered input-sm w-full text-xs"
-                                                    placeholder="Talle:M, Color:Negro"
+                                                    placeholder="RAM: 16GB, Almacenamiento: 512GB"
                                                     formControlName="attributesJson" />
+                                                }
 
+                                                @if (selectedType() === ProductType.CLOTHING) {
+                                                <input type="text" class="input input-bordered input-sm w-full text-xs"
+                                                    placeholder="Ejem: S, M, L, XL, 42, 43, 44,Único"
+                                                    formControlName="size" />
+                                                }
                                             </td>
                                             <td>
                                                 <input type="number" class="input input-bordered input-sm w-full"
@@ -368,6 +454,45 @@
                                                 <input type="text" class="input input-bordered input-sm w-full"
                                                     placeholder="Negro" formControlName="colorName" />
 
+                                            </td>
+                                            <td>
+                                                @if (imagesControls.length > 0) {
+                                                <div class="dropdown dropdown-left">
+
+                                                    <div tabindex="0" role="button"
+                                                        class="avatar tooltip tooltip-top transition-transform hover:scale-105"
+                                                        data-tip="Cambiar imagen">
+                                                        <div
+                                                            class="w-18 h-18 rounded border border-base-300 bg-base-200 shadow-sm">
+                                                            <img [src]="imagesControls.value[variant.get('imageIndex')?.value || 0].link"
+                                                                class="object-cover" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div tabindex="0"
+                                                        class="dropdown-content z-50 p-3 shadow-2xl bg-base-100 rounded-box w-55 border border-base-300">
+                                                        <p
+                                                            class="text-xs font-bold mb-3 text-base-content/70 border-b border-base-200 pb-1">
+                                                            Seleccionar imagen:</p>
+
+                                                        <div class="flex flex-wrap gap-2">
+                                                            @for (img of imagesControls.value; track $index) {
+                                                            <img [src]="img.link"
+                                                                class="w-18 h-18 object-cover rounded cursor-pointer border-2 transition-all hover:scale-105 hover:shadow-md"
+                                                                [class.border-primary]="variant.get('imageIndex')?.value === $index"
+                                                                [class.border-transparent]="variant.get('imageIndex')?.value !== $index"
+                                                                (click)="variant.get('imageIndex')?.setValue($index)" />
+                                                            }
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                                } @else {
+                                                <div class="w-18 h-18 rounded border border-dashed border-base-300 bg-base-200 flex items-center justify-center opacity-50 tooltip tooltip-top"
+                                                    data-tip="Subí imágenes en la pestaña 'Imágenes'">
+                                                    <mat-icon class="text-[18px]">image_not_supported</mat-icon>
+                                                </div>
+                                                }
                                             </td>
                                             <td>
                                                 <input type="color" class="input input-bordered input-sm w-full h-9 p-1"
@@ -394,7 +519,7 @@
                 </div>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-6 animate-slide-in-left duration-300"
+            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'SEO & Social'" [class.hidden]="tabSelected() !== 'SEO & Social'">
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-8" formGroupName="seo">
 
@@ -440,7 +565,8 @@
                         </fieldset>
 
                         <app-single-image-upload [control]="seoImageControl" [title]="'Imagen SEO'"
-                            [ratioBadge]="'1.91:1'" (previewChange)="onSeoImagePreviewChange($event)" [showPreview]="false" />
+                            [ratioBadge]="'1.91:1'" (previewChange)="onSeoImagePreviewChange($event)"
+                            [showPreview]="false" />
 
                         <!-- <fieldset class="fieldset bg-base-200/40 p-5 rounded-2xl border border-base-300">
                         <legend class="fieldset-legend font-bold text-base-content/80">Slug de URL</legend>

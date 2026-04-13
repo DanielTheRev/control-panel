@@ -77,13 +77,43 @@ export class ProductService {
       })
     ));
   }
-
-  calculatePrices(costPrice: number, customProfitMargin?: number | string): Observable<IProductPrices> {
-    const payload: any = { costPrice };
-    if (customProfitMargin !== undefined && customProfitMargin !== null && customProfitMargin !== '') {
-      payload.customProfitMargin = Number(customProfitMargin);
+  /**
+   * @description Calcula los precios del producto
+   * @param data
+   * @param data.costPrice Precio de costo del producto
+   * @param data.customProfitMargin1Pay Ganancia personalizada para pago en 1 cuota
+   * @param data.customProfitMarginInstallments Ganancia personalizada para pago en cuotas
+   */
+  calculatePrices(data: { costPrice: number, customProfitMargin1Pay?: number | string, customProfitMarginInstallments?: number | string }): Observable<IProductPrices> {
+    let payload = { ...data };
+    if (payload.customProfitMargin1Pay !== undefined && payload.customProfitMargin1Pay !== null && payload.customProfitMargin1Pay !== '') {
+      payload.customProfitMargin1Pay = Number(payload.customProfitMargin1Pay);
     }
-    return this.#http.post<IProductPrices>(`${this.#apiUrl}/calculate-prices`, payload)
+    if (payload.customProfitMarginInstallments !== undefined && payload.customProfitMarginInstallments !== null && payload.customProfitMarginInstallments !== '') {
+      payload.customProfitMarginInstallments = Number(payload.customProfitMarginInstallments);
+    }
+    return this.#http.post<IProductPrices>(`${this.#apiUrl}/calculate-prices`, payload).pipe(
+      this.#toast.observe({
+        loading: {
+          content: 'Calculando precios...',
+          icon: '⏳',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        success: {
+          content: 'Precios calculados correctamente',
+          icon: '✅',
+          position: 'top-right',
+          theme: 'snackbar',
+        },
+        error: {
+          content: 'Error al calcular los precios',
+          icon: '❌',
+          position: 'top-right',
+          theme: 'snackbar',
+        }
+      })
+    )
   }
 
   deleteProduct(id: string) {
