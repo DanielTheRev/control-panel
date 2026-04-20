@@ -41,6 +41,14 @@ export class ProviderCreate {
         province: ['Sin datos', Validators.required],
         zipCode: ['Sin datos', Validators.required]
       }),
+      paymentData: this.#FormBuilder.group({
+        cvu: ['Sin datos'],
+        alias: ['Sin datos', Validators.required],
+        bank: ['Sin datos'],
+        accountNumber: ['Sin datos'],
+        accountType: ['Sin datos'],
+        accountHolder: ['Sin datos', Validators.required]
+      }),
       active: [true]
     });
   }

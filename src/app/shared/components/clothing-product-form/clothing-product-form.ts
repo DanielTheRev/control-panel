@@ -37,7 +37,7 @@ export class ClothingProductForm implements OnInit, OnChanges {
   clothingForm: FormGroup;
 
   readonly genderOptions: string[] = ['Hombre', 'Mujer', 'Unisex', 'Niños'];
-  readonly fitOptions: string[] = ['Regular', 'Slim', 'Oversized', 'Relaxed'];
+  readonly fitOptions: string[] = ['Regular', 'Slim', 'Oversized', 'Relaxed', 'Boxy', 'Straight', 'Tapered', 'Baggy'];
   readonly sizeTypeOptions: { label: string; value: string }[] = [
     { value: 'Ropa', label: 'Ropa (S, M, L, XL)' },
     { value: 'Calzado', label: 'Calzado (38-44)' },

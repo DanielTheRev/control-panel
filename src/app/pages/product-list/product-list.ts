@@ -18,6 +18,7 @@ import { SidebarService } from '../../services/sidebar.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
+import { ProviderStateService } from '../../states/provider.state.service';
 
 @Component({
   selector: 'app-product-list',
@@ -42,6 +43,7 @@ import { StoreConfigStateService } from '../../states/store.config.state.service
 export class ProductList {
   ProductState = inject(ProductStoreService);
   #StoreConfigState = inject(StoreConfigStateService)
+  ProviderState = inject(ProviderStateService).ProviderState;
   #SidebarService = inject(SidebarService)
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
@@ -93,6 +95,11 @@ export class ProductList {
     this.ProductState.setCategoryFilter(category);
   }
 
+  onProviderChange(event: Event) {
+    const provider = (event.target as HTMLSelectElement).value;
+    this.ProductState.setProviderFilter(provider);
+  }
+
   clearSearch() {
     this.ProductState.setSearchQuery('');
   }
@@ -101,9 +108,14 @@ export class ProductList {
     this.ProductState.setCategoryFilter('');
   }
 
+  clearProvider() {
+    this.ProductState.setProviderFilter('');
+  }
+
   clearAllFilters() {
     this.ProductState.setSearchQuery('');
     this.ProductState.setCategoryFilter('');
+    this.ProductState.setProviderFilter('');
   }
 
   onPageChange(event: PageEvent) {
@@ -125,6 +137,15 @@ export class ProductList {
     return product.variants
       ?.filter(v => v.isActive)
       .reduce((sum, v) => sum + v.stock, 0) || 0;
+  }
+
+  getCategoryCount(category: string): number {
+    return this.ProductState.products().data.filter(p => p.category === category).length;
+  }
+
+  getProviderName(id: string): string {
+    const provider = this.ProviderState().data.find(p => p._id === id);
+    return provider ? provider.name : 'Unknown';
   }
 
   setFilter(filter: string) {

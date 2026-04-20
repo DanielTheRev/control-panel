@@ -1,17 +1,17 @@
 <app-page-layout>
   <app-page-header header [title]="product()?.brand + ' ' + product()?.model" subtitle="Detalles del producto">
-    <div actions>
-      <div class="flex items-center gap-2">
-        <button class="btn btn-sm btn-ghost" (click)="goBack()">
-          <mat-icon>arrow_back</mat-icon> Volver
+    <div actions class="w-full">
+      <div class="flex flex-wrap items-center gap-2 w-full justify-between sm:justify-end">
+        <button class="btn btn-sm btn-ghost flex-1 sm:flex-none" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon> <span class="hidden sm:inline">Volver</span>
         </button>
-        <button class="btn btn-sm btn-ghost" (click)="copyLink()">
-          <mat-icon>link</mat-icon> Copiar enlace
+        <button class="btn btn-sm btn-ghost flex-1 sm:flex-none" (click)="copyLink()">
+          <mat-icon>link</mat-icon> <span class="hidden sm:inline">Copiar</span> Enlace
         </button>
-        <button class="btn btn-sm btn-warning" [routerLink]="['/home/products/edit', productID()]">
+        <button class="btn btn-sm btn-warning flex-1 sm:flex-none" [routerLink]="['/home/products/edit', productID()]">
           <mat-icon>edit</mat-icon> Editar
         </button>
-        <button class="btn btn-sm btn-error" (click)="deleteProduct()">
+        <button class="btn btn-sm btn-error flex-1 sm:flex-none" (click)="deleteProduct()">
           <mat-icon>delete_outline</mat-icon> Eliminar
         </button>
       </div>
@@ -120,7 +120,7 @@
             </div>
 
             <!-- Installments + Margin -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-4 pt-4 border-t border-base-300">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-base-300">
               <div class="flex flex-col">
                 <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">3 Cuotas
                   S/I</span>
@@ -143,7 +143,7 @@
                     {{ getMargin1Pay() }}%
                   </span>
                   @if (isUsingGlobalMargin()) {
-                  <div class="tooltip"
+                  <div class="tooltip tooltip-bottom sm:tooltip-top"
                     data-tip="Se está aplicando el Margen Global al no tener un margen propio definido.">
                     <span class="badge badge-sm badge-info gap-1 cursor-help">
                       <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon> Global
@@ -164,7 +164,7 @@
                     {{ getMarginInstallments() }}%
                   </span>
                   @if (isUsingGlobalMargin()) {
-                  <div class="tooltip"
+                  <div class="tooltip tooltip-bottom sm:tooltip-top"
                     data-tip="Se está aplicando el Margen Global al no tener un margen propio definido.">
                     <span class="badge badge-sm badge-info gap-1 cursor-help">
                       <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon> Global
@@ -173,7 +173,7 @@
                   }
                 </div>
               </div>
-              <div class="flex flex-col">
+              <div class="flex flex-col col-span-2 md:col-span-1">
                 <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Dólar</span>
                 <span class="text-sm font-bold text-base-content">{{ p.prices.dolarPrice | currency:
                   'ARS':'symbol-narrow':'1.0-0' }}</span>
@@ -182,32 +182,32 @@
 
             <!-- Earnings -->
             @if (p.prices.earnings) {
-            <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-base-300">
-              <div class="bg-success/5 rounded-lg p-3 border border-success/15">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5! text-success">trending_up</mat-icon>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mt-4 pt-4 border-t border-base-300">
+              <div class="bg-success/5 rounded-lg p-3 border border-success/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+                <div class="flex items-center gap-1.5 sm:mb-1.5">
+                  <mat-icon class="text-[16px]! w-4! h-4! text-success">trending_up</mat-icon>
                   <span
-                    class="text-[9px] font-bold text-success/60 uppercase tracking-wider">Transf/Debito/1pagoCred</span>
+                    class="text-[9px] sm:text-[10px] font-bold text-success/60 uppercase tracking-wider">Tr/Deb/1p</span>
                 </div>
-                <span class="text-base font-bold text-success">
+                <span class="text-sm sm:text-base font-bold text-success">
                   {{ p.prices.earnings.cash_transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>
-              <div class="bg-info/5 rounded-lg p-3 border border-info/15">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5! text-info">trending_up</mat-icon>
-                  <span class="text-[9px] font-bold text-info/60 uppercase tracking-wider">3 Cuotas</span>
+              <div class="bg-info/5 rounded-lg p-3 border border-info/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+                <div class="flex items-center gap-1.5 sm:mb-1.5">
+                  <mat-icon class="text-[16px]! w-4! h-4! text-info">trending_up</mat-icon>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-info/60 uppercase tracking-wider">3 Cuotas</span>
                 </div>
-                <span class="text-base font-bold text-info">
+                <span class="text-sm sm:text-base font-bold text-info">
                   {{ p.prices.earnings.card_3_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>
-              <div class="bg-primary/5 rounded-lg p-3 border border-primary/15">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">trending_up</mat-icon>
-                  <span class="text-[9px] font-bold text-primary/60 uppercase tracking-wider">6 Cuotas</span>
+              <div class="bg-primary/5 rounded-lg p-3 border border-primary/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+                <div class="flex items-center gap-1.5 sm:mb-1.5">
+                  <mat-icon class="text-[16px]! w-4! h-4! text-primary">trending_up</mat-icon>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-primary/60 uppercase tracking-wider">6 Cuotas</span>
                 </div>
-                <span class="text-base font-bold text-primary">
+                <span class="text-sm sm:text-base font-bold text-primary">
                   {{ p.prices.earnings.card_6_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>

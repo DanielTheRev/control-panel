@@ -3,7 +3,7 @@ import {
   LOCALE_ID,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
-  provideZonelessChangeDetection,
+  provideZonelessChangeDetection, isDevMode,
 } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
@@ -17,6 +17,7 @@ import { initializeAuth } from './core/app_initializers';
 // for angular currency pipe
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
+import { provideServiceWorker } from '@angular/service-worker';
 registerLocaleData(localeEsAr);
 
 export const appConfig: ApplicationConfig = {
@@ -49,7 +50,11 @@ export const appConfig: ApplicationConfig = {
         ]
       }
     }),
-    provideHotToastConfig()
+    provideHotToastConfig(),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerImmediately'
+    })
 
   ],
 };

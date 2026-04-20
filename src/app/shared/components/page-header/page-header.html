@@ -1,19 +1,19 @@
-<div class="flex flex-col flex-wrap sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-base-300 p-6 {{ withMB() ? 'mb-2' : '' }}">
-  <div class="flex-1">
-    <h1 class="m-0 text-xl font-bold text-base-content tracking-wide">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 border-b border-base-300 p-4 sm:p-6 {{ withMB() ? 'mb-2' : '' }}">
+  <div class="flex-1 min-w-0">
+    <h1 class="m-0 text-lg sm:text-xl font-bold text-base-content tracking-wide truncate">
       {{ title() }}
     </h1>
 
     @if (subtitle()) {
-    <p class="text-sm text-base-content/50 mt-1">
+    <p class="text-xs sm:text-sm text-base-content/50 mt-1 truncate">
       {{ subtitle() }}
     </p>
     }
   </div>
 
-  <div class="flex items-center gap-3">
+  <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto mt-2 sm:mt-0">
     <ng-content select="[actions]"></ng-content>
   </div>
 </div>
 
-<ng-content select="[sub-menu]"></ng-content>
+<ng-content select="[sub-menu]" class="overflow-x-auto"></ng-content>

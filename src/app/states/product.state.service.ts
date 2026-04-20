@@ -18,6 +18,7 @@ export class ProductStoreService {
   private pageSize = signal(10);
   private searchQuery = signal('');
   private categoryFilter = signal('');
+  private providerFilter = signal('');
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -30,6 +31,7 @@ export class ProductStoreService {
         limit: this.pageSize(),
         ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
         ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
+        ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
       },
     }));
   }
@@ -63,6 +65,7 @@ export class ProductStoreService {
 
   readonly currentSearchQuery = computed(() => this.searchQuery());
   readonly currentCategoryFilter = computed(() => this.categoryFilter());
+  readonly currentProviderFilter = computed(() => this.providerFilter());
 
   // Pagination methods — just update the signals, httpResource handles the rest
   setPage(page: number) {
@@ -82,6 +85,11 @@ export class ProductStoreService {
   setCategoryFilter(category: string) {
     this.categoryFilter.set(category);
     this.pageNumber.set(1); // Reset page when filtering
+  }
+
+  setProviderFilter(provider: string) {
+    this.providerFilter.set(provider);
+    this.pageNumber.set(1);
   }
 
   changePage(page: number, size: number) {

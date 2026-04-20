@@ -45,7 +45,7 @@
               <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789"
                 formControlName="phone" />
             </fieldset>
-            <div class="grid grid-cols-2 gap-4" formGroupName="address">
+            <div class="grid grid-cols-2 gap-4 py-5" formGroupName="address">
               <fieldset class="fieldset w-full">
                 <legend class="fieldset-legend">Dirección</legend>
                 <input type="text" class="input input-bordered w-full" placeholder="Ej. Calle 123"
@@ -70,6 +70,37 @@
                 <legend class="fieldset-legend">Código Postal</legend>
                 <input type="text" class="input input-bordered w-full" placeholder="Ej. 1234"
                   formControlName="zipCode" />
+              </fieldset>
+
+            </div>
+            <span class="block text-xl">Datos de pago</span>
+            <div class="grid grid-cols-2 gap-4" formGroupName="paymentData">
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">CVU</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789" formControlName="cvu" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Alias</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789" formControlName="alias" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Banco</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789" formControlName="bank" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Número de Cuenta</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789"
+                  formControlName="accountNumber" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Tipo de Cuenta</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789"
+                  formControlName="accountType" />
+              </fieldset>
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Titular de la Cuenta</legend>
+                <input type="text" class="input input-bordered w-full" placeholder="Ej. 123456789"
+                  formControlName="accountHolder" />
               </fieldset>
             </div>
           </div>
