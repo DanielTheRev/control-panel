@@ -49,7 +49,6 @@ export class ProductDetail implements OnInit {
   async ngOnInit() {
     try {
       const product = await this.#productState.getProduct(this.productID());
-      console.log(product);
       // Usa margen global si NO tiene ni los campos nuevos ni el legacy
       const has1Pay = product.prices.profitMargin1Pay !== undefined && product.prices.profitMargin1Pay !== null;
       const hasInstallments = product.prices.profitMarginInstallments !== undefined && product.prices.profitMarginInstallments !== null;

@@ -1,16 +1,15 @@
 import { NgClass } from '@angular/common';
-import { Component, inject, input, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IBanner } from '../../interfaces/banner.interface';
-import { BannerService } from '../../services/banner.service';
+import { Router, RouterLink } from '@angular/router';
+import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
+import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 import { BannerStateService } from '../../states/banner.state.service';
-import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-banner-create',
@@ -23,7 +22,8 @@ import { SidebarService } from '../../services/sidebar.service';
     MatSnackBarModule,
     RouterLink,
     PageLayout,
-    PageHeader
+    PageHeader,
+    SingleImageUpload
   ],
   templateUrl: './banner-create.html',
   styleUrl: './banner-create.scss'
@@ -45,16 +45,21 @@ export class BannerCreate implements OnInit {
     image: ['', [Validators.required]], // Basic URL validation can be added
     textClass: ['text-white'],
     buttonClass: ['bg-white text-black'],
-    icon: ['Smartphone'],
+    icon: [''],
     order: [0],
     isActive: [true]
   });
 
   isEditMode = false;
-  loading = false;
+  loading = signal(false);
+  currentImagePreview: string | null = null;
 
-  get imagePreview() {
-    return this.bannerForm.get('image')?.value;
+  get imageControl(): FormControl {
+    return this.bannerForm.get('image') as FormControl;
+  }
+
+  onImagePreviewChange(url: string | null) {
+    this.currentImagePreview = url;
   }
 
   constructor() {
@@ -71,48 +76,51 @@ export class BannerCreate implements OnInit {
   }
 
   async loadBanner(id: string) {
-    this.loading = true;
+    this.loading.set(true);
     try {
       const response = await this.#bannerStateService.getBannerById(id);
       this.bannerForm.patchValue(response);
-      this.loading = false;
     } catch (error) {
       console.error('Error loading banner', error);
       this.showSnackBar('Error loading banner details');
-      this.loading = false;
       this.#Router.navigate(['/home/banners']);
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async onSubmit() {
     if (this.bannerForm.invalid) return;
 
-    this.loading = true;
-    const bannerData: IBanner = this.bannerForm.value;
+    this.loading.set(true);
+    const formValues = this.bannerForm.value;
+    
+    const formData = new FormData();
+    Object.keys(formValues).forEach(key => {
+      const value = formValues[key];
+      if (value !== null && value !== undefined) {
+        if (key === 'image' && value instanceof File) {
+          formData.append(key, value, value.name);
+        } else {
+          formData.append(key, typeof value === 'boolean' ? String(value) : value);
+        }
+      }
+    });
 
-    if (this.isEditMode && this.bannerID()) {
-      try {
-
-        await this.#bannerStateService.updateBanner(this.bannerID(), bannerData);
+    try {
+      if (this.isEditMode && this.bannerID()) {
+        await this.#bannerStateService.updateBanner(this.bannerID(), formData as any);
         this.showSnackBar('Banner updated successfully');
-        this.#Router.navigate(['/home/banners']);
-        this.loading = false;
-      } catch (error) {
-        console.error('Error updating banner', error);
-        this.showSnackBar('Error al actualizar el banner');
-        this.loading = false;
-      }
-    } else {
-      try {
-        await this.#bannerStateService.addBanner(bannerData)
+      } else {
+        await this.#bannerStateService.addBanner(formData as any);
         this.showSnackBar('Banner creado exitosamente');
-        this.#Router.navigate(['/home/banners']);
-        this.loading = false;
-      } catch (error) {
-        console.error('Error creating banner', error);
-        this.showSnackBar('Error al crear el banner');
-        this.loading = false;
       }
+      this.#Router.navigate(['/home/banners']);
+    } catch (error) {
+      console.error('Error in banner operation', error);
+      this.showSnackBar('Error al procesar el banner');
+    } finally {
+      this.loading.set(false);
     }
   }
 

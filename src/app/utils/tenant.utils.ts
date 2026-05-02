@@ -1,4 +1,4 @@
-import { environment } from '../../environments/environment';
+import { environment } from '../../environments/environment.development';
 
 /**
  * Returns the tenant slug for the current session.
@@ -21,8 +21,11 @@ export function getTenantSlug(): string {
  * - Otherwise, builds it from the tenant slug: https://{slug}.nexocommerce.com
  */
 export function getStoreUrl(): string {
-  if (environment.storeUrl) {
-    return environment.storeUrl;
+  // if (environment.storeUrl) {
+  //   return environment.storeUrl;
+  // }
+  if (!environment.production) {
+    return 'http://localhost:4200';
   }
   const slug = getTenantSlug();
   return `https://${slug}.nexocommerce.com`;

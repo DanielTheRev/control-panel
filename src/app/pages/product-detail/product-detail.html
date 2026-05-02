@@ -84,6 +84,11 @@
               {{ p.category }}
             </span>
             <span class="text-xs font-bold text-primary uppercase tracking-widest">{{ p.brand }}</span>
+            <span class="text-xs font-bold badge badge-primary uppercase tracking-widest"
+              [class.badge-primary]="p.isActive"
+              [class.badge-warning]="!p.isActive">
+              {{ p.isActive ? 'Activo' : 'Desactivado' }}
+            </span>
             @if (p.discount > 0) {
             <span class="bg-error/10 text-error text-[10px] font-bold px-2 py-1 rounded uppercase">
               {{ p.discount }}% OFF
@@ -183,7 +188,8 @@
             <!-- Earnings -->
             @if (p.prices.earnings) {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mt-4 pt-4 border-t border-base-300">
-              <div class="bg-success/5 rounded-lg p-3 border border-success/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+              <div
+                class="bg-success/5 rounded-lg p-3 border border-success/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
                 <div class="flex items-center gap-1.5 sm:mb-1.5">
                   <mat-icon class="text-[16px]! w-4! h-4! text-success">trending_up</mat-icon>
                   <span
@@ -193,19 +199,23 @@
                   {{ p.prices.earnings.cash_transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>
-              <div class="bg-info/5 rounded-lg p-3 border border-info/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+              <div
+                class="bg-info/5 rounded-lg p-3 border border-info/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
                 <div class="flex items-center gap-1.5 sm:mb-1.5">
                   <mat-icon class="text-[16px]! w-4! h-4! text-info">trending_up</mat-icon>
-                  <span class="text-[9px] sm:text-[10px] font-bold text-info/60 uppercase tracking-wider">3 Cuotas</span>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-info/60 uppercase tracking-wider">3
+                    Cuotas</span>
                 </div>
                 <span class="text-sm sm:text-base font-bold text-info">
                   {{ p.prices.earnings.card_3_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>
-              <div class="bg-primary/5 rounded-lg p-3 border border-primary/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
+              <div
+                class="bg-primary/5 rounded-lg p-3 border border-primary/15 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start">
                 <div class="flex items-center gap-1.5 sm:mb-1.5">
                   <mat-icon class="text-[16px]! w-4! h-4! text-primary">trending_up</mat-icon>
-                  <span class="text-[9px] sm:text-[10px] font-bold text-primary/60 uppercase tracking-wider">6 Cuotas</span>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-primary/60 uppercase tracking-wider">6
+                    Cuotas</span>
                 </div>
                 <span class="text-sm sm:text-base font-bold text-primary">
                   {{ p.prices.earnings.card_6_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}

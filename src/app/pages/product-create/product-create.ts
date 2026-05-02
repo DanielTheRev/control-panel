@@ -98,8 +98,8 @@ export class ProductCreate {
     ),
     features: this.#fb.array<string>([]),
     specifications: this.#fb.array<FormGroup>([]),
-    // Variants
-    variants: this.#fb.array<FormGroup>([]),
+    // Color Groups
+    colorGroups: this.#fb.array<FormGroup>([]),
     seo: this.#fb.group({
       metaTitle: [''],
       metaDescription: [''],
@@ -214,7 +214,7 @@ export class ProductCreate {
   get imagesControls() { return this.productForm.get('images') as FormArray; }
   get featuresControls() { return this.productForm.get('features') as FormArray; }
   get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
-  get variantsControls() { return this.productForm.get('variants') as FormArray; }
+  get colorGroupsControls() { return this.productForm.get('colorGroups') as FormArray; }
   get seoImageControl() { return this.productForm.get('seo.metaImage') as FormControl<string | File | null>; }
 
   get invalidControls(): string[] {
@@ -229,7 +229,7 @@ export class ProductCreate {
       images: 'Imágenes',
       features: 'Características',
       specifications: 'Especificaciones',
-      variants: 'Variantes',
+      colorGroups: 'Variantes',
       provider: 'Proveedor / Vendedor',
     };
 
@@ -422,45 +422,51 @@ export class ProductCreate {
         });
       }
 
-      // Patch Variants
+      // Patch Variants (Color Groups)
       if (product.variants && Array.isArray(product.variants)) {
-        this.variantsControls.clear();
+        this.colorGroupsControls.clear();
 
-
+        // Agrupamos por color
+        const groupedVariants = new Map<string, any[]>();
         product.variants.forEach(v => {
-          let imgIdx = null;
-          if (v.imageReference?.url) {
-            imgIdx = product.images.findIndex((img: any) => (img.url || img) === v.imageReference.url);
-          }
+           const key = v.color?.name || '';
+           if (!groupedVariants.has(key)) groupedVariants.set(key, []);
+           groupedVariants.get(key)!.push(v);
+        });
 
-          // CASO TECH: Usamos la función guardiana
-          if (product.productType === ProductType.TECH && isTechVariant(v)) {
-            this.variantsControls.push(this.#fb.group({
-              sku: [v.sku, Validators.required],
-              // ¡TS ya no se queja porque sabe que 'v' es ITechVariant!
-              attributesJson: [v.attributes.map(a => `${a.key}:${a.value}`).join(', ')],
-              colorName: [v.color?.name || ''],
-              colorHex: [v.color?.hex || ''],
-              stock: [v.stock, [Validators.required, Validators.min(0)]],
-              isActive: [v.isActive],
-              imageIndex: [imgIdx !== -1 ? imgIdx : 0]
-            }));
-          }
+        groupedVariants.forEach((variants, colorName) => {
+           const firstV = variants[0];
+           let imgIdx = null;
+           if (firstV.imageReference?.url) {
+             imgIdx = product.images.findIndex((img: any) => (img.url || img) === firstV.imageReference.url);
+           }
 
-          // CASO ROPA: Usamos la otra función guardiana
-          else if (product.productType === ProductType.CLOTHING && isClothingVariant(v)) {
-            this.variantsControls.push(this.#fb.group({
-              sku: [v.sku, Validators.required],
-              // ¡TS te va a autocompletar 'v.size' acá!
-              size: [v.size, Validators.required],
-              colorName: [v.color?.name || ''],
-              colorHex: [v.color?.hex || ''],
-              stock: [v.stock, [Validators.required, Validators.min(0)]],
-              isActive: [v.isActive],
-              imageIndex: [imgIdx !== -1 ? imgIdx : 0]
-            }));
-          }
+           const colorGroup = this.#fb.group({
+              colorName: [colorName],
+              colorHex: [firstV.color?.hex || '#000000'],
+              imageIndex: [imgIdx !== -1 ? imgIdx : 0],
+              variants: this.#fb.array([])
+           });
 
+           const variantsArray = colorGroup.get('variants') as FormArray;
+
+           variants.forEach(v => {
+              if (product.productType === ProductType.TECH && isTechVariant(v)) {
+                variantsArray.push(this.#fb.group({
+                  attributesJson: [v.attributes.map(a => `${a.key}:${a.value}`).join(', ')],
+                  stock: [v.stock, [Validators.required, Validators.min(0)]],
+                  isActive: [v.isActive]
+                }));
+              } else if (product.productType === ProductType.CLOTHING && isClothingVariant(v)) {
+                variantsArray.push(this.#fb.group({
+                  size: [v.size, Validators.required],
+                  stock: [v.stock, [Validators.required, Validators.min(0)]],
+                  isActive: [v.isActive]
+                }));
+              }
+           });
+
+           this.colorGroupsControls.push(colorGroup);
         });
       }
 
@@ -522,132 +528,83 @@ export class ProductCreate {
     this.seoImagePreview.set(url);
   }
 
-  #LastSKU = linkedSignal<string | undefined,
-    {
-      productType: string,
-      identifier: string,
-      size: number,
-      colorSuffix: string,
-      colorName: string,
-      colorHex: string
-    }>({
-      source: this.formCategory,
-      computation: (categoryStr, previous) => {
-        // 1. Calculamos el prefijo en base a la categoría seleccionada (ej: "Smartphone" -> "SMA")
-        const newPrefix = (categoryStr || 'PROD').slice(0, 3).toUpperCase();
-
-        // 2. Si ya teníamos un estado previo (el usuario ya había estado agregando talles),
-        // conservamos sus números, pero le "inyectamos" el nuevo prefijo.
-        if (previous?.value) {
-          return { ...previous.value, productType: newPrefix };
-        }
-
-        // 3. Si es la primera vez (no hay 'previous'), inicializamos desde cero.
-        return {
-          productType: newPrefix,
-          identifier: '00',
-          size: 38, // Tu talle base
-          colorSuffix: 'BLK',
-          colorName: 'Negro',
-          colorHex: '#000000'
-        };
-      }
-    });
-
-
-  addVariant() {
-    const currentVariants = this.variantsControls.value;
-
-    // 1. Sincronizamos con la última variante cargada en el form
-    if (currentVariants && currentVariants.length > 0) {
-      const lastVariant = currentVariants[currentVariants.length - 1];
-      const parts = (lastVariant.sku || '').split('-');
-
-      this.#LastSKU.update(v => ({
-        ...v!,
-        identifier: (parseInt(parts[1]) || 0).toString().padStart(3, '0'),
-        size: parseInt(parts[2]) || v!.size,
-        colorSuffix: lastVariant.colorSuffix || parts[3] || v!.colorSuffix,
-        colorName: lastVariant.colorName || v!.colorName,
-        colorHex: lastVariant.colorHex || v!.colorHex
-      }));
-    }
-
-    // 2. Incrementamos el talle para la NUEVA variante
-    this.#LastSKU.update(v => ({
-      ...v!,
-      size: v!.size + 1
+  addColorGroup() {
+    this.colorGroupsControls.push(this.#fb.group({
+      colorName: [''],
+      colorHex: ['#000000'],
+      imageIndex: [0],
+      variants: this.#fb.array([])
     }));
+  }
 
-    // 3. Armamos el string del SKU
-    const last = this.#LastSKU()!;
-    let sku = `${last.productType}-${last.identifier}-${last.size}`;
-    if (last.colorSuffix) {
-      sku += `-${last.colorSuffix.toUpperCase()}`;
-    }
+  removeColorGroup(index: number) {
+    this.colorGroupsControls.removeAt(index);
+  }
 
-    // 4. Pusheamos la nueva variante al FormArray DEPENDIENDO DEL TIPO
+  addVariantToGroup(groupIndex: number) {
+    const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
+    const variantsArray = group.get('variants') as FormArray;
+    
     if (this.selectedType() === ProductType.TECH) {
-      this.variantsControls.push(this.#fb.group({
-        sku: [sku, Validators.required],
-        attributesJson: [`Talle: ${last.size}`], // En Tech seguimos usando attributes
-        colorName: [last.colorName || 'Blanco'],
-        colorHex: [last.colorHex || '#ffffff'],
-        stock: [8, [Validators.required, Validators.min(1)]],
-        isActive: [true],
-        imageIndex: [0],
-      }));
+       variantsArray.push(this.#fb.group({
+         attributesJson: [''],
+         stock: [8, [Validators.required, Validators.min(1)]],
+         isActive: [true]
+       }));
     } else {
-      // ES CLOTHING (ROPA)
-      this.variantsControls.push(this.#fb.group({
-        sku: [sku, Validators.required],
-        size: [last.size.toString(), Validators.required], // <--- AHORA SÍ LE PASAMOS SIZE
-        colorName: [last.colorName || 'Blanco'],
-        colorHex: [last.colorHex || '#ffffff'],
-        stock: [8, [Validators.required, Validators.min(1)]],
-        isActive: [true],
-        imageIndex: [0],
-      }));
+       variantsArray.push(this.#fb.group({
+         size: ['', Validators.required],
+         stock: [8, [Validators.required, Validators.min(1)]],
+         isActive: [true]
+       }));
     }
   }
 
-  removeVariant(index: number) {
-    this.variantsControls.removeAt(index);
+  removeVariantFromGroup(groupIndex: number, variantIndex: number) {
+    const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
+    const variantsArray = group.get('variants') as FormArray;
+    variantsArray.removeAt(variantIndex);
+  }
+
+  getGroupVariants(groupIndex: number): FormArray {
+    const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
+    return group.get('variants') as FormArray;
   }
 
   #parseVariants(): any[] {
-    const currentType = this.selectedType(); // Le preguntamos al form qué tipo es
+    const currentType = this.selectedType();
+    const flatVariants: any[] = [];
 
-    return this.variantsControls.value.map((v: any) => {
-      // 1. Armamos la base compartida
-      const variant: any = {
-        sku: v.sku,
-        stock: Number(v.stock),
-        reservedStock: 0,
-        isActive: v.isActive !== false,
-        images: [],
-        imageIndex: v.imageIndex
-      };
+    this.colorGroupsControls.value.forEach((group: any) => {
+      (group.variants || []).forEach((v: any) => {
+        const variant: any = {
+           stock: Number(v.stock),
+           reservedStock: 0,
+           isActive: v.isActive !== false,
+           images: [],
+           imageIndex: group.imageIndex !== null && group.imageIndex !== undefined ? group.imageIndex : 0
+        };
 
-      // 2. Le inyectamos lo específico
-      if (currentType === ProductType.TECH) {
-        variant.attributes = v.attributesJson
-          ? v.attributesJson.split(',').map((a: string) => {
-            const [key, value] = a.trim().split(':');
-            return { key: key?.trim() || '', value: value?.trim() || '' };
-          }).filter((a: any) => a.key && a.value)
-          : [];
-      } else if (currentType === ProductType.CLOTHING) {
-        variant.size = String(v.size).trim(); // ¡Mandamos el talle obligatorio!
-      }
+        if (currentType === ProductType.TECH) {
+           variant.attributes = v.attributesJson
+             ? v.attributesJson.split(',').map((a: string) => {
+               const [key, value] = a.trim().split(':');
+               return { key: key?.trim() || '', value: value?.trim() || '' };
+             }).filter((a: any) => a.key && a.value)
+             : [];
+        } else if (currentType === ProductType.CLOTHING) {
+           variant.size = String(v.size).trim();
+        }
 
-      // 3. El color
-      if (v.colorName) {
-        variant.color = { name: v.colorName, hex: v.colorHex || '#000000' };
-      }
-
-      return variant;
+        if (group.colorName) {
+           variant.color = { name: group.colorName, hex: group.colorHex || '#000000' };
+        }
+        
+        flatVariants.push(variant);
+      });
     });
+
+    return flatVariants;
   }
 
   #getEffectiveMargin(formValue: any): number | undefined {
@@ -696,7 +653,7 @@ export class ProductCreate {
     const formData = new FormData();
 
     if (this.isEditMode() && this.#originalProduct()) {
-      // Le pasamos el fullProductData ya armadito
+      // Le pasamos el fullProductData ya armado
       const changes = ProductFormUtils.hasChanges(
         fullProductData,
         this.#originalProduct(),

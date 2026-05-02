@@ -31,21 +31,23 @@ export class BannerStateService {
     return this.#bannerService.getBannerById(id);
   }
 
-  async addBanner(banner: IBanner) {
+  async addBanner(banner: IBanner | FormData) {
     try {
-      await this.#bannerService.createBanner(banner);
-      this.#addBanner(banner);
+      const createdBanner = await this.#bannerService.createBanner(banner);
+      this.#addBanner(createdBanner);
     } catch (error) {
       console.log(error);
+      throw error;
     }
   }
 
-  async updateBanner(id: string, banner: Partial<IBanner>) {
+  async updateBanner(id: string, banner: Partial<IBanner> | FormData) {
     try {
       const updatedBanner = await this.#bannerService.updateBanner(id, banner);
       this.#updateBanner(id, updatedBanner);
     } catch (error) {
       console.log(error);
+      throw error;
     }
   }
 

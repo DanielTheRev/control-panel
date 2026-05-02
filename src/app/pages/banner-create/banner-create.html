@@ -8,15 +8,15 @@
       <a routerLink="/home/banners" class="btn btn-ghost text-base-content/50">
         Cancelar
       </a>
-      <button class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="bannerForm.invalid || loading">
-        <mat-icon>save</mat-icon> {{ loading ? 'Guardando...' : 'Guardar Banner' }}
+      <button class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="bannerForm.invalid || loading()">
+        <mat-icon>save</mat-icon> {{ loading() ? 'Guardando...' : 'Guardar Banner' }}
       </button>
     </div>
   </app-page-header>
 
   <ng-container content>
     <!-- LIVE PREVIEW SECTION -->
-    @if (bannerForm.value.image) {
+    @if (currentImagePreview) {
     <div class="mb-8 animate-fade-in-down">
       <div class="flex items-center gap-2 mb-4 px-1">
         <mat-icon class="text-primary animate-pulse">visibility</mat-icon>
@@ -25,15 +25,15 @@
       </div>
 
       <!-- Simulated Frontend Banner -->
-      <div class="relative w-full h-[500px] rounded-3xl overflow-hidden shadow-2xl group border border-base-200">
+      <div class="relative w-full h-125 rounded-3xl overflow-hidden shadow-2xl group border border-base-200">
 
         <!-- Background Image -->
-        <img [src]="bannerForm.value.image"
+        <img [src]="currentImagePreview"
           class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           alt="Banner Preview" onerror="this.src='https://placehold.co/1200x600?text=Invalid+Image+URL'">
 
         <!-- Overlay Gradient (matches frontend) -->
-        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
+        <div class="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent"></div>
 
         <!-- Content Container -->
         <div
@@ -64,7 +64,7 @@
               <span>Ver Detalles</span>
               <!-- Improved Icon Rendering -->
               @if (!bannerForm.value.icon) {
-              <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">arrow_forward</mat-icon>
+              <mat-icon class="text-[20px]! w-5! h-5!">arrow_forward</mat-icon>
               }
             </button>
           </div>
@@ -116,13 +116,16 @@
                 formControlName="description"></textarea>
             </fieldset>
 
-            <!-- Moved Image URL here specifically for content flow -->
-            <fieldset class="fieldset w-full mt-4">
-              <legend class="fieldset-legend">URL de Imagen de Fondo</legend>
-              <input type="text" class="input input-bordered w-full" placeholder="https://..."
-                formControlName="image" />
+            <!-- Image Upload Component -->
+            <div class="mt-4">
+              <app-single-image-upload
+                title="Imagen de Fondo"
+                ratioBadge="16:9"
+                [control]="imageControl"
+                (previewChange)="onImagePreviewChange($event)"
+              />
               <p class="text-xs text-base-content/50 mt-1">La vista previa oficial aparecerá arriba automáticamente.</p>
-            </fieldset>
+            </div>
           </div>
         </div>
 
@@ -160,7 +163,7 @@
 
             <div class="grid grid-cols-2 gap-4 mt-4">
               <fieldset class="fieldset w-full">
-                <legend class="fieldset-legend">Icono (Lucide)</legend>
+                <legend class="fieldset-legend">Icono</legend>
                 <input type="text" class="input input-bordered w-full" placeholder="Smartphone"
                   formControlName="icon" />
               </fieldset>

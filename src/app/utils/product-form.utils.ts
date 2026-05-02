@@ -84,7 +84,6 @@ export class ProductFormUtils {
 
     const originalVariants = (originalProduct.variants || []).map((v: any) => {
       const origVar: any = {
-        sku: v.sku,
         stock: v.stock,
         isActive: v.isActive
       };
@@ -109,7 +108,6 @@ export class ProductFormUtils {
 
     const newVariants = (productData.variants || []).map((v: any) => {
       const variant: any = {
-        sku: v.sku,
         stock: v.stock,
         isActive: v.isActive,
         // Agregamos el imageIndex que viene del frontend (o null si no hay)

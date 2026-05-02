@@ -15,11 +15,11 @@ export class BannerService {
     return firstValueFrom(this.http.get<IBanner>(`${this.apiUrl}/${id}`));
   }
 
-  createBanner(banner: IBanner) {
+  createBanner(banner: IBanner | FormData): Promise<IBanner> {
     return firstValueFrom(this.http.post<IBanner>(this.apiUrl, banner));
   }
 
-  updateBanner(id: string, banner: Partial<IBanner>) {
+  updateBanner(id: string, banner: Partial<IBanner> | FormData): Promise<Partial<IBanner>> {
     return firstValueFrom(this.http.put<Partial<IBanner>>(`${this.apiUrl}/${id}`, banner));
   }
 
