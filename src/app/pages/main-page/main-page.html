@@ -75,6 +75,29 @@
         @if (authService.isAdmin()) {
         @if (isExpanded) {
         <span
+          class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Clientes</span>
+        }
+
+        <a routerLink="/home/clients" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Clientes' : ''" matTooltipPosition="right">
+          <mat-icon>people</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Clientes</span>
+          }
+        </a>
+
+        <a routerLink="/home/favorites" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Favoritos' : ''" matTooltipPosition="right">
+          <mat-icon>favorite</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Favoritos</span>
+          }
+        </a>
+        }
+
+        @if (authService.isAdmin()) {
+        @if (isExpanded) {
+        <span
           class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Configuración</span>
         }
 

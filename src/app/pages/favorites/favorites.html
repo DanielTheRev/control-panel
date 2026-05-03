@@ -1,0 +1,323 @@
+<app-page-layout>
+  <app-page-header header title="Favoritos" [withMB]="false" [subtitle]="
+    isLoading()
+      ? 'Cargando favoritos...'
+      : totalProducts() + ' productos · ' + totalFavorites() + ' favoritos · ' + uniqueUsers() + ' clientes'
+  ">
+    <div actions class="flex items-center gap-2">
+      <!-- Search -->
+      <label class="input input-sm input-bordered flex items-center gap-2 focus-within:outline-none w-48">
+        <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
+        <input type="text" class="grow text-xs" placeholder="Buscar producto..."
+          [value]="searchTerm()"
+          (input)="updateSearch($any($event.target).value)" />
+      </label>
+
+      <div class="flex gap-1">
+        <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-sm btn-ghost btn-square" title="Actualizar">
+          <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <!-- Error -->
+    @if (hasError()) {
+    <div class="flex flex-col items-center justify-center py-16 gap-3">
+      <div class="bg-error/10 rounded-full p-4">
+        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
+      </div>
+      <h2 class="text-base font-bold text-base-content">Error al cargar favoritos</h2>
+      <p class="text-sm text-base-content/50">No se pudieron cargar los datos. Intentá de nuevo.</p>
+      <button class="btn btn-sm btn-primary" (click)="refreshData()">
+        <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon> Reintentar
+      </button>
+    </div>
+    }
+
+    <!-- Loading Skeleton -->
+    @if (isLoading() && !hasData()) {
+    <div class="p-3 space-y-2">
+      @for (i of [1,2,3,4,5,6]; track i) {
+      <div class="skeleton w-full h-14 rounded-lg"></div>
+      }
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && !hasData() && !hasError()) {
+    <div class="flex flex-col items-center justify-center py-16 gap-3">
+      <div class="bg-base-200 rounded-full p-5">
+        <mat-icon class="text-5xl! w-12! h-12! text-base-content/30">favorite_border</mat-icon>
+      </div>
+      <h2 class="text-base font-bold text-base-content">Sin favoritos</h2>
+      <p class="text-sm text-base-content/50 max-w-xs text-center">
+        Ningún producto tiene favoritos todavía.
+      </p>
+    </div>
+    }
+
+    <!-- Favorites Table -->
+    @if (hasData()) {
+    <div class="flex flex-col flex-1 min-h-0">
+
+      <!-- Desktop Table: md+ -->
+      <div class="hidden md:flex flex-col flex-1 min-h-0 overflow-auto mx-3 mt-3">
+        <div class="rounded-xl border border-base-300 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="table table-sm w-full">
+              <thead>
+                <tr class="bg-base-200/60">
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider pl-4 py-2.5">Producto</th>
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Categoría</th>
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Precio</th>
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Estado</th>
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5 text-center">Favoritos</th>
+                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Usuarios</th>
+                  <th class="py-2.5 pr-4"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fav of filteredFavorites(); track fav.product._id) {
+                <!-- Fila principal -->
+                <tr class="hover:bg-base-200/40 transition-colors border-b border-base-200 last:border-0"
+                  [class.bg-base-200/20]="isExpanded(fav.product._id)">
+
+                  <!-- Producto -->
+                  <td class="pl-4 py-2.5">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg overflow-hidden bg-base-200 shrink-0">
+                        @if (fav.product.images.length > 0) {
+                        <img [src]="fav.product.images[0].url"
+                          [alt]="fav.product.model"
+                          class="w-full h-full object-cover" />
+                        } @else {
+                        <div class="w-full h-full flex items-center justify-center">
+                          <mat-icon class="text-[18px]! w-5! h-5! text-base-content/20">image</mat-icon>
+                        </div>
+                        }
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-semibold text-xs text-base-content leading-tight truncate max-w-[200px]">
+                          {{ fav.product.brand }} {{ fav.product.model }}
+                        </span>
+                        <span class="text-[10px] text-base-content/40 font-mono truncate max-w-[200px]">
+                          {{ fav.product.slug }}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Categoría -->
+                  <td class="py-2.5">
+                    <span class="badge badge-sm badge-ghost text-[10px]">{{ fav.product.category }}</span>
+                  </td>
+
+                  <!-- Precio -->
+                  <td class="py-2.5">
+                    <div class="flex flex-col">
+                      <span class="font-bold text-xs text-base-content">
+                        {{ fav.product.prices.efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                      <span class="text-[10px] text-base-content/40">
+                        Tarjeta: {{ fav.product.prices.tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Estado -->
+                  <td class="py-2.5">
+                    @if (fav.product.isActive) {
+                    <span class="badge badge-xs border-0 bg-green-100 text-green-800 font-medium">Activo</span>
+                    } @else {
+                    <span class="badge badge-xs border-0 bg-red-100 text-red-800 font-medium">Inactivo</span>
+                    }
+                  </td>
+
+                  <!-- Favoritos Count -->
+                  <td class="py-2.5 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! text-rose-400">favorite</mat-icon>
+                      <span class="font-bold text-sm text-base-content">{{ fav.favoritesCount }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Usuarios (toggle) -->
+                  <td class="py-2.5">
+                    <button class="btn btn-xs btn-ghost gap-1" (click)="toggleExpand(fav.product._id)">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">
+                        {{ isExpanded(fav.product._id) ? 'expand_less' : 'expand_more' }}
+                      </mat-icon>
+                      <span class="text-[11px]">{{ fav.users.length }} usuarios</span>
+                    </button>
+                  </td>
+
+                  <!-- Acciones -->
+                  <td class="py-2.5 pr-3">
+                    <div class="flex items-center justify-end gap-0.5">
+                      <!-- Resultado de notificación -->
+                      @if (getNotifyResult(fav.product._id); as result) {
+                        @if (result.success) {
+                        <span class="badge badge-xs border-0 bg-green-100 text-green-800 mr-1">
+                          {{ result.message }}
+                        </span>
+                        } @else {
+                        <span class="badge badge-xs border-0 bg-red-100 text-red-800 mr-1">
+                          {{ result.message }}
+                        </span>
+                        }
+                      }
+
+                      <button
+                        class="btn btn-xs btn-ghost gap-1"
+                        [disabled]="isNotifying(fav.product._id)"
+                        (click)="sendNotification(fav.product._id)"
+                        matTooltip="Notificar que volvió al stock">
+                        @if (isNotifying(fav.product._id)) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                        <mat-icon class="text-[15px]! w-4! h-4! text-primary">mail</mat-icon>
+                        }
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Fila expandida: lista de usuarios -->
+                @if (isExpanded(fav.product._id)) {
+                <tr class="bg-base-200/30">
+                  <td colspan="7" class="px-4 py-3">
+                    <div class="flex flex-wrap gap-2">
+                      @for (user of fav.users; track user._id) {
+                      <div class="flex items-center gap-2 bg-base-100 rounded-lg px-3 py-1.5 border border-base-300">
+                        <div class="bg-primary/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                          <span class="text-[10px] font-bold text-primary">
+                            {{ user.name.charAt(0).toUpperCase() }}
+                          </span>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                          <span class="text-[11px] font-semibold text-base-content leading-tight truncate">{{ user.name }}</span>
+                          <span class="text-[10px] text-base-content/40 truncate">{{ user.email }}</span>
+                        </div>
+                      </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+                }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Cards: < md -->
+      <div class="flex md:hidden flex-col flex-1 min-h-0 bg-base-200">
+        <div class="overflow-y-auto flex-1 min-h-0 p-2">
+          <div class="grid grid-cols-1 gap-2 content-start">
+            @for (fav of filteredFavorites(); track fav.product._id) {
+            <div class="flex flex-col p-3 rounded-xl border border-base-300 bg-base-100 shadow-sm gap-2">
+              <!-- Header -->
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg overflow-hidden bg-base-200 shrink-0">
+                  @if (fav.product.images.length > 0) {
+                  <img [src]="fav.product.images[0].url"
+                    [alt]="fav.product.model"
+                    class="w-full h-full object-cover" />
+                  } @else {
+                  <div class="w-full h-full flex items-center justify-center">
+                    <mat-icon class="text-[20px]! text-base-content/20">image</mat-icon>
+                  </div>
+                  }
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
+                  <span class="font-semibold text-sm text-base-content leading-tight truncate">
+                    {{ fav.product.brand }} {{ fav.product.model }}
+                  </span>
+                  <span class="text-[11px] text-base-content/40">{{ fav.product.category }}</span>
+                </div>
+                <div class="flex flex-col items-end gap-0.5">
+                  <div class="flex items-center gap-1">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! text-rose-400">favorite</mat-icon>
+                    <span class="font-bold text-sm text-base-content">{{ fav.favoritesCount }}</span>
+                  </div>
+                  @if (fav.product.isActive) {
+                  <span class="badge badge-xs border-0 bg-green-100 text-green-800">Activo</span>
+                  } @else {
+                  <span class="badge badge-xs border-0 bg-red-100 text-red-800">Inactivo</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Precio -->
+              <div class="flex justify-between items-center px-1">
+                <span class="font-bold text-xs text-base-content">
+                  {{ fav.product.prices.efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                </span>
+                <span class="text-[10px] text-base-content/40">
+                  Tarjeta: {{ fav.product.prices.tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                </span>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center justify-between border-t border-base-200 pt-2 mt-1">
+                <button class="btn btn-xs btn-ghost gap-1" (click)="toggleExpand(fav.product._id)">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">
+                    {{ isExpanded(fav.product._id) ? 'expand_less' : 'expand_more' }}
+                  </mat-icon>
+                  {{ fav.users.length }} usuarios
+                </button>
+
+                <div class="flex items-center gap-1">
+                  @if (getNotifyResult(fav.product._id); as result) {
+                    @if (result.success) {
+                    <span class="badge badge-xs border-0 bg-green-100 text-green-800">✓</span>
+                    } @else {
+                    <span class="badge badge-xs border-0 bg-red-100 text-red-800">✗</span>
+                    }
+                  }
+                  <button
+                    class="btn btn-xs btn-primary gap-1"
+                    [disabled]="isNotifying(fav.product._id)"
+                    (click)="sendNotification(fav.product._id)">
+                    @if (isNotifying(fav.product._id)) {
+                    <span class="loading loading-spinner loading-xs"></span>
+                    } @else {
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">mail</mat-icon>
+                    }
+                    Notificar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Usuarios expandidos -->
+              @if (isExpanded(fav.product._id)) {
+              <div class="flex flex-col gap-1.5 border-t border-base-200 pt-2">
+                @for (user of fav.users; track user._id) {
+                <div class="flex items-center gap-2 bg-base-200/50 rounded-lg px-3 py-1.5">
+                  <div class="bg-primary/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                    <span class="text-[10px] font-bold text-primary">
+                      {{ user.name.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <span class="text-[11px] font-semibold text-base-content leading-tight truncate">{{ user.name }}</span>
+                    <span class="text-[10px] text-base-content/40 truncate">{{ user.email }}</span>
+                  </div>
+                </div>
+                }
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+    }
+  </ng-container>
+
+</app-page-layout>

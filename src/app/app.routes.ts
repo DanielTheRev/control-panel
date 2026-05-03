@@ -194,6 +194,16 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'clients',
+        title: 'Clientes',
+        loadComponent: () => import('./pages/clients/clients').then(c => c.ClientsComponent)
+      },
+      {
+        path: 'favorites',
+        title: 'Favoritos',
+        loadComponent: () => import('./pages/favorites/favorites').then(c => c.FavoritesComponent)
+      },
+      {
         path: '**',
         pathMatch: 'full',
         redirectTo: 'products',
