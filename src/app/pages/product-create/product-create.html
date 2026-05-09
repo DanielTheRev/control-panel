@@ -154,11 +154,20 @@
                         <!-- Precio de costo -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 sm:mt-4">
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Precio de Costo (USD)</legend>
+                                <legend class="fieldset-legend flex items-center gap-2">
+                                    Precio de Costo
+                                    <div class="badge badge-sm border-none shadow-sm" [ngClass]="costCurrency() === 'USD' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'">
+                                        {{costCurrency() === 'USD' ? 'Dólares (USD)' : 'Pesos (ARS)'}}
+                                    </div>
+                                </legend>
                                 <div class="join w-full">
-                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4">$</span>
-                                    <input type="number" class="join-item input input-bordered w-full"
+                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4 font-bold">{{ costCurrency() === 'USD' ? 'U$D' : '$' }}</span>
+                                    <input type="number" class="join-item input input-bordered w-full focus:border-primary/50"
                                         placeholder="0.00" formControlName="price" />
+                                </div>
+                                <div class="text-[10px] text-base-content/60 mt-1.5 flex items-center gap-1.5 bg-base-200/50 p-1.5 rounded-md border border-base-300/50">
+                                    <mat-icon class="text-[12px] w-3 h-3 text-info shrink-0">info</mat-icon>
+                                    <span class="leading-tight">El tipo de moneda se obtiene de la configuración general del comercio.</span>
                                 </div>
                             </fieldset>
 

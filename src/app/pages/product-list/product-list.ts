@@ -100,6 +100,11 @@ export class ProductList {
     this.ProductState.setProviderFilter(provider);
   }
 
+  onStatusChange(event: Event) {
+    const status = (event.target as HTMLSelectElement).value;
+    this.ProductState.setStatusFilter(status);
+  }
+
   clearSearch() {
     this.ProductState.setSearchQuery('');
   }
@@ -112,10 +117,15 @@ export class ProductList {
     this.ProductState.setProviderFilter('');
   }
 
+  clearStatus() {
+    this.ProductState.setStatusFilter('');
+  }
+
   clearAllFilters() {
     this.ProductState.setSearchQuery('');
     this.ProductState.setCategoryFilter('');
     this.ProductState.setProviderFilter('');
+    this.ProductState.setStatusFilter('');
   }
 
   onPageChange(event: PageEvent) {
@@ -242,6 +252,34 @@ export class ProductList {
         this.#snackBar.open('Error al eliminar algunos productos', 'Cerrar', {
           duration: 3000,
         });
+      }
+    }
+  }
+
+  async deactivateSelected() {
+    const selectedCount = this.selectedProducts().length;
+    if (selectedCount === 0) return;
+
+    if (confirm(`¿Estás seguro de que deseas desactivar los ${selectedCount} productos seleccionados?`)) {
+      try {
+        await this.ProductState.bulkUpdateStatus(this.selectedProducts(), false);
+        this.clearSelection();
+      } catch (error) {
+        // Toast is handled in service
+      }
+    }
+  }
+
+  async activateSelected() {
+    const selectedCount = this.selectedProducts().length;
+    if (selectedCount === 0) return;
+
+    if (confirm(`¿Estás seguro de que deseas activar los ${selectedCount} productos seleccionados?`)) {
+      try {
+        await this.ProductState.bulkUpdateStatus(this.selectedProducts(), true);
+        this.clearSelection();
+      } catch (error) {
+        // Toast is handled in service
       }
     }
   }

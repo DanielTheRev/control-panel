@@ -17,13 +17,19 @@
                   (input)="$event.preventDefault();onSearch($event)">
               </div>
             </div>
-            <div class="flex pl-0 mt-3 space-x-1 sm:pl-2 sm:mt-0">
+            <div class="flex pl-0 mt-3 space-x-2 sm:pl-2 sm:mt-0">
               <select class="select select-bordered" [value]="ProductState.currentProviderFilter()"
                 (change)="onProviderChange($event)">
                 <option value="">Todos los proveedores</option>
                 @for (prov of ProviderState().data; track prov._id) {
                 <option [value]="prov._id">{{prov.name}}</option>
                 }
+              </select>
+              <select class="select select-bordered" [value]="ProductState.currentStatusFilter()"
+                (change)="onStatusChange($event)">
+                <option value="">Todos los estados</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
               </select>
             </div>
           </div>
@@ -36,7 +42,7 @@
         </div>
 
         <!-- Active Filters Badges -->
-        @if (ProductState.currentSearchQuery() || ProductState.currentCategoryFilter() || ProductState.currentProviderFilter()) {
+        @if (ProductState.currentSearchQuery() || ProductState.currentCategoryFilter() || ProductState.currentProviderFilter() || ProductState.currentStatusFilter()) {
         <div class="flex flex-wrap items-center gap-2 mt-3 text-sm px-2">
           <span class="text-base-content/60 font-medium">Filtros activos:</span>
 
@@ -70,6 +76,19 @@
             class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-amber-800 font-medium shadow-sm">
             Proveedor: {{ getProviderName(ProductState.currentProviderFilter()) }}
             <button (click)="clearProvider()" class="ml-2 hover:text-amber-600 focus:outline-none transition-colors">
+              <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+              </svg>
+            </button>
+          </span>
+          }
+
+          @if (ProductState.currentStatusFilter()) {
+          <span
+            class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-purple-800 font-medium shadow-sm">
+            Estado: {{ ProductState.currentStatusFilter() === 'true' ? 'Activos' : 'Inactivos' }}
+            <button (click)="clearStatus()" class="ml-2 hover:text-purple-600 focus:outline-none transition-colors">
               <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" clip-rule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
@@ -150,6 +169,16 @@
             <span>producto(s) seleccionado(s)</span>
           </div>
           <div class="flex items-center gap-2">
+            <button class="btn btn-sm btn-ghost text-success hover:bg-success/10"
+              [disabled]="selectedProducts().length === 0" (click)="activateSelected()">
+              <mat-icon class="text-sm">visibility</mat-icon>
+              Activar
+            </button>
+            <button class="btn btn-sm btn-ghost text-warning hover:bg-warning/10"
+              [disabled]="selectedProducts().length === 0" (click)="deactivateSelected()">
+              <mat-icon class="text-sm">visibility_off</mat-icon>
+              Desactivar
+            </button>
             <button class="btn btn-sm btn-ghost text-error hover:bg-error/10"
               [disabled]="selectedProducts().length === 0" (click)="deleteSelected()">
               <mat-icon class="text-sm">delete</mat-icon>
@@ -206,11 +235,16 @@
                   <= 0 ? "/no-image.jpg" : p.images[0].url; <img [src]="imageURL"
                     class="w-10 h-10 object-cover rounded-lg shadow-md border border-base-content/10 shrink-0" />
                   <div class="flex flex-col min-w-0">
-                    <button
-                      class="text-left text-sm font-semibold text-base-content truncate max-w-62.5 hover:text-primary transition-colors cursor-pointer"
-                      (click)="viewProduct(p)">
-                      {{ p.model }}
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <button
+                        class="text-left text-sm font-semibold text-base-content truncate max-w-62.5 hover:text-primary transition-colors cursor-pointer"
+                        (click)="viewProduct(p)" [ngClass]="{'opacity-50': !p.isActive}">
+                        {{ p.model }}
+                      </button>
+                      @if (!p.isActive) {
+                        <span class="badge badge-error badge-xs text-[10px] font-bold uppercase">Inactivo</span>
+                      }
+                    </div>
                   </div>
                 </div>
               </td>
@@ -361,7 +395,12 @@
                     <span class="text-[10px] text-base-content/30">·</span>
                     <span class="text-[10px] text-base-content/40 uppercase">{{ p.category }}</span>
                   </div>
-                  <p class="text-sm font-semibold text-base-content truncate">{{ p.model }}</p>
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-base-content truncate" [ngClass]="{'opacity-50': !p.isActive}">{{ p.model }}</p>
+                    @if (!p.isActive) {
+                      <span class="badge badge-error badge-xs text-[9px] font-bold uppercase">Inactivo</span>
+                    }
+                  </div>
                   <p class="text-xs text-success font-bold mt-0.5">
                     {{ p.prices.efectivo_transferencia | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
                   </p>

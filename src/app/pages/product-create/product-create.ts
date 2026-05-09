@@ -6,7 +6,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
-import { combineLatest, debounceTime, distinctUntilChanged, filter, map, switchMap } from 'rxjs';
+import { combineLatest, debounceTime, distinctUntilChanged, filter, map, switchMap, of } from 'rxjs';
 import { IProduct, IProductPrices, isClothingVariant, isTechVariant, ProductType } from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
 import { ClothingFormValue, ClothingProductForm } from '../../shared/components/clothing-product-form/clothing-product-form';
@@ -74,6 +74,11 @@ export class ProductCreate {
     if (this.#CommerceConfigState.StoreConfig().hasError) return []
     return this.#CommerceConfigState.StoreConfig().config.categories;
   })
+
+  costCurrency = computed(() => {
+    if (this.#CommerceConfigState.StoreConfig().hasError || this.#CommerceConfigState.StoreConfig().isLoading) return 'USD';
+    return this.#CommerceConfigState.StoreConfig().config.costCurrency || 'USD';
+  });
 
   providers = this.#ProviderState.ProviderState;
 
@@ -251,7 +256,22 @@ export class ProductCreate {
       map(val => ({ costPrice: val.price, customProfitMargin1Pay: val.customProfitMargin1Pay || '', customProfitMarginInstallments: val.customProfitMarginInstallments || '' })),
       distinctUntilChanged((prev, curr) => prev.costPrice === curr.costPrice && prev.customProfitMargin1Pay === curr.customProfitMargin1Pay && prev.customProfitMarginInstallments === curr.customProfitMarginInstallments),
       filter(val => val.costPrice > 0),
-      switchMap(val => this.#productState.calculatePrices(val))
+      switchMap(val => {
+        const original = this.#originalProduct();
+        if (original) {
+          const originalPrice = this.costCurrency() === 'ARS' ? original.prices.costPrice.inARS : original.prices.costPrice.inUSD;
+          const roundedOriginalPrice = Math.ceil(originalPrice);
+          const orig1Pay = original.prices.profitMargin1Pay ?? '';
+          const origInstall = original.prices.profitMarginInstallments ?? '';
+
+          if (val.costPrice === roundedOriginalPrice &&
+              val.customProfitMargin1Pay === orig1Pay &&
+              val.customProfitMarginInstallments === origInstall) {
+            return of(original.prices);
+          }
+        }
+        return this.#productState.calculatePrices(val);
+      })
     ).subscribe({
       next: (prices) => {
         this.calculatedPrices.set(prices);
@@ -376,7 +396,7 @@ export class ProductCreate {
         model: product.model,
         brand: product.brand,
         category: product.category,
-        price: product.prices.costPrice.inUSD,
+        price: Math.ceil(this.costCurrency() === 'ARS' ? product.prices.costPrice.inARS : product.prices.costPrice.inUSD),
         useCustomProfit1Pay: useCustom1Pay,
         useCustomProfitInstallments: useCustomInstallments,
         customProfitMargin1Pay: useCustom1Pay ? product.prices.profitMargin1Pay : '',

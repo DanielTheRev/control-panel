@@ -148,6 +148,22 @@
               </div>
             </div>
 
+            <div
+              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
+              <div class="sm:w-1/3 shrink-0">
+                <label class="text-sm font-bold text-base-content flex items-center gap-2">
+                  <mat-icon class="text-[18px] w-4.5 h-4.5">payments</mat-icon>
+                  Moneda de Precio de Costo
+                </label>
+              </div>
+              <div class="sm:w-2/3">
+                <select formControlName="costCurrency" class="select select-bordered w-full max-w-xs focus:border-base-content/50">
+                  <option value="USD">Dólares (USD)</option>
+                  <option value="ARS">Pesos Argentinos (ARS)</option>
+                </select>
+              </div>
+            </div>
+
             <div formGroupName="taxes"
               class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
               <div class="sm:w-1/3 shrink-0">
@@ -164,6 +180,25 @@
                 </label>
               </div>
             </div>
+
+            <!-- Envío Gratis -->
+            <div formGroupName="shippingConfig"
+              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
+              <div class="sm:w-1/3 shrink-0">
+                <label class="text-sm font-bold text-primary flex items-center gap-2">
+                  <mat-icon class="text-[18px] w-4.5 h-4.5">local_shipping</mat-icon>
+                  Envío Gratis (Umbral)
+                </label>
+              </div>
+              <div class="sm:w-2/3">
+                <label
+                  class="input input-bordered flex items-center gap-2 max-w-xs border-primary/30 focus-within:border-primary">
+                  <span class="text-primary font-bold">$</span>
+                  <input type="number" formControlName="freeShippingThreshold" class="grow font-medium" placeholder="50000" />
+                </label>
+              </div>
+            </div>
+
           </div>
         </section>
 

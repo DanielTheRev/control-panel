@@ -34,8 +34,12 @@ export class StoreSettings {
     this.configForm = this.#fb.group({
       name: [''],
       profit: [0],
+      costCurrency: ['USD'],
       taxes: this.#fb.group({
         iva: [21]
+      }),
+      shippingConfig: this.#fb.group({
+        freeShippingThreshold: [50000]
       }),
       contact: this.#fb.group({
         email: [''],

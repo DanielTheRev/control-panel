@@ -19,6 +19,7 @@ export class ProductStoreService {
   private searchQuery = signal('');
   private categoryFilter = signal('');
   private providerFilter = signal('');
+  private statusFilter = signal<string>('');
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -32,6 +33,7 @@ export class ProductStoreService {
         ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
         ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
         ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
+        ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
       },
     }));
   }
@@ -66,6 +68,7 @@ export class ProductStoreService {
   readonly currentSearchQuery = computed(() => this.searchQuery());
   readonly currentCategoryFilter = computed(() => this.categoryFilter());
   readonly currentProviderFilter = computed(() => this.providerFilter());
+  readonly currentStatusFilter = computed(() => this.statusFilter());
 
   // Pagination methods — just update the signals, httpResource handles the rest
   setPage(page: number) {
@@ -89,6 +92,11 @@ export class ProductStoreService {
 
   setProviderFilter(provider: string) {
     this.providerFilter.set(provider);
+    this.pageNumber.set(1);
+  }
+
+  setStatusFilter(status: string) {
+    this.statusFilter.set(status);
     this.pageNumber.set(1);
   }
 
@@ -163,6 +171,28 @@ export class ProductStoreService {
       // 4. ROLLBACK: Si falla, restauramos el estado anterior
       this.#notificationService.error('No se pudo eliminar el producto, restaurando...');
       this.#fetchedProducts.set(previousState); // Reinstalamos la data vieja
+    }
+  }
+
+  async bulkUpdateStatus(ids: string[], isActive: boolean) {
+    const previousState = this.#fetchedProducts.value();
+
+    // Optimistic Update
+    this.#fetchedProducts.update(state => {
+      if (!state) return state;
+      return {
+        ...state,
+        data: state.data.map(p => ids.includes(p._id) ? { ...p, isActive } : p)
+      };
+    });
+
+    try {
+      await this.#productService.bulkUpdateStatus(ids, isActive);
+      // Optional: reload to ensure consistency
+      // this.#fetchedProducts.reload();
+    } catch (error) {
+      // Rollback
+      this.#fetchedProducts.set(previousState);
     }
   }
 

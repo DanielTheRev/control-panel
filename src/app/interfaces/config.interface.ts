@@ -4,6 +4,7 @@ export interface IEcommerceConfig {
   taxes: {
     iva: number;
   };
+  costCurrency?: 'USD' | 'ARS';
   contact: {
     email: string;
     phone: string;
@@ -17,6 +18,9 @@ export interface IEcommerceConfig {
   };
   brands: string[],
   categories: string[],
+  shippingConfig?: {
+    freeShippingThreshold: number;
+  },
   paymentGateways: {
     uala: {
       active: boolean;

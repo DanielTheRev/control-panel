@@ -137,4 +137,14 @@ export class ProductService {
       params: { q: query, suggestions: 'true' },
     });
   }
+
+  bulkUpdateStatus(ids: string[], isActive: boolean) {
+    return firstValueFrom(this.#http.patch<any>(`${this.#apiUrl}/bulk-status`, { ids, isActive }).pipe(
+      this.#toast.observe({
+        loading: 'Actualizando estado de los productos...',
+        success: `Productos ${isActive ? 'activados' : 'desactivados'} correctamente`,
+        error: 'Error al actualizar el estado de los productos',
+      })
+    ));
+  }
 }
