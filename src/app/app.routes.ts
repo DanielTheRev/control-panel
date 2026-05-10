@@ -204,6 +204,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/favorites/favorites').then(c => c.FavoritesComponent)
       },
       {
+        path: 'sales',
+        title: 'Ventas',
+        loadComponent: () => import('./pages/sales/sales').then(c => c.SalesComponent)
+      },
+      {
         path: '**',
         pathMatch: 'full',
         redirectTo: 'products',

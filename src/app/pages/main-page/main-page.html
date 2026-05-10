@@ -64,9 +64,17 @@
           }
         </a>
 
-        <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
-          [matTooltip]="isCollapsed ? 'Reportes' : ''" matTooltipPosition="right">
+        <a routerLink="/home/sales" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Ventas' : ''" matTooltipPosition="right">
           <mat-icon>bar_chart</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Ventas</span>
+          }
+        </a>
+
+        <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Resumen Diario' : ''" matTooltipPosition="right">
+          <mat-icon>today</mat-icon>
           @if (isExpanded) {
           <span class="menu-text">Resumen Diario</span>
           }
@@ -221,13 +229,13 @@
     <mat-icon>shopping_cart</mat-icon>
     <span class="dock-label">Pedidos</span>
   </a>
+  <a routerLink="/home/sales" routerLinkActive="dock-active">
+    <mat-icon>bar_chart</mat-icon>
+    <span class="dock-label">Ventas</span>
+  </a>
   <a routerLink="/home/pos" routerLinkActive="dock-active">
     <mat-icon>point_of_sale</mat-icon>
     <span class="dock-label">POS</span>
-  </a>
-  <a routerLink="/home/cash-register" routerLinkActive="dock-active">
-    <mat-icon>account_balance_wallet</mat-icon>
-    <span class="dock-label">Caja</span>
   </a>
   <a routerLink="/home/settings" routerLinkActive="dock-active">
     <mat-icon>settings</mat-icon>

@@ -1,0 +1,361 @@
+@if (state(); as state) {
+<app-page-layout>
+  <!-- HEADER con selector de rango y datepicker -->
+  <app-page-header header title="Ventas" subtitle="Estadísticas de ventas por período">
+    <div actions class="flex items-center gap-2">
+
+      <!-- Selector de rango tipo tab -->
+      <div class="flex items-center bg-base-200 rounded-sm p-0.5 gap-0.5 border border-base-300">
+        @for (r of ranges; track r.value) {
+          <button
+            class="px-3 py-1 text-xs font-bold rounded-sm transition-all duration-200"
+            [class.bg-primary]="salesStore.selectedRange() === r.value"
+            [class.text-primary-content]="salesStore.selectedRange() === r.value"
+            [class.text-base-content]="salesStore.selectedRange() !== r.value"
+            [class.opacity-50]="salesStore.selectedRange() !== r.value"
+            (click)="setRange(r.value)"
+            [id]="'range-btn-' + r.value">
+            {{ r.label }}
+          </button>
+        }
+      </div>
+
+      <!-- Datepicker (solo en modo 'day') -->
+      @if (salesStore.selectedRange() === 'day') {
+        <div class="flex items-center gap-2 bg-base-100 px-3 py-1.5 rounded-sm border border-base-300">
+          <mat-icon class="text-primary/50 text-sm">calendar_today</mat-icon>
+          <input type="date" [ngModel]="salesStore.selectedDate()" (ngModelChange)="setDate($event)"
+            class="input input-sm input-ghost bg-transparent border-none font-bold text-xs cursor-pointer p-0 h-auto min-h-0">
+        </div>
+      }
+
+      <!-- Botón refresh -->
+      <button class="btn btn-sm btn-ghost btn-square" (click)="salesStore.refresh()" id="sales-refresh-btn">
+        <mat-icon class="text-sm">refresh</mat-icon>
+      </button>
+    </div>
+  </app-page-header>
+
+  <div content class="flex flex-col gap-4 max-w-6xl mx-auto w-full pb-6">
+
+    <!-- Loading -->
+    @if (state.isLoading) {
+      <div class="flex flex-col items-center justify-center py-20 space-y-3">
+        <span class="loading loading-ring loading-md text-primary"></span>
+        <p class="text-sm text-base-content/40 font-bold">Cargando estadísticas...</p>
+      </div>
+    }
+
+    @if (!state.isLoading && state.hasData && state.stats; as stats) {
+
+      <!-- ── Indicador de moneda ─────────────────────────────────────────────── -->
+      <div class="flex items-center gap-2">
+        <span class="badge badge-neutral text-[10px] font-bold uppercase tracking-widest">
+          <mat-icon class="text-[10px]! mr-1">currency_exchange</mat-icon>
+          Moneda: {{ stats.currency }}
+        </span>
+        <span class="badge badge-ghost text-[10px] font-bold uppercase tracking-widest">
+          {{ getRangeLabel(salesStore.selectedRange()) }}
+        </span>
+      </div>
+
+      <!-- ── KPIs ────────────────────────────────────────────────────────────── -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
+        <!-- Ingresos brutos -->
+        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="w-8 h-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center">
+              <mat-icon class="text-sm">payments</mat-icon>
+            </div>
+            <mat-icon class="text-base-content/10">trending_up</mat-icon>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Ingresos Brutos</p>
+            <h3 class="text-xl font-black tabular-nums">
+              {{ getCurrencySymbol(stats.currency) }}{{ stats.totalRevenue | number:'1.0-0' }}
+            </h3>
+          </div>
+        </div>
+
+        <!-- Ganancia neta -->
+        <div class="bg-neutral text-neutral-content rounded-sm p-4 border border-neutral space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="w-8 h-8 rounded-sm bg-white/10 flex items-center justify-center">
+              <mat-icon class="text-sm text-white">show_chart</mat-icon>
+            </div>
+            <mat-icon class="opacity-10">trending_up</mat-icon>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Ganancia Estimada</p>
+            <h3 class="text-xl font-black text-primary tabular-nums">
+              {{ getCurrencySymbol(stats.currency) }}{{ stats.totalEarnings | number:'1.0-0' }}
+            </h3>
+          </div>
+        </div>
+
+        <!-- Deuda al proveedor -->
+        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="w-8 h-8 rounded-sm bg-warning/10 text-warning flex items-center justify-center">
+              <mat-icon class="text-sm">receipt_long</mat-icon>
+            </div>
+            <mat-icon class="text-base-content/10">arrow_upward</mat-icon>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Costo Proveedores</p>
+            <h3 class="text-xl font-black tabular-nums">
+              {{ getCurrencySymbol(stats.currency) }}{{ stats.totalCostPrice | number:'1.0-0' }}
+            </h3>
+          </div>
+        </div>
+
+        <!-- Cantidad de ventas -->
+        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="w-8 h-8 rounded-sm bg-secondary/10 text-secondary flex items-center justify-center">
+              <mat-icon class="text-sm">shopping_bag</mat-icon>
+            </div>
+            <span class="text-xl font-black tabular-nums">{{ stats.salesCount.total }}</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Ventas Totales</p>
+            <div class="flex gap-3 mt-1">
+              <span class="text-[10px] opacity-50">
+                <mat-icon class="text-[10px]! mr-0.5">storefront</mat-icon>{{ stats.salesCount.local }} mostrador
+              </span>
+              <span class="text-[10px] opacity-50">
+                <mat-icon class="text-[10px]! mr-0.5">public</mat-icon>{{ stats.salesCount.online }} online
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Chart + Métodos de pago ──────────────────────────────────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+        <!-- Chart de tendencia -->
+        <div class="lg:col-span-3 bg-base-100 border border-base-300 rounded-sm overflow-hidden">
+          <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between bg-base-200/30">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+              <mat-icon class="text-primary text-sm">bar_chart</mat-icon>
+              Tendencia de Ingresos
+            </h3>
+            <span class="badge badge-neutral badge-sm font-bold text-[9px]">
+              {{ stats.dailyBreakdown.length }} DÍAS
+            </span>
+          </div>
+          <div class="p-4">
+            @if (stats.dailyBreakdown.length > 0) {
+              <div class="relative h-52">
+                <canvas #revenueChart></canvas>
+              </div>
+            } @else {
+              <div class="flex flex-col items-center justify-center h-52 opacity-20 space-y-2">
+                <mat-icon class="text-4xl!">bar_chart</mat-icon>
+                <p class="text-xs font-bold">Sin datos para graficar</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Distribución por método de pago -->
+        <div class="lg:col-span-2 bg-base-100 border border-base-300 rounded-sm overflow-hidden">
+          <div class="px-5 py-3 border-b border-base-200 bg-base-200/30">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+              <mat-icon class="text-primary text-sm">donut_large</mat-icon>
+              Por Método de Pago
+            </h3>
+          </div>
+          <div class="p-5 space-y-4">
+            @if ((stats.revenueByMethod | keyvalue).length === 0) {
+              <div class="py-10 text-center opacity-20 space-y-2">
+                <mat-icon class="text-4xl!">no_sim</mat-icon>
+                <p class="text-xs font-bold">Sin transacciones</p>
+              </div>
+            } @else {
+              @for (item of stats.revenueByMethod | keyvalue; track item.key) {
+                <div class="space-y-2 group">
+                  <div class="flex justify-between items-end">
+                    <div>
+                      <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">{{ getPaymentMethodLabel(item.key) }}</p>
+                      <p class="font-black text-base group-hover:text-primary transition-colors tabular-nums">
+                        {{ getCurrencySymbol(stats.currency) }}{{ item.value | number:'1.0-0' }}
+                      </p>
+                    </div>
+                    <span class="text-[10px] font-bold opacity-25 tabular-nums">
+                      {{ getMethodPercentage(item.value, stats.totalRevenue) / 100 | percent:'1.1-1' }}
+                    </span>
+                  </div>
+                  <div class="w-full bg-base-200 h-2 rounded-full overflow-hidden">
+                    <div class="bg-primary h-full rounded-full transition-all duration-500"
+                      [style.width.%]="getMethodPercentage(item.value, stats.totalRevenue)">
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Listado de ventas con detalle ───────────────────────────────── -->
+      <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between bg-base-200/30">
+          <h3 class="text-sm font-bold flex items-center gap-2">
+            <mat-icon class="text-primary text-sm">receipt</mat-icon>
+            Detalle de Ventas
+          </h3>
+          <span class="badge badge-neutral badge-sm font-bold text-[9px]">
+            {{ stats.salesWithDetails.length }} VENTAS
+          </span>
+        </div>
+
+        @if (stats.salesWithDetails.length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 opacity-20 text-center space-y-2">
+            <mat-icon class="text-5xl!">receipt_long</mat-icon>
+            <p class="text-sm font-black">Sin ventas en este período</p>
+          </div>
+        } @else {
+          <div class="divide-y divide-base-200">
+            @for (sale of stats.salesWithDetails; track sale.orderId) {
+              <!-- Fila de la venta -->
+              <div class="group">
+                <button
+                  class="w-full px-5 py-3.5 flex items-center justify-between hover:bg-base-200/40 transition-colors text-left"
+                  (click)="toggleSaleExpanded(sale.orderId)"
+                  [id]="'sale-row-' + sale.orderId">
+
+                  <!-- Izquierda: número, tipo, comprador -->
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center"
+                      [class.bg-secondary/10]="sale.saleType === 'LOCAL'"
+                      [class.text-secondary]="sale.saleType === 'LOCAL'"
+                      [class.bg-accent/10]="sale.saleType === 'ONLINE'"
+                      [class.text-accent]="sale.saleType === 'ONLINE'">
+                      <mat-icon class="text-sm">{{ getSaleTypeIcon(sale.saleType) }}</mat-icon>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-xs font-black tracking-tight">{{ sale.orderNumber }}</p>
+                        <span class="badge badge-ghost badge-xs text-[9px] font-bold">{{ getSaleTypeLabel(sale.saleType) }}</span>
+                        <span class="badge badge-ghost badge-xs text-[9px] font-bold">{{ getPaymentMethodLabel(sale.paymentMethod) }}</span>
+                      </div>
+                      @if (sale.buyer) {
+                        <p class="text-[11px] text-base-content/50 truncate">
+                          <mat-icon class="text-[10px]! mr-0.5">person</mat-icon>
+                          {{ sale.buyer.name }} · {{ sale.buyer.email }}
+                        </p>
+                      } @else {
+                        <p class="text-[11px] text-base-content/30 italic">Comprador invitado</p>
+                      }
+                      <p class="text-[10px] opacity-30">{{ sale.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Derecha: total, ganancia, chevron -->
+                  <div class="flex items-center gap-4 shrink-0 ml-3">
+                    <div class="text-right hidden sm:block">
+                      <p class="text-xs font-black tabular-nums">
+                        {{ getCurrencySymbol(stats.currency) }}{{ sale.total | number:'1.0-0' }}
+                      </p>
+                      <p class="text-[10px] text-emerald-500 font-bold tabular-nums">
+                        +{{ getCurrencySymbol(stats.currency) }}{{ sale.earnings | number:'1.0-0' }}
+                      </p>
+                    </div>
+                    <mat-icon class="text-base-content/30 transition-transform duration-200"
+                      [style.transform]="isSaleExpanded(sale.orderId) ? 'rotate(180deg)' : 'rotate(0deg)'">
+                      expand_more
+                    </mat-icon>
+                  </div>
+                </button>
+
+                <!-- Detalle expandido: items con proveedor y costPrice -->
+                @if (isSaleExpanded(sale.orderId)) {
+                  <div class="px-5 pb-4 bg-base-200/20">
+                    <!-- Total en mobile -->
+                    <div class="flex items-center gap-4 sm:hidden mb-3 pt-2 border-t border-base-200">
+                      <div>
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest">Total</p>
+                        <p class="text-sm font-black tabular-nums">
+                          {{ getCurrencySymbol(stats.currency) }}{{ sale.total | number:'1.0-0' }}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest">Ganancia</p>
+                        <p class="text-sm font-black text-emerald-500 tabular-nums">
+                          +{{ getCurrencySymbol(stats.currency) }}{{ sale.earnings | number:'1.0-0' }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Tabla de items -->
+                    <div class="rounded-sm overflow-hidden border border-base-300 mt-2">
+                      <table class="w-full text-xs">
+                        <thead>
+                          <tr class="bg-base-200/60 text-[10px] uppercase tracking-widest">
+                            <th class="text-left px-3 py-2 font-bold opacity-40">Producto</th>
+                            <th class="text-center px-3 py-2 font-bold opacity-40">Cant.</th>
+                            <th class="text-right px-3 py-2 font-bold opacity-40">Precio</th>
+                            <th class="text-right px-3 py-2 font-bold opacity-40 text-warning">Costo</th>
+                            <th class="text-right px-3 py-2 font-bold opacity-40 text-emerald-500">Ganancia</th>
+                            <th class="text-left px-3 py-2 font-bold opacity-40">Proveedor</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-base-200">
+                          @for (item of sale.items; track $index) {
+                            <tr class="hover:bg-base-200/30 transition-colors">
+                              <td class="px-3 py-2.5 font-semibold">{{ item.productName }}</td>
+                              <td class="px-3 py-2.5 text-center tabular-nums opacity-60">{{ item.quantity }}</td>
+                              <td class="px-3 py-2.5 text-right tabular-nums font-bold">
+                                {{ getCurrencySymbol(stats.currency) }}{{ item.unitPrice | number:'1.0-0' }}
+                              </td>
+                              <td class="px-3 py-2.5 text-right tabular-nums text-warning font-bold">
+                                {{ getCurrencySymbol(stats.currency) }}{{ item.costPrice | number:'1.0-0' }}
+                              </td>
+                              <td class="px-3 py-2.5 text-right tabular-nums text-emerald-500 font-bold">
+                                {{ getCurrencySymbol(stats.currency) }}{{ (item.unitPrice - item.costPrice) * item.quantity | number:'1.0-0' }}
+                              </td>
+                              <td class="px-3 py-2.5 opacity-60">
+                                @if (item.provider) {
+                                  <span class="badge badge-ghost badge-xs">{{ item.provider.name }}</span>
+                                } @else {
+                                  <span class="opacity-30 italic text-[10px]">Sin proveedor</span>
+                                }
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Sin datos -->
+    @if (!state.isLoading && !state.hasData && !state.hasError) {
+      <div class="flex flex-col items-center justify-center py-20 opacity-20 text-center space-y-3">
+        <mat-icon class="text-5xl!">search_off</mat-icon>
+        <h3 class="text-lg font-black">Sin ventas en este período</h3>
+        <p class="text-xs max-w-xs">No se encontraron ventas aprobadas para el rango seleccionado.</p>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (!state.isLoading && state.hasError) {
+      <div class="flex flex-col items-center justify-center py-20 opacity-20 text-center space-y-3">
+        <mat-icon class="text-5xl!">error</mat-icon>
+        <h3 class="text-lg font-black">Error al cargar los datos</h3>
+        <p class="text-xs max-w-xs">Intentá recargar la página o verificá tu conexión.</p>
+      </div>
+    }
+
+  </div>
+</app-page-layout>
+}
