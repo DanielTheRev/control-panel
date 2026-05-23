@@ -84,7 +84,7 @@ export class ProductService {
    * @param data.customProfitMargin1Pay Ganancia personalizada para pago en 1 cuota
    * @param data.customProfitMarginInstallments Ganancia personalizada para pago en cuotas
    */
-  calculatePrices(data: { costPrice: number, customProfitMargin1Pay?: number | string, customProfitMarginInstallments?: number | string }): Observable<IProductPrices> {
+  calculatePrices(data: { costPrice: number, customProfitMargin1Pay?: number | string, customProfitMarginInstallments?: number | string, customPricingMethod?: string }): Observable<IProductPrices> {
     let payload = { ...data };
     if (payload.customProfitMargin1Pay !== undefined && payload.customProfitMargin1Pay !== null && payload.customProfitMargin1Pay !== '') {
       payload.customProfitMargin1Pay = Number(payload.customProfitMargin1Pay);

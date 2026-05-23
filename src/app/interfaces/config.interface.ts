@@ -1,10 +1,17 @@
 export interface IEcommerceConfig {
   name: string;
   profit: number;
+  profit1Pay?: number;
+  profitInstallments?: number;
   taxes: {
     iva: number;
   };
   costCurrency?: 'USD' | 'ARS';
+  pricingStrategy?: {
+    method: 'markup' | 'margin';
+    transferGrossUp: boolean;
+    absorbInstallments: boolean;
+  };
   contact: {
     email: string;
     phone: string;
@@ -18,6 +25,7 @@ export interface IEcommerceConfig {
   };
   brands: string[],
   categories: string[],
+  clothingFits: string[],
   shippingConfig?: {
     freeShippingThreshold: number;
   },

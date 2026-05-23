@@ -1,6 +1,6 @@
 <form (ngSubmit)="save()" [formGroup]="form">
 
-  <h2 mat-dialog-title>Agregar {{ data.type === 'brand' ? 'Marca' : 'Categoría' }}</h2>
+  <h2 mat-dialog-title>Agregar {{ data.type === 'brand' ? 'Marca' : data.type === 'category' ? 'Categoría' : 'Corte/Fit' }}</h2>
 
   <mat-dialog-content class="mat-typography">
     <fieldset class="fieldset w-full">

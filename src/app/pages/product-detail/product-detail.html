@@ -47,8 +47,8 @@
             @if (p.images && p.images.length > 0) {
             <div class="carousel rounded-box">
               @for (img of p.images; track $index) {
-              <div class="carousel-item w-full">
-                <img [src]="img.url" class="w-full" alt="Product image {{ $index + 1 }}" />
+              <div class="carousel-item w-full max-h-128 ">
+                <img [src]="img.url" class="w-full object-contain" alt="Product image {{ $index + 1 }}" />
               </div>
               }
             </div>
@@ -85,9 +85,12 @@
             </span>
             <span class="text-xs font-bold text-primary uppercase tracking-widest">{{ p.brand }}</span>
             <span class="text-xs font-bold badge badge-primary uppercase tracking-widest"
-              [class.badge-primary]="p.isActive"
-              [class.badge-warning]="!p.isActive">
+              [class.badge-primary]="p.isActive" [class.badge-warning]="!p.isActive">
               {{ p.isActive ? 'Activo' : 'Desactivado' }}
+            </span>
+            <span class="badge badge-info">
+              Método de ganancia:
+              {{ p.prices.customPricingMethod ? p.prices.customPricingMethod : 'Global' }}
             </span>
             @if (p.discount > 0) {
             <span class="bg-error/10 text-error text-[10px] font-bold px-2 py-1 rounded uppercase">

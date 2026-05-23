@@ -25,7 +25,16 @@
                 </fieldset>
 
                 <fieldset class="fieldset">
-                    <legend class="fieldset-legend">Fit / Corte</legend>
+                    <legend class="fieldset-legend w-full">
+                        <div class="flex justify-between items-center w-full gap-2">
+                            Fit / Corte
+                            <button type="button" class="btn btn-success btn-soft btn-xs sm:btn-sm"
+                                (click)="addFit()">
+                                <mat-icon class="text-[16px] w-4 h-4">add</mat-icon>
+                                <span class="hidden sm:inline">Agregar</span>
+                            </button>
+                        </div>
+                    </legend>
                     <select class="select select-bordered w-full" formControlName="fit">
                         <option value="">Seleccionar...</option>
                         @for (opt of fitOptions; track opt) {

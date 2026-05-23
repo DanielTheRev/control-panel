@@ -7,12 +7,17 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  inject
 } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { StoreConfigStateService } from '../../../states/store.config.state.service';
+import { MatDialog } from '@angular/material/dialog';
+import { AddBrandCategory } from '../../../share/components/add-brand-category/add-brand-category';
+import { MatIcon } from '@angular/material/icon';
 
 export interface ClothingFormValue {
   gender: string;
@@ -25,7 +30,7 @@ export interface ClothingFormValue {
 @Component({
   selector: 'app-clothing-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIcon],
   templateUrl: './clothing-product-form.html',
 })
 export class ClothingProductForm implements OnInit, OnChanges {
@@ -35,9 +40,16 @@ export class ClothingProductForm implements OnInit, OnChanges {
   @Output() formChange = new EventEmitter<ClothingFormValue>();
 
   clothingForm: FormGroup;
+  configState = inject(StoreConfigStateService);
+  #dialog = inject(MatDialog);
 
   readonly genderOptions: string[] = ['Hombre', 'Mujer', 'Unisex', 'Niños'];
-  readonly fitOptions: string[] = ['Regular', 'Slim', 'Oversized', 'Relaxed', 'Boxy', 'Straight', 'Tapered', 'Baggy'];
+
+  // Opciones dinámicas que vienen de la configuración de negocio
+  get fitOptions(): string[] {
+    const config = this.configState.StoreConfig().config;
+    return config?.clothingFits || [];
+  }
   readonly sizeTypeOptions: { label: string; value: string }[] = [
     { value: 'Ropa', label: 'Ropa (S, M, L, XL)' },
     { value: 'Calzado', label: 'Calzado (38-44)' },
@@ -83,5 +95,20 @@ export class ClothingProductForm implements OnInit, OnChanges {
 
   getValue(): ClothingFormValue {
     return this.clothingForm.value as ClothingFormValue;
+  }
+
+  addFit() {
+    const dialogRef = this.#dialog.open(AddBrandCategory, {
+      width: '400px',
+      data: { type: 'fit', actuallyData: this.fitOptions }
+    });
+
+    dialogRef.afterClosed().subscribe((result: string) => {
+      if (result) {
+        this.configState.saveConfig({ clothingFits: [...this.fitOptions, result] });
+        // Automatically select the newly created fit
+        this.clothingForm.patchValue({ fit: result });
+      }
+    });
   }
 }

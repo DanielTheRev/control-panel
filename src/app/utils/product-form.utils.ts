@@ -47,6 +47,15 @@ export class ProductFormUtils {
       changes.hasChanges = true;
     }
 
+    // --- PRICING METHOD OVERRIDE ---
+    const origPricingMethod = originalProduct.prices?.customPricingMethod || '';
+    const newPricingMethod = productData.useCustomPricingMethod ? (productData.customPricingMethod || '') : '';
+    if (newPricingMethod !== origPricingMethod) {
+      console.warn(`[DEBUG] Change detected in customPricingMethod. New: '${newPricingMethod}', Orig: '${origPricingMethod}'`);
+      changes.formData.append('customPricingMethod', newPricingMethod);
+      changes.hasChanges = true;
+    }
+
     simpleFields.forEach(field => {
       const prodVal = productData[field];
       let origVal = originalProduct[field];

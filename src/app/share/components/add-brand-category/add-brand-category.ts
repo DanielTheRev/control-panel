@@ -11,7 +11,7 @@ import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angu
 export class AddBrandCategory {
   #dialogRef = inject(MatDialogRef<AddBrandCategory>);
   #formBuilder = inject(FormBuilder)
-  data: { type: 'brand' | 'category', actuallyData: string[] } = inject(MAT_DIALOG_DATA);
+  data: { type: 'brand' | 'category' | 'fit', actuallyData: string[] } = inject(MAT_DIALOG_DATA);
 
   form = this.#formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9 ]+$/)]]

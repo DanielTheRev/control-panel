@@ -144,6 +144,7 @@ export interface IProductPrices {
   profitMarginInstallments?: number;
   baseCommission: number;
   cft6Cuotas: number;
+  customPricingMethod?: 'markup' | 'margin';
   efectivo_transferencia: number;
   tarjeta_credito_debito: number;
   cuotas: {
@@ -185,6 +186,7 @@ export interface IProductCreateDTO {
   category: string;
   customProfitMargin1Pay?: number | string;
   customProfitMarginInstallments?: number | string;
+  customPricingMethod?: 'markup' | 'margin';
   isActive?: boolean;
   isFeatured?: boolean;
   image: { link: string; file: File }[];

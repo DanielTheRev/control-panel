@@ -46,17 +46,29 @@ export class StoreConfigStateService {
   }
 
 
-  async saveConfig(newConfig: Partial<IEcommerceConfig>) {
+  async saveConfig(newConfig: Partial<IEcommerceConfig>): Promise<{ success: boolean; shouldRecalculate: boolean }> {
     try {
-      await this.#configService.updateConfig(newConfig);
+      const response = await this.#configService.updateConfig(newConfig);
       this.#notificationService.success('Configuración guardada correctamente');
-      return true;
+      return { success: true, shouldRecalculate: response.shouldRecalculate };
     } catch (error) {
       console.error('Error saving config', error);
       this.#notificationService.error('Error al guardar la configuración');
-      return false;
+      return { success: false, shouldRecalculate: false };
     } finally {
       this.#RsState.reload()
+    }
+  }
+
+  async recalculateAllPrices(): Promise<boolean> {
+    try {
+      await this.#configService.recalculatePrices();
+      this.#notificationService.success('Precios recalculados correctamente');
+      return true;
+    } catch (error) {
+      console.error('Error recalculating prices', error);
+      this.#notificationService.error('Error al recalcular los precios');
+      return false;
     }
   }
 }

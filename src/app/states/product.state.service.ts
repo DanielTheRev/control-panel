@@ -131,7 +131,7 @@ export class ProductStoreService {
    * @param data.useCustomProfit1Pay Ganancia personalizada para pago en 1 cuota
    * @param data.useCustomProfitInstallments Ganancia personalizada para pago en cuotas
    */
-  calculatePrices(data: { costPrice: number, customProfitMargin1Pay: number | string, customProfitMarginInstallments: number | string }) {
+  calculatePrices(data: { costPrice: number, customProfitMargin1Pay: number | string, customProfitMarginInstallments: number | string, customPricingMethod?: string }) {
     return this.#productService.calculatePrices(data);
   }
 

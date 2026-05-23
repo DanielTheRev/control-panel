@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, input } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { IEcommerceConfig } from '../../interfaces/config.interface';
@@ -27,6 +27,8 @@ export class StoreSettings {
   mp_error = input<boolean>();
 
   configForm: FormGroup;
+  showRecalculateModal = signal(false);
+  isRecalculating = signal(false);
 
   constructor() {
     this.#sidebarService.navbarTitle.set({ title: 'Configuración Global' });
@@ -34,9 +36,16 @@ export class StoreSettings {
     this.configForm = this.#fb.group({
       name: [''],
       profit: [0],
+      profit1Pay: [null],
+      profitInstallments: [null],
       costCurrency: ['USD'],
       taxes: this.#fb.group({
         iva: [21]
+      }),
+      pricingStrategy: this.#fb.group({
+        method: ['markup'],
+        transferGrossUp: [true],
+        absorbInstallments: [true]
       }),
       shippingConfig: this.#fb.group({
         freeShippingThreshold: [50000]
@@ -52,6 +61,7 @@ export class StoreSettings {
         twitter: [''],
         tiktok: ['']
       }),
+      clothingFits: [[]],
       paymentGateways: this.#fb.group({
         mercadopago: this.#fb.group({
           active: [false],
@@ -97,19 +107,17 @@ export class StoreSettings {
 
       if (success) {
         this.#NotificationService.success('Mercado pago sincronizado con éxito');
-        this.cleanUrlParams(); // Opcional pero recomendado
+        this.cleanUrlParams();
       }
 
       if (error) {
         this.#NotificationService.error('Error al sincronizar con Mercado Pago');
-        this.cleanUrlParams(); // Opcional pero recomendado
+        this.cleanUrlParams();
       }
     });
   }
 
   private cleanUrlParams() {
-    // Reemplaza la URL actual quitando los query params de Mercado Pago, 
-    // pero sin recargar la página ni afectar el historial
     this.#router.navigate([], {
       queryParams: {
         mp_success: null,
@@ -124,11 +132,51 @@ export class StoreSettings {
     this.configState.signMercadoPago()
   }
 
-
   async saveConfig() {
     if (this.configForm.invalid) return;
     const formValue = this.configForm.value as IEcommerceConfig;
 
-    await this.configState.saveConfig(formValue);
+    const { success, shouldRecalculate } = await this.configState.saveConfig(formValue);
+
+    if (success && shouldRecalculate) {
+      this.showRecalculateModal.set(true);
+    }
+  }
+
+  async confirmRecalculate() {
+    this.isRecalculating.set(true);
+    await this.configState.recalculateAllPrices();
+    this.isRecalculating.set(false);
+    this.showRecalculateModal.set(false);
+  }
+
+  cancelRecalculate() {
+    this.showRecalculateModal.set(false);
+  }
+
+  get clothingFits() {
+    return this.configForm.get('clothingFits')?.value as string[] || [];
+  }
+
+  addFit(newFitElement: HTMLInputElement) {
+    const value = newFitElement.value.trim();
+    if (!value) return;
+
+    const currentFits = this.clothingFits;
+    if (!currentFits.includes(value)) {
+      this.configForm.patchValue({
+        clothingFits: [...currentFits, value]
+      });
+      this.configForm.markAsDirty();
+    }
+    newFitElement.value = '';
+  }
+
+  removeFit(fitToRemove: string) {
+    const currentFits = this.clothingFits;
+    this.configForm.patchValue({
+      clothingFits: currentFits.filter(f => f !== fitToRemove)
+    });
+    this.configForm.markAsDirty();
   }
 }

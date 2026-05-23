@@ -80,6 +80,11 @@ export class ProductCreate {
     return this.#CommerceConfigState.StoreConfig().config.costCurrency || 'USD';
   });
 
+  globalPricingMethod = computed(() => {
+    if (this.#CommerceConfigState.StoreConfig().hasError || this.#CommerceConfigState.StoreConfig().isLoading) return 'markup';
+    return this.#CommerceConfigState.StoreConfig().config.pricingStrategy?.method || 'markup';
+  });
+
   providers = this.#ProviderState.ProviderState;
 
   productForm: FormGroup = this.#fb.group({
@@ -93,6 +98,8 @@ export class ProductCreate {
     useCustomProfitInstallments: [false],
     customProfitMargin1Pay: [{ value: 10, disabled: true }],
     customProfitMarginInstallments: [{ value: 10, disabled: true }],
+    useCustomPricingMethod: [false],
+    customPricingMethod: [null],
     isActive: [true],
     isFeatured: [false],
     shortDescription: ['', Validators.required],
@@ -253,8 +260,18 @@ export class ProductCreate {
     this.productForm.valueChanges.pipe(
       takeUntilDestroyed(),
       debounceTime(800),
-      map(val => ({ costPrice: val.price, customProfitMargin1Pay: val.customProfitMargin1Pay || '', customProfitMarginInstallments: val.customProfitMarginInstallments || '' })),
-      distinctUntilChanged((prev, curr) => prev.costPrice === curr.costPrice && prev.customProfitMargin1Pay === curr.customProfitMargin1Pay && prev.customProfitMarginInstallments === curr.customProfitMarginInstallments),
+      map(val => ({
+        costPrice: val.price,
+        customProfitMargin1Pay: val.customProfitMargin1Pay || '',
+        customProfitMarginInstallments: val.customProfitMarginInstallments || '',
+        customPricingMethod: val.useCustomPricingMethod ? val.customPricingMethod : undefined
+      })),
+      distinctUntilChanged((prev, curr) =>
+        prev.costPrice === curr.costPrice &&
+        prev.customProfitMargin1Pay === curr.customProfitMargin1Pay &&
+        prev.customProfitMarginInstallments === curr.customProfitMarginInstallments &&
+        prev.customPricingMethod === curr.customPricingMethod
+      ),
       filter(val => val.costPrice > 0),
       switchMap(val => {
         const original = this.#originalProduct();
@@ -301,6 +318,18 @@ export class ProductCreate {
       } else {
         this.productForm.get('customProfitMarginInstallments')?.disable();
         this.isUsingGlobalMargin.set(true);
+      }
+    });
+
+    // Cuando activa el override de método, auto-seleccionar el alternativo
+    this.productForm.get('useCustomPricingMethod')?.valueChanges.pipe(
+      takeUntilDestroyed()
+    ).subscribe((useCustom: boolean) => {
+      if (useCustom) {
+        const alternativeMethod = this.globalPricingMethod() === 'markup' ? 'margin' : 'markup';
+        this.productForm.patchValue({ customPricingMethod: alternativeMethod });
+      } else {
+        this.productForm.patchValue({ customPricingMethod: null });
       }
     });
 
@@ -401,6 +430,8 @@ export class ProductCreate {
         useCustomProfitInstallments: useCustomInstallments,
         customProfitMargin1Pay: useCustom1Pay ? product.prices.profitMargin1Pay : '',
         customProfitMarginInstallments: useCustomInstallments ? product.prices.profitMarginInstallments : '',
+        useCustomPricingMethod: !!product.prices.customPricingMethod,
+        customPricingMethod: product.prices.customPricingMethod || null,
         isActive: product.isActive !== false,
         isFeatured: !!product.isFeatured,
         shortDescription: product.shortDescription,
@@ -730,6 +761,9 @@ export class ProductCreate {
     }
     if (data.customProfitMarginInstallments !== null && data.customProfitMarginInstallments !== '') {
       formData.append('customProfitMarginInstallments', data.customProfitMarginInstallments.toString());
+    }
+    if (data.useCustomPricingMethod && data.customPricingMethod) {
+      formData.append('customPricingMethod', data.customPricingMethod);
     }
 
     formData.append('isActive', String(data.isActive));

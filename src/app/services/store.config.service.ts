@@ -28,8 +28,12 @@ export class StoreConfigService {
     return this.#masterClientID
   }
 
-  async updateConfig(config: Partial<IEcommerceConfig>) {
-    return firstValueFrom(this.#http.put<IEcommerceConfig>(this.#apiUrl, config));
+  async updateConfig(config: Partial<IEcommerceConfig>): Promise<{ success: boolean; data: IEcommerceConfig; shouldRecalculate: boolean }> {
+    return firstValueFrom(this.#http.put<{ success: boolean; data: IEcommerceConfig; shouldRecalculate: boolean }>(this.#apiUrl, config));
+  }
+
+  async recalculatePrices(): Promise<{ success: boolean; message: string }> {
+    return firstValueFrom(this.#http.post<{ success: boolean; message: string }>(`${this.#apiUrl}/recalculate-prices`, {}));
   }
 
   async updateMPConfig(config: Partial<IUpdateMPConfigDTO>) {

@@ -171,7 +171,50 @@
                                 </div>
                             </fieldset>
 
-                            <!-- Custom Profit Margin -->
+                            <!-- Método de cálculo de ganancia -->
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend w-full flex justify-between items-center gap-2">
+                                    <span class="truncate">Método de cálculo</span>
+                                    @if (!productForm.get('useCustomPricingMethod')?.value) {
+                                    <div class="badge badge-sm bg-success/15 text-success border-success/30 font-bold gap-1">
+                                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">settings</mat-icon>
+                                        Global — {{ globalPricingMethod() === 'markup' ? 'Sobre el costo' : 'Sobre la venta' }}
+                                    </div>
+                                    } @else {
+                                    <div class="badge badge-sm bg-warning/15 text-warning border-warning/30 font-bold gap-1">
+                                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">edit</mat-icon>
+                                        Custom — {{ productForm.get('customPricingMethod')?.value === 'markup' ? 'Sobre el costo' : 'Sobre la venta' }}
+                                    </div>
+                                    }
+                                </legend>
+
+                                <div class="flex items-center justify-between gap-3 w-full">
+                                    @if (!productForm.get('useCustomPricingMethod')?.value) {
+                                    <!-- Locked: using global method -->
+                                    <div
+                                        class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 sm:py-3 border border-info/20 rounded-lg flex items-center gap-2 leading-tight">
+                                        <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
+                                        <span class="flex-1">Usando el método global: <strong>{{ globalPricingMethod() === 'markup' ? 'Markup (sobre el costo)' : 'Margin (sobre la venta)' }}</strong></span>
+                                    </div>
+                                    } @else {
+                                    <!-- Custom method selector -->
+                                    <select formControlName="customPricingMethod"
+                                        class="select select-bordered w-full focus:border-warning/50">
+                                        <option value="markup">Sobre el Costo (Markup)</option>
+                                        <option value="margin">Sobre la Venta (Margin)</option>
+                                    </select>
+                                    }
+                                </div>
+
+                                <label class="flex items-center gap-1.5 cursor-pointer mt-2">
+                                    <input type="checkbox" class="checkbox checkbox-xs checkbox-warning"
+                                        formControlName="useCustomPricingMethod" />
+                                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-warning">Usar método diferente</span>
+                                </label>
+                            </fieldset>
+                        </div>
+
+                        <!-- Custom Profit Margin -->
                             <div class="flex flex-col gap-3">
                                 <!-- transferencia, débito y 1 pago crédito -->
                                 <fieldset class="fieldset">
@@ -277,7 +320,7 @@
                 </div>
 
 
-            </div>
+           
 
             <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
                 [class.block]="tabSelected() === 'Especificaciones principales'"
