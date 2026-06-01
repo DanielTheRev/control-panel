@@ -113,7 +113,7 @@ export class OrderDetails implements OnInit {
     const earnings = item.productSnapshot?.prices?.earnings;
     if (!earnings) return 0;
     const paymentMethod = currentOrder.paymentInfo;
-    const installments = currentOrder.paymentInfo.mercadopagoData.transactions.payments[0].payment_method.installments;
+    const installments = currentOrder.paymentInfo?.mercadopagoData?.transactions?.payments?.[0]?.payment_method?.installments;
     let unitPrice = 0;
     switch (paymentMethod.method) {
       case PaymentType.CARD:

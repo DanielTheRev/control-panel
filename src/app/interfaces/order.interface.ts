@@ -47,11 +47,15 @@ export interface IOrderItem {
 // Interface para dirección de envío
 export interface IShippingAddress {
   street: string;
+  number?: string;
+  apartment?: string;
   city: string;
   state: string;
-  postalCode: string;
-  country: string;
+  postalCode?: string;
+  zipCode?: string;
+  country?: string;
   phone?: string;
+  recipientName?: string;
 }
 
 // Interface para información de envío
@@ -113,11 +117,15 @@ export interface OrdersApiResponse {
 // Interface para dirección de envío
 export interface IShippingAddress {
   street: string;
+  number?: string;
+  apartment?: string;
   city: string;
   state: string;
-  postalCode: string;
-  country: string;
+  postalCode?: string;
+  zipCode?: string;
+  country?: string;
   phone?: string;
+  recipientName?: string;
 }
 
 // Interface para información de envío

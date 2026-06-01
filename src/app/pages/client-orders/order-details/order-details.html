@@ -323,6 +323,40 @@
                   </div>
                 </div>
                 }
+                @if (order()!.shippingInfo.shippingAddress) {
+                @let addr = order()!.shippingInfo.shippingAddress!;
+                <div class="border-t border-base-200/60 pt-3 mt-2 flex flex-col gap-1.5 text-xs">
+                  @if (addr.recipientName) {
+                  <div class="flex justify-between items-start gap-4">
+                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Destinatario</span>
+                    <span class="text-right text-base-content/70 font-medium">{{ addr.recipientName }}</span>
+                  </div>
+                  }
+                  @if (addr.phone) {
+                  <div class="flex justify-between items-start gap-4">
+                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Teléfono</span>
+                    <span class="text-right text-base-content/70 font-medium">{{ addr.phone }}</span>
+                  </div>
+                  }
+                  <div class="flex justify-between items-start gap-4">
+                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Dirección</span>
+                    <div class="text-right">
+                      <span class="text-base-content/70 font-medium block">
+                        {{ addr.street }} {{ addr.number }}
+                        @if (addr.apartment) {
+                          - {{ addr.apartment }}
+                        }
+                      </span>
+                      <span class="text-[10px] text-base-content/40 block">
+                        {{ addr.city }}, {{ addr.state }}
+                        @if (addr.zipCode) {
+                          (CP {{ addr.zipCode }})
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                }
               </div>
             </div>
 
@@ -349,7 +383,7 @@
                   </span>
                 </div>
 
-                @if (paymentType.ALIAS_TRANSFER || paymentType.BANK_TRANSFER) {
+                @if (order()?.paymentInfo?.method === paymentType.ALIAS_TRANSFER || order()?.paymentInfo?.method === paymentType.BANK_TRANSFER) {
                 @let payerData = order()?.buyerData;
                 <div class="border-t border-base-200/60 pt-3 mt-2">
                   <p class="text-[10px] text-base-content/40 mb-2">
