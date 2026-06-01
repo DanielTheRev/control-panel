@@ -8,6 +8,7 @@ import {
 import { WebSocketState } from '../interfaces/websocket.interface';
 import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
+import { SoundService } from './sound.service';
 import { environment } from '../../environments/environment';
 import { getTenantSlug } from '../utils/tenant.utils';
 
@@ -17,6 +18,7 @@ import { getTenantSlug } from '../utils/tenant.utils';
 export class WebSocketService {
   private socket: Socket | null = null;
   private orderState = inject(OrdersStateService);
+  private soundService = inject(SoundService);
 
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
@@ -95,7 +97,7 @@ export class WebSocketService {
 
       // Mostrar notificación nativa si es relevante
       if (!notification.read) {
-        this.showNotification(notification.title, notification.message);
+        this.showNotification(notification.title, notification.message, notification.id);
       }
     });
   }
@@ -104,6 +106,9 @@ export class WebSocketService {
     // Si es una nueva orden, actualizar el estado
     if (notification.type === NotificationType.NEW_ORDER) {
       this.orderState.addNewOrder(notification.data);
+      if (!notification.read) {
+        this.soundService.startOrderAlarm();
+      }
     }
   }
 
@@ -127,21 +132,28 @@ export class WebSocketService {
     }));
   }
 
-  private showNotification(title: string, body: string): void {
+  private showNotification(title: string, body: string, notificationId?: string): void {
+    const options: NotificationOptions = {
+      body,
+      icon: '/favicon.ico',
+      tag: notificationId || 'nexocommerce-admin',
+    };
+
+    const createNotification = () => {
+      const n = new Notification(title, options);
+      n.onclick = (e) => {
+        e.preventDefault();
+        window.focus();
+        this.soundService.stopAlarm();
+      };
+    };
+
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, {
-        body,
-        icon: '/favicon.ico',
-        tag: 'nexocommerce-admin',
-      });
+      createNotification();
     } else {
       this.requestNotificationPermission().then(() => {
         if (Notification.permission === 'granted') {
-          new Notification(title, {
-            body,
-            icon: '/favicon.ico',
-            tag: 'nexocommerce-admin',
-          });
+          createNotification();
         }
       });
     }
@@ -161,6 +173,7 @@ export class WebSocketService {
   }
 
   markAsRead(notificationId?: string): void {
+    this.soundService.stopAlarm();
     if (notificationId) {
       this._wsState.update((state) => ({
         ...state,
@@ -179,6 +192,7 @@ export class WebSocketService {
   }
 
   clearNotifications(): void {
+    this.soundService.stopAlarm();
     this._wsState.update((state) => ({
       ...state,
       notifications: [],

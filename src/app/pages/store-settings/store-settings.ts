@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { IEcommerceConfig } from '../../interfaces/config.interface';
 import { SidebarService } from '../../services/sidebar.service';
@@ -9,11 +9,12 @@ import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { NotificationsService } from '../../services/notifications.service';
 import { Router } from '@angular/router';
+import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [PageHeader, PageLayout, ReactiveFormsModule, MatIcon, CommonModule],
+  imports: [PageHeader, PageLayout, ReactiveFormsModule, MatIcon, CommonModule, SingleImageUpload],
   templateUrl: './store-settings.html',
   styleUrl: './store-settings.scss'
 })
@@ -27,6 +28,8 @@ export class StoreSettings {
   mp_error = input<boolean>();
 
   configForm: FormGroup;
+  logoControl = new FormControl<any>(null);
+  isUploadingLogo = signal(false);
   showRecalculateModal = signal(false);
   isRecalculating = signal(false);
 
@@ -98,6 +101,9 @@ export class StoreSettings {
       const { hasData, config, hasError, isLoading } = this.configState.StoreConfig()
       if (hasData && !hasError && !isLoading) {
         this.configForm.patchValue(config);
+        if (config.logo) {
+          this.logoControl.setValue(config.logo, { emitEvent: false });
+        }
       }
     })
     effect(() => {
@@ -178,5 +184,18 @@ export class StoreSettings {
       clothingFits: currentFits.filter(f => f !== fitToRemove)
     });
     this.configForm.markAsDirty();
+  }
+
+  get isNewLogoSelected(): boolean {
+    return this.logoControl.value instanceof File;
+  }
+
+  async uploadLogo() {
+    const file = this.logoControl.value;
+    if (!(file instanceof File)) return;
+
+    this.isUploadingLogo.set(true);
+    const success = await this.configState.uploadLogo(file);
+    this.isUploadingLogo.set(false);
   }
 }

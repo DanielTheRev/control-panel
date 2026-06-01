@@ -15,6 +15,10 @@ export interface IPaymentMethod {
   description?: string;
   isActive: boolean;
   processingFee?: number; // Comisión en porcentaje (opcional)
+  alias?: string;
+  cbuCvu?: string;
+  bankName?: string;
+  titular?: string;
   createdAt: Date;
   updatedAt: Date;
 }

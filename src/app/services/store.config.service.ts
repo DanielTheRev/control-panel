@@ -32,6 +32,18 @@ export class StoreConfigService {
     return firstValueFrom(this.#http.put<{ success: boolean; data: IEcommerceConfig; shouldRecalculate: boolean }>(this.#apiUrl, config));
   }
 
+  async uploadLogo(file: File): Promise<{ success: boolean; logoUrl: string }> {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return firstValueFrom(
+      this.#http.patch<{ success: boolean; logoUrl: string }>(
+        `${environment.apiUrl}/config/logo`,
+        formData,
+        { withCredentials: true }
+      )
+    );
+  }
+
   async recalculatePrices(): Promise<{ success: boolean; message: string }> {
     return firstValueFrom(this.#http.post<{ success: boolean; message: string }>(`${this.#apiUrl}/recalculate-prices`, {}));
   }

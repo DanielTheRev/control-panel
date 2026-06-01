@@ -1,12 +1,22 @@
 // ============ ENUMS ============
 
-import { IProvider } from "./provider.interface";
+import { IProvider } from './provider.interface';
 
 export enum ProductType {
   TECH = 'TechProduct',
-  CLOTHING = 'ClothingProduct'
+  CLOTHING = 'ClothingProduct',
 }
 
+export interface ISizeGuideRow {
+  size: string;
+  values: string[];
+}
+
+export interface ISizeGuide {
+  headers: string[];
+  rows: ISizeGuideRow[];
+  tolerance?: string;
+}
 
 // ============ VARIANT INTERFACES ============
 export interface IVariantColor {
@@ -43,7 +53,6 @@ export interface ITechVariant extends IBaseVariant {
 
 // Union type para contextos donde no se discrimina el tipo
 export type IVariant = IClothingVariant | ITechVariant;
-
 
 // ============ PRODUCT INTERFACES ============
 
@@ -86,7 +95,8 @@ export interface IProduct {
   sizeType?: ClothingSizeType;
   careInstructions?: string[];
   season?: string;
-  seo: IProductSeo
+  sizeGuide?: ISizeGuide;
+  seo: IProductSeo;
 }
 
 export interface ITechProduct extends IProduct {
@@ -110,27 +120,28 @@ export interface IClothingProduct extends IProduct {
   careInstructions?: string[];
   season?: string;
   variants: IClothingVariant[];
+  sizeGuide?: ISizeGuide;
 }
 
 export enum ClothingGender {
   Hombre = 'Hombre',
   Mujer = 'Mujer',
   Unisex = 'Unisex',
-  Ninos = 'Niños'
+  Ninos = 'Niños',
 }
 
 export enum ClothingFit {
   Regular = 'Regular',
   Slim = 'Slim',
   Oversized = 'Oversized',
-  Relaxed = 'Relaxed'
+  Relaxed = 'Relaxed',
 }
 
 export enum ClothingSizeType {
   Ropa = 'Ropa',
   Calzado = 'Calzado',
   Numerico = 'Numérico',
-  Unico = 'Talle Único'
+  Unico = 'Talle Único',
 }
 
 export interface IProductPrices {
@@ -164,9 +175,9 @@ export interface IProductSeo {
   metaTitle: string;
   metaDescription: string;
   metaImage: {
-    url: string,
-    public_id: string
-  }
+    url: string;
+    public_id: string;
+  };
 }
 
 export interface IProductImage {
@@ -207,13 +218,12 @@ export interface IProductCreateDTO {
   composition?: { material: string; percentage: number }[];
   sizeType?: string;
   careInstructions?: string[];
-  seo?: IProductSeo
+  seo?: IProductSeo;
 }
 
 export interface IProductUpdateDTO extends Partial<IProductCreateDTO> {
   _id: string;
 }
-
 
 // Le dice a TS: "Si esta función da true, te juro que v es ITechVariant"
 export function isTechVariant(v: IVariant): v is ITechVariant {

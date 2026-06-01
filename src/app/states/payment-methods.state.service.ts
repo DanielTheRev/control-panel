@@ -2,11 +2,14 @@ import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { IPaymentMethod } from '../interfaces/paymentInfo.interface';
 import { PaymentMethodsService } from '../services/payment-methods.service';
-import { IAggregatedPaymentMethodsResponse, IUpdateMPConfigDTO } from '../interfaces/mercadopago.interface';
+import {
+  IAggregatedPaymentMethodsResponse,
+  IUpdateMPConfigDTO,
+} from '../interfaces/mercadopago.interface';
 import { StoreConfigService } from '../services/store.config.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PaymentMethodsStateService {
   #paymentService = inject(PaymentMethodsService);
@@ -22,17 +25,17 @@ export class PaymentMethodsStateService {
   readonly state = computed(() => ({
     manualMethods: this.#state.value()?.manualMethods || [],
     automaticGateways: this.#state.value()?.automaticGateways || {
-        mercadopago: {
-            active: false,
-            availableMethods: [],
-            excludedPaymentMethods: [],
-            excludedPaymentTypes: []
-        }
+      mercadopago: {
+        active: false,
+        availableMethods: [],
+        excludedPaymentMethods: [],
+        excludedPaymentTypes: [],
+      },
     },
     isLoading: this.#state.isLoading(),
     error: this.#state.error(),
     hasValue: this.#state.hasValue(),
-  }))
+  }));
 
   refresh() {
     this.#state.reload();
@@ -44,10 +47,10 @@ export class PaymentMethodsStateService {
 
   async addPaymentMethod(paymentMethod: any) {
     try {
-      const newPaymentMethod = await this.#paymentService.create(paymentMethod);
+      await this.#paymentService.create(paymentMethod);
       this.refresh(); // Reload to get aggregated state
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -56,7 +59,7 @@ export class PaymentMethodsStateService {
       await this.#paymentService.update(id, paymentMethod);
       this.refresh(); // Reload to get aggregated state
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -65,7 +68,7 @@ export class PaymentMethodsStateService {
       await this.#paymentService.delete(id);
       this.refresh(); // Reload to get aggregated state
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -77,4 +80,4 @@ export class PaymentMethodsStateService {
       throw error;
     }
   }
-}
+}

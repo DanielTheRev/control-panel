@@ -39,7 +39,11 @@ export class PaymentMethodsCreate implements OnInit {
     name: ['', Validators.required],
     type: ['', Validators.required],
     description: ['', Validators.required],
-    isActive: [true]
+    isActive: [true],
+    alias: [''],
+    cbuCvu: ['', [Validators.pattern(/^\d{22}$/)]],
+    bankName: [''],
+    titular: ['']
   });
 
   ngOnInit() {
@@ -56,7 +60,11 @@ export class PaymentMethodsCreate implements OnInit {
         name: method.name,
         type: method.type,
         description: method.description,
-        isActive: method.isActive
+        isActive: method.isActive,
+        alias: method.alias || '',
+        cbuCvu: method.cbuCvu || '',
+        bankName: method.bankName || '',
+        titular: method.titular || ''
       });
     } catch (error) {
       console.error('Error loading payment method', error);
@@ -71,6 +79,13 @@ export class PaymentMethodsCreate implements OnInit {
     }
 
     const value = this.form.value;
+
+    if (value.type !== 'BANK_TRANSFER' && value.type !== 'ALIAS_TRANSFER') {
+      value.alias = '';
+      value.cbuCvu = '';
+      value.bankName = '';
+      value.titular = '';
+    }
 
     if (this.isEditMode()) {
       try {

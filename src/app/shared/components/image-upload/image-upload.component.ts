@@ -59,6 +59,8 @@ export class ImageUploadComponent {
     this.imagesControls().push(imageGroup);
   }
 
+  imagesChanged = output<void>();
+
   removeImage(index: number) {
     const control = this.imagesControls().at(index);
     const blobURL = control.value.link;
@@ -74,5 +76,6 @@ export class ImageUploadComponent {
       }
     }
     this.imagesControls().removeAt(index);
+    this.imagesChanged.emit();
   }
 }

@@ -60,6 +60,19 @@ export class StoreConfigStateService {
     }
   }
 
+  async uploadLogo(file: File): Promise<boolean> {
+    try {
+      await this.#configService.uploadLogo(file);
+      this.#notificationService.success('Logo de la tienda actualizado');
+      this.#RsState.reload();
+      return true;
+    } catch (error) {
+      console.error('Error uploading logo', error);
+      this.#notificationService.error('Error al subir el logotipo');
+      return false;
+    }
+  }
+
   async recalculateAllPrices(): Promise<boolean> {
     try {
       await this.#configService.recalculatePrices();

@@ -103,6 +103,52 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Datos de la Cuenta (Condicional para Transferencia y Alias) -->
+                @if (form.get('type')?.value === 'BANK_TRANSFER' || form.get('type')?.value === 'ALIAS_TRANSFER') {
+                <div class="card bg-base-100 shadow-sm border border-base-300 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div class="card-body p-6">
+                        <h3 class="card-title text-lg mb-4 flex items-center gap-2">
+                            <mat-icon class="text-primary">account_balance</mat-icon>
+                            Datos de la Cuenta Bancaria / Virtual
+                        </h3>
+                        <p class="text-xs opacity-60 mb-4">
+                            Ingresa los datos de destino de la transferencia. Estos datos se presentarán al comprador al finalizar su pedido.
+                        </p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Banco / Entidad Financiera</legend>
+                                <input type="text" class="input input-bordered w-full" formControlName="bankName"
+                                    placeholder="Ej. Banco Galicia, Mercado Pago" />
+                            </fieldset>
+
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Titular de la Cuenta</legend>
+                                <input type="text" class="input input-bordered w-full" formControlName="titular"
+                                    placeholder="Ej. Juan Pérez" />
+                            </fieldset>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Número de CBU / CVU</legend>
+                                <input type="text" class="input input-bordered w-full" formControlName="cbuCvu"
+                                    placeholder="Ej. 0000003100012345678901 (22 dígitos)" maxlength="22" />
+                                @if (form.get('cbuCvu')?.touched && form.get('cbuCvu')?.errors?.['pattern']) {
+                                    <span class="text-error text-xs mt-1">El CBU/CVU debe tener exactamente 22 dígitos numéricos.</span>
+                                }
+                            </fieldset>
+
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Alias de la Cuenta</legend>
+                                <input type="text" class="input input-bordered w-full" formControlName="alias"
+                                    placeholder="Ej. tienda.vura.mp" />
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+                }
             </div>
 
             <!-- Help/Side Info -->

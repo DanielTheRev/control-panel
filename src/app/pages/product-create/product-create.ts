@@ -26,6 +26,13 @@ import { AddBrandCategory } from '../../share/components/add-brand-category/add-
 import { ProviderStateService } from '../../states/provider.state.service';
 import { ProviderCreate } from '../provider-create/provider-create';
 
+interface SizeGuideState {
+  enabled: boolean;
+  headers: string[];
+  rows: { size: string; values: string[] }[];
+  tolerance: string;
+}
+
 @Component({
   selector: 'app-product-create',
   imports: [
@@ -141,10 +148,18 @@ export class ProductCreate {
         ? this.techInitialValue()
         : this.clothingInitialValue();
     }
+    
+    const sizeGuide = this.sizeGuideState();
+    const sizeGuideData = sizeGuide.enabled ? {
+      headers: sizeGuide.headers,
+      rows: sizeGuide.rows,
+      tolerance: sizeGuide.tolerance
+    } : null;
 
     return {
       ...currentFormValue,
       variants: this.#parseVariants(),
+      sizeGuide: sizeGuideData,
       ...(typeSpecific || {}) // Esparcimos la ram, gender, etc.
     };
   }
@@ -202,9 +217,103 @@ export class ProductCreate {
     { label: 'Especificaciones técnicas', active: false },
     { label: 'Variantes', active: false },
     { label: 'SEO & Social', active: false },
+    { label: 'Guía de Talles', active: false },
   ])
 
   tabSelected = computed(() => this.tabs().find(tab => tab.active)!.label)
+
+  sizeGuideState = signal<SizeGuideState>({
+    enabled: false,
+    headers: ['Talle', 'Ancho (cm)', 'Largo (cm)'],
+    rows: [{ size: 'S', values: ['48', '65'] }],
+    tolerance: ''
+  });
+
+  isSizeGuideValid = computed(() => {
+    const state = this.sizeGuideState();
+    if (!state.enabled) return true;
+    if (state.headers.length < 2) return false;
+    if (state.headers.some(h => !h.trim())) return false;
+    if (state.rows.length < 1) return false;
+    for (const row of state.rows) {
+      if (!row.size.trim()) return false;
+      if (row.values.length !== state.headers.length - 1) return false;
+      if (row.values.some(v => !v.trim())) return false;
+    }
+    return true;
+  });
+
+  toggleSizeGuide(e: Event) {
+    const enabled = (e.target as HTMLInputElement).checked;
+    this.sizeGuideState.update(s => ({ ...s, enabled }));
+  }
+
+  addSizeGuideColumn() {
+    this.sizeGuideState.update(s => ({
+      ...s,
+      headers: [...s.headers, 'Nueva Medida'],
+      rows: s.rows.map(r => ({ ...r, values: [...r.values, ''] }))
+    }));
+  }
+
+  removeSizeGuideColumn(index: number) {
+    this.sizeGuideState.update(s => {
+      if (s.headers.length <= 2) return s; // Minimum 2 columns
+      return {
+        ...s,
+        headers: s.headers.filter((_, i) => i !== index),
+        rows: s.rows.map(r => ({ ...r, values: r.values.filter((_, i) => i !== index - 1) }))
+      };
+    });
+  }
+
+  addSizeGuideRow() {
+    this.sizeGuideState.update(s => ({
+      ...s,
+      rows: [...s.rows, { size: '', values: new Array(s.headers.length - 1).fill('') }]
+    }));
+  }
+
+  removeSizeGuideRow(index: number) {
+    this.sizeGuideState.update(s => ({
+      ...s,
+      rows: s.rows.filter((_, i) => i !== index)
+    }));
+  }
+
+  updateSizeGuideHeader(index: number, e: Event) {
+    const value = (e.target as HTMLInputElement).value;
+    this.sizeGuideState.update(s => {
+      const newHeaders = [...s.headers];
+      newHeaders[index] = value;
+      return { ...s, headers: newHeaders };
+    });
+  }
+
+  updateSizeGuideRowSize(rowIndex: number, e: Event) {
+    const value = (e.target as HTMLInputElement).value;
+    this.sizeGuideState.update(s => {
+      const newRows = [...s.rows];
+      newRows[rowIndex] = { ...newRows[rowIndex], size: value };
+      return { ...s, rows: newRows };
+    });
+  }
+
+  updateSizeGuideRowValue(rowIndex: number, colIndex: number, e: Event) {
+    const value = (e.target as HTMLInputElement).value;
+    this.sizeGuideState.update(s => {
+      const newRows = [...s.rows];
+      const newValues = [...newRows[rowIndex].values];
+      newValues[colIndex] = value;
+      newRows[rowIndex] = { ...newRows[rowIndex], values: newValues };
+      return { ...s, rows: newRows };
+    });
+  }
+
+  updateSizeGuideTolerance(e: Event) {
+    const value = (e.target as HTMLTextAreaElement).value;
+    this.sizeGuideState.update(s => ({ ...s, tolerance: value }));
+  }
 
   setActiveTab(label: string) {
     this.tabs.update(tabs => tabs.map(tab => ({
@@ -251,6 +360,9 @@ export class ProductCreate {
       if (controls[name].invalid) {
         invalid.push(translations[name] || name);
       }
+    }
+    if (!this.isSizeGuideValid()) {
+      invalid.push('Guía de Talles');
     }
     return invalid;
   }
@@ -417,6 +529,22 @@ export class ProductCreate {
         });
       }
 
+      if (product.sizeGuide) {
+        this.sizeGuideState.set({
+          enabled: true,
+          headers: product.sizeGuide.headers || ['Talle', 'Medida'],
+          rows: product.sizeGuide.rows || [{ size: '', values: [''] }],
+          tolerance: product.sizeGuide.tolerance || ''
+        });
+      } else {
+        this.sizeGuideState.set({
+          enabled: false,
+          headers: ['Talle', 'Ancho (cm)', 'Largo (cm)'],
+          rows: [{ size: 'S', values: ['48', '65'] }],
+          tolerance: ''
+        });
+      }
+
       const useCustom1Pay = hasCustomMargin1Pay;
       const useCustomInstallments = hasCustomMarginInstallments;
       this.productForm.patchValue({
@@ -572,6 +700,36 @@ export class ProductCreate {
 
   onImageDeleted(publicId: string) {
     this.#deletedImages.update(imgs => [...imgs, publicId]);
+    // Clamp color group imageIndex values since the images array shrank
+    this.#clampColorGroupImageIndices();
+  }
+
+  /** Safely get the image link for a color group's selected image */
+  getColorGroupImageLink(group: any): string {
+    const images = this.imagesControls.value;
+    if (!images || images.length === 0) return '';
+    let idx = group.get('imageIndex')?.value ?? 0;
+    if (idx >= images.length) {
+      idx = images.length - 1;
+    }
+    if (idx < 0) idx = 0;
+    return images[idx]?.link || '';
+  }
+
+  /** Clamp all color group imageIndex values to valid range after images change */
+  #clampColorGroupImageIndices() {
+    const maxIndex = this.imagesControls.length - 1;
+    this.colorGroupsControls.controls.forEach((group: any) => {
+      const imageIndexCtrl = group.get('imageIndex');
+      if (imageIndexCtrl && imageIndexCtrl.value > maxIndex) {
+        imageIndexCtrl.setValue(Math.max(0, maxIndex));
+      }
+    });
+  }
+
+  /** Called when any image (blob or existing) is added or removed from the images FormArray */
+  onImagesChanged() {
+    this.#clampColorGroupImageIndices();
   }
 
   /** Recibe la URL de preview desde SingleImageUpload y actualiza el signal local */
@@ -694,7 +852,7 @@ export class ProductCreate {
   }
 
   async saveProduct() {
-    if (this.productForm.invalid) {
+    if (this.productForm.invalid || !this.isSizeGuideValid()) {
       this.productForm.markAllAsTouched();
       return;
     }

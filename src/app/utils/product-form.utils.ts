@@ -264,6 +264,33 @@ export class ProductFormUtils {
       changes.hasChanges = true;
     }
 
+    // --- 9. SIZE GUIDE ---
+    const origSizeGuide = originalProduct.sizeGuide || null;
+    const newSizeGuide = productData.sizeGuide || null;
+    
+    // Normalize before compare to avoid key ordering issues
+    const normalizedOrig = origSizeGuide ? JSON.stringify({
+      headers: origSizeGuide.headers || [],
+      rows: origSizeGuide.rows || [],
+      tolerance: origSizeGuide.tolerance || ''
+    }) : 'null';
+    
+    const normalizedNew = newSizeGuide ? JSON.stringify({
+      headers: newSizeGuide.headers || [],
+      rows: newSizeGuide.rows || [],
+      tolerance: newSizeGuide.tolerance || ''
+    }) : 'null';
+
+    if (normalizedNew !== normalizedOrig) {
+      console.warn(`[DEBUG] Change detected in sizeGuide. New: '${normalizedNew}', Orig: '${normalizedOrig}'`);
+      if (newSizeGuide) {
+        changes.formData.append('sizeGuide', JSON.stringify(newSizeGuide));
+      } else {
+        changes.formData.append('sizeGuide', 'null');
+      }
+      changes.hasChanges = true;
+    }
+
     return changes;
   }
 }

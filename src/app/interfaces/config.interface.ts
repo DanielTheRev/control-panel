@@ -1,5 +1,6 @@
 export interface IEcommerceConfig {
   name: string;
+  logo?: string;
   profit: number;
   profit1Pay?: number;
   profitInstallments?: number;

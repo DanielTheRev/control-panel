@@ -32,7 +32,7 @@
             </h3>
             <p class="text-sm text-base-content/60 mt-1 pl-10">Información básica y pública de la tienda.</p>
           </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-md">
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-md divide-y divide-base-200">
             <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="sm:w-1/3 shrink-0">
                 <label class="text-sm font-medium text-base-content">Nombre del Comercio</label>
@@ -40,6 +40,39 @@
               <div class="sm:w-2/3">
                 <input type="text" formControlName="name" class="input input-bordered w-full max-w-md focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
                   placeholder="Nombre de tu tienda" />
+              </div>
+            </div>
+            
+            <div class="p-5 sm:p-6 flex flex-col sm:flex-row gap-4">
+              <div class="sm:w-1/3 shrink-0">
+                <label class="text-sm font-medium text-base-content block">Logotipo de la Tienda</label>
+                <p class="text-xs text-base-content/60 mt-1 max-w-62.5">
+                  Sube una imagen (PNG, JPG, WEBP) para identificar tu tienda. Se recomienda formato cuadrado.
+                </p>
+              </div>
+              <div class="sm:w-2/3 flex flex-col gap-4 max-w-md">
+                <app-single-image-upload
+                  title="Logo del Comercio"
+                  ratioBadge="SQUARE"
+                  [control]="logoControl"
+                />
+                
+                @if (isNewLogoSelected) {
+                  <button
+                    type="button"
+                    class="btn btn-primary self-start shadow-md hover:shadow-lg transition-all"
+                    [disabled]="isUploadingLogo()"
+                    (click)="uploadLogo()"
+                  >
+                    @if (isUploadingLogo()) {
+                      <span class="loading loading-spinner loading-xs"></span>
+                      Subiendo...
+                    } @else {
+                      <mat-icon class="mr-1 -ml-1 text-sm">cloud_upload</mat-icon>
+                      Actualizar Logotipo
+                    }
+                  </button>
+                }
               </div>
             </div>
           </div>
