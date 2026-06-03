@@ -52,6 +52,13 @@ export class ProductList {
   dataSource = new MatTableDataSource<IProduct>([]);
   private searchSubject = new Subject<string>();
 
+  simulateUnits = signal<number>(1);
+
+  onSimulateUnitsChange(event: Event) {
+    const val = (event.target as HTMLSelectElement).value;
+    this.simulateUnits.set(Number(val));
+  }
+
   // Selection state
   selectedProducts = signal<string[]>([]);
 
@@ -121,11 +128,17 @@ export class ProductList {
     this.ProductState.setStatusFilter('');
   }
 
+  toggleNoSeoFilter() {
+    const current = this.ProductState.currentNoSeoOnlyFilter();
+    this.ProductState.setNoSeoOnlyFilter(!current);
+  }
+
   clearAllFilters() {
     this.ProductState.setSearchQuery('');
     this.ProductState.setCategoryFilter('');
     this.ProductState.setProviderFilter('');
     this.ProductState.setStatusFilter('');
+    this.ProductState.setNoSeoOnlyFilter(false);
   }
 
   onPageChange(event: PageEvent) {

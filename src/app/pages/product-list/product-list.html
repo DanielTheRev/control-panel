@@ -42,9 +42,21 @@
         </div>
 
         <!-- Active Filters Badges -->
-        @if (ProductState.currentSearchQuery() || ProductState.currentCategoryFilter() || ProductState.currentProviderFilter() || ProductState.currentStatusFilter()) {
+        @if (ProductState.currentSearchQuery() || ProductState.currentCategoryFilter() || ProductState.currentProviderFilter() || ProductState.currentStatusFilter() || ProductState.currentNoSeoOnlyFilter()) {
         <div class="flex flex-wrap items-center gap-2 mt-3 text-sm px-2">
           <span class="text-base-content/60 font-medium">Filtros activos:</span>
+
+          @if (ProductState.currentNoSeoOnlyFilter()) {
+          <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-amber-800 font-medium shadow-sm">
+            Filtro: Sin SEO
+            <button (click)="ProductState.setNoSeoOnlyFilter(false)" class="ml-2 hover:text-amber-600 focus:outline-none transition-colors">
+              <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+              </svg>
+            </button>
+          </span>
+          }
 
           @if (ProductState.currentSearchQuery()) {
           <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-blue-800 font-medium shadow-sm">
@@ -128,6 +140,119 @@
 
   <ng-container content>
     <div class="flex-1 flex flex-col min-h-0 w-full">
+      <!-- DASHBOARD DE ESTADÍSTICAS RÁPIDAS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 px-4 sm:px-6 w-full pt-4">
+        
+        <!-- Card 1: Total Productos -->
+        <div class="bg-base-100/60 backdrop-blur-md border border-base-300 shadow-sm rounded-2xl p-5 hover:shadow-md transition-all duration-300 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 border border-blue-500/20">
+            <mat-icon class="text-[24px]! w-6! h-6!">inventory_2</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5">Total Productos</p>
+            @if (ProductState.statsLoading()) {
+              <div class="h-8 w-20 bg-base-300 animate-pulse rounded-md mt-1"></div>
+              <div class="h-4 w-32 bg-base-300 animate-pulse rounded-md mt-1"></div>
+            } @else {
+              <p class="text-2xl font-black text-base-content tracking-tight">
+                {{ ProductState.totalProductsCount() }}
+              </p>
+              <p class="text-xs text-base-content/50 truncate font-medium">
+                {{ ProductState.activeProductsCount() }} activos / {{ ProductState.inactiveProductsCount() }} inactivos
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Card 2: SEO Configurado -->
+        <div (click)="toggleNoSeoFilter()"
+          class="backdrop-blur-md border shadow-sm rounded-2xl p-5 hover:shadow-md transition-all duration-300 flex items-center gap-4 cursor-pointer select-none"
+          [ngClass]="ProductState.currentNoSeoOnlyFilter() ? 'border-amber-500 ring-2 ring-amber-500/25 bg-amber-500/10' : 'bg-base-100/60 border-base-300'">
+          @let hasMissingSeo = ProductState.noSeoCount() > 0;
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-colors duration-300"
+            [ngClass]="hasMissingSeo ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-success/10 text-success border-success/20'">
+            <mat-icon class="text-[24px]! w-6! h-6!">travel_explore</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5">SEO Sin Configurar</p>
+            @if (ProductState.statsLoading()) {
+              <div class="h-8 w-20 bg-base-300 animate-pulse rounded-md mt-1"></div>
+              <div class="h-4 w-32 bg-base-300 animate-pulse rounded-md mt-1"></div>
+            } @else {
+              <div class="flex items-baseline gap-2">
+                <p class="text-2xl font-black tracking-tight transition-colors duration-300"
+                  [ngClass]="hasMissingSeo ? 'text-amber-600' : 'text-success'">
+                  {{ ProductState.noSeoCount() }}
+                </p>
+                @if (!hasMissingSeo) {
+                  <span class="badge badge-success badge-xs text-[10px] font-bold uppercase py-1 px-1.5 rounded">¡Al día!</span>
+                }
+              </div>
+              <p class="text-xs text-base-content/50 truncate font-medium">
+                @if (hasMissingSeo) {
+                  Falta meta título o descripción
+                } @else {
+                  100% de productos optimizados
+                }
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Card 3: Ganancia Estimada -->
+        <div class="bg-base-100/60 backdrop-blur-md border border-base-300 shadow-sm rounded-2xl p-5 hover:shadow-md transition-all duration-300 flex items-center gap-4 cursor-help"
+          [matTooltip]="'Desglose de ganancia estimada (' + simulateUnits() + ' ud' + (simulateUnits() > 1 ? 's' : '') + '. c/u):\n• Efectivo: ' + (ProductState.estimatedEarningsCash() * simulateUnits() | currency:'ARS':'symbol-narrow':'1.0-0') + '\n• Tarjeta: ' + (ProductState.estimatedEarningsCard1() * simulateUnits() | currency:'ARS':'symbol-narrow':'1.0-0') + '\n• 3 Cuotas: ' + (ProductState.estimatedEarningsCard3() * simulateUnits() | currency:'ARS':'symbol-narrow':'1.0-0') + '\n• 6 Cuotas: ' + (ProductState.estimatedEarningsCard6() * simulateUnits() | currency:'ARS':'symbol-narrow':'1.0-0')"
+          matTooltipPosition="above">
+          <div class="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center shrink-0 border border-success/20">
+            <mat-icon class="text-[24px]! w-6! h-6!">trending_up</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5">Ganancia Estimada</p>
+            @if (ProductState.statsLoading()) {
+              <div class="h-8 w-28 bg-base-300 animate-pulse rounded-md mt-1"></div>
+              <div class="h-4 w-32 bg-base-300 animate-pulse rounded-md mt-1"></div>
+            } @else {
+              <p class="text-2xl font-black text-success tracking-tight">
+                {{ ProductState.estimatedEarningsCash() * simulateUnits() | currency:"ARS":"symbol-narrow":"1.0-0" }}
+              </p>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] text-base-content/40 font-medium uppercase tracking-wider">Simular:</span>
+                <select [value]="simulateUnits()" (change)="onSimulateUnitsChange($event)" (click)="$event.stopPropagation()"
+                  class="select select-ghost select-xs text-[10px] font-bold text-success bg-success/5 border border-success/15 rounded-md focus:outline-none h-5 min-h-5 py-0 px-1">
+                  <option value="1">1 ud.</option>
+                  <option value="2">2 uds.</option>
+                  <option value="3">3 uds.</option>
+                  <option value="5">5 uds.</option>
+                  <option value="10">10 uds.</option>
+                </select>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Card 4: Stock Total -->
+        <div class="bg-base-100/60 backdrop-blur-md border border-base-300 shadow-sm rounded-2xl p-5 hover:shadow-md transition-all duration-300 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 border border-purple-500/20">
+            <mat-icon class="text-[24px]! w-6! h-6!">warehouse</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5">Inventario Físico</p>
+            @if (ProductState.statsLoading()) {
+              <div class="h-8 w-20 bg-base-300 animate-pulse rounded-md mt-1"></div>
+              <div class="h-4 w-32 bg-base-300 animate-pulse rounded-md mt-1"></div>
+            } @else {
+              <p class="text-2xl font-black text-base-content tracking-tight">
+                {{ ProductState.totalStockCount() }}
+              </p>
+              <p class="text-xs text-base-content/50 truncate font-medium">
+                Unidades activas totales
+              </p>
+            }
+          </div>
+        </div>
+
+      </div>
+
       @if (Products.hasError) {
       <div role="alert" class="alert alert-error mb-4">
         <span>Error al traer los productos</span>

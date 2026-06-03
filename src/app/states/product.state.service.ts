@@ -20,9 +20,13 @@ export class ProductStoreService {
   private categoryFilter = signal('');
   private providerFilter = signal('');
   private statusFilter = signal<string>('');
+  private noSeoOnly = signal(false);
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
+
+  // httpResource that fetches all products for global statistics
+  #allProductsForStats: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
 
   constructor() {
     this.#fetchedProducts = httpResource<IPaginatedResult<IProduct>>(() => ({
@@ -36,10 +40,39 @@ export class ProductStoreService {
         ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
       },
     }));
+
+    this.#allProductsForStats = httpResource<IPaginatedResult<IProduct>>(() => ({
+      url: `${environment.apiUrl}/products/admin/list`,
+      params: {
+        page: 1,
+        limit: 1000,
+        ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
+        ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
+        ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
+        ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+      },
+    }));
   }
 
   // Public computed state (maintains same shape for backward compatibility)
   readonly products = computed(() => {
+    if (this.noSeoOnly()) {
+      const all = this.allProducts().filter(p => !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim());
+      const page = this.pageNumber();
+      const limit = this.pageSize();
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const data = all.slice(startIndex, endIndex);
+
+      return {
+        data,
+        hasData: this.#allProductsForStats.hasValue(),
+        hasError: !!this.#allProductsForStats.error(),
+        isLoading: this.#allProductsForStats.isLoading(),
+        itemsCount: all.length,
+      };
+    }
+
     const result = this.#fetchedProducts.value();
     return {
       data: result?.data || [],
@@ -51,6 +84,19 @@ export class ProductStoreService {
   });
 
   readonly pagination = computed(() => {
+    if (this.noSeoOnly()) {
+      const all = this.allProducts().filter(p => !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim());
+      const limit = this.pageSize();
+      const totalPages = Math.ceil(all.length / limit);
+
+      return {
+        currentPage: this.pageNumber(),
+        totalPages: totalPages || 1,
+        totalItems: all.length,
+        itemsPerPage: limit,
+      };
+    }
+
     const result = this.#fetchedProducts.value();
     return result!.pagination
   });
@@ -69,6 +115,58 @@ export class ProductStoreService {
   readonly currentCategoryFilter = computed(() => this.categoryFilter());
   readonly currentProviderFilter = computed(() => this.providerFilter());
   readonly currentStatusFilter = computed(() => this.statusFilter());
+  readonly currentNoSeoOnlyFilter = computed(() => this.noSeoOnly());
+
+  // Statistics signals
+  readonly allProducts = computed(() => this.#allProductsForStats.value()?.data || []);
+  readonly statsLoading = computed(() => this.#allProductsForStats.isLoading());
+  readonly totalProductsCount = computed(() => this.allProducts().length);
+  readonly activeProductsCount = computed(() => this.allProducts().filter(p => p.isActive).length);
+  readonly inactiveProductsCount = computed(() => this.allProducts().filter(p => !p.isActive).length);
+
+  readonly noSeoCount = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .filter(p => {
+        return !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim();
+      }).length;
+  });
+
+  readonly estimatedEarningsCash = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .reduce((acc, p) => acc + (p.prices?.earnings?.cash_transfer || 0), 0);
+  });
+
+  readonly estimatedEarningsCard1 = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .reduce((acc, p) => acc + (p.prices?.earnings?.card_1_installments || 0), 0);
+  });
+
+  readonly estimatedEarningsCard3 = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .reduce((acc, p) => acc + (p.prices?.earnings?.card_3_installments || 0), 0);
+  });
+
+  readonly estimatedEarningsCard6 = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .reduce((acc, p) => acc + (p.prices?.earnings?.card_6_installments || 0), 0);
+  });
+
+  readonly totalStockCount = computed(() => {
+    return this.allProducts()
+      .filter(p => p.isActive)
+      .reduce((acc, p) => {
+        if (p.totalStock !== undefined) return acc + p.totalStock;
+        const variantsStock = p.variants
+          ?.filter(v => v.isActive)
+          .reduce((sum, v) => sum + v.stock, 0) || 0;
+        return acc + variantsStock;
+      }, 0);
+  });
 
   // Pagination methods — just update the signals, httpResource handles the rest
   setPage(page: number) {
@@ -97,6 +195,11 @@ export class ProductStoreService {
 
   setStatusFilter(status: string) {
     this.statusFilter.set(status);
+    this.pageNumber.set(1);
+  }
+
+  setNoSeoOnlyFilter(value: boolean) {
+    this.noSeoOnly.set(value);
     this.pageNumber.set(1);
   }
 
@@ -139,6 +242,7 @@ export class ProductStoreService {
     try {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
+      this.#allProductsForStats.reload();
       return product._id
     } catch (error) {
       throw error;
@@ -148,8 +252,8 @@ export class ProductStoreService {
   async updateProduct(id: string, data: FormData) {
     try {
       const response = await this.#productService.updateProduct(id, data);
-
       this.#updateProduct(response);
+      this.#allProductsForStats.reload();
     } catch (error) {
       throw error;
     }
@@ -166,6 +270,7 @@ export class ProductStoreService {
       await this.#productService.deleteProduct(id);
       // 3. Si sale bien, podemos hacer un reload opcional para rellenar la paginación
       this.#fetchedProducts.reload();
+      this.#allProductsForStats.reload();
       this.#notificationService.success('Producto eliminado con éxito');
     } catch (error) {
       // 4. ROLLBACK: Si falla, restauramos el estado anterior
@@ -188,6 +293,7 @@ export class ProductStoreService {
 
     try {
       await this.#productService.bulkUpdateStatus(ids, isActive);
+      this.#allProductsForStats.reload();
       // Optional: reload to ensure consistency
       // this.#fetchedProducts.reload();
     } catch (error) {
