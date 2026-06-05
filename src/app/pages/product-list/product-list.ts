@@ -23,7 +23,6 @@ import { ProviderStateService } from '../../states/provider.state.service';
 @Component({
   selector: 'app-product-list',
   imports: [
-    PageLayout,
     PageHeader,
     MatIcon,
     MatChipsModule,
@@ -49,6 +48,8 @@ export class ProductList {
   #router = inject(Router);
 
   activeFilter = signal<string>('all');
+  viewMode = signal<'grid' | 'list'>('grid');
+  showStatsSidebar = signal<boolean>(false);
   dataSource = new MatTableDataSource<IProduct>([]);
   private searchSubject = new Subject<string>();
 
@@ -64,15 +65,12 @@ export class ProductList {
 
   displayedColumns: string[] = [
     'select',
-    'image',
-    'brand',
+    'product',
     'provider',
-    'type',
-    'category',
     'stock',
     'price_cost',
-    'price_cash',
-    'price_installments',
+    'price_sale',
+    'actions',
   ];
 
   Categories = computed(() => {
@@ -294,6 +292,22 @@ export class ProductList {
       } catch (error) {
         // Toast is handled in service
       }
+    }
+  }
+
+  async toggleProductStatus(product: IProduct) {
+    try {
+      const newStatus = !product.isActive;
+      await this.ProductState.bulkUpdateStatus([product._id], newStatus);
+      this.#snackBar.open(
+        `Producto ${newStatus ? 'activado' : 'desactivado'} correctamente`,
+        'Cerrar',
+        { duration: 2000 }
+      );
+    } catch (error) {
+      this.#snackBar.open('Error al cambiar el estado del producto', 'Cerrar', {
+        duration: 3000,
+      });
     }
   }
 }

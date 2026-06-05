@@ -40,3 +40,90 @@
   background: transparent !important;
   color: oklch(var(--color-base-content)) !important;
 }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(from oklch(var(--color-base-300)) l c h / 0.8);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(from oklch(var(--color-base-content)) l c h / 0.2);
+}
+
+/* Stats Cards Hover Effect */
+.stats-grid > div {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -8px oklch(from oklch(var(--color-base-content)) l c h / 0.12);
+    border-color: oklch(from oklch(var(--color-primary)) l c h / 0.3);
+    background-color: oklch(from oklch(var(--color-base-100)) l c h / 0.85);
+  }
+}
+
+/* Product Card Grid Styles */
+.product-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -12px oklch(from oklch(var(--color-base-content)) l c h / 0.15);
+  }
+
+  .checkbox {
+    border-color: oklch(from oklch(var(--color-base-content)) l c h / 0.3);
+  }
+}
+
+/* Premium Menu overrides */
+::ng-deep .premium-menu {
+  border-radius: 16px !important;
+  border: 1px solid oklch(from oklch(var(--color-base-300)) l c h / 0.8) !important;
+  box-shadow: 0 10px 25px -5px oklch(from oklch(var(--color-base-content)) l c h / 0.1) !important;
+  background-color: oklch(var(--color-base-100)) !important;
+  overflow: hidden !important;
+
+  .mat-mdc-menu-item {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: oklch(var(--color-base-content)) !important;
+    padding: 0 16px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+
+    mat-icon {
+      margin-right: 8px !important;
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+    }
+
+    &:hover {
+      background-color: oklch(from oklch(var(--color-base-200)) l c h / 0.6) !important;
+    }
+  }
+}
+
+/* Sidebar animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
