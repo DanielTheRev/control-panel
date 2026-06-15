@@ -1,58 +1,97 @@
 <app-page-layout>
-    @let title = productID() ? 'Editar Producto' : 'Crear Nuevo Producto';
-    @let subtitle = productID() ? 'Edita cualquier campo para actualizar el producto.'
-    : 'Rellena la información para tu nuevo artículo.';
+  @let title = productID() ? "Editar Producto" : "Crear Nuevo Producto";
+  @let subtitle =
+    productID()
+      ? "Edita cualquier campo para actualizar el producto."
+      : "Rellena la información para tu nuevo artículo.";
 
-    <app-page-header header [title]="title" [subtitle]="subtitle" [withMB]="false">
-        <div actions class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            @if (productForm.invalid) {
-            <div
-                class="text-[11px] text-error font-medium bg-error/5 px-3 py-1.5 border border-error/20 rounded-lg flex items-center justify-center gap-1.5 max-w-full sm:max-w-50 leading-tight shadow-sm">
-                <mat-icon class="text-[16px] w-4 h-4 shrink-0">error_outline</mat-icon>
-                <span class="truncate">Faltan campos: <span class="font-bold">{{ invalidControls.join(', ') }}</span></span>
-            </div>
-            } @else if (isEditMode() && !hasChanges()) {
-            <div
-                class="text-[11px] text-base-content/60 font-medium bg-base-200/50 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 border border-base-300">
-                <mat-icon class="text-[16px] w-4 h-4">info</mat-icon>
-                <span>Sin cambios</span>
-            </div>
-            } @else {
-            <div
-                class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm">
-                <mat-icon class="text-[16px] w-4 h-4">check_circle</mat-icon>
-                <span>Listo p/guardar</span>
-            </div>
-            }
-            <a routerLink="/home/products/{{productID()}}" class="btn btn-ghost text-base-content/50 w-full sm:w-auto">
-                Cancelar
-            </a>
-            @let disable = productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
-            <button class="btn btn-primary px-8 w-full sm:w-auto" (click)="saveProduct()" [disabled]="disable">
-                @if (isLoading()) {
-                <span class="loading loading-spinner"></span>
-                Guardando...
-                } @else {
-                <mat-icon>save</mat-icon>
-                {{ productID() ? 'Actualizar' : 'Guardar' }} Producto
-                }
-            </button>
+  <app-page-header
+    header
+    [title]="title"
+    [subtitle]="subtitle"
+    [withMB]="false"
+  >
+    <div
+      actions
+      class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto"
+    >
+      @if (productForm.invalid) {
+        <div
+          class="text-[11px] text-error font-medium bg-error/5 px-3 py-1.5 border border-error/20 rounded-lg flex items-center justify-center gap-1.5 max-w-full sm:max-w-50 leading-tight shadow-sm"
+        >
+          <mat-icon class="text-[16px] w-4 h-4 shrink-0"
+            >error_outline</mat-icon
+          >
+          <span class="truncate"
+            >Faltan campos:
+            <span class="font-bold">{{
+              invalidControls.join(", ")
+            }}</span></span
+          >
         </div>
-        <div role="tablist" class="tabs tabs-box rounded-none overflow-x-auto overflow-y-hidden flex-nowrap w-full no-scrollbar pb-0" sub-menu>
-            @for (tab of tabs(); track tab.label) {
-            <span role="tab" class="tab whitespace-nowrap h-12" [class.tab-active]="tabSelected() === tab.label"
-                (click)="setActiveTab(tab.label)">{{ tab.label }}</span>
-            }
+      } @else if (isEditMode() && !hasChanges()) {
+        <div
+          class="text-[11px] text-base-content/60 font-medium bg-base-200/50 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 border border-base-300"
+        >
+          <mat-icon class="text-[16px] w-4 h-4">info</mat-icon>
+          <span>Sin cambios</span>
         </div>
-    </app-page-header>
+      } @else {
+        <div
+          class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <mat-icon class="text-[16px] w-4 h-4">check_circle</mat-icon>
+          <span>Listo p/guardar</span>
+        </div>
+      }
+      <a
+        routerLink="/home/products/{{ productID() }}"
+        class="btn btn-ghost text-base-content/50 w-full sm:w-auto"
+      >
+        Cancelar
+      </a>
+      @let disable =
+        productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
+      <button
+        class="btn btn-primary px-8 w-full sm:w-auto"
+        (click)="saveProduct()"
+        [disabled]="disable"
+      >
+        @if (isLoading()) {
+          <span class="loading loading-spinner"></span>
+          Guardando...
+        } @else {
+          <mat-icon>save</mat-icon>
+          {{ productID() ? "Actualizar" : "Guardar" }} Producto
+        }
+      </button>
+    </div>
+    <div
+      role="tablist"
+      class="tabs tabs-box rounded-none overflow-x-auto overflow-y-hidden flex-nowrap w-full no-scrollbar pb-0"
+      sub-menu
+    >
+      @for (tab of tabs(); track tab.label) {
+        <span
+          role="tab"
+          class="tab whitespace-nowrap h-12"
+          [class.tab-active]="tabSelected() === tab.label"
+          (click)="setActiveTab(tab.label)"
+          >{{ tab.label }}</span
+        >
+      }
+    </div>
+  </app-page-header>
 
-    <ng-container content>
-        <form [formGroup]="productForm" class="flex w-full">
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Información Principal'"
-                [class.hidden]="tabSelected() !== 'Información Principal'">
-                <!-- Product Type Selector (only shown in edit mode since in create mode type is pre-selected from route) -->
-                <!-- @if (!typeParam()) {
+  <ng-container content>
+    <form [formGroup]="productForm" class="flex w-full">
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Información Principal'"
+        [class.hidden]="tabSelected() !== 'Información Principal'"
+      >
+        <!-- Product Type Selector (only shown in edit mode since in create mode type is pre-selected from route) -->
+        <!-- @if (!typeParam()) {
                 <div class="card bg-base-100 shadow-sm border border-base-300">
                     <div class="card-body p-6">
                         <h3 class="card-title text-lg mb-4">Tipo de Producto</h3>
@@ -82,730 +121,2073 @@
                 </div>
                 } -->
 
-                <!-- Basic Info Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-4 sm:p-6">
-                        <h3 class="card-title text-base sm:text-lg mb-2 sm:mb-4">Información Principal</h3>
+        <!-- Basic Info Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-4 sm:p-6">
+            <h3 class="card-title text-base sm:text-lg mb-2 sm:mb-4">
+              Información Principal
+            </h3>
 
-                        <fieldset class="fieldset">
-                            <legend class="fieldset-legend w-full">
-                                <div class="flex justify-between items-center w-full gap-2">
-                                    Proveedor / Vendedor
-                                    <!-- <button class="btn btn-success btn-soft btn-sm" (click)="addProvider()">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend w-full">
+                <div class="flex justify-between items-center w-full gap-2">
+                  Proveedor / Vendedor
+                  <!-- <button class="btn btn-success btn-soft btn-sm" (click)="addProvider()">
                                         <mat-icon>add</mat-icon>
                                         Agregar
                                     </button> -->
-                                </div>
-                            </legend>
-                            <select class="select select-bordered w-full" formControlName="provider">
-                                @for (provider of providers().data; track provider._id) {
-                                <option [value]="provider._id" id="provider-{{ provider._id }}">{{ provider.name }}
-                                </option>
-                                }
-                            </select>
-                        </fieldset>
-
-
-                        <fieldset class="fieldset w-full">
-                            <legend class="fieldset-legend">Modelo</legend>
-                            <input type="text" class="input input-bordered w-full" placeholder="Ej. iPhone 15 Pro"
-                                formControlName="model" />
-                        </fieldset>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 sm:mt-4">
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend w-full">
-                                    <div class="flex justify-between items-center w-full gap-2">
-                                        Marca
-                                        <button class="btn btn-success btn-soft btn-xs sm:btn-sm"
-                                            (click)="addBrandCategory('brand')">
-                                            <mat-icon>add</mat-icon>
-                                            <span class="hidden sm:inline">Agregar</span>
-                                        </button>
-                                    </div>
-                                </legend>
-                                <select class="select select-bordered w-full" formControlName="brand">
-                                    @for (b of brands(); track b) {
-                                    <option [value]="b" id="brand-{{ b }}">{{ b }}</option>
-                                    }
-                                </select>
-                            </fieldset>
-
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend w-full">
-                                    <div class="flex justify-between items-center w-full gap-2">
-                                        Categoría
-                                        <button class="btn btn-success btn-soft btn-xs sm:btn-sm"
-                                            (click)="addBrandCategory('category')">
-                                            <mat-icon>add</mat-icon>
-                                            <span class="hidden sm:inline">Agregar</span>
-                                        </button>
-                                    </div>
-                                </legend>
-                                <select class="select select-bordered w-full" formControlName="category">
-                                    @for (c of categories(); track c) {
-                                    <option [value]="c" id="category-{{ c }}">{{ c }}</option>
-                                    }
-                                </select>
-                            </fieldset>
-                        </div>
-
-                        <!-- Prices -->
-                        <!-- Precio de costo -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 sm:mt-4">
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend flex items-center gap-2">
-                                    Precio de Costo
-                                    <div class="badge badge-sm border-none shadow-sm" [ngClass]="costCurrency() === 'USD' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'">
-                                        {{costCurrency() === 'USD' ? 'Dólares (USD)' : 'Pesos (ARS)'}}
-                                    </div>
-                                </legend>
-                                <div class="join w-full">
-                                    <span class="join-item btn btn-static bg-base-200 border-base-300 px-4 font-bold">{{ costCurrency() === 'USD' ? 'U$D' : '$' }}</span>
-                                    <input type="number" class="join-item input input-bordered w-full focus:border-primary/50"
-                                        placeholder="0.00" formControlName="price" />
-                                </div>
-                                <div class="text-[10px] text-base-content/60 mt-1.5 flex items-center gap-1.5 bg-base-200/50 p-1.5 rounded-md border border-base-300/50">
-                                    <mat-icon class="text-[12px] w-3 h-3 text-info shrink-0">info</mat-icon>
-                                    <span class="leading-tight">El tipo de moneda se obtiene de la configuración general del comercio.</span>
-                                </div>
-                            </fieldset>
-
-                            <!-- Método de cálculo de ganancia -->
-                            <fieldset class="fieldset">
-                                <legend class="fieldset-legend w-full flex justify-between items-center gap-2">
-                                    <span class="truncate">Método de cálculo</span>
-                                    @if (!productForm.get('useCustomPricingMethod')?.value) {
-                                    <div class="badge badge-sm bg-success/15 text-success border-success/30 font-bold gap-1">
-                                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">settings</mat-icon>
-                                        Global — {{ globalPricingMethod() === 'markup' ? 'Sobre el costo' : 'Sobre la venta' }}
-                                    </div>
-                                    } @else {
-                                    <div class="badge badge-sm bg-warning/15 text-warning border-warning/30 font-bold gap-1">
-                                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">edit</mat-icon>
-                                        Custom — {{ productForm.get('customPricingMethod')?.value === 'markup' ? 'Sobre el costo' : 'Sobre la venta' }}
-                                    </div>
-                                    }
-                                </legend>
-
-                                <div class="flex items-center justify-between gap-3 w-full">
-                                    @if (!productForm.get('useCustomPricingMethod')?.value) {
-                                    <!-- Locked: using global method -->
-                                    <div
-                                        class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 sm:py-3 border border-info/20 rounded-lg flex items-center gap-2 leading-tight">
-                                        <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
-                                        <span class="flex-1">Usando el método global: <strong>{{ globalPricingMethod() === 'markup' ? 'Markup (sobre el costo)' : 'Margin (sobre la venta)' }}</strong></span>
-                                    </div>
-                                    } @else {
-                                    <!-- Custom method selector -->
-                                    <select formControlName="customPricingMethod"
-                                        class="select select-bordered w-full focus:border-warning/50">
-                                        <option value="markup">Sobre el Costo (Markup)</option>
-                                        <option value="margin">Sobre la Venta (Margin)</option>
-                                    </select>
-                                    }
-                                </div>
-
-                                <label class="flex items-center gap-1.5 cursor-pointer mt-2">
-                                    <input type="checkbox" class="checkbox checkbox-xs checkbox-warning"
-                                        formControlName="useCustomPricingMethod" />
-                                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-warning">Usar método diferente</span>
-                                </label>
-                            </fieldset>
-                        </div>
-
-                        <!-- Custom Profit Margin -->
-                            <div class="flex flex-col gap-3">
-                                <!-- transferencia, débito y 1 pago crédito -->
-                                <fieldset class="fieldset">
-                                    <legend class="fieldset-legend w-full flex justify-between items-center gap-2">
-                                        <span class="truncate">Ganancia transferencia, débito y 1 pago</span>
-                                        <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
-                                            <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
-                                                formControlName="useCustomProfit1Pay" />
-                                            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-primary">Personalizar</span>
-                                        </label>
-                                    </legend>
-
-                                    <div class="flex items-center justify-between gap-3 w-full">
-                                        @if (productForm.get('useCustomProfit1Pay')?.value) {
-                                        <!-- Custom margin input (enabled) -->
-                                        <div class="join w-full items-center">
-                                            <input type="number" class="join-item input input-bordered w-full"
-                                                placeholder="Ej. 35" formControlName="customProfitMargin1Pay" />
-                                            <span
-                                                class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
-                                        </div>
-                                        } @else {
-                                        <!-- Locked: using global margin -->
-                                        <div
-                                            class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 sm:py-3 border border-info/20 rounded-lg flex items-center gap-2 leading-tight">
-                                            <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
-                                            <span class="flex-1">Usando el Margen Global de la tienda.</span>
-                                        </div>
-                                        }
-                                    </div>
-                                </fieldset>
-                                
-                                <!-- tarjeta crédito cuotas -->
-                                <fieldset class="fieldset">
-                                    <legend class="fieldset-legend w-full flex justify-between items-center gap-2">
-                                        <span class="truncate">Ganancia tarjeta crédito cuotas</span>
-                                        <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
-                                            <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
-                                                formControlName="useCustomProfitInstallments" />
-                                            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-primary">Personalizar</span>
-                                        </label>
-                                    </legend>
-
-                                    <div class="flex items-center justify-between gap-3">
-                                        @if (productForm.get('useCustomProfitInstallments')?.value) {
-                                        <!-- Custom margin input (enabled) -->
-                                        <div class="join w-full items-center">
-                                            <input type="number" class="join-item input input-bordered w-full"
-                                                placeholder="Ej. 35" formControlName="customProfitMarginInstallments" />
-                                            <span
-                                                class="join-item btn btn-static bg-base-200 border-base-300 px-4">%</span>
-                                        </div>
-                                        } @else {
-                                        <!-- Locked: using global margin -->
-                                        <div
-                                            class="text-[11px] text-info font-medium w-full bg-info/5 px-3 py-2 sm:py-3 border border-info/20 rounded-lg flex items-center gap-2 leading-tight">
-                                            <mat-icon class="text-[16px] w-4 h-4 shrink-0">lock</mat-icon>
-                                            <span class="flex-1">Usando el Margen Global de la tienda.</span>
-                                        </div>
-                                        }
-                                    </div>
-                                </fieldset>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 sm:mt-4">
-                            <!-- isFeatured Toggle -->
-                            <fieldset class="fieldset bg-base-200/40 p-3 sm:p-4 rounded-xl border border-base-300">
-                                <label class="flex items-start gap-3 cursor-pointer">
-                                    <input type="checkbox" class="toggle toggle-primary mt-1"
-                                        formControlName="isFeatured" />
-                                    <div class="flex-1">
-                                        <span class="text-sm font-bold block">Destacar en Novedades</span>
-                                        <span class="text-xs text-base-content/60 leading-tight block mt-0.5">Este check activa el producto para
-                                            que aparezca en la sección de Novedades de la página principal.</span>
-                                    </div>
-                                </label>
-                            </fieldset>
-
-                            <!-- isActive Toggle (Only in edit mode) -->
-                            @if (isEditMode()) {
-                            <fieldset class="fieldset bg-base-200/40 p-3 sm:p-4 rounded-xl border border-base-300">
-                                <label class="flex items-start gap-3 cursor-pointer">
-                                    <input type="checkbox" class="toggle toggle-success mt-1"
-                                        formControlName="isActive" />
-                                    <div class="flex-1">
-                                        <span class="text-sm font-bold block">Producto Activo</span>
-                                        <span class="text-xs text-base-content/60 leading-tight block mt-0.5">Usa este control para pausar la
-                                            publicación temporalmente en lugar de eliminar el producto.</span>
-                                    </div>
-                                </label>
-                            </fieldset>
-                            }
-                        </div>
-
-
-
-                        <!-- Price Calculator Preview -->
-                        @if (calculatedPrices()) {
-                        <app-price-preview [prices]="calculatedPrices()!"></app-price-preview>
-                        }
-                    </div>
                 </div>
-
-
-           
-
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Especificaciones principales'"
-                [class.hidden]="tabSelected() !== 'Especificaciones principales'">
-                <!-- Type-Specific Fields via child forms -->
-                @if (selectedType() === ProductType.TECH) {
-                <app-tech-product-form [value]="techInitialValue()" (formChange)="onTypeSpecificFormChange($event)">
-                </app-tech-product-form>
+              </legend>
+              <select
+                class="select select-bordered w-full"
+                formControlName="provider"
+              >
+                @for (provider of providers().data; track provider._id) {
+                  <option
+                    [value]="provider._id"
+                    id="provider-{{ provider._id }}"
+                  >
+                    {{ provider.name }}
+                  </option>
                 }
+              </select>
+            </fieldset>
 
-                @if (selectedType() === ProductType.CLOTHING) {
-                <app-clothing-product-form [value]="clothingInitialValue()"
-                    (formChange)="onTypeSpecificFormChange($event)">
-                </app-clothing-product-form>
-                }
+            <fieldset class="fieldset w-full">
+              <legend class="fieldset-legend">Modelo</legend>
+              <input
+                type="text"
+                class="input input-bordered w-full"
+                placeholder="Ej. iPhone 15 Pro"
+                formControlName="model"
+              />
+            </fieldset>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 sm:mt-4">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend w-full">
+                  <div class="flex justify-between items-center w-full gap-2">
+                    Marca
+                    <button
+                      class="btn btn-success btn-soft btn-xs sm:btn-sm"
+                      (click)="addBrandCategory('brand')"
+                    >
+                      <mat-icon>add</mat-icon>
+                      <span class="hidden sm:inline">Agregar</span>
+                    </button>
+                  </div>
+                </legend>
+                <select
+                  class="select select-bordered w-full"
+                  formControlName="brand"
+                >
+                  @for (b of brands(); track b) {
+                    <option [value]="b" id="brand-{{ b }}">{{ b }}</option>
+                  }
+                </select>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend w-full">
+                  <div class="flex justify-between items-center w-full gap-2">
+                    Categoría
+                    <button
+                      class="btn btn-success btn-soft btn-xs sm:btn-sm"
+                      (click)="addBrandCategory('category')"
+                    >
+                      <mat-icon>add</mat-icon>
+                      <span class="hidden sm:inline">Agregar</span>
+                    </button>
+                  </div>
+                </legend>
+                <select
+                  class="select select-bordered w-full"
+                  formControlName="category"
+                >
+                  @for (c of categories(); track c) {
+                    <option [value]="c" id="category-{{ c }}">{{ c }}</option>
+                  }
+                </select>
+              </fieldset>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Descripciones'" [class.hidden]="tabSelected() !== 'Descripciones'">
-                <!-- Description Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-4 sm:p-6">
-                        <h3 class="card-title text-base sm:text-lg mb-2 sm:mb-4">Descripción</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 sm:mt-4">
+              <!-- isFeatured Toggle -->
+              <fieldset
+                class="fieldset bg-base-200/40 p-3 sm:p-4 rounded-xl border border-base-300"
+              >
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-primary mt-1"
+                    formControlName="isFeatured"
+                  />
+                  <div class="flex-1">
+                    <span class="text-sm font-bold block"
+                      >Destacar en Novedades</span
+                    >
+                    <span
+                      class="text-xs text-base-content/60 leading-tight block mt-0.5"
+                      >Este check activa el producto para que aparezca en la
+                      sección de Novedades de la página principal.</span
+                    >
+                  </div>
+                </label>
+              </fieldset>
 
-                        <fieldset class="fieldset">
-                            <legend class="fieldset-legend font-semibold">Descripción Corta</legend>
-                            <input type="text" class="input input-bordered w-full"
-                                placeholder="Un breve resumen del producto..." formControlName="shortDescription" />
-                        </fieldset>
-
-                        <fieldset class="fieldset mt-4 block">
-                            <legend class="fieldset-legend font-semibold mb-2 block">Descripción Detallada</legend>
-                            <div class="max-w-full overflow-hidden">
-                                <quill-editor formControlName="largeDescription" class="content-editor h-64 sm:h-72 block"></quill-editor>
-                            </div>
-                        </fieldset>
+              <!-- isActive Toggle (Only in edit mode) -->
+              @if (isEditMode()) {
+                <fieldset
+                  class="fieldset bg-base-200/40 p-3 sm:p-4 rounded-xl border border-base-300"
+                >
+                  <label class="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="toggle toggle-success mt-1"
+                      formControlName="isActive"
+                    />
+                    <div class="flex-1">
+                      <span class="text-sm font-bold block"
+                        >Producto Activo</span
+                      >
+                      <span
+                        class="text-xs text-base-content/60 leading-tight block mt-0.5"
+                        >Usa este control para pausar la publicación
+                        temporalmente en lugar de eliminar el producto.</span
+                      >
                     </div>
-                </div>
+                  </label>
+                </fieldset>
+              }
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Imágenes'" [class.hidden]="tabSelected() !== 'Imágenes'">
-                <!-- Images Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-lg mb-4">Imágenes del Producto</h3>
-                        <app-image-upload [imagesControls]="imagesControls" [originalImages]="originalImages()"
-                            (imageDeleted)="onImageDeleted($event)" (imagesChanged)="onImagesChanged()">
-                        </app-image-upload>
+      <!-- Precios Tab Content -->
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Precios'"
+        [class.hidden]="tabSelected() !== 'Precios'"
+      >
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-4 sm:p-6">
+            <h3
+              class="card-title text-base sm:text-lg mb-2 sm:mb-4 flex items-center gap-2"
+            >
+              <mat-icon class="text-primary animate-pulse">payments</mat-icon>
+              Configuración de Precios y Finanzas
+            </h3>
+
+            <!-- @if (isEditMode() && originalProduct()?.isLegacyPrices) {
+              <div
+                class="alert alert-warning shadow-sm border border-warning/20 bg-warning/5 text-warning-content rounded-xl p-4 flex gap-3 text-xs leading-normal mb-4"
+              >
+                <mat-icon class="text-warning text-lg shrink-0"
+                  >warning</mat-icon
+                >
+                <div>
+                  <strong class="block mb-0.5"
+                    >Estructura legada detectada</strong
+                  >
+                  <span
+                    >Este producto tiene precios guardados con el sistema
+                    antiguo. Al guardar este producto, se recalculará y guardará
+                    automáticamente con el nuevo sistema financiero de costos y
+                    comisiones de pasarela.</span
+                  >
+                </div>
+              </div>
+            } -->
+            <!-- Estrategia de precio -->
+            <div class="space-y-6 mb-2">
+              <div class="border-b border-base-200 pb-2">
+                <h4
+                  class="text-sm font-bold text-base-content/70 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <mat-icon class="text-secondary">payments</mat-icon>
+                  1. Estrategia de Precio
+                </h4>
+              </div>
+              <div class="alert alert-info">
+                <mat-icon>info</mat-icon>
+                {{
+                  isAbsorbedPaymentsEnabled()
+                    ? "Estas absorbiendo el costo de las cuotas"
+                    : "Los costos de las cuotas no están siendo absorbidos"
+                }}
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-start">
+                <!-- Toggle margen personalizado -->
+                <fieldset
+                  class="fieldset bg-base-200/30 p-4 rounded-xl border border-base-300 h-full flex flex-col justify-center"
+                >
+                  <label class="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="toggle toggle-primary mt-1"
+                      formControlName="useCustomProfit"
+                    />
+                    <div class="flex-1">
+                      <span class="text-sm font-bold block"
+                        >Personalizar Margen</span
+                      >
+                      <span
+                        class="text-xs text-base-content/60 leading-tight block mt-0.5"
+                        >Anula el margen global de la tienda para este
+                        producto.</span
+                      >
                     </div>
-                </div>
-            </div>
+                  </label>
+                </fieldset>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Etiquetas(tags)'"
-                [class.hidden]="tabSelected() !== 'Etiquetas(tags)'">
-                <!-- Features Card -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-lg mb-4">Etiquetas</h3>
-                        <app-tag-input [formArray]="featuresControls"
-                            placeholder="Añadir etiqueta (ej. 5G, Oferta, Tendencia 2026)">
-                        </app-tag-input>
+                <!-- Valor del margen y selector unificado de método en la misma línea si está activo -->
+                <div class="gap-4">
+                  <!-- Método de cálculo unificado -->
+                  <fieldset
+                    class="fieldset"
+                    [class.opacity-50]="
+                      !productForm.get('useCustomProfit')?.value
+                    "
+                  >
+                    <legend
+                      class="fieldset-legend font-semibold text-base-content/80"
+                    >
+                      Método de cálculo
+                    </legend>
+                    <select
+                      formControlName="pricingMethodChoice"
+                      class="select select-bordered w-full text-sm focus:border-primary/50"
+                    >
+                      <option [ngValue]="null">
+                        Global de la Tienda ({{
+                          globalPricingMethod() === "markup"
+                            ? "Sobre costo"
+                            : "Sobre venta"
+                        }})
+                      </option>
+                      <option ngValue="markup">Sobre el Costo (Markup)</option>
+                      <option ngValue="margin">Sobre la Venta (Margin)</option>
+                    </select>
+                  </fieldset>
+                </div>
+              </div>
+            </div>
+            <!-- SECCIÓN COSTOS -->
+            <div class="space-y-6">
+              <div class="border-b border-base-200 pb-2">
+                <h4
+                  class="text-sm font-bold text-base-content/70 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <mat-icon class="text-secondary">inventory_2</mat-icon>
+                  2. Costos del Producto
+                </h4>
+              </div>
+
+              <!-- Costo del proveedor y ganancia -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Costo del proveedor -->
+                <fieldset class="fieldset">
+                  <legend
+                    class="fieldset-legend flex items-center gap-2 font-semibold text-base-content/80"
+                  >
+                    Precio de Costo (Proveedor)
+                    <div
+                      class="badge badge-sm border-none shadow-sm font-bold"
+                      [ngClass]="
+                        costCurrency() === 'USD'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-blue-100 text-blue-700'
+                      "
+                    >
+                      {{
+                        costCurrency() === "USD"
+                          ? "Dólares (USD)"
+                          : "Pesos (ARS)"
+                      }}
                     </div>
-                </div>
-            </div>
+                  </legend>
+                  <div class="join w-full">
+                    <span
+                      class="join-item btn btn-static bg-base-200 border-base-300 px-4 font-bold text-base-content/70"
+                      >{{ costCurrency() === "USD" ? "U$D" : "$" }}</span
+                    >
+                    <input
+                      type="number"
+                      min="1"
+                      class="join-item input input-bordered w-full focus:border-primary/50 text-sm"
+                      placeholder="0.00"
+                      formControlName="price"
+                    />
+                  </div>
+                  <div
+                    class="text-[10px] text-base-content/60 mt-1.5 flex items-center gap-1.5 bg-base-200/50 p-1.5 rounded-md border border-base-300/50"
+                  >
+                    <mat-icon class="text-[12px] w-3 h-3 text-info shrink-0"
+                      >info</mat-icon
+                    >
+                    <span class="leading-tight"
+                      >La moneda se configura globalmente para el
+                      comercio.</span
+                    >
+                  </div>
+                </fieldset>
+                <!-- Porcentaje de ganancia -->
+                <fieldset
+                  class="fieldset"
+                  [class.opacity-50]="
+                    !productForm.get('useCustomProfit')?.value
+                  "
+                >
+                  <legend
+                    class="fieldset-legend font-semibold text-base-content/80"
+                  >
+                    Porcentaje de Ganancia
+                  </legend>
+                  <div class="join w-full">
+                    <input
+                      type="number"
+                      class="join-item input input-bordered w-full text-sm"
+                      placeholder="Ej. 35"
+                      formControlName="customProfitMargin"
+                    />
+                    <span
+                      class="join-item btn btn-static bg-base-200 border-base-300 px-4 font-bold text-base-content/70"
+                      >%</span
+                    >
+                  </div>
+                </fieldset>
+              </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Especificaciones técnicas'"
-                [class.hidden]="tabSelected() !== 'Especificaciones técnicas'">
-                <div class="card rounded-sm bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-4 sm:p-6">
-                        <div class="flex justify-between items-center mb-2 sm:mb-4">
-                            <h3 class="card-title text-base sm:text-lg">Especificaciones</h3>
+              <!-- Costos Adicionales -->
+              <div class="mb-4">
+                <div
+                  class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3"
+                >
+                  <div>
+                    <h5
+                      class="font-bold text-xs text-base-content/80 flex items-center gap-1.5"
+                    >
+                      <mat-icon class="text-secondary text-[16px] w-4 h-4"
+                        >add_circle</mat-icon
+                      >
+                      Otros Costos Adicionales
+                    </h5>
+                    <p class="text-[11px] text-base-content/60">
+                      Agrega comisiones de reventa, envíos o impuestos
+                      fijos/porcentuales.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-secondary btn-sm w-full sm:w-auto hover:scale-102 transition-transform duration-200"
+                    (click)="addAdditionalCost()"
+                  >
+                    <mat-icon>add</mat-icon> Añadir Costo
+                  </button>
+                </div>
+
+                @if (additionalCostsControls.length === 0) {
+                  <div
+                    class="text-center py-6 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl bg-base-200/20"
+                  >
+                    <mat-icon class="text-3xl mb-1 text-base-content/25"
+                      >receipt_long</mat-icon
+                    >
+                    <p class="text-xs">Sin costos adicionales cargados.</p>
+                  </div>
+                } @else {
+                  <div class="space-y-2" formArrayName="additionalCosts">
+                    @for (
+                      costGroup of additionalCostsControls.controls;
+                      track costGroup;
+                      let i = $index
+                    ) {
+                      <div
+                        [formGroupName]="i"
+                        class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-base-200/40 p-2.5 rounded-xl border border-base-300/60 animate-fade-in-down"
+                      >
+                        <!-- Concepto -->
+                        <div class="flex-1">
+                          <input
+                            type="text"
+                            formControlName="concept"
+                            class="input input-sm input-bordered w-full"
+                            placeholder="Nombre (Ej: Envío, Impuesto)"
+                          />
                         </div>
 
-                        <app-key-value-list [formArray]="specificationsControls" keyPlaceholder="Característica"
-                            valuePlaceholder="Detalle" entityName="Especificación">
-                        </app-key-value-list>
-
-                        <div class="divider my-4"></div>
-
-                        <div class="bg-base-200/50 p-3 sm:p-4 rounded-xl border border-base-300">
-                            <h4
-                                class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 sm:mb-3 flex items-center gap-2">
-                                <mat-icon class="text-[16px] w-4 h-4">bolt</mat-icon>
-                                Carga Rápida
-                            </h4>
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <input #bulkSpecs type="text" class="input input-bordered input-sm w-full sm:flex-1"
-                                    placeholder="Ej: RAM: 15gb, Almacenamiento: 256gb"
-                                    (keydown.enter)="$event.preventDefault(); addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''" />
-                                <button type="button" class="btn btn-sm btn-secondary w-full sm:w-auto"
-                                    (click)="addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''">
-                                    Cargar
-                                </button>
-                            </div>
-                            <p class="text-[10px] mt-2 text-base-content/40 italic">
-                                Separa cada característica con una coma (,) y su valor con dos puntos (:)
-                            </p>
+                        <!-- Valor -->
+                        <div class="w-full sm:w-36">
+                          <div class="join w-full">
+                            <input
+                              type="number"
+                              formControlName="value"
+                              class="join-item input input-bordered input-sm w-full text-sm"
+                              placeholder="0.00"
+                            />
+                            <span
+                              class="join-item btn btn-static btn-sm bg-base-200 border-base-300 px-2.5 font-bold"
+                            >
+                              {{
+                                costGroup.get("type")?.value === "fixed"
+                                  ? "$"
+                                  : "%"
+                              }}
+                            </span>
+                          </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'Variantes'" [class.hidden]="tabSelected() !== 'Variantes'">
-                <div class="lg:col-span-5">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                        <div>
-                            <h3 class="text-base sm:text-lg font-bold">Grupos de Color & Variantes</h3>
-                            <p class="text-xs sm:text-sm text-base-content/80 mt-0.5 max-w-sm">
-                                Gestiona los diferentes talles, capacidades o atributos de cada color.
-                            </p>
+                        <!-- Tipo -->
+                        <div class="w-full sm:w-48">
+                          <select
+                            formControlName="type"
+                            class="select select-bordered select-sm w-full text-xs"
+                          >
+                            <option value="fixed">Monto Fijo</option>
+                            <option value="percent_over_provider">
+                              % sobre Costo
+                            </option>
+                          </select>
                         </div>
-                        <button type="button" class="btn btn-primary btn-sm w-full sm:w-auto" (click)="addColorGroup()">
-                            <mat-icon>add</mat-icon> Agregar Color
+
+                        <!-- Acciones -->
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm text-error/70 hover:text-error hover:bg-error/10 shrink-0"
+                          (click)="removeAdditionalCost(i)"
+                        >
+                          <mat-icon>delete</mat-icon>
                         </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+              <!-- SECCIÓN PRECIO LISTA -->
+            </div>
+            <div class="space-y-6 mb-4">
+              <div class="border-b border-base-200 pb-2">
+                <h4
+                  class="text-sm font-bold text-base-content/70 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <mat-icon class="text-secondary">receipt_long</mat-icon>
+                  3. Tu precio de lista
+                </h4>
+              </div>
+
+              @if (isCalculatingListPrice()) {
+                <!-- Loading State -->
+                <div
+                  class="bg-base-200/30 rounded-2xl border border-base-300 p-8 flex flex-col items-center justify-center gap-3 animate-pulse"
+                >
+                  <span
+                    class="loading loading-ring loading-lg text-primary"
+                  ></span>
+                  <span
+                    class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                    >Calculando precios...</span
+                  >
+                </div>
+              } @else if (calculatedListPrice()) {
+                @let lp = calculatedListPrice()!;
+                <!-- Precio de Lista Hero -->
+                <div
+                  class="bg-linear-to-br from-primary/5 via-base-100 to-secondary/5 rounded-2xl border border-primary/20 shadow-sm p-6 space-y-5"
+                >
+                  <!-- Main Price -->
+                  <div
+                    class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2"
+                  >
+                    <div>
+                      <h4
+                        class="text-[10px] font-black text-base-content/40 uppercase tracking-widest"
+                      >
+                        Precio de Lista (Tarjeta / Publicación)
+                      </h4>
+                      <div
+                        class="text-4xl font-black text-base-content mt-1 tabular-nums tracking-tight"
+                      >
+                        {{
+                          lp.listPrice
+                            | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                        }}
+                      </div>
+                    </div>
+                    <span
+                      class="badge badge-lg bg-primary/10 text-primary font-bold border border-primary/20 text-xs"
+                    >
+                      <mat-icon class="text-[14px] w-3.5 h-3.5 mr-1"
+                        >verified</mat-icon
+                      >
+                      Precio Final
+                    </span>
+                  </div>
+
+                  <!-- 1 Pago Price -->
+                  <div
+                    class="flex items-center justify-between bg-base-100 rounded-xl p-3 border border-base-300/60"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <mat-icon class="text-info text-sm">credit_card</mat-icon>
+                      <div class="flex flex-col">
+                        <span
+                          class="text-[10px] font-bold text-base-content/40 uppercase"
+                          >1 Pago con Tarjeta - Pago Fácil / Rapipago</span
+                        >
+                      </div>
+                    </div>
+                    <span
+                      class="font-extrabold text-xl tabular-nums text-base-content"
+                    >
+                      {{
+                        lp.one_pay | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                      }}
+                    </span>
+                  </div>
+
+                  <!-- Cuotas Grid -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- 3 Cuotas -->
+                    <div
+                      class="bg-base-100 rounded-xl p-3.5 border border-base-300/60 space-y-1"
+                    >
+                      <div class="flex justify-between items-center">
+                        <span
+                          class="text-[10px] font-bold text-base-content/40 uppercase"
+                          >3 Cuotas Sin Interés</span
+                        >
+                        <span
+                          class="badge badge-xs bg-info/10 text-info border-info/20 font-bold"
+                          >3x</span
+                        >
+                      </div>
+                      <div
+                        class="text-lg font-black text-base-content tabular-nums"
+                      >
+                        {{
+                          lp.installments.threePaymentsAmount
+                            | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                        }}
+                        <span class="text-xs font-medium text-base-content/40"
+                          >/ cuota</span
+                        >
+                      </div>
                     </div>
 
-                    @if (colorGroupsControls.length === 0) {
-                        <div class="text-center py-6 sm:py-10 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl px-4">
-                            <mat-icon class="text-4xl mb-2 w-10! h-10!">palette</mat-icon>
-                            <p class="text-xs sm:text-sm">Agrega al menos un color para comenzar a cargar variantes de este producto.</p>
+                    <!-- 6 Cuotas -->
+                    <div
+                      class="bg-base-100 rounded-xl p-3.5 border border-base-300/60 space-y-1"
+                    >
+                      <div class="flex justify-between items-center">
+                        <span
+                          class="text-[10px] font-bold text-base-content/40 uppercase"
+                          >6 Cuotas Sin Interés</span
+                        >
+                        <span
+                          class="badge badge-xs bg-secondary/10 text-secondary border-secondary/20 font-bold"
+                          >6x</span
+                        >
+                      </div>
+                      <div
+                        class="text-lg font-black text-base-content tabular-nums"
+                      >
+                        {{
+                          lp.installments.sixPaymentsAmount
+                            | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                        }}
+                        <span class="text-xs font-medium text-base-content/40"
+                          >/ cuota</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Breakdown: Composición del Precio de Lista -->
+                  @if (lp.breakdown && lp.breakdown.length > 0) {
+                    <div class="space-y-3 mt-1">
+                      <h5
+                        class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5"
+                      >
+                        <mat-icon
+                          class="text-[14px] w-3.5 h-3.5 text-base-content/40"
+                          >donut_small</mat-icon
+                        >
+                        Composición del Precio de Lista
+                      </h5>
+
+                      <!-- Stacked Bar -->
+                      <div
+                        class="w-full h-8 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40"
+                        style="min-width: 0"
+                      >
+                        @for (
+                          item of lp.breakdown;
+                          track item.label;
+                          let i = $index
+                        ) {
+                          <div
+                            class="h-full flex items-center justify-center transition-all duration-500 ease-out relative group"
+                            [style.width.%]="item.percentage"
+                            [class]="
+                              i === 0
+                                ? 'bg-secondary/70'
+                                : i === 1
+                                  ? 'bg-info/60'
+                                  : i === 2
+                                    ? 'bg-success/70'
+                                    : 'bg-warning/70'
+                            "
+                          >
+                            @if (item.percentage >= 10) {
+                              <span
+                                class="text-[10px] font-black text-white drop-shadow-sm tabular-nums"
+                                >{{ item.percentage }}%</span
+                              >
+                            }
+                            <!-- Tooltip on hover -->
+                            <div
+                              class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-content text-base-100 text-[10px] font-bold px-2.5 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10"
+                            >
+                              {{ item.label }}:
+                              {{
+                                item.value
+                                  | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                              }}
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Itemized Legend -->
+                      <div class="space-y-1.5">
+                        @for (
+                          item of lp.breakdown;
+                          track item.label;
+                          let i = $index
+                        ) {
+                          <div
+                            class="flex items-center justify-between rounded-lg px-3 py-2 transition-colors"
+                            [class]="
+                              i === 0
+                                ? 'bg-secondary/5 border border-secondary/10'
+                                : i === 1
+                                  ? 'bg-info/5 border border-info/10'
+                                  : i === 2
+                                    ? 'bg-success/5 border border-success/10'
+                                    : 'bg-warning/5 border border-warning/10'
+                            "
+                          >
+                            <div class="flex items-center gap-2.5">
+                              <!-- Color dot -->
+                              <div
+                                class="w-2.5 h-2.5 rounded-full shrink-0"
+                                [class]="
+                                  i === 0
+                                    ? 'bg-secondary'
+                                    : i === 1
+                                      ? 'bg-info'
+                                      : i === 2
+                                        ? 'bg-success'
+                                        : 'bg-warning'
+                                "
+                              ></div>
+                              <span
+                                class="text-xs font-semibold text-base-content/80"
+                                >{{ item.label }}</span
+                              >
+                            </div>
+                            <div class="flex items-center gap-3">
+                              <span
+                                class="text-xs font-black tabular-nums"
+                                [class]="
+                                  i === 0
+                                    ? 'text-secondary'
+                                    : i === 1
+                                      ? 'text-info'
+                                      : i === 2
+                                        ? 'text-success'
+                                        : 'text-warning'
+                                "
+                              >
+                                {{
+                                  item.value
+                                    | currency
+                                      : "ARS"
+                                      : "symbol-narrow"
+                                      : "1.0-0"
+                                }}
+                              </span>
+                              <span
+                                class="badge badge-sm font-bold tabular-nums border-none"
+                                [class]="
+                                  i === 0
+                                    ? 'bg-secondary/15 text-secondary'
+                                    : i === 1
+                                      ? 'bg-info/15 text-info'
+                                      : i === 2
+                                        ? 'bg-success/15 text-success'
+                                        : 'bg-warning/15 text-warning'
+                                "
+                                >{{ item.percentage }}%</span
+                              >
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Total Row -->
+                      <div
+                        class="flex items-center justify-between bg-base-200/60 rounded-lg px-3 py-2 border border-base-300"
+                      >
+                        <span
+                          class="text-xs font-black text-base-content/60 uppercase tracking-wider"
+                          >Total = Precio de Lista</span
+                        >
+                        <span
+                          class="text-sm font-black text-base-content tabular-nums"
+                        >
+                          {{
+                            lp.listPrice
+                              | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                          }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Divider -->
+                  <div class="relative flex py-1 items-center">
+                    <div
+                      class="grow border-t border-dashed border-base-300"
+                    ></div>
+                    <span
+                      class="shrink mx-3 text-[9px] font-bold text-blue-500 uppercase tracking-widest"
+                      >Detalle por método de pago</span
+                    >
+                    <div
+                      class="grow border-t border-dashed border-base-300"
+                    ></div>
+                  </div>
+
+                  <!-- Comisiones de Pasarela -->
+                  <div class="space-y-2">
+                    <h5
+                      class="text-[10px] font-bold text-warning/70 uppercase tracking-wider flex items-center gap-1.5"
+                    >
+                      <mat-icon class="text-[14px] w-3.5 h-3.5 text-warning"
+                        >account_balance_wallet</mat-icon
+                      >
+                      Comisiones de Pasarela (Mercado Pago)
+                    </h5>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div
+                        class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-warning/60 uppercase block"
+                          >Base</span
+                        >
+                        <span
+                          class="text-sm font-black text-warning tabular-nums"
+                          >{{ lp.commissions.base | number: "1.1-2" }}%</span
+                        >
+                      </div>
+                      <div
+                        class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-warning/60 uppercase block"
+                          >CFT 3 Cuotas</span
+                        >
+                        <span
+                          class="text-sm font-black text-warning tabular-nums"
+                          >{{
+                            lp.commissions.cft3Cuotas | number: "1.1-2"
+                          }}%</span
+                        >
+                      </div>
+                      <div
+                        class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-warning/60 uppercase block"
+                          >CFT 6 Cuotas</span
+                        >
+                        <span
+                          class="text-sm font-black text-warning tabular-nums"
+                          >{{
+                            lp.commissions.cft6Cuotas | number: "1.1-2"
+                          }}%</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Ganancias por Método -->
+                  <div class="space-y-2">
+                    <h5
+                      class="text-[10px] font-bold text-success/70 uppercase tracking-wider flex items-center gap-1.5"
+                    >
+                      <mat-icon class="text-[14px] w-3.5 h-3.5 text-success"
+                        >trending_up</mat-icon
+                      >
+                      Tu ganancia neta por método de pago
+                    </h5>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div
+                        class="bg-success/5 rounded-lg p-2.5 border border-success/10"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-success/60 uppercase block"
+                          >1 Pago (tarjeta, Pago Fácil / Rapipago)</span
+                        >
+                        <span
+                          class="text-sm font-black text-success tabular-nums"
+                          >{{
+                            lp.profits.one_pay
+                              | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                          }}</span
+                        >
+                      </div>
+                      <div
+                        class="bg-success/5 rounded-lg p-2.5 border border-success/10"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-success/60 uppercase block"
+                          >3 Cuotas</span
+                        >
+                        <span
+                          class="text-sm font-black text-success tabular-nums"
+                          >{{
+                            lp.profits.three_installments
+                              | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                          }}</span
+                        >
+                      </div>
+                      <div
+                        class="bg-success/5 rounded-lg p-2.5 border border-success/10"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-success/60 uppercase block"
+                          >6 Cuotas</span
+                        >
+                        <span
+                          class="text-sm font-black text-success tabular-nums"
+                          >{{
+                            lp.profits.six_installments
+                              | currency: "ARS" : "symbol-narrow" : "1.0-0"
+                          }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Max Safe Discount -->
+                  <div
+                    class="bg-info/5 rounded-xl p-3 border border-info/10 flex items-center justify-between"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <mat-icon class="text-info text-[18px] w-4.5 h-4.5"
+                        >shield</mat-icon
+                      >
+                      <div>
+                        <span
+                          class="text-[10px] font-bold text-info/70 uppercase block"
+                          >Descuento máximo seguro</span
+                        >
+                        <span class="text-[10px] text-info/50 leading-tight"
+                          >El % máximo que podés descontar por transferencia sin
+                          perder tu ganancia</span
+                        >
+                      </div>
+                    </div>
+                    <span class="text-lg font-black text-info tabular-nums"
+                      >{{ lp.maxSafeDiscount | number: "1.0-1" }}%</span
+                    >
+                  </div>
+                </div>
+              } @else {
+                <!-- Empty State -->
+                <div
+                  class="text-center py-8 text-base-content/25 border-2 border-dashed border-base-300 rounded-2xl bg-base-200/10"
+                >
+                  <mat-icon
+                    class="text-4xl mb-2 text-base-content/20 w-10! h-10!"
+                    >calculate</mat-icon
+                  >
+                  <p class="text-xs font-medium">
+                    Completá el precio de costo y el margen de ganancia para ver
+                    el cálculo del precio de lista.
+                  </p>
+                </div>
+              }
+            </div>
+
+            <!-- SECTION 4: TRANSFER PRICE & PROMOTIONS -->
+            <div class="space-y-6">
+              <div class="border-b border-base-200 pb-2">
+                <h4
+                  class="text-sm font-bold text-base-content/70 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <mat-icon class="text-secondary">local_offer</mat-icon>
+                  4. Tu precio de transferencia y margen para promociones
+                </h4>
+              </div>
+
+              @if (calculatedListPrice()) {
+                @let lp = calculatedListPrice()!;
+
+                <div
+                  class="bg-linear-to-br from-success/5 via-base-100 to-emerald-500/5 rounded-2xl border border-success/20 shadow-sm p-4 sm:p-6 space-y-5"
+                >
+                  <!-- Discount Input -->
+                  <div class="space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                      <div>
+                        <h5
+                          class="text-[10px] font-black text-base-content/40 uppercase tracking-widest"
+                        >
+                          Descuento por Transferencia / Efectivo
+                        </h5>
+                        <p class="text-[11px] text-base-content/50 mt-0.5">
+                          Elegí cuánto % querés descontar del precio de lista para pagos sin pasarela.
+                        </p>
+                      </div>
+                      <div
+                        class="badge badge-lg font-bold text-xs border"
+                        [class]="
+                          transferDiscountPercent() <= lp.maxSafeDiscount
+                            ? 'bg-success/10 text-success border-success/20'
+                            : 'bg-warning/10 text-warning border-warning/20'
+                        "
+                      >
+                        <mat-icon class="text-[14px] w-3.5 h-3.5 mr-1">{{
+                          transferDiscountPercent() <= lp.maxSafeDiscount
+                            ? "check_circle"
+                            : "warning"
+                        }}</mat-icon>
+                        {{
+                          transferDiscountPercent() <= lp.maxSafeDiscount
+                            ? "Margen protegido"
+                            : "Absorbe margen"
+                        }}
+                      </div>
+                    </div>
+
+                    <!-- Slider + Input -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <div class="flex-1">
+                        <input
+                          type="range"
+                          min="0"
+                          [max]="Math.ceil(lp.maxSafeDiscount * 1.5)"
+                          step="1"
+                          class="range range-sm w-full"
+                          [class]="
+                            transferDiscountPercent() <= lp.maxSafeDiscount
+                              ? 'range-success'
+                              : 'range-warning'
+                          "
+                          formControlName="discountPercentageTransfer"
+                        />
+                        <!-- Ticks -->
+                        <div class="flex justify-between px-0.5 mt-1">
+                          <span class="text-[9px] text-base-content/30 font-bold">0%</span>
+                          <span class="text-[9px] text-success font-bold flex items-center gap-0.5">
+                            <mat-icon class="text-[10px] w-2.5 h-2.5">shield</mat-icon>
+                            {{ lp.maxSafeDiscount | number : "1.0-1" }}%
+                          </span>
+                          <span class="text-[9px] text-base-content/30 font-bold">{{ Math.ceil(lp.maxSafeDiscount * 1.5) }}%</span>
                         </div>
+                      </div>
+                      <div class="join w-full sm:w-28 shrink-0">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          class="join-item input input-bordered input-sm w-full text-center text-sm font-bold"
+                          formControlName="discountPercentageTransfer"
+                        />
+                        <span
+                          class="join-item btn btn-static btn-sm bg-base-200 border-base-300 px-3 font-bold text-base-content/70"
+                          >%</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Transfer Price Hero -->
+                  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 bg-base-100 rounded-xl p-4 border border-base-300/60">
+                    <div>
+                      <h4
+                        class="text-[10px] font-black text-success/70 uppercase tracking-widest"
+                      >
+                        Precio Transferencia / Efectivo
+                      </h4>
+                      <div
+                        class="text-3xl sm:text-4xl font-black text-success mt-1 tabular-nums tracking-tight"
+                      >
+                        {{ transferPrice() | currency : "ARS" : "symbol-narrow" : "1.0-0" }}
+                      </div>
+                    </div>
+                    @if (transferDiscountPercent() > 0) {
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm text-base-content/40 line-through tabular-nums">
+                          {{ lp.listPrice | currency : "ARS" : "symbol-narrow" : "1.0-0" }}
+                        </span>
+                        <span class="badge badge-lg badge-success font-bold text-xs">
+                          {{ transferDiscountPercent() }}% OFF
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Discount Breakdown -->
+                  @if (transferDiscountPercent() > 0) {
+                    <div class="space-y-3">
+                      <h5
+                        class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5"
+                      >
+                        <mat-icon class="text-[14px] w-3.5 h-3.5 text-base-content/40"
+                          >help_outline</mat-icon
+                        >
+                        ¿Cómo se financia tu descuento?
+                      </h5>
+
+                      <!-- Visual bar showing free vs paid discount -->
+                      <div class="w-full h-6 rounded-lg overflow-hidden flex border border-base-300/40">
+                        @if (discountFromPasarela() > 0) {
+                          <div
+                            class="h-full bg-success/60 flex items-center justify-center transition-all duration-500"
+                            [style.width.%]="(discountFromPasarela() / transferDiscountPercent()) * 100"
+                          >
+                            <span class="text-[9px] font-black text-white drop-shadow-sm tabular-nums">
+                              {{ discountFromPasarela() | number : "1.0-1" }}%
+                            </span>
+                          </div>
+                        }
+                        @if (discountFromMargin() > 0) {
+                          <div
+                            class="h-full bg-warning/60 flex items-center justify-center transition-all duration-500"
+                            [style.width.%]="(discountFromMargin() / transferDiscountPercent()) * 100"
+                          >
+                            <span class="text-[9px] font-black text-white drop-shadow-sm tabular-nums">
+                              {{ discountFromMargin() | number : "1.0-1" }}%
+                            </span>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Legend -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div
+                          class="flex items-center justify-between bg-success/5 rounded-lg px-3 py-2 border border-success/10"
+                        >
+                          <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-success shrink-0"></div>
+                            <div class="flex flex-col">
+                              <span class="text-[10px] font-bold text-success/80">Gratis (ahorro pasarela)</span>
+                              <span class="text-[9px] text-success/50">No te cuesta nada</span>
+                            </div>
+                          </div>
+                          <span class="text-xs font-black text-success tabular-nums">
+                            {{ discountFromPasarela() | number : "1.0-1" }}%
+                          </span>
+                        </div>
+                        <div
+                          class="flex items-center justify-between rounded-lg px-3 py-2 border"
+                          [class]="
+                            discountFromMargin() > 0
+                              ? 'bg-warning/5 border-warning/10'
+                              : 'bg-base-200/30 border-base-300/40'
+                          "
+                        >
+                          <div class="flex items-center gap-2">
+                            <div
+                              class="w-2.5 h-2.5 rounded-full shrink-0"
+                              [class]="discountFromMargin() > 0 ? 'bg-warning' : 'bg-base-300'"
+                            ></div>
+                            <div class="flex flex-col">
+                              <span
+                                class="text-[10px] font-bold"
+                                [class]="discountFromMargin() > 0 ? 'text-warning/80' : 'text-base-content/40'"
+                                >De tu ganancia</span
+                              >
+                              <span
+                                class="text-[9px]"
+                                [class]="discountFromMargin() > 0 ? 'text-warning/50' : 'text-base-content/30'"
+                                >Reduce tu margen</span
+                              >
+                            </div>
+                          </div>
+                          <span
+                            class="text-xs font-black tabular-nums"
+                            [class]="discountFromMargin() > 0 ? 'text-warning' : 'text-base-content/30'"
+                          >
+                            {{ discountFromMargin() | number : "1.0-1" }}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Remaining Margin for Promotions -->
+                  <div class="space-y-3">
+                    <div class="relative flex py-1 items-center">
+                      <div class="flex-grow border-t border-dashed border-base-300"></div>
+                      <span class="flex-shrink mx-3 text-[9px] font-bold text-base-content/25 uppercase tracking-widest"
+                        >Margen para promociones</span
+                      >
+                      <div class="flex-grow border-t border-dashed border-base-300"></div>
+                    </div>
+
+                    <div
+                      class="rounded-xl p-4 border space-y-3"
+                      [class]="
+                        remainingMarginForPromos() > 0
+                          ? 'bg-primary/5 border-primary/15'
+                          : 'bg-base-200/30 border-base-300'
+                      "
+                    >
+                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex items-center gap-2.5">
+                          <mat-icon
+                            class="text-[20px] w-5 h-5"
+                            [class]="remainingMarginForPromos() > 0 ? 'text-primary' : 'text-base-content/30'"
+                            >loyalty</mat-icon
+                          >
+                          <div>
+                            <span
+                              class="text-xs font-bold block"
+                              [class]="remainingMarginForPromos() > 0 ? 'text-primary' : 'text-base-content/40'"
+                              >Margen disponible para promociones</span
+                            >
+                            <span class="text-[10px] text-base-content/40">
+                              Podés usar este % para descuentos sin perder dinero
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          class="text-2xl font-black tabular-nums"
+                          [class]="remainingMarginForPromos() > 0 ? 'text-primary' : 'text-base-content/25'"
+                        >
+                          {{ remainingMarginForPromos() | number : "1.0-1" }}%
+                        </span>
+                      </div>
+
+                      @if (remainingMarginForPromos() > 0) {
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div class="flex items-center gap-2 bg-base-100 rounded-lg p-2.5 border border-base-300/50">
+                            <mat-icon class="text-[16px] w-4 h-4 text-primary/60">person_add</mat-icon>
+                            <span class="text-[10px] text-base-content/60 font-medium">Dto. primera compra</span>
+                          </div>
+                          <div class="flex items-center gap-2 bg-base-100 rounded-lg p-2.5 border border-base-300/50">
+                            <mat-icon class="text-[16px] w-4 h-4 text-primary/60">card_membership</mat-icon>
+                            <span class="text-[10px] text-base-content/60 font-medium">Dto. por registrarse</span>
+                          </div>
+                          <div class="flex items-center gap-2 bg-base-100 rounded-lg p-2.5 border border-base-300/50">
+                            <mat-icon class="text-[16px] w-4 h-4 text-primary/60">campaign</mat-icon>
+                            <span class="text-[10px] text-base-content/60 font-medium">Cupones de descuento</span>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="flex items-start gap-2 bg-warning/5 rounded-lg p-3 border border-warning/10">
+                          <mat-icon class="text-[16px] w-4 h-4 text-warning shrink-0 mt-0.5"
+                            >info</mat-icon
+                          >
+                          <p class="text-[11px] text-warning/80 leading-relaxed">
+                            No tenés margen disponible para promociones. Si querés ofrecer descuentos por primera compra o registro,
+                            reducí el descuento de transferencia para liberar margen.
+                          </p>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <!-- Empty State -->
+                <div
+                  class="text-center py-8 text-base-content/25 border-2 border-dashed border-base-300 rounded-2xl bg-base-200/10"
+                >
+                  <mat-icon class="text-4xl mb-2 text-base-content/20 w-10! h-10!"
+                    >local_offer</mat-icon
+                  >
+                  <p class="text-xs font-medium">
+                    Primero completá las secciones anteriores para configurar tu precio de transferencia.
+                  </p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Especificaciones principales'"
+        [class.hidden]="tabSelected() !== 'Especificaciones principales'"
+      >
+        <!-- Type-Specific Fields via child forms -->
+        @if (selectedType() === ProductType.TECH) {
+          <app-tech-product-form
+            [value]="techInitialValue()"
+            (formChange)="onTypeSpecificFormChange($event)"
+          >
+          </app-tech-product-form>
+        }
+
+        @if (selectedType() === ProductType.CLOTHING) {
+          <app-clothing-product-form
+            [value]="clothingInitialValue()"
+            (formChange)="onTypeSpecificFormChange($event)"
+          >
+          </app-clothing-product-form>
+        }
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Descripciones'"
+        [class.hidden]="tabSelected() !== 'Descripciones'"
+      >
+        <!-- Description Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-4 sm:p-6">
+            <h3 class="card-title text-base sm:text-lg mb-2 sm:mb-4">
+              Descripción
+            </h3>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-semibold">
+                Descripción Corta
+              </legend>
+              <input
+                type="text"
+                class="input input-bordered w-full"
+                placeholder="Un breve resumen del producto..."
+                formControlName="shortDescription"
+              />
+            </fieldset>
+
+            <fieldset class="fieldset mt-4 block">
+              <legend class="fieldset-legend font-semibold mb-2 block">
+                Descripción Detallada
+              </legend>
+              <div class="max-w-full overflow-hidden">
+                <quill-editor
+                  formControlName="largeDescription"
+                  class="content-editor h-64 sm:h-72 block"
+                ></quill-editor>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Imágenes'"
+        [class.hidden]="tabSelected() !== 'Imágenes'"
+      >
+        <!-- Images Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Imágenes del Producto</h3>
+            <app-image-upload
+              [imagesControls]="imagesControls"
+              [originalImages]="originalImages()"
+              (imageDeleted)="onImageDeleted($event)"
+              (imagesChanged)="onImagesChanged()"
+            >
+            </app-image-upload>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Etiquetas(tags)'"
+        [class.hidden]="tabSelected() !== 'Etiquetas(tags)'"
+      >
+        <!-- Features Card -->
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-6">
+            <h3 class="card-title text-lg mb-4">Etiquetas</h3>
+            <app-tag-input
+              [formArray]="featuresControls"
+              placeholder="Añadir etiqueta (ej. 5G, Oferta, Tendencia 2026)"
+            >
+            </app-tag-input>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Especificaciones técnicas'"
+        [class.hidden]="tabSelected() !== 'Especificaciones técnicas'"
+      >
+        <div
+          class="card rounded-sm bg-base-100 shadow-sm border border-base-300"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-2 sm:mb-4">
+              <h3 class="card-title text-base sm:text-lg">Especificaciones</h3>
+            </div>
+
+            <app-key-value-list
+              [formArray]="specificationsControls"
+              keyPlaceholder="Característica"
+              valuePlaceholder="Detalle"
+              entityName="Especificación"
+            >
+            </app-key-value-list>
+
+            <div class="divider my-4"></div>
+
+            <div
+              class="bg-base-200/50 p-3 sm:p-4 rounded-xl border border-base-300"
+            >
+              <h4
+                class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 sm:mb-3 flex items-center gap-2"
+              >
+                <mat-icon class="text-[16px] w-4 h-4">bolt</mat-icon>
+                Carga Rápida
+              </h4>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input
+                  #bulkSpecs
+                  type="text"
+                  class="input input-bordered input-sm w-full sm:flex-1"
+                  placeholder="Ej: RAM: 15gb, Almacenamiento: 256gb"
+                  (keydown.enter)="
+                    $event.preventDefault();
+                    addBulkSpecifications(bulkSpecs.value);
+                    bulkSpecs.value = ''
+                  "
+                />
+                <button
+                  type="button"
+                  class="btn btn-sm btn-secondary w-full sm:w-auto"
+                  (click)="
+                    addBulkSpecifications(bulkSpecs.value); bulkSpecs.value = ''
+                  "
+                >
+                  Cargar
+                </button>
+              </div>
+              <p class="text-[10px] mt-2 text-base-content/40 italic">
+                Separa cada característica con una coma (,) y su valor con dos
+                puntos (:)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'Variantes'"
+        [class.hidden]="tabSelected() !== 'Variantes'"
+      >
+        <div class="lg:col-span-5">
+          <div
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4"
+          >
+            <div>
+              <h3 class="text-base sm:text-lg font-bold">
+                Grupos de Color & Variantes
+              </h3>
+              <p
+                class="text-xs sm:text-sm text-base-content/80 mt-0.5 max-w-sm"
+              >
+                Gestiona los diferentes talles, capacidades o atributos de cada
+                color.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm w-full sm:w-auto"
+              (click)="addColorGroup()"
+            >
+              <mat-icon>add</mat-icon> Agregar Color
+            </button>
+          </div>
+
+          @if (colorGroupsControls.length === 0) {
+            <div
+              class="text-center py-6 sm:py-10 text-base-content/30 border-2 border-dashed border-base-300 rounded-xl px-4"
+            >
+              <mat-icon class="text-4xl mb-2 w-10! h-10!">palette</mat-icon>
+              <p class="text-xs sm:text-sm">
+                Agrega al menos un color para comenzar a cargar variantes de
+                este producto.
+              </p>
+            </div>
+          }
+
+          <div class="flex flex-col gap-6" formArrayName="colorGroups">
+            @for (
+              group of colorGroupsControls.controls;
+              track group;
+              let groupIndex = $index
+            ) {
+              <div
+                class="card bg-base-100 shadow-sm border border-base-300 overflow-visible"
+                [formGroupName]="groupIndex"
+              >
+                <!-- Card Header: Info del Color -->
+                <div
+                  class="bg-base-200/50 p-4 border-b border-base-300 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between rounded-t-2xl"
+                >
+                  <div class="flex flex-wrap items-center gap-4 flex-1 w-full">
+                    <!-- Selector de Imagen -->
+                    @if (imagesControls.length > 0) {
+                      <div class="dropdown dropdown-right">
+                        <div
+                          tabindex="0"
+                          role="button"
+                          class="avatar tooltip tooltip-top transition-transform hover:scale-105"
+                          data-tip="Cambiar imagen"
+                        >
+                          <div
+                            class="w-16 h-16 rounded cursor-pointer border border-base-300 bg-base-100 shadow-sm relative group overflow-hidden"
+                          >
+                            <img
+                              [src]="getColorGroupImageLink(group)"
+                              class="w-full h-full object-cover"
+                            />
+                            <div
+                              class="absolute inset-0 bg-black/40 flex grid-cols-1 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <mat-icon class="text-white text-[18px]"
+                                >edit</mat-icon
+                              >
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          tabindex="0"
+                          class="dropdown-content z-99 p-3 shadow-2xl bg-base-100 rounded-box w-55 border border-base-300"
+                        >
+                          <p
+                            class="text-xs font-bold mb-3 text-base-content/70 border-b border-base-200 pb-1"
+                          >
+                            Seleccionar imagen principal:
+                          </p>
+                          <div class="flex flex-wrap gap-2">
+                            @for (img of imagesControls.value; track $index) {
+                              <img
+                                [src]="img.link"
+                                class="w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all hover:scale-105"
+                                [class.border-primary]="
+                                  group.get('imageIndex')?.value === $index
+                                "
+                                [class.border-transparent]="
+                                  group.get('imageIndex')?.value !== $index
+                                "
+                                (click)="
+                                  group.get('imageIndex')?.setValue($index)
+                                "
+                              />
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                      <div
+                        class="w-16 h-16 rounded border-2 border-dashed border-base-300 bg-base-200 flex items-center justify-center opacity-50 tooltip tooltip-top shrink-0"
+                        data-tip="Sube imágenes primero"
+                      >
+                        <mat-icon class="text-[18px]"
+                          >image_not_supported</mat-icon
+                        >
+                      </div>
                     }
 
-                    <div class="flex flex-col gap-6" formArrayName="colorGroups">
-                        @for (group of colorGroupsControls.controls; track group; let groupIndex = $index) {
-                            <div class="card bg-base-100 shadow-sm border border-base-300 overflow-visible" [formGroupName]="groupIndex">
-                                
-                                <!-- Card Header: Info del Color -->
-                                <div class="bg-base-200/50 p-4 border-b border-base-300 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between rounded-t-2xl">
-                                    <div class="flex flex-wrap items-center gap-4 flex-1 w-full">
-                                        <!-- Selector de Imagen -->
-                                        @if (imagesControls.length > 0) {
-                                            <div class="dropdown dropdown-right">
-                                                <div tabindex="0" role="button" class="avatar tooltip tooltip-top transition-transform hover:scale-105" data-tip="Cambiar imagen">
-                                                    <div class="w-16 h-16 rounded cursor-pointer border border-base-300 bg-base-100 shadow-sm relative group overflow-hidden">
-                                                        <img [src]="getColorGroupImageLink(group)" class="w-full h-full object-cover" />
-                                                        <div class="absolute inset-0 bg-black/40 flex grid-cols-1 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <mat-icon class="text-white text-[18px]">edit</mat-icon>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div tabindex="0" class="dropdown-content z-99 p-3 shadow-2xl bg-base-100 rounded-box w-55 border border-base-300">
-                                                    <p class="text-xs font-bold mb-3 text-base-content/70 border-b border-base-200 pb-1">Seleccionar imagen principal:</p>
-                                                    <div class="flex flex-wrap gap-2">
-                                                        @for (img of imagesControls.value; track $index) {
-                                                            <img [src]="img.link"
-                                                                class="w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all hover:scale-105"
-                                                                [class.border-primary]="group.get('imageIndex')?.value === $index"
-                                                                [class.border-transparent]="group.get('imageIndex')?.value !== $index"
-                                                                (click)="group.get('imageIndex')?.setValue($index)" />
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        } @else {
-                                            <div class="w-16 h-16 rounded border-2 border-dashed border-base-300 bg-base-200 flex items-center justify-center opacity-50 tooltip tooltip-top shrink-0" data-tip="Sube imágenes primero">
-                                                <mat-icon class="text-[18px]">image_not_supported</mat-icon>
-                                            </div>
-                                        }
+                    <!-- Detalles del Color -->
+                    <div class="flex gap-2 flex-1 items-center min-w-50">
+                      <div class="flex flex-col w-full">
+                        <span
+                          class="text-[10px] font-bold text-base-content/50 uppercase ml-1 mb-0.5"
+                          >Nombre del Color</span
+                        >
+                        <input
+                          type="text"
+                          class="input input-sm input-bordered font-bold text-sm w-full"
+                          placeholder="Ej. Negro Carbón"
+                          formControlName="colorName"
+                        />
+                      </div>
+                      <div class="flex flex-col">
+                        <span
+                          class="text-[10px] font-bold text-base-content/50 uppercase ml-1 mb-0.5"
+                          >Muestra</span
+                        >
+                        <input
+                          type="color"
+                          class="input input-sm input-bordered p-0 cursor-pointer h-8 w-12 rounded"
+                          formControlName="colorHex"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                                        <!-- Detalles del Color -->
-                                        <div class="flex gap-2 flex-1 items-center min-w-50">
-                                            <div class="flex flex-col w-full">
-                                                <span class="text-[10px] font-bold text-base-content/50 uppercase ml-1 mb-0.5">Nombre del Color</span>
-                                                <input type="text" class="input input-sm input-bordered font-bold text-sm w-full" placeholder="Ej. Negro Carbón" formControlName="colorName" />
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] font-bold text-base-content/50 uppercase ml-1 mb-0.5">Muestra</span>
-                                                <input type="color" class="input input-sm input-bordered p-0 cursor-pointer h-8 w-12 rounded" formControlName="colorHex" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <button type="button" class="btn btn-ghost btn-sm text-error/60 hover:text-error shrink-0 self-end md:self-auto mt-2 md:mt-0" (click)="removeColorGroup(groupIndex)" title="Eliminar Color Completo">
-                                        <mat-icon class="text-[18px]">delete_sweep</mat-icon> Eliminar Color
-                                    </button>
-                                </div>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm text-error/60 hover:text-error shrink-0 self-end md:self-auto mt-2 md:mt-0"
+                    (click)="removeColorGroup(groupIndex)"
+                    title="Eliminar Color Completo"
+                  >
+                    <mat-icon class="text-[18px]">delete_sweep</mat-icon>
+                    Eliminar Color
+                  </button>
+                </div>
 
-                                <!-- Card Body: Tabla de Variantes -->
-                                <div class="p-0 sm:p-4 overflow-x-auto">
-                                    <table class="table table-sm w-full">
-                                        <thead>
-                                            <tr>
-                                                @if (selectedType() === ProductType.TECH) {
-                                                    <th class="w-1/2">Atributos <span class="text-[10px] font-normal opacity-60 ml-1">(ej. RAM: 8GB, AlMACENAMIENTO: 256GB)</span></th>
-                                                }
-                                                @if (selectedType() === ProductType.CLOTHING) {
-                                                    <th class="w-1/3">Talle <span class="text-[10px] font-normal opacity-60 ml-1">(ej. S, M, 42, Único)</span></th>
-                                                }
-                                                <th class="w-1/4">Stock</th>
-                                                <th class="w-16 text-center">Estado</th>
-                                                <th class="w-12"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody formArrayName="variants">
-                                            @for (variant of getGroupVariants(groupIndex).controls; track variant; let variantIndex = $index) {
-                                                <tr [formGroupName]="variantIndex" class="hover border-b border-base-200">
-                                                    <td>
-                                                        @if (selectedType() === ProductType.TECH) {
-                                                            <input type="text" class="input input-bordered input-sm w-full text-xs font-mono bg-base-100 focus:bg-base-100" formControlName="attributesJson" />
-                                                        }
-                                                        @if (selectedType() === ProductType.CLOTHING) {
-                                                            <input type="text" class="input input-bordered input-sm w-full text-xs font-mono font-bold bg-base-100 focus:bg-base-100" formControlName="size" />
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        <div class="flex items-center gap-2">
-                                                            <input type="number" class="input input-bordered input-sm w-24 bg-base-100 focus:bg-base-100" min="0" formControlName="stock" />
-                                                            <span class="text-xs text-base-content/50 relative top-px">uds.</span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center align-middle">
-                                                        <input type="checkbox" class="toggle toggle-sm toggle-success" formControlName="isActive" />
-                                                    </td>
-                                                    <td class="text-center align-middle">
-                                                        <button type="button" class="btn btn-ghost btn-xs text-base-content/30 hover:text-error" (click)="removeVariantFromGroup(groupIndex, variantIndex)">
-                                                            <mat-icon class="text-[16px]">close</mat-icon>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                    
-                                    <div class="px-3 pb-3 pt-3">
-                                        <button type="button" class="btn btn-ghost btn-sm btn-block justify-start text-primary/70 hover:text-primary hover:bg-primary/10 border border-dashed border-base-300" (click)="addVariantToGroup(groupIndex)">
-                                            <mat-icon class="text-[16px]">add_circle_outline</mat-icon> Añadir Talle / Variante a este Color
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Card Body: Tabla de Variantes -->
+                <div class="p-0 sm:p-4 overflow-x-auto">
+                  <table class="table table-sm w-full">
+                    <thead>
+                      <tr>
+                        @if (selectedType() === ProductType.TECH) {
+                          <th class="w-1/2">
+                            Atributos
+                            <span
+                              class="text-[10px] font-normal opacity-60 ml-1"
+                              >(ej. RAM: 8GB, AlMACENAMIENTO: 256GB)</span
+                            >
+                          </th>
                         }
-                    </div>
+                        @if (selectedType() === ProductType.CLOTHING) {
+                          <th class="w-1/3">
+                            Talle
+                            <span
+                              class="text-[10px] font-normal opacity-60 ml-1"
+                              >(ej. S, M, 42, Único)</span
+                            >
+                          </th>
+                        }
+                        <th class="w-1/4">Stock</th>
+                        <th class="w-16 text-center">Estado</th>
+                        <th class="w-12"></th>
+                      </tr>
+                    </thead>
+                    <tbody formArrayName="variants">
+                      @for (
+                        variant of getGroupVariants(groupIndex).controls;
+                        track variant;
+                        let variantIndex = $index
+                      ) {
+                        <tr
+                          [formGroupName]="variantIndex"
+                          class="hover border-b border-base-200"
+                        >
+                          <td>
+                            @if (selectedType() === ProductType.TECH) {
+                              <input
+                                type="text"
+                                class="input input-bordered input-sm w-full text-xs font-mono bg-base-100 focus:bg-base-100"
+                                formControlName="attributesJson"
+                              />
+                            }
+                            @if (selectedType() === ProductType.CLOTHING) {
+                              <input
+                                type="text"
+                                class="input input-bordered input-sm w-full text-xs font-mono font-bold bg-base-100 focus:bg-base-100"
+                                formControlName="size"
+                              />
+                            }
+                          </td>
+                          <td>
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="number"
+                                class="input input-bordered input-sm w-24 bg-base-100 focus:bg-base-100"
+                                min="0"
+                                formControlName="stock"
+                              />
+                              <span
+                                class="text-xs text-base-content/50 relative top-px"
+                                >uds.</span
+                              >
+                            </div>
+                          </td>
+                          <td class="text-center align-middle">
+                            <input
+                              type="checkbox"
+                              class="toggle toggle-sm toggle-success"
+                              formControlName="isActive"
+                            />
+                          </td>
+                          <td class="text-center align-middle">
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-xs text-base-content/30 hover:text-error"
+                              (click)="
+                                removeVariantFromGroup(groupIndex, variantIndex)
+                              "
+                            >
+                              <mat-icon class="text-[16px]">close</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+
+                  <div class="px-3 pb-3 pt-3">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm btn-block justify-start text-primary/70 hover:text-primary hover:bg-primary/10 border border-dashed border-base-300"
+                      (click)="addVariantToGroup(groupIndex)"
+                    >
+                      <mat-icon class="text-[16px]"
+                        >add_circle_outline</mat-icon
+                      >
+                      Añadir Talle / Variante a este Color
+                    </button>
+                  </div>
                 </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        [class.block]="tabSelected() === 'SEO & Social'"
+        [class.hidden]="tabSelected() !== 'SEO & Social'"
+      >
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8" formGroupName="seo">
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <mat-icon class="text-primary">troubleshoot</mat-icon>
+                Technical SEO Inspector
+              </h3>
+              <p class="text-xs sm:text-sm text-base-content/60">
+                Optimiza cómo se verá este producto en los buscadores y redes
+                sociales.
+              </p>
             </div>
 
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                [class.block]="tabSelected() === 'SEO & Social'" [class.hidden]="tabSelected() !== 'SEO & Social'">
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8" formGroupName="seo">
+            <fieldset
+              class="fieldset bg-base-200/40 p-4 sm:p-5 rounded-2xl border border-base-300"
+            >
+              <legend class="fieldset-legend font-bold text-base-content/80">
+                Meta Title
+              </legend>
+              <input
+                type="text"
+                class="input input-bordered w-full bg-base-100 text-sm"
+                placeholder="Título para buscadores..."
+                formControlName="metaTitle"
+              />
+              <div class="flex justify-between mt-2">
+                <span
+                  class="text-[10px] uppercase font-bold text-base-content/40"
+                  >Recomendado: 50-60 caracteres.</span
+                >
+                <span
+                  [class]="
+                    productForm.get('seo.metaTitle')?.value?.length > 60
+                      ? 'text-error'
+                      : 'text-success'
+                  "
+                  class="text-[10px] sm:text-xs font-mono font-bold"
+                >
+                  {{ productForm.get("seo.metaTitle")?.value?.length || 0 }}/60
+                </span>
+              </div>
+            </fieldset>
 
-                    <div class="space-y-6">
-                        <div>
-                            <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
-                                <mat-icon class="text-primary">troubleshoot</mat-icon>
-                                Technical SEO Inspector
-                            </h3>
-                            <p class="text-xs sm:text-sm text-base-content/60">Optimiza cómo se verá este producto en los
-                                buscadores y
-                                redes sociales.</p>
-                        </div>
+            <fieldset
+              class="fieldset bg-base-200/40 p-4 sm:p-5 rounded-2xl border border-base-300"
+            >
+              <legend class="fieldset-legend font-bold text-base-content/80">
+                Meta Description
+              </legend>
+              <textarea
+                class="textarea textarea-bordered w-full h-24 sm:h-28 bg-base-100 leading-relaxed text-sm"
+                placeholder="Resumen para atraer clics..."
+                formControlName="metaDescription"
+              ></textarea>
+              <div class="flex justify-between mt-2">
+                <span
+                  class="text-[10px] uppercase font-bold text-base-content/40"
+                  >Recomendado: 120-160 caracteres.</span
+                >
+                <span
+                  [class]="
+                    productForm.get('seo.metaDescription')?.value?.length > 160
+                      ? 'text-error'
+                      : 'text-success'
+                  "
+                  class="text-[10px] sm:text-xs font-mono font-bold"
+                >
+                  {{
+                    productForm.get("seo.metaDescription")?.value?.length || 0
+                  }}/160
+                </span>
+              </div>
+            </fieldset>
 
-                        <fieldset class="fieldset bg-base-200/40 p-4 sm:p-5 rounded-2xl border border-base-300">
-                            <legend class="fieldset-legend font-bold text-base-content/80">Meta Title</legend>
-                            <input type="text" class="input input-bordered w-full bg-base-100 text-sm"
-                                placeholder="Título para buscadores..." formControlName="metaTitle" />
-                            <div class="flex justify-between mt-2">
-                                <span class="text-[10px] uppercase font-bold text-base-content/40">Recomendado: 50-60
-                                    caracteres.</span>
-                                <span
-                                    [class]="productForm.get('seo.metaTitle')?.value?.length > 60 ? 'text-error' : 'text-success'"
-                                    class="text-[10px] sm:text-xs font-mono font-bold">
-                                    {{ productForm.get('seo.metaTitle')?.value?.length || 0 }}/60
-                                </span>
-                            </div>
-                        </fieldset>
+            <app-single-image-upload
+              [control]="seoImageControl"
+              [title]="'Imagen SEO'"
+              [ratioBadge]="'1.91:1'"
+              (previewChange)="onSeoImagePreviewChange($event)"
+              [showPreview]="false"
+            />
+          </div>
 
-                        <fieldset class="fieldset bg-base-200/40 p-4 sm:p-5 rounded-2xl border border-base-300">
-                            <legend class="fieldset-legend font-bold text-base-content/80">Meta Description</legend>
-                            <textarea class="textarea textarea-bordered w-full h-24 sm:h-28 bg-base-100 leading-relaxed text-sm"
-                                placeholder="Resumen para atraer clics..." formControlName="metaDescription"></textarea>
-                            <div class="flex justify-between mt-2">
-                                <span class="text-[10px] uppercase font-bold text-base-content/40">Recomendado: 120-160
-                                    caracteres.</span>
-                                <span
-                                    [class]="productForm.get('seo.metaDescription')?.value?.length > 160 ? 'text-error' : 'text-success'"
-                                    class="text-[10px] sm:text-xs font-mono font-bold">
-                                    {{ productForm.get('seo.metaDescription')?.value?.length || 0 }}/160
-                                </span>
-                            </div>
-                        </fieldset>
+          <div
+            class="space-y-6 sm:space-y-8 bg-base-200/30 p-4 sm:p-8 rounded-md border border-dashed border-base-400"
+          >
+            <h4
+              class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-base-content/30 border-b border-base-300 pb-2"
+            >
+              Vura Live Preview
+            </h4>
 
-                        <app-single-image-upload [control]="seoImageControl" [title]="'Imagen SEO'"
-                            [ratioBadge]="'1.91:1'" (previewChange)="onSeoImagePreviewChange($event)"
-                            [showPreview]="false" />
-                    </div>
-
-                    <div class="space-y-6 sm:space-y-8 bg-base-200/30 p-4 sm:p-8 rounded-md border border-dashed border-base-400">
-                        <h4
-                            class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-base-content/30 border-b border-base-300 pb-2">
-                            Vura Live Preview</h4>
-
-                        <div class="group mx-auto max-w-full">
-                            <span
-                                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-2 sm:mb-3">
-                                <mat-icon class="text-[14px] w-3.5 h-3.5">search</mat-icon> Google Search Result
-                            </span>
-                            <div class="bg-white p-3 sm:p-5 rounded-xl shadow-md border border-gray-200 font-sans max-w-full sm:max-w-150 wrap-break-word overflow-hidden">
-                                <div class="text-[12px] sm:text-[14px] text-[#202124] flex items-center gap-1 mb-1 truncate">
-                                    vura.com <span class="text-gray-400">› productos › {{
-                                        productForm.get('seo.slug')?.value
-                                        || 'url-slug' }}</span>
-                                </div>
-                                <div
-                                    class="text-[16px] sm:text-[20px] text-[#1a0dab] hover:underline cursor-pointer leading-tight mb-1 font-medium truncate">
-                                    {{ productForm.get('seo.metaTitle')?.value || productForm.get('model')?.value }}
-                                </div>
-                                <div class="text-[12px] sm:text-[14px] text-[#4d5156] line-clamp-2 leading-relaxed">
-                                    {{ productForm.get('seo.metaDescription')?.value }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="group mx-auto max-w-full">
-                            <span
-                                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-2 sm:mb-3">
-                                <mat-icon class="text-[14px] w-3.5 h-3.5">share</mat-icon> Social Media Share (Open
-                                Graph)
-                            </span>
-                            <div class="bg-white rounded-xl overflow-hidden border border-gray-300 shadow-lg max-w-full sm:max-w-150">
-                                <div class="aspect-video bg-base-300 flex items-center justify-center relative group">
-                                    @if (seoImagePreview()) {
-                                    <img [src]="seoImagePreview()"
-                                        class="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                                    } @else {
-                                    <div class="flex flex-col items-center opacity-20">
-                                        <mat-icon class="text-4xl sm:text-6xl h-10! w-10! sm:h-15! sm:w-15!">image</mat-icon>
-                                        <span class="text-[10px] sm:text-xs font-bold">Sin Imagen SEO</span>
-                                    </div>
-                                    }
-                                </div>
-                                <div class="p-3 sm:p-4 bg-[#f2f3f5] border-t border-gray-200">
-                                    <div class="text-[10px] sm:text-[12px] text-gray-500 uppercase tracking-tight">VURA.COM</div>
-                                    <div class="text-[14px] sm:text-[17px] font-bold text-[#1c1e21] leading-tight mt-1 truncate">
-                                        {{ productForm.get('seo.metaTitle')?.value || productForm.get('model')?.value }}
-                                    </div>
-                                    <div class="text-[12px] sm:text-[14px] text-[#606770] line-clamp-2 sm:line-clamp-1 mt-1 font-normal wrap-break-word">
-                                        {{ productForm.get('seo.metaDescription')?.value }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="group mx-auto max-w-full">
+              <span
+                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-2 sm:mb-3"
+              >
+                <mat-icon class="text-[14px] w-3.5 h-3.5">search</mat-icon>
+                Google Search Result
+              </span>
+              <div
+                class="bg-white p-3 sm:p-5 rounded-xl shadow-md border border-gray-200 font-sans max-w-full sm:max-w-150 wrap-break-word overflow-hidden"
+              >
+                <div
+                  class="text-[12px] sm:text-[14px] text-[#202124] flex items-center gap-1 mb-1 truncate"
+                >
+                  vura.com
+                  <span class="text-gray-400"
+                    >› productos ›
+                    {{ productForm.get("seo.slug")?.value || "url-slug" }}</span
+                  >
                 </div>
+                <div
+                  class="text-[16px] sm:text-[20px] text-[#1a0dab] hover:underline cursor-pointer leading-tight mb-1 font-medium truncate"
+                >
+                  {{
+                    productForm.get("seo.metaTitle")?.value ||
+                      productForm.get("model")?.value
+                  }}
+                </div>
+                <div
+                  class="text-[12px] sm:text-[14px] text-[#4d5156] line-clamp-2 leading-relaxed"
+                >
+                  {{ productForm.get("seo.metaDescription")?.value }}
+                </div>
+              </div>
             </div>
-            <div class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
-                *ngIf="selectedType() === ProductType.CLOTHING"
-                [class.block]="tabSelected() === 'Guía de Talles'" [class.hidden]="tabSelected() !== 'Guía de Talles'">
-                
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="card-title text-lg">Guía de Talles (Opcional)</h3>
-                                <p class="text-xs text-base-content/60">Agrega una tabla de medidas dinámica para ayudar a tus clientes.</p>
-                            </div>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <span class="text-sm font-bold">Habilitar Guía</span>
-                                <input type="checkbox" class="toggle toggle-primary"
-                                    [checked]="sizeGuideState().enabled"
-                                    (change)="toggleSizeGuide($event)" />
-                            </label>
-                        </div>
 
-                        @if (sizeGuideState().enabled) {
-                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                            <!-- Edición -->
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between border-b border-base-200 pb-2">
-                                    <h4 class="font-bold text-sm">Editar Tabla</h4>
-                                    <button type="button" class="btn btn-xs btn-outline btn-primary" (click)="addSizeGuideColumn()">
-                                        <mat-icon class="text-[14px]">add</mat-icon> Medida
-                                    </button>
-                                </div>
-                                
-                                <div class="overflow-x-auto border border-base-200 rounded-lg">
-                                    <table class="table table-sm w-full">
-                                        <thead class="bg-base-200/50">
-                                            <tr>
-                                                @for (header of sizeGuideState().headers; track $index) {
-                                                <th class="p-2 relative min-w-[120px]">
-                                                    <div class="flex items-center gap-1">
-                                                        <input type="text" class="input input-xs input-bordered w-full font-bold bg-white"
-                                                            [value]="header" (input)="updateSizeGuideHeader($index, $event)" [placeholder]="$index === 0 ? 'Talle' : 'Medida'" />
-                                                        @if ($index > 0 && sizeGuideState().headers.length > 2) {
-                                                        <button type="button" class="btn btn-ghost btn-xs text-error/50 hover:text-error p-0 w-6 h-6 shrink-0" (click)="removeSizeGuideColumn($index)" title="Eliminar Medida">
-                                                            <mat-icon class="text-[14px]">close</mat-icon>
-                                                        </button>
-                                                        }
-                                                    </div>
-                                                </th>
-                                                }
-                                                <th class="w-8"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (row of sizeGuideState().rows; track $index; let rowIndex = $index) {
-                                            <tr class="hover">
-                                                <td class="p-2">
-                                                    <input type="text" class="input input-xs input-bordered w-full font-bold bg-white"
-                                                        [value]="row.size" (input)="updateSizeGuideRowSize(rowIndex, $event)" placeholder="Ej. S, 38..." />
-                                                </td>
-                                                @for (val of row.values; track $index; let colIndex = $index) {
-                                                <td class="p-2">
-                                                    <input type="text" class="input input-xs input-bordered w-full bg-white"
-                                                        [value]="val" (input)="updateSizeGuideRowValue(rowIndex, colIndex, $event)" placeholder="Valor..." />
-                                                </td>
-                                                }
-                                                <td class="p-2 text-center">
-                                                    @if (sizeGuideState().rows.length > 1) {
-                                                    <button type="button" class="btn btn-ghost btn-xs text-error/50 hover:text-error p-0 w-6 h-6" (click)="removeSizeGuideRow(rowIndex)" title="Eliminar Fila">
-                                                        <mat-icon class="text-[14px]">delete</mat-icon>
-                                                    </button>
-                                                    }
-                                                </td>
-                                            </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
+            <div class="group mx-auto max-w-full">
+              <span
+                class="flex items-center gap-1 text-[10px] font-bold text-base-content/50 uppercase mb-2 sm:mb-3"
+              >
+                <mat-icon class="text-[14px] w-3.5 h-3.5">share</mat-icon>
+                Social Media Share (Open Graph)
+              </span>
+              <div
+                class="bg-white rounded-xl overflow-hidden border border-gray-300 shadow-lg max-w-full sm:max-w-150"
+              >
+                <div
+                  class="aspect-video bg-base-300 flex items-center justify-center relative group"
+                >
+                  @if (seoImagePreview()) {
+                    <img
+                      [src]="seoImagePreview()"
+                      class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  } @else {
+                    <div class="flex flex-col items-center opacity-20">
+                      <mat-icon
+                        class="text-4xl sm:text-6xl h-10! w-10! sm:h-15! sm:w-15!"
+                        >image</mat-icon
+                      >
+                      <span class="text-[10px] sm:text-xs font-bold"
+                        >Sin Imagen SEO</span
+                      >
+                    </div>
+                  }
+                </div>
+                <div class="p-3 sm:p-4 bg-[#f2f3f5] border-t border-gray-200">
+                  <div
+                    class="text-[10px] sm:text-[12px] text-gray-500 uppercase tracking-tight"
+                  >
+                    VURA.COM
+                  </div>
+                  <div
+                    class="text-[14px] sm:text-[17px] font-bold text-[#1c1e21] leading-tight mt-1 truncate"
+                  >
+                    {{
+                      productForm.get("seo.metaTitle")?.value ||
+                        productForm.get("model")?.value
+                    }}
+                  </div>
+                  <div
+                    class="text-[12px] sm:text-[14px] text-[#606770] line-clamp-2 sm:line-clamp-1 mt-1 font-normal wrap-break-word"
+                  >
+                    {{ productForm.get("seo.metaDescription")?.value }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="w-full min-h-full bg-base-100 border-base-300 p-2 animate-slide-in-left duration-300"
+        *ngIf="selectedType() === ProductType.CLOTHING"
+        [class.block]="tabSelected() === 'Guía de Talles'"
+        [class.hidden]="tabSelected() !== 'Guía de Talles'"
+      >
+        <div class="card bg-base-100 shadow-sm border border-base-300">
+          <div class="card-body p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="card-title text-lg">Guía de Talles (Opcional)</h3>
+                <p class="text-xs text-base-content/60">
+                  Agrega una tabla de medidas dinámica para ayudar a tus
+                  clientes.
+                </p>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <span class="text-sm font-bold">Habilitar Guía</span>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-primary"
+                  [checked]="sizeGuideState().enabled"
+                  (change)="toggleSizeGuide($event)"
+                />
+              </label>
+            </div>
 
-                                <button type="button" class="btn btn-sm btn-ghost btn-block text-primary/70 hover:text-primary hover:bg-primary/10 border border-dashed border-base-300" (click)="addSizeGuideRow()">
-                                    <mat-icon class="text-[16px]">add_circle_outline</mat-icon> Añadir Fila (Talle)
-                                </button>
+            @if (sizeGuideState().enabled) {
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <!-- Edición -->
+                <div class="space-y-4">
+                  <div
+                    class="flex items-center justify-between border-b border-base-200 pb-2"
+                  >
+                    <h4 class="font-bold text-sm">Editar Tabla</h4>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline btn-primary"
+                      (click)="addSizeGuideColumn()"
+                    >
+                      <mat-icon class="text-[14px]">add</mat-icon> Medida
+                    </button>
+                  </div>
 
-                                <div class="mt-4">
-                                    <label class="block text-xs font-bold mb-1 text-base-content/80">Texto de Tolerancia (Opcional)</label>
-                                    <textarea class="textarea textarea-bordered w-full h-20 text-sm"
-                                        [value]="sizeGuideState().tolerance"
-                                        (input)="updateSizeGuideTolerance($event)"
-                                        placeholder="Ej. Las medidas pueden variar +/- 2cm debido a la confección."></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Preview -->
-                            <div class="space-y-4 bg-base-200/30 p-4 rounded-xl border border-dashed border-base-400 flex flex-col">
-                                <h4 class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-base-content/30 border-b border-base-300 pb-2">Vista Previa</h4>
-                                
-                                <div class="flex-1 flex items-center justify-center bg-white p-4 sm:p-6 rounded-lg border border-base-300 shadow-sm overflow-x-auto">
-                                    <div class="w-full max-w-lg">
-                                        <h5 class="text-lg font-bold mb-4 text-center">Guía de Talles</h5>
-                                        <table class="w-full text-sm text-left border-collapse">
-                                            <thead>
-                                                <tr class="bg-base-200/50 border-b border-base-300">
-                                                    @for (header of sizeGuideState().headers; track $index) {
-                                                    <th class="py-3 px-4 font-bold text-base-content/80">{{ header || '-' }}</th>
-                                                    }
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @for (row of sizeGuideState().rows; track $index) {
-                                                <tr class="border-b border-base-200 hover:bg-base-50/50 transition-colors">
-                                                    <td class="py-3 px-4 font-bold">{{ row.size || '-' }}</td>
-                                                    @for (val of row.values; track $index) {
-                                                    <td class="py-3 px-4 text-base-content/80">{{ val || '-' }}</td>
-                                                    }
-                                                </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                        @if (sizeGuideState().tolerance) {
-                                        <div class="mt-4 text-xs text-base-content/50 italic text-center">
-                                            * {{ sizeGuideState().tolerance }}
-                                        </div>
-                                        }
-                                    </div>
-                                </div>
-                                
-                                @if (!isSizeGuideValid()) {
-                                <div class="text-xs text-error font-medium bg-error/10 p-3 rounded-lg flex items-center gap-2 mt-auto">
-                                    <mat-icon class="text-[16px] w-4 h-4 shrink-0">warning</mat-icon>
-                                    Faltan completar campos en la guía de talles (no puede haber celdas vacías).
-                                </div>
+                  <div
+                    class="overflow-x-auto border border-base-200 rounded-lg"
+                  >
+                    <table class="table table-sm w-full">
+                      <thead class="bg-base-200/50">
+                        <tr>
+                          @for (
+                            header of sizeGuideState().headers;
+                            track $index
+                          ) {
+                            <th class="p-2 relative min-w-[120px]">
+                              <div class="flex items-center gap-1">
+                                <input
+                                  type="text"
+                                  class="input input-xs input-bordered w-full font-bold bg-white"
+                                  [value]="header"
+                                  (input)="
+                                    updateSizeGuideHeader($index, $event)
+                                  "
+                                  [placeholder]="
+                                    $index === 0 ? 'Talle' : 'Medida'
+                                  "
+                                />
+                                @if (
+                                  $index > 0 &&
+                                  sizeGuideState().headers.length > 2
+                                ) {
+                                  <button
+                                    type="button"
+                                    class="btn btn-ghost btn-xs text-error/50 hover:text-error p-0 w-6 h-6 shrink-0"
+                                    (click)="removeSizeGuideColumn($index)"
+                                    title="Eliminar Medida"
+                                  >
+                                    <mat-icon class="text-[14px]"
+                                      >close</mat-icon
+                                    >
+                                  </button>
                                 }
-                            </div>
-                        </div>
+                              </div>
+                            </th>
+                          }
+                          <th class="w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (
+                          row of sizeGuideState().rows;
+                          track $index;
+                          let rowIndex = $index
+                        ) {
+                          <tr class="hover">
+                            <td class="p-2">
+                              <input
+                                type="text"
+                                class="input input-xs input-bordered w-full font-bold bg-white"
+                                [value]="row.size"
+                                (input)="
+                                  updateSizeGuideRowSize(rowIndex, $event)
+                                "
+                                placeholder="Ej. S, 38..."
+                              />
+                            </td>
+                            @for (
+                              val of row.values;
+                              track $index;
+                              let colIndex = $index
+                            ) {
+                              <td class="p-2">
+                                <input
+                                  type="text"
+                                  class="input input-xs input-bordered w-full bg-white"
+                                  [value]="val"
+                                  (input)="
+                                    updateSizeGuideRowValue(
+                                      rowIndex,
+                                      colIndex,
+                                      $event
+                                    )
+                                  "
+                                  placeholder="Valor..."
+                                />
+                              </td>
+                            }
+                            <td class="p-2 text-center">
+                              @if (sizeGuideState().rows.length > 1) {
+                                <button
+                                  type="button"
+                                  class="btn btn-ghost btn-xs text-error/50 hover:text-error p-0 w-6 h-6"
+                                  (click)="removeSizeGuideRow(rowIndex)"
+                                  title="Eliminar Fila"
+                                >
+                                  <mat-icon class="text-[14px]"
+                                    >delete</mat-icon
+                                  >
+                                </button>
+                              }
+                            </td>
+                          </tr>
                         }
-                    </div>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-ghost btn-block text-primary/70 hover:text-primary hover:bg-primary/10 border border-dashed border-base-300"
+                    (click)="addSizeGuideRow()"
+                  >
+                    <mat-icon class="text-[16px]">add_circle_outline</mat-icon>
+                    Añadir Fila (Talle)
+                  </button>
+
+                  <div class="mt-4">
+                    <label
+                      class="block text-xs font-bold mb-1 text-base-content/80"
+                      >Texto de Tolerancia (Opcional)</label
+                    >
+                    <textarea
+                      class="textarea textarea-bordered w-full h-20 text-sm"
+                      [value]="sizeGuideState().tolerance"
+                      (input)="updateSizeGuideTolerance($event)"
+                      placeholder="Ej. Las medidas pueden variar +/- 2cm debido a la confección."
+                    ></textarea>
+                  </div>
                 </div>
-            </div>
 
-        </form>
-    </ng-container>
+                <!-- Preview -->
+                <div
+                  class="space-y-4 bg-base-200/30 p-4 rounded-xl border border-dashed border-base-400 flex flex-col"
+                >
+                  <h4
+                    class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-base-content/30 border-b border-base-300 pb-2"
+                  >
+                    Vista Previa
+                  </h4>
 
+                  <div
+                    class="flex-1 flex items-center justify-center bg-white p-4 sm:p-6 rounded-lg border border-base-300 shadow-sm overflow-x-auto"
+                  >
+                    <div class="w-full max-w-lg">
+                      <h5 class="text-lg font-bold mb-4 text-center">
+                        Guía de Talles
+                      </h5>
+                      <table class="w-full text-sm text-left border-collapse">
+                        <thead>
+                          <tr class="bg-base-200/50 border-b border-base-300">
+                            @for (
+                              header of sizeGuideState().headers;
+                              track $index
+                            ) {
+                              <th
+                                class="py-3 px-4 font-bold text-base-content/80"
+                              >
+                                {{ header || "-" }}
+                              </th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (row of sizeGuideState().rows; track $index) {
+                            <tr
+                              class="border-b border-base-200 hover:bg-base-50/50 transition-colors"
+                            >
+                              <td class="py-3 px-4 font-bold">
+                                {{ row.size || "-" }}
+                              </td>
+                              @for (val of row.values; track $index) {
+                                <td class="py-3 px-4 text-base-content/80">
+                                  {{ val || "-" }}
+                                </td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                      @if (sizeGuideState().tolerance) {
+                        <div
+                          class="mt-4 text-xs text-base-content/50 italic text-center"
+                        >
+                          * {{ sizeGuideState().tolerance }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  @if (!isSizeGuideValid()) {
+                    <div
+                      class="text-xs text-error font-medium bg-error/10 p-3 rounded-lg flex items-center gap-2 mt-auto"
+                    >
+                      <mat-icon class="text-[16px] w-4 h-4 shrink-0"
+                        >warning</mat-icon
+                      >
+                      Faltan completar campos en la guía de talles (no puede
+                      haber celdas vacías).
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </form>
+  </ng-container>
 </app-page-layout>

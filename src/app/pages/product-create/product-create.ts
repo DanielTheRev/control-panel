@@ -1,22 +1,63 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import {
+  takeUntilDestroyed,
+  toObservable,
+  toSignal,
+} from '@angular/core/rxjs-interop';
+import {
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
-import { combineLatest, debounceTime, distinctUntilChanged, filter, map, switchMap, of } from 'rxjs';
-import { IProduct, IProductPrices, isClothingVariant, isTechVariant, ProductType } from '../../interfaces/product.interface';
+import {
+  combineLatest,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  EMPTY,
+  filter,
+  map,
+  switchMap,
+  of,
+} from 'rxjs';
+import {
+  IProduct,
+  IProductFinance,
+  IProductPrices,
+  isClothingVariant,
+  isTechVariant,
+  ProductType,
+} from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
-import { ClothingFormValue, ClothingProductForm } from '../../shared/components/clothing-product-form/clothing-product-form';
+import {
+  ClothingFormValue,
+  ClothingProductForm,
+} from '../../shared/components/clothing-product-form/clothing-product-form';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
-import { PricePreview } from '../../shared/components/price-preview/price-preview';
+// import { PricePreview } from '../../shared/components/price-preview/price-preview';
 import { TagInputComponent } from '../../shared/components/tag-input/tag-input.component';
-import { TechFormValue, TechProductForm } from '../../shared/components/tech-product-form/tech-product-form';
+import {
+  TechFormValue,
+  TechProductForm,
+} from '../../shared/components/tech-product-form/tech-product-form';
 import { ProductStoreService } from '../../states/product.state.service';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { ProductFormUtils } from '../../utils/product-form.utils';
@@ -25,6 +66,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { AddBrandCategory } from '../../share/components/add-brand-category/add-brand-category';
 import { ProviderStateService } from '../../states/provider.state.service';
 import { ProviderCreate } from '../provider-create/provider-create';
+import { IFinanceCost } from '../../interfaces/finance.interface';
 
 interface SizeGuideState {
   enabled: boolean;
@@ -42,7 +84,7 @@ interface SizeGuideState {
     PageHeader,
     QuillModule,
     MatSnackBarModule,
-    PricePreview,
+    // PricePreview,
     TagInputComponent,
     KeyValueListComponent,
     ImageUploadComponent,
@@ -50,19 +92,19 @@ interface SizeGuideState {
     RouterLink,
     TechProductForm,
     ClothingProductForm,
-    SingleImageUpload
+    SingleImageUpload,
   ],
   templateUrl: './product-create.html',
   styleUrl: './product-create.css',
 })
 export class ProductCreate {
-  #SidebarService = inject(SidebarService)
+  #SidebarService = inject(SidebarService);
   #fb = inject(FormBuilder);
   #productState = inject(ProductStoreService);
   #router = inject(Router);
   #CommerceConfigState = inject(StoreConfigStateService);
   #dialog = inject(MatDialog);
-  #ProviderState = inject(ProviderStateService)
+  #ProviderState = inject(ProviderStateService);
 
   #storeConfig = this.#CommerceConfigState.StoreConfig;
   isFormReady = signal<boolean>(false);
@@ -72,24 +114,47 @@ export class ProductCreate {
   brands = computed(() => {
     if (this.#CommerceConfigState.StoreConfig().hasError) return [];
     if (this.#CommerceConfigState.StoreConfig().isLoading) return [];
-    if (this.#CommerceConfigState.StoreConfig().hasError) return []
+    if (this.#CommerceConfigState.StoreConfig().hasError) return [];
     return this.#CommerceConfigState.StoreConfig().config.brands;
-  })
+  });
   categories = computed(() => {
     if (this.#CommerceConfigState.StoreConfig().hasError) return [];
     if (this.#CommerceConfigState.StoreConfig().isLoading) return [];
-    if (this.#CommerceConfigState.StoreConfig().hasError) return []
+    if (this.#CommerceConfigState.StoreConfig().hasError) return [];
     return this.#CommerceConfigState.StoreConfig().config.categories;
-  })
+  });
 
   costCurrency = computed(() => {
-    if (this.#CommerceConfigState.StoreConfig().hasError || this.#CommerceConfigState.StoreConfig().isLoading) return 'USD';
+    if (
+      this.#CommerceConfigState.StoreConfig().hasError ||
+      this.#CommerceConfigState.StoreConfig().isLoading
+    )
+      return 'USD';
     return this.#CommerceConfigState.StoreConfig().config.costCurrency || 'USD';
   });
 
   globalPricingMethod = computed(() => {
-    if (this.#CommerceConfigState.StoreConfig().hasError || this.#CommerceConfigState.StoreConfig().isLoading) return 'markup';
-    return this.#CommerceConfigState.StoreConfig().config.pricingStrategy?.method || 'markup';
+    if (
+      this.#CommerceConfigState.StoreConfig().hasError ||
+      this.#CommerceConfigState.StoreConfig().isLoading
+    )
+      return 'markup';
+    return (
+      this.#CommerceConfigState.StoreConfig().config.pricingStrategy?.method ||
+      'markup'
+    );
+  });
+
+  isAbsorbedPaymentsEnabled = computed(() => {
+    if (
+      this.#CommerceConfigState.StoreConfig().hasError ||
+      this.#CommerceConfigState.StoreConfig().isLoading
+    )
+      return false;
+    return (
+      this.#CommerceConfigState.StoreConfig().config.pricingStrategy
+        ?.absorbInstallments || false
+    );
   });
 
   providers = this.#ProviderState.ProviderState;
@@ -101,12 +166,17 @@ export class ProductCreate {
     brand: ['', Validators.required],
     category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
-    useCustomProfit1Pay: [false],
-    useCustomProfitInstallments: [false],
-    customProfitMargin1Pay: [{ value: 10, disabled: true }],
-    customProfitMarginInstallments: [{ value: 10, disabled: true }],
-    useCustomPricingMethod: [false],
-    customPricingMethod: [null],
+    additionalCosts: this.#fb.array<FormGroup>([]),
+    discountPercentageTransfer: [
+      0,
+      [Validators.required, Validators.min(0), Validators.max(100)],
+    ],
+    useCustomProfit: [false],
+    pricingMethodChoice: [{ value: null, disabled: true }],
+    customProfitMargin: [
+      { value: 0, disabled: true },
+      [Validators.required, Validators.min(0)],
+    ],
     isActive: [true],
     isFeatured: [false],
     shortDescription: ['', Validators.required],
@@ -122,21 +192,21 @@ export class ProductCreate {
     seo: this.#fb.group({
       metaTitle: [''],
       metaDescription: [''],
-      metaImage: [null as string | File | null]
+      metaImage: [null as string | File | null],
     }),
   });
-  readonly #formStatus = toSignal(this.productForm.statusChanges, { initialValue: 'INVALID' });
+  readonly #formStatus = toSignal(this.productForm.statusChanges, {
+    initialValue: 'INVALID',
+  });
   readonly #formTrigger = toSignal(this.productForm.valueChanges);
-  readonly #formValueWatcher = toSignal(
-    this.productForm.valueChanges,
-    { initialValue: this.productForm.getRawValue() }
-  );
+  readonly #formValueWatcher = toSignal(this.productForm.valueChanges, {
+    initialValue: this.productForm.getRawValue(),
+  });
 
   readonly formCategory = toSignal<string>(
     this.productForm.get('category')!.valueChanges,
-    { initialValue: this.productForm.get('category')?.value || '' }
+    { initialValue: this.productForm.get('category')?.value || '' },
   );
-
 
   #getFullProductData() {
     const currentFormValue = this.productForm.getRawValue();
@@ -144,23 +214,26 @@ export class ProductCreate {
 
     // Si no tocaron el form hijo, usamos los valores iniciales
     if (!typeSpecific) {
-      typeSpecific = this.selectedType() === ProductType.TECH
-        ? this.techInitialValue()
-        : this.clothingInitialValue();
+      typeSpecific =
+        this.selectedType() === ProductType.TECH
+          ? this.techInitialValue()
+          : this.clothingInitialValue();
     }
-    
+
     const sizeGuide = this.sizeGuideState();
-    const sizeGuideData = sizeGuide.enabled ? {
-      headers: sizeGuide.headers,
-      rows: sizeGuide.rows,
-      tolerance: sizeGuide.tolerance
-    } : null;
+    const sizeGuideData = sizeGuide.enabled
+      ? {
+          headers: sizeGuide.headers,
+          rows: sizeGuide.rows,
+          tolerance: sizeGuide.tolerance,
+        }
+      : null;
 
     return {
       ...currentFormValue,
       variants: this.#parseVariants(),
       sizeGuide: sizeGuideData,
-      ...(typeSpecific || {}) // Esparcimos la ram, gender, etc.
+      ...(typeSpecific || {}), // Esparcimos la ram, gender, etc.
     };
   }
 
@@ -176,17 +249,18 @@ export class ProductCreate {
     const deleted = this.#deletedImages();
     let typeSpecific = this.#typeSpecificValues();
     if (!typeSpecific) {
-      typeSpecific = this.selectedType() === ProductType.TECH
-        ? this.techInitialValue()
-        : this.clothingInitialValue();
+      typeSpecific =
+        this.selectedType() === ProductType.TECH
+          ? this.techInitialValue()
+          : this.clothingInitialValue();
     }
 
-    if (this.isEditMode() && this.#originalProduct()) {
+    if (this.isEditMode() && this.originalProduct()) {
       const fullProductData = this.#getFullProductData();
       const changes = ProductFormUtils.hasChanges(
         fullProductData,
-        this.#originalProduct(),
-        deleted
+        this.originalProduct(),
+        deleted,
       );
       return changes.hasChanges;
     }
@@ -198,18 +272,66 @@ export class ProductCreate {
   productID = input.required<string>();
   /** Provided when creating (from type-selector route), e.g. 'TechProduct' | 'ClothingProduct' */
   typeParam = input<string>('');
+  /** Expose Math to template for Math.ceil() etc. */
+  protected readonly Math = Math;
 
   isEditMode = computed(() => this.productID() !== null);
-  calculatedPrices = signal<IProductPrices | null>(null);
+  calculatedPrices = signal<{
+    price: IProductPrices;
+    finance: IProductFinance;
+  } | null>(null);
+  calculatedListPrice = signal<IFinanceCost | null>(null);
+  isCalculatingListPrice = signal<boolean>(false);
 
-  #originalProduct = signal<IProduct | null>(null);
-  originalImages = computed(() => this.#originalProduct()?.images || []);
+  /** Reads the current discount percentage from the form (reactive via formValueWatcher) */
+  transferDiscountPercent = computed(() => {
+    this.#formValueWatcher(); // trigger reactivity on form changes
+    return this.productForm.get('discountPercentageTransfer')?.value ?? 0;
+  });
+
+  /** The transfer/cash price after applying the discount to the list price */
+  transferPrice = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const discount = this.transferDiscountPercent();
+    return Math.round(lp.listPrice * (1 - discount / 100));
+  });
+
+  /** How much of the discount is "free" — funded by savings from not using the payment gateway */
+  discountFromPasarela = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const discount = this.transferDiscountPercent();
+    return Math.min(discount, lp.maxSafeDiscount);
+  });
+
+  /** How much of the discount eats into the seller's profit margin */
+  discountFromMargin = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const discount = this.transferDiscountPercent();
+    return Math.max(0, discount - lp.maxSafeDiscount);
+  });
+
+  /** Remaining margin % available for promotions (first purchase, registration, etc.) */
+  remainingMarginForPromos = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const discount = this.transferDiscountPercent();
+    return Math.max(0, lp.maxSafeDiscount - discount);
+  });
+
+  originalProduct = signal<IProduct | null>(null);
+  originalImages = computed(() => this.originalProduct()?.images || []);
   isLoading = signal<boolean>(false);
-  selectedType = linkedSignal(toSignal(this.productForm.get('productType')!.valueChanges));
+  selectedType = linkedSignal(
+    toSignal(this.productForm.get('productType')!.valueChanges),
+  );
 
   isUsingGlobalMargin = signal<boolean>(false);
   tabs = signal([
     { label: 'Información Principal', active: true },
+    { label: 'Precios', active: false },
     { label: 'Especificaciones principales', active: false },
     { label: 'Descripciones', active: false },
     { label: 'Imágenes', active: false },
@@ -218,72 +340,78 @@ export class ProductCreate {
     { label: 'Variantes', active: false },
     { label: 'SEO & Social', active: false },
     { label: 'Guía de Talles', active: false },
-  ])
+  ]);
 
-  tabSelected = computed(() => this.tabs().find(tab => tab.active)!.label)
+  tabSelected = computed(() => this.tabs().find((tab) => tab.active)!.label);
 
   sizeGuideState = signal<SizeGuideState>({
     enabled: false,
     headers: ['Talle', 'Ancho (cm)', 'Largo (cm)'],
     rows: [{ size: 'S', values: ['48', '65'] }],
-    tolerance: ''
+    tolerance: '',
   });
 
   isSizeGuideValid = computed(() => {
     const state = this.sizeGuideState();
     if (!state.enabled) return true;
     if (state.headers.length < 2) return false;
-    if (state.headers.some(h => !h.trim())) return false;
+    if (state.headers.some((h) => !h.trim())) return false;
     if (state.rows.length < 1) return false;
     for (const row of state.rows) {
       if (!row.size.trim()) return false;
       if (row.values.length !== state.headers.length - 1) return false;
-      if (row.values.some(v => !v.trim())) return false;
+      if (row.values.some((v) => !v.trim())) return false;
     }
     return true;
   });
 
   toggleSizeGuide(e: Event) {
     const enabled = (e.target as HTMLInputElement).checked;
-    this.sizeGuideState.update(s => ({ ...s, enabled }));
+    this.sizeGuideState.update((s) => ({ ...s, enabled }));
   }
 
   addSizeGuideColumn() {
-    this.sizeGuideState.update(s => ({
+    this.sizeGuideState.update((s) => ({
       ...s,
       headers: [...s.headers, 'Nueva Medida'],
-      rows: s.rows.map(r => ({ ...r, values: [...r.values, ''] }))
+      rows: s.rows.map((r) => ({ ...r, values: [...r.values, ''] })),
     }));
   }
 
   removeSizeGuideColumn(index: number) {
-    this.sizeGuideState.update(s => {
+    this.sizeGuideState.update((s) => {
       if (s.headers.length <= 2) return s; // Minimum 2 columns
       return {
         ...s,
         headers: s.headers.filter((_, i) => i !== index),
-        rows: s.rows.map(r => ({ ...r, values: r.values.filter((_, i) => i !== index - 1) }))
+        rows: s.rows.map((r) => ({
+          ...r,
+          values: r.values.filter((_, i) => i !== index - 1),
+        })),
       };
     });
   }
 
   addSizeGuideRow() {
-    this.sizeGuideState.update(s => ({
+    this.sizeGuideState.update((s) => ({
       ...s,
-      rows: [...s.rows, { size: '', values: new Array(s.headers.length - 1).fill('') }]
+      rows: [
+        ...s.rows,
+        { size: '', values: new Array(s.headers.length - 1).fill('') },
+      ],
     }));
   }
 
   removeSizeGuideRow(index: number) {
-    this.sizeGuideState.update(s => ({
+    this.sizeGuideState.update((s) => ({
       ...s,
-      rows: s.rows.filter((_, i) => i !== index)
+      rows: s.rows.filter((_, i) => i !== index),
     }));
   }
 
   updateSizeGuideHeader(index: number, e: Event) {
     const value = (e.target as HTMLInputElement).value;
-    this.sizeGuideState.update(s => {
+    this.sizeGuideState.update((s) => {
       const newHeaders = [...s.headers];
       newHeaders[index] = value;
       return { ...s, headers: newHeaders };
@@ -292,7 +420,7 @@ export class ProductCreate {
 
   updateSizeGuideRowSize(rowIndex: number, e: Event) {
     const value = (e.target as HTMLInputElement).value;
-    this.sizeGuideState.update(s => {
+    this.sizeGuideState.update((s) => {
       const newRows = [...s.rows];
       newRows[rowIndex] = { ...newRows[rowIndex], size: value };
       return { ...s, rows: newRows };
@@ -301,7 +429,7 @@ export class ProductCreate {
 
   updateSizeGuideRowValue(rowIndex: number, colIndex: number, e: Event) {
     const value = (e.target as HTMLInputElement).value;
-    this.sizeGuideState.update(s => {
+    this.sizeGuideState.update((s) => {
       const newRows = [...s.rows];
       const newValues = [...newRows[rowIndex].values];
       newValues[colIndex] = value;
@@ -312,14 +440,16 @@ export class ProductCreate {
 
   updateSizeGuideTolerance(e: Event) {
     const value = (e.target as HTMLTextAreaElement).value;
-    this.sizeGuideState.update(s => ({ ...s, tolerance: value }));
+    this.sizeGuideState.update((s) => ({ ...s, tolerance: value }));
   }
 
   setActiveTab(label: string) {
-    this.tabs.update(tabs => tabs.map(tab => ({
-      ...tab,
-      active: tab.label === label
-    })))
+    this.tabs.update((tabs) =>
+      tabs.map((tab) => ({
+        ...tab,
+        active: tab.label === label,
+      })),
+    );
   }
 
   /** Values from the active child form (tech or clothing) */
@@ -332,11 +462,44 @@ export class ProductCreate {
   ProductType = ProductType;
 
   // Getters for FormArrays
-  get imagesControls() { return this.productForm.get('images') as FormArray; }
-  get featuresControls() { return this.productForm.get('features') as FormArray; }
-  get specificationsControls() { return this.productForm.get('specifications') as FormArray; }
-  get colorGroupsControls() { return this.productForm.get('colorGroups') as FormArray; }
-  get seoImageControl() { return this.productForm.get('seo.metaImage') as FormControl<string | File | null>; }
+  get imagesControls() {
+    return this.productForm.get('images') as FormArray;
+  }
+  get featuresControls() {
+    return this.productForm.get('features') as FormArray;
+  }
+  get specificationsControls() {
+    return this.productForm.get('specifications') as FormArray;
+  }
+  get colorGroupsControls() {
+    return this.productForm.get('colorGroups') as FormArray;
+  }
+  get seoImageControl() {
+    return this.productForm.get('seo.metaImage') as FormControl<
+      string | File | null
+    >;
+  }
+  get additionalCostsControls() {
+    return this.productForm.get('additionalCosts') as FormArray;
+  }
+
+  addAdditionalCost(
+    concept: string = '',
+    value: number = 0,
+    type: 'fixed' | 'percent_over_provider' = 'fixed',
+  ) {
+    this.additionalCostsControls.push(
+      this.#fb.group({
+        concept: [concept, Validators.required],
+        value: [value, [Validators.required, Validators.min(0)]],
+        type: [type, Validators.required],
+      }),
+    );
+  }
+
+  removeAdditionalCost(index: number) {
+    this.additionalCostsControls.removeAt(index);
+  }
 
   get invalidControls(): string[] {
     const translations: Record<string, string> = {
@@ -344,7 +507,7 @@ export class ProductCreate {
       model: 'Modelo',
       brand: 'Marca',
       category: 'Categoría',
-      price: 'Precio',
+      price: 'Precio de costo',
       shortDescription: 'Desc. Corta',
       largeDescription: 'Desc. Larga',
       images: 'Imágenes',
@@ -352,6 +515,9 @@ export class ProductCreate {
       specifications: 'Especificaciones',
       colorGroups: 'Variantes',
       provider: 'Proveedor / Vendedor',
+      discountPercentageTransfer: 'Descuento Transf.',
+      additionalCosts: 'Costos Adicionales',
+      customProfitMargin: 'Margen Personalizado',
     };
 
     const invalid: string[] = [];
@@ -369,106 +535,119 @@ export class ProductCreate {
 
   constructor() {
     // Listen to price and margin changes for calculating visual prices via the backend
-    this.productForm.valueChanges.pipe(
-      takeUntilDestroyed(),
-      debounceTime(800),
-      map(val => ({
-        costPrice: val.price,
-        customProfitMargin1Pay: val.customProfitMargin1Pay || '',
-        customProfitMarginInstallments: val.customProfitMarginInstallments || '',
-        customPricingMethod: val.useCustomPricingMethod ? val.customPricingMethod : undefined
-      })),
-      distinctUntilChanged((prev, curr) =>
-        prev.costPrice === curr.costPrice &&
-        prev.customProfitMargin1Pay === curr.customProfitMargin1Pay &&
-        prev.customProfitMarginInstallments === curr.customProfitMarginInstallments &&
-        prev.customPricingMethod === curr.customPricingMethod
-      ),
-      filter(val => val.costPrice > 0),
-      switchMap(val => {
-        const original = this.#originalProduct();
-        if (original) {
-          const originalPrice = this.costCurrency() === 'ARS' ? original.prices.costPrice.inARS : original.prices.costPrice.inUSD;
-          const roundedOriginalPrice = Math.ceil(originalPrice);
-          const orig1Pay = original.prices.profitMargin1Pay ?? '';
-          const origInstall = original.prices.profitMarginInstallments ?? '';
+    // We use getRawValue() to include disabled controls (customProfitMargin, pricingMethodChoice)
+    this.productForm.valueChanges
+      .pipe(
+        takeUntilDestroyed(),
+        debounceTime(800),
+        map(() => {
+          const raw = this.productForm.getRawValue();
+          // Resolve the effective pricing method: null => actual global method
+          const effectiveMethod: 'markup' | 'margin' =
+            raw.pricingMethodChoice === null || !raw.useCustomProfit
+              ? this.globalPricingMethod()
+              : raw.pricingMethodChoice;
+          // Resolve the effective profit margin: use global when not customized
+          const effectiveMargin: number = raw.useCustomProfit
+            ? raw.customProfitMargin
+            : (this.#storeConfig()?.config?.profit ?? 0);
+          return {
+            providerCost: raw.price,
+            additionalCosts: raw.additionalCosts ?? [],
+            useCustomProfit: raw.useCustomProfit,
+            customProfitMargin: effectiveMargin,
+            pricingMethodChoice: effectiveMethod,
+            calculate: true,
+          };
+        }),
+        distinctUntilChanged(
+          (prev, curr) =>
+            prev.providerCost === curr.providerCost &&
+            JSON.stringify(prev.additionalCosts) ===
+              JSON.stringify(curr.additionalCosts) &&
+            prev.useCustomProfit === curr.useCustomProfit &&
+            prev.customProfitMargin === curr.customProfitMargin &&
+            prev.pricingMethodChoice === curr.pricingMethodChoice,
+        ),
+        // Filtro de integridad: solo dispara si los datos esenciales están completos
+        filter((val) => {
+          return (
+            val.providerCost !== undefined &&
+            val.providerCost !== null &&
+            val.providerCost > 0 &&
+            val.customProfitMargin !== undefined &&
+            val.customProfitMargin !== null &&
+            val.customProfitMargin > 0 &&
+            (val.pricingMethodChoice === 'margin' ||
+              val.pricingMethodChoice === 'markup')
+          );
+        }),
+        switchMap((val) => {
+          this.isCalculatingListPrice.set(true);
+          return this.#productState.calculateListPrice(val).pipe(
+            map((result) => ({ result, error: false as const })),
+            catchError((err) => {
+              this.isCalculatingListPrice.set(false);
+              console.error('Error calculating list price', err);
+              return EMPTY; // Keep the stream alive for future emissions
+            }),
+          );
+        }),
+      )
+      .subscribe({
+        next: ({ result }) => {
+          this.calculatedListPrice.set(result);
+          this.isCalculatingListPrice.set(false);
+          console.log('✅ Precio de lista calculado:', result);
+        },
+      });
 
-          if (val.costPrice === roundedOriginalPrice &&
-              val.customProfitMargin1Pay === orig1Pay &&
-              val.customProfitMarginInstallments === origInstall) {
-            return of(original.prices);
-          }
+    // Toggle customProfitMargin and pricingMethodChoice enabled/disabled based on useCustomProfit checkbox
+    this.productForm
+      .get('useCustomProfit')
+      ?.valueChanges.pipe(takeUntilDestroyed())
+      .subscribe((useCustom: boolean) => {
+        if (useCustom) {
+          this.productForm.get('customProfitMargin')?.enable();
+          this.productForm.get('pricingMethodChoice')?.enable();
+          this.isUsingGlobalMargin.set(false);
+        } else {
+          this.productForm.get('customProfitMargin')?.disable();
+          this.productForm.get('pricingMethodChoice')?.disable();
+          this.isUsingGlobalMargin.set(true);
         }
-        return this.#productState.calculatePrices(val);
-      })
-    ).subscribe({
-      next: (prices) => {
-        this.calculatedPrices.set(prices);
-      },
-      error: (err) => console.error('Error calculating prices', err)
-    });
-
-    // Toggle customProfitMargin enabled/disabled based on useCustomProfit checkbox
-    this.productForm.get('useCustomProfit1Pay')?.valueChanges.pipe(
-      takeUntilDestroyed()
-    ).subscribe((useCustom: boolean) => {
-      if (useCustom) {
-        this.productForm.get('customProfitMargin1Pay')?.enable();
-        this.isUsingGlobalMargin.set(false);
-      } else {
-        this.productForm.get('customProfitMargin1Pay')?.disable();
-        this.isUsingGlobalMargin.set(true);
-      }
-    });
-
-    this.productForm.get('useCustomProfitInstallments')?.valueChanges.pipe(
-      takeUntilDestroyed()
-    ).subscribe((useCustom: boolean) => {
-      if (useCustom) {
-        this.productForm.get('customProfitMarginInstallments')?.enable();
-        this.isUsingGlobalMargin.set(false);
-      } else {
-        this.productForm.get('customProfitMarginInstallments')?.disable();
-        this.isUsingGlobalMargin.set(true);
-      }
-    });
-
-    // Cuando activa el override de método, auto-seleccionar el alternativo
-    this.productForm.get('useCustomPricingMethod')?.valueChanges.pipe(
-      takeUntilDestroyed()
-    ).subscribe((useCustom: boolean) => {
-      if (useCustom) {
-        const alternativeMethod = this.globalPricingMethod() === 'markup' ? 'margin' : 'markup';
-        this.productForm.patchValue({ customPricingMethod: alternativeMethod });
-      } else {
-        this.productForm.patchValue({ customPricingMethod: null });
-      }
-    });
+      });
 
     this.#SidebarService.navbarTitle.set({
-      title: 'Gestionar producto'
-    })
+      title: 'Gestionar producto',
+    });
 
     combineLatest([
       toObservable(this.productID),
-      toObservable(this.#storeConfig)
-    ]).pipe(
-      takeUntilDestroyed(), // Se limpia solo al destruir el componente
-      // Filtramos: Solo pasamos si la config no está cargando y tiene data
-      filter(([id, config]) => !config.isLoading && config.hasData),
-      // Evitamos llamadas innecesarias si el ID y el Profit no cambiaron
-      distinctUntilChanged((prev, curr) => prev[0] === curr[0] && prev[1].config.profit === curr[1].config.profit)
-    ).subscribe(async ([id, config]) => {
-      const profit = config.config.profit;
+      toObservable(this.#storeConfig),
+    ])
+      .pipe(
+        takeUntilDestroyed(), // Se limpia solo al destruir el componente
+        // Filtramos: Solo pasamos si la config no está cargando y tiene data
+        filter(([id, config]) => !config.isLoading && config.hasData),
+        // Evitamos llamadas innecesarias si el ID y el Profit no cambiaron
+        distinctUntilChanged(
+          (prev, curr) =>
+            prev[0] === curr[0] &&
+            prev[1].config.profit === curr[1].config.profit,
+        ),
+      )
+      .subscribe(async ([id, config]) => {
+        const profit = config.config.profit;
 
-      if (id) {
-        // MODO EDICIÓN
-        await this.#loadProduct(id, profit);
-      } else {
-        // MODO CREACIÓN
-        this.#initCreateMode(profit);
-      }
-    });
+        if (id) {
+          // MODO EDICIÓN
+          await this.#loadProduct(id, profit);
+        } else {
+          // MODO CREACIÓN
+          this.#initCreateMode(profit);
+        }
+      });
   }
 
   #initCreateMode(profit: number) {
@@ -481,9 +660,11 @@ export class ProductCreate {
     this.isUsingGlobalMargin.set(true);
     this.productForm.patchValue({
       useCustomProfit: false,
-      customProfitMargin: profit
+      customProfitMargin: profit,
+      pricingMethodChoice: null,
     });
     this.productForm.get('customProfitMargin')?.disable();
+    this.productForm.get('pricingMethodChoice')?.disable();
     this.isFormReady.set(true);
   }
 
@@ -491,21 +672,12 @@ export class ProductCreate {
     try {
       const product = await this.#productState.getProduct(id);
       console.log(product);
-      const hasCustomMargin1Pay =
-        product.prices.profitMargin1Pay !== undefined &&
-        product.prices.profitMargin1Pay !== null;
-      const hasCustomMarginInstallments =
-        product.prices.profitMarginInstallments !== undefined &&
-        product.prices.profitMarginInstallments !== null;
+      const hasCustomMargin =
+        product.finance?.pricingStrategy?.targetProfit !== undefined &&
+        product.finance?.pricingStrategy?.targetProfit !== null;
 
       // ⚠️ Clonamos ANTES de mutar, así originalProduct refleja el estado real de la DB
-      this.#originalProduct.set(structuredClone(product));
-
-      if (!hasCustomMargin1Pay && !hasCustomMarginInstallments) {
-        product.prices.profitMargin1Pay = defaultProfit;
-        product.prices.profitMarginInstallments = defaultProfit;
-        this.isUsingGlobalMargin.set(true);
-      }
+      this.originalProduct.set(structuredClone(product));
 
       const type = product.productType;
       this.selectedType.set(type);
@@ -534,58 +706,91 @@ export class ProductCreate {
           enabled: true,
           headers: product.sizeGuide.headers || ['Talle', 'Medida'],
           rows: product.sizeGuide.rows || [{ size: '', values: [''] }],
-          tolerance: product.sizeGuide.tolerance || ''
+          tolerance: product.sizeGuide.tolerance || '',
         });
       } else {
         this.sizeGuideState.set({
           enabled: false,
           headers: ['Talle', 'Ancho (cm)', 'Largo (cm)'],
           rows: [{ size: 'S', values: ['48', '65'] }],
-          tolerance: ''
+          tolerance: '',
         });
       }
 
-      const useCustom1Pay = hasCustomMargin1Pay;
-      const useCustomInstallments = hasCustomMarginInstallments;
+      const pricingMethodChoiceVal = product.finance?.pricingStrategy?.method || null;
+
       this.productForm.patchValue({
         productType: type,
         provider: product.provider ? product.provider._id : '',
         model: product.model,
         brand: product.brand,
         category: product.category,
-        price: Math.ceil(this.costCurrency() === 'ARS' ? product.prices.costPrice.inARS : product.prices.costPrice.inUSD),
-        useCustomProfit1Pay: useCustom1Pay,
-        useCustomProfitInstallments: useCustomInstallments,
-        customProfitMargin1Pay: useCustom1Pay ? product.prices.profitMargin1Pay : '',
-        customProfitMarginInstallments: useCustomInstallments ? product.prices.profitMarginInstallments : '',
-        useCustomPricingMethod: !!product.prices.customPricingMethod,
-        customPricingMethod: product.prices.customPricingMethod || null,
+        price: Math.ceil(
+          this.costCurrency() === 'ARS'
+            ? (product.finance?.providerCost?.inARS ?? 0)
+            : (product.finance?.providerCost?.inUSD ?? 0),
+        ),
+        discountPercentageTransfer:
+          product.price?.discountPercentageTransfer ?? 0,
+        useCustomProfit: hasCustomMargin,
+        customProfitMargin: hasCustomMargin
+          ? product.finance?.pricingStrategy?.targetProfit
+          : defaultProfit,
+        pricingMethodChoice: pricingMethodChoiceVal,
         isActive: product.isActive !== false,
         isFeatured: !!product.isFeatured,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
         seo: {
           ...product.seo,
-          metaImage: product.seo && product.seo.metaImage ? product.seo.metaImage.url : ''
-        }
+          metaImage:
+            product.seo && product.seo.metaImage
+              ? product.seo.metaImage.url
+              : '',
+        },
       });
 
-      this.seoImagePreview.set(product.seo && product.seo.metaImage ? product.seo.metaImage.url : '')
+      this.seoImagePreview.set(
+        product.seo && product.seo.metaImage ? product.seo.metaImage.url : '',
+      );
+
+      // Patch additionalCosts FormArray
+      const additionalCostsArray = this.productForm.get(
+        'additionalCosts',
+      ) as FormArray;
+      additionalCostsArray.clear();
+      if (
+        product.finance?.additionalCosts &&
+        Array.isArray(product.finance.additionalCosts)
+      ) {
+        product.finance.additionalCosts.forEach((cost: any) => {
+          additionalCostsArray.push(
+            this.#fb.group({
+              concept: [cost.concept, Validators.required],
+              value: [cost.value, [Validators.required, Validators.min(0)]],
+              type: [cost.type, Validators.required],
+            }),
+          );
+        });
+      }
 
       // Enable/disable margin field based on whether the product had a custom margin
-      if (useCustom1Pay) {
-        this.productForm.get('customProfitMargin1Pay')?.enable();
+      if (hasCustomMargin) {
+        this.productForm.get('customProfitMargin')?.enable();
+        this.productForm.get('pricingMethodChoice')?.enable();
+        this.isUsingGlobalMargin.set(false);
       } else {
-        this.productForm.get('customProfitMargin1Pay')?.disable();
+        this.productForm.get('customProfitMargin')?.disable();
+        this.productForm.get('pricingMethodChoice')?.disable();
+        this.isUsingGlobalMargin.set(true);
       }
 
-      if (useCustomInstallments) {
-        this.productForm.get('customProfitMarginInstallments')?.enable();
-      } else {
-        this.productForm.get('customProfitMarginInstallments')?.disable();
+      if (product.price) {
+        this.calculatedPrices.set({
+          price: product.price,
+          finance: product.finance || ({} as any),
+        });
       }
-
-      this.calculatedPrices.set(product.prices);
 
       // Patch Arrays
       this.#patchArray(this.featuresControls, product.features);
@@ -594,10 +799,12 @@ export class ProductCreate {
       if (product.specifications && Array.isArray(product.specifications)) {
         this.specificationsControls.clear();
         product.specifications.forEach((s: any) => {
-          this.specificationsControls.push(this.#fb.group({
-            key: [s.key, Validators.required],
-            value: [s.value, Validators.required]
-          }));
+          this.specificationsControls.push(
+            this.#fb.group({
+              key: [s.key, Validators.required],
+              value: [s.value, Validators.required],
+            }),
+          );
         });
       }
 
@@ -607,45 +814,56 @@ export class ProductCreate {
 
         // Agrupamos por color
         const groupedVariants = new Map<string, any[]>();
-        product.variants.forEach(v => {
-           const key = v.color?.name || '';
-           if (!groupedVariants.has(key)) groupedVariants.set(key, []);
-           groupedVariants.get(key)!.push(v);
+        product.variants.forEach((v) => {
+          const key = v.color?.name || '';
+          if (!groupedVariants.has(key)) groupedVariants.set(key, []);
+          groupedVariants.get(key)!.push(v);
         });
 
         groupedVariants.forEach((variants, colorName) => {
-           const firstV = variants[0];
-           let imgIdx = null;
-           if (firstV.imageReference?.url) {
-             imgIdx = product.images.findIndex((img: any) => (img.url || img) === firstV.imageReference.url);
-           }
+          const firstV = variants[0];
+          let imgIdx = null;
+          if (firstV.imageReference?.url) {
+            imgIdx = product.images.findIndex(
+              (img: any) => (img.url || img) === firstV.imageReference.url,
+            );
+          }
 
-           const colorGroup = this.#fb.group({
-              colorName: [colorName],
-              colorHex: [firstV.color?.hex || '#000000'],
-              imageIndex: [imgIdx !== -1 ? imgIdx : 0],
-              variants: this.#fb.array([])
-           });
+          const colorGroup = this.#fb.group({
+            colorName: [colorName],
+            colorHex: [firstV.color?.hex || '#000000'],
+            imageIndex: [imgIdx !== -1 ? imgIdx : 0],
+            variants: this.#fb.array([]),
+          });
 
-           const variantsArray = colorGroup.get('variants') as FormArray;
+          const variantsArray = colorGroup.get('variants') as FormArray;
 
-           variants.forEach(v => {
-              if (product.productType === ProductType.TECH && isTechVariant(v)) {
-                variantsArray.push(this.#fb.group({
-                  attributesJson: [v.attributes.map(a => `${a.key}:${a.value}`).join(', ')],
+          variants.forEach((v) => {
+            if (product.productType === ProductType.TECH && isTechVariant(v)) {
+              variantsArray.push(
+                this.#fb.group({
+                  attributesJson: [
+                    v.attributes.map((a) => `${a.key}:${a.value}`).join(', '),
+                  ],
                   stock: [v.stock, [Validators.required, Validators.min(0)]],
-                  isActive: [v.isActive]
-                }));
-              } else if (product.productType === ProductType.CLOTHING && isClothingVariant(v)) {
-                variantsArray.push(this.#fb.group({
+                  isActive: [v.isActive],
+                }),
+              );
+            } else if (
+              product.productType === ProductType.CLOTHING &&
+              isClothingVariant(v)
+            ) {
+              variantsArray.push(
+                this.#fb.group({
                   size: [v.size, Validators.required],
                   stock: [v.stock, [Validators.required, Validators.min(0)]],
-                  isActive: [v.isActive]
-                }));
-              }
-           });
+                  isActive: [v.isActive],
+                }),
+              );
+            }
+          });
 
-           this.colorGroupsControls.push(colorGroup);
+          this.colorGroupsControls.push(colorGroup);
         });
       }
 
@@ -653,10 +871,12 @@ export class ProductCreate {
       if (product.images && Array.isArray(product.images)) {
         this.imagesControls.clear();
         product.images.forEach((img: any) => {
-          this.imagesControls.push(this.#fb.group({
-            link: [img.url || img],
-            file: [null]
-          }));
+          this.imagesControls.push(
+            this.#fb.group({
+              link: [img.url || img],
+              file: [null],
+            }),
+          );
         });
       }
 
@@ -669,7 +889,7 @@ export class ProductCreate {
   #patchArray(formArray: FormArray, data: any[]) {
     formArray.clear();
     if (data && Array.isArray(data)) {
-      data.forEach(item => formArray.push(this.#fb.control(item)));
+      data.forEach((item) => formArray.push(this.#fb.control(item)));
     }
   }
 
@@ -681,25 +901,27 @@ export class ProductCreate {
   addBulkSpecifications(value: string) {
     if (!value.trim()) return;
     const pairs = value.split(',');
-    pairs.forEach(pair => {
+    pairs.forEach((pair) => {
       const indexOfColon = pair.indexOf(':');
       if (indexOfColon !== -1) {
         const key = pair.substring(0, indexOfColon).trim();
         const val = pair.substring(indexOfColon + 1).trim();
         if (key && val) {
-          // Al pushear al FormArray, se dispara el valueChanges del form, 
+          // Al pushear al FormArray, se dispara el valueChanges del form,
           // lo que actualiza formChanges() y recalcula hasChanges automáticamente.
-          this.specificationsControls.push(this.#fb.group({
-            key: [key, Validators.required],
-            value: [val, Validators.required]
-          }));
+          this.specificationsControls.push(
+            this.#fb.group({
+              key: [key, Validators.required],
+              value: [val, Validators.required],
+            }),
+          );
         }
       }
     });
   }
 
   onImageDeleted(publicId: string) {
-    this.#deletedImages.update(imgs => [...imgs, publicId]);
+    this.#deletedImages.update((imgs) => [...imgs, publicId]);
     // Clamp color group imageIndex values since the images array shrank
     this.#clampColorGroupImageIndices();
   }
@@ -738,12 +960,14 @@ export class ProductCreate {
   }
 
   addColorGroup() {
-    this.colorGroupsControls.push(this.#fb.group({
-      colorName: [''],
-      colorHex: ['#000000'],
-      imageIndex: [0],
-      variants: this.#fb.array([])
-    }));
+    this.colorGroupsControls.push(
+      this.#fb.group({
+        colorName: [''],
+        colorHex: ['#000000'],
+        imageIndex: [0],
+        variants: this.#fb.array([]),
+      }),
+    );
   }
 
   removeColorGroup(index: number) {
@@ -753,19 +977,23 @@ export class ProductCreate {
   addVariantToGroup(groupIndex: number) {
     const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
     const variantsArray = group.get('variants') as FormArray;
-    
+
     if (this.selectedType() === ProductType.TECH) {
-       variantsArray.push(this.#fb.group({
-         attributesJson: [''],
-         stock: [8, [Validators.required, Validators.min(1)]],
-         isActive: [true]
-       }));
+      variantsArray.push(
+        this.#fb.group({
+          attributesJson: [''],
+          stock: [8, [Validators.required, Validators.min(1)]],
+          isActive: [true],
+        }),
+      );
     } else {
-       variantsArray.push(this.#fb.group({
-         size: ['', Validators.required],
-         stock: [8, [Validators.required, Validators.min(1)]],
-         isActive: [true]
-       }));
+      variantsArray.push(
+        this.#fb.group({
+          size: ['', Validators.required],
+          stock: [8, [Validators.required, Validators.min(1)]],
+          isActive: [true],
+        }),
+      );
     }
   }
 
@@ -787,28 +1015,37 @@ export class ProductCreate {
     this.colorGroupsControls.value.forEach((group: any) => {
       (group.variants || []).forEach((v: any) => {
         const variant: any = {
-           stock: Number(v.stock),
-           reservedStock: 0,
-           isActive: v.isActive !== false,
-           images: [],
-           imageIndex: group.imageIndex !== null && group.imageIndex !== undefined ? group.imageIndex : 0
+          stock: Number(v.stock),
+          reservedStock: 0,
+          isActive: v.isActive !== false,
+          images: [],
+          imageIndex:
+            group.imageIndex !== null && group.imageIndex !== undefined
+              ? group.imageIndex
+              : 0,
         };
 
         if (currentType === ProductType.TECH) {
-           variant.attributes = v.attributesJson
-             ? v.attributesJson.split(',').map((a: string) => {
-               const [key, value] = a.trim().split(':');
-               return { key: key?.trim() || '', value: value?.trim() || '' };
-             }).filter((a: any) => a.key && a.value)
-             : [];
+          variant.attributes = v.attributesJson
+            ? v.attributesJson
+                .split(',')
+                .map((a: string) => {
+                  const [key, value] = a.trim().split(':');
+                  return { key: key?.trim() || '', value: value?.trim() || '' };
+                })
+                .filter((a: any) => a.key && a.value)
+            : [];
         } else if (currentType === ProductType.CLOTHING) {
-           variant.size = String(v.size).trim();
+          variant.size = String(v.size).trim();
         }
 
         if (group.colorName) {
-           variant.color = { name: group.colorName, hex: group.colorHex || '#000000' };
+          variant.color = {
+            name: group.colorName,
+            hex: group.colorHex || '#000000',
+          };
         }
-        
+
         flatVariants.push(variant);
       });
     });
@@ -830,15 +1067,22 @@ export class ProductCreate {
   addBrandCategory(type: 'brand' | 'category') {
     const dialogRef = this.#dialog.open(AddBrandCategory, {
       width: '400px',
-      data: { type, actuallyData: type === 'brand' ? this.brands() : this.categories() }
+      data: {
+        type,
+        actuallyData: type === 'brand' ? this.brands() : this.categories(),
+      },
     });
 
     dialogRef.afterClosed().subscribe((result: string) => {
       if (result) {
         if (type === 'brand') {
-          this.#CommerceConfigState.saveConfig({ brands: [...this.brands(), result] });
+          this.#CommerceConfigState.saveConfig({
+            brands: [...this.brands(), result],
+          });
         } else {
-          this.#CommerceConfigState.saveConfig({ categories: [...this.categories(), result] });
+          this.#CommerceConfigState.saveConfig({
+            categories: [...this.categories(), result],
+          });
         }
       }
     });
@@ -861,12 +1105,12 @@ export class ProductCreate {
     const fullProductData = this.#getFullProductData();
     const formData = new FormData();
 
-    if (this.isEditMode() && this.#originalProduct()) {
+    if (this.isEditMode() && this.originalProduct()) {
       // Le pasamos el fullProductData ya armado
       const changes = ProductFormUtils.hasChanges(
         fullProductData,
-        this.#originalProduct(),
-        this.#deletedImages()
+        this.originalProduct(),
+        this.#deletedImages(),
       );
 
       if (!changes.hasChanges) return;
@@ -875,8 +1119,11 @@ export class ProductCreate {
       try {
         console.log('=== DATOS QUE SE VAN AL BACKEND (PATCH) ===');
         changes.formData.forEach((value, key) => console.log(`${key}:`, value));
-
-        await this.#productState.updateProduct(this.productID(), changes.formData);
+        console.log(this.calculatedListPrice());
+        await this.#productState.updateProduct(
+          this.productID(),
+          changes.formData,
+        );
         this.#router.navigate(['/home/products', this.productID()]);
       } catch (error) {
         console.error('Error updating product', error);
@@ -914,14 +1161,29 @@ export class ProductCreate {
     formData.append('price', data.price);
 
     // Only send customProfitMargin if the user opted in
-    if (data.customProfitMargin1Pay !== null && data.customProfitMargin1Pay !== '') {
-      formData.append('customProfitMargin1Pay', data.customProfitMargin1Pay.toString());
+    if (
+      data.useCustomProfit &&
+      data.customProfitMargin !== null &&
+      data.customProfitMargin !== ''
+    ) {
+      formData.append('customProfitMargin', data.customProfitMargin.toString());
     }
-    if (data.customProfitMarginInstallments !== null && data.customProfitMarginInstallments !== '') {
-      formData.append('customProfitMarginInstallments', data.customProfitMarginInstallments.toString());
+    if (data.useCustomProfit && data.pricingMethodChoice !== null) {
+      formData.append('customPricingMethod', data.pricingMethodChoice);
+    } else if (data.useCustomProfit && data.pricingMethodChoice === null) {
+      formData.append('customPricingMethod', '');
     }
-    if (data.useCustomPricingMethod && data.customPricingMethod) {
-      formData.append('customPricingMethod', data.customPricingMethod);
+    if (
+      data.discountPercentageTransfer !== undefined &&
+      data.discountPercentageTransfer !== null
+    ) {
+      formData.append(
+        'discountPercentageTransfer',
+        data.discountPercentageTransfer.toString(),
+      );
+    }
+    if (data.additionalCosts) {
+      formData.append('additionalCosts', JSON.stringify(data.additionalCosts));
     }
 
     formData.append('isActive', String(data.isActive));
@@ -938,10 +1200,13 @@ export class ProductCreate {
     if (this.#typeSpecificValues()) {
       if (data.productType === ProductType.TECH) {
         const techVals = this.#typeSpecificValues() as TechFormValue;
-        if (techVals.storage?.length) formData.append('storage', JSON.stringify(techVals.storage));
+        if (techVals.storage?.length)
+          formData.append('storage', JSON.stringify(techVals.storage));
         if (techVals.ram) formData.append('ram', techVals.ram);
-        if (techVals.processor) formData.append('processor', techVals.processor);
-        if (techVals.screenSize) formData.append('screenSize', techVals.screenSize);
+        if (techVals.processor)
+          formData.append('processor', techVals.processor);
+        if (techVals.screenSize)
+          formData.append('screenSize', techVals.screenSize);
         if (techVals.os) formData.append('os', techVals.os);
       }
 
@@ -949,8 +1214,10 @@ export class ProductCreate {
         const clothingVals = this.#typeSpecificValues() as ClothingFormValue;
         if (clothingVals.gender) formData.append('gender', clothingVals.gender);
         if (clothingVals.fit) formData.append('fit', clothingVals.fit);
-        if (clothingVals.material) formData.append('material', clothingVals.material);
-        if (clothingVals.sizeType) formData.append('sizeType', clothingVals.sizeType);
+        if (clothingVals.material)
+          formData.append('material', clothingVals.material);
+        if (clothingVals.sizeType)
+          formData.append('sizeType', clothingVals.sizeType);
         if (clothingVals.season) formData.append('season', clothingVals.season);
       }
     }
@@ -967,7 +1234,10 @@ export class ProductCreate {
         metaDescription: data.seo.metaDescription || '',
       };
       // Si la imagen actual es una URL (ej: modo edición), la incluimos en el JSON
-      if (typeof seoImageValue === 'string' && seoImageValue.startsWith('http')) {
+      if (
+        typeof seoImageValue === 'string' &&
+        seoImageValue.startsWith('http')
+      ) {
         seoData.metaImage = { url: seoImageValue, public_id: '' };
       }
       // Enviamos el objeto SEO como un único string JSON

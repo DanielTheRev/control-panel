@@ -12,7 +12,7 @@ import {
   PaymentStatus,
 } from '../interfaces/order.interface';
 import { AuthService } from '../services/auth.service';
-import { OrdersService } from '../services/orders.service';
+import { OrdersService, sanitizeOrder } from '../services/orders.service';
 
 @Injectable({
   providedIn: 'root',
@@ -56,6 +56,13 @@ export class OrdersStateService {
     return {
       url: `${environment.apiUrl}/orders?${params.toString()}`,
     };
+  }, {
+    parse: (res: any) => {
+      if (res && res.data) {
+        res.data = res.data.map(sanitizeOrder);
+      }
+      return res;
+    }
   });
 
   // método para agregar nueva orden
@@ -65,7 +72,7 @@ export class OrdersStateService {
       console.log(oldState);
       if (!oldState) return oldState;
       return {
-        data: [order, ...oldState.data],
+        data: [sanitizeOrder(order), ...oldState.data],
         pagination: oldState.pagination,
       };
     });
@@ -77,7 +84,7 @@ export class OrdersStateService {
       return {
         ...oldState,
         data: oldState.data.map((ordr) => {
-          if (ordr._id === order._id) return { ...ordr, ...order };
+          if (ordr._id === order._id) return sanitizeOrder({ ...ordr, ...order });
           return ordr;
         }),
       };

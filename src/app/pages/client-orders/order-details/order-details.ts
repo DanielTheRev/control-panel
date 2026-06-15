@@ -63,87 +63,114 @@ export class OrderDetails implements OnInit {
 
   // ─── Financials ───
 
-  /** Ingresos reales = precio de venta × cantidad, según método de pago */
-  productsSubtotal = computed(() => {
-    const items = this.items();
-    const isCard = this.order()?.paymentInfo.method === PaymentType.CARD;
-    return items.reduce((acc, item) => {
-      const prices = item.productSnapshot?.prices;
-      if (!prices) return acc;
-      const unitPrice = isCard
-        ? (prices.tarjeta_credito_debito ?? 0)
-        : (prices.efectivo_transferencia ?? 0);
-      return acc + unitPrice * item.quantity;
-    }, 0);
+  shippingCost = computed(() => this.order()?.shippingInfo?.cost || 0);
+
+  /** Total cobrado (incluye envío si lo pagó el cliente) */
+  orderTotal = computed(() => this.order()?.finance?.total || this.order()?.total || 0);
+
+  /** Costo base de los proveedores (Costo de Ventas) */
+  baseProviderCost = computed(() => {
+    return this.order()?.finance?.baseCost || 0;
   });
 
-  /** Costo real de los productos en ARS */
-  totalCost = computed(() => {
-    return this.items().reduce((acc, item) => {
-      const unitCost = item.productSnapshot?.prices?.costPrice?.inARS ?? 0;
-      return acc + unitCost * item.quantity;
-    }, 0);
+  /** Desglose de gastos adicionales desde los items */
+  additionalCostsBreakdown = computed(() => {
+    const o = this.order();
+    if (!o) return [];
+    const breakdownMap = new Map<string, number>();
+
+    for (const item of o.items) {
+      const additionalCosts = item.productSnapshot?.finance?.additionalCosts;
+      if (!additionalCosts || !Array.isArray(additionalCosts)) continue;
+
+      const providerCost = item.productSnapshot?.finance?.providerCost?.inARS || 0;
+
+      for (const cost of additionalCosts) {
+        let costValue = 0;
+        if (cost.type === 'percent_over_provider') {
+          costValue = providerCost * (cost.value / 100);
+        } else if (cost.type === 'fixed') {
+          costValue = cost.value;
+        }
+        
+        costValue = costValue * item.quantity;
+        const current = breakdownMap.get(cost.concept) || 0;
+        breakdownMap.set(cost.concept, current + costValue);
+      }
+    }
+
+    return Array.from(breakdownMap.entries()).map(([concept, value]) => ({ concept, value }));
   });
 
-  shippingCost = computed(() => this.order()?.shippingCost || 0);
+  totalAdditionalCosts = computed(() => {
+    return this.additionalCostsBreakdown().reduce((sum, cost) => sum + cost.value, 0);
+  });
 
-  /** Ganancia bruta = ingresos + envío - costo */
-  grossProfit = computed(() => this.productsSubtotal() + this.shippingCost() - this.totalCost());
+  /** Ganancia Neta Final (dictada por el backend) */
+  grossProfit = computed(() => this.order()?.finance?.earnings || 0);
 
+  /** Comisiones de Pago deducidas matemáticamente si el backend no las envía */
+  paymentGatewayFee = computed(() => {
+    const o = this.order();
+    if (!o || !o.finance) return 0;
+    
+    if (o.finance.paymentGatewayFee !== undefined) {
+      return o.finance.paymentGatewayFee;
+    }
+
+    const fee = this.orderTotal() - this.baseProviderCost() - this.totalAdditionalCosts() - this.shippingCost() - this.grossProfit();
+    return fee > 0 ? fee : 0;
+  });
+
+  /** Margen sobre el ingreso de los productos (descontando el envío para calcular la rentabilidad real) */
   margin = computed(() => {
-    const revenue = this.productsSubtotal() + this.shippingCost();
-    if (revenue === 0) return 0;
-    return (this.grossProfit() / revenue) * 100;
+    const isFreeShipping = this.order()?.shippingInfo?.freeShippingApplied;
+    // Si el cliente pagó el envío, lo restamos del total abonado para saber cuánto ingreso es puramente de producto.
+    // Si el vendedor pagó el envío, el total abonado ya es puramente de producto.
+    const productRevenue = isFreeShipping ? this.orderTotal() : Math.max(0, this.orderTotal() - this.shippingCost());
+    
+    if (productRevenue <= 0) return 0;
+    return (this.grossProfit() / productRevenue) * 100;
   });
 
   // ─── Per-item helpers ───
 
-  getItemPrice(item: any): number {
-    const prices = item.productSnapshot?.prices;
-    if (!prices) return 0;
-    return this.order()?.paymentInfo?.method === PaymentType.CARD
-      ? (prices.tarjeta_credito_debito ?? 0)
-      : (prices.efectivo_transferencia ?? 0);
+  getItemPrice(item: IOrderItem): number {
+    if (!item) return 0;
+    return item.price;
+  }
+
+  getItemAdditionalCosts(item: IOrderItem): number {
+    const additionalCosts = item.productSnapshot?.finance?.additionalCosts;
+    if (!additionalCosts || !Array.isArray(additionalCosts)) return 0;
+    
+    const providerCost = item.productSnapshot?.finance?.providerCost?.inARS || 0;
+    let total = 0;
+    
+    for (const cost of additionalCosts) {
+      if (cost.type === 'percent_over_provider') {
+        total += providerCost * (cost.value / 100);
+      } else if (cost.type === 'fixed') {
+        total += cost.value;
+      }
+    }
+    return total;
   }
 
   getItemEarnings(item: IOrderItem): number {
-    const currentOrder = this.order();
     if (!item) return 0;
-    if (!currentOrder) return 0;
-    const earnings = item.productSnapshot?.prices?.earnings;
-    if (!earnings) return 0;
-    const paymentMethod = currentOrder.paymentInfo;
-    const installments = currentOrder.paymentInfo?.mercadopagoData?.transactions?.payments?.[0]?.payment_method?.installments;
-    let unitPrice = 0;
-    switch (paymentMethod.method) {
-      case PaymentType.CARD:
-        if (installments !== undefined && installments === 1) {
-          unitPrice = item.productSnapshot.prices.earnings.cash_transfer;
-        } else if (installments !== undefined && installments === 3) {
-          unitPrice = item.productSnapshot.prices.earnings.card_3_installments;
-        } else if (installments !== undefined && installments === 6) {
-          unitPrice = item.productSnapshot.prices.earnings.card_6_installments;
-        } else {
-          unitPrice = item.productSnapshot.prices.earnings.card_6_installments;
-        }
-        break;
-      case PaymentType.TICKET:
-        unitPrice = item.productSnapshot?.prices.earnings.cash_transfer;
-        break;
-      case PaymentType.CASH:
-        unitPrice = item.productSnapshot?.prices.earnings.cash_transfer;
-        break;
-      case PaymentType.BANK_TRANSFER:
-        unitPrice = item.productSnapshot?.prices.earnings.cash_transfer;
-        break;
-      case PaymentType.ALIAS_TRANSFER:
-        unitPrice = item.productSnapshot?.prices.earnings.cash_transfer;
-        break;
-      default:
-        unitPrice = item.productSnapshot?.prices.earnings.cash_transfer;
-        break;
+    const orderPaymentType = this.order()?.paymentInfo.method;
+    if (orderPaymentType === PaymentType.CARD) {
+      return item.productSnapshot.finance?.calculatedProfits.card3Installments || 0;
     }
-    return unitPrice * item.quantity;
+    if(orderPaymentType === PaymentType.BANK_TRANSFER || orderPaymentType === PaymentType.ALIAS_TRANSFER) {
+      return item.productSnapshot.finance?.calculatedProfits.transfer || 0;
+    }
+    if(orderPaymentType === PaymentType.TICKET){
+      return item.productSnapshot.finance?.calculatedProfits.card_ticket1Pay || 0;
+    }
+    return item.productSnapshot.finance?.calculatedProfits.card6Installments || 0;
+    // return item.productSnapshot.finance?.calculatedProfits;
   }
 
   // ─── Navigation ───

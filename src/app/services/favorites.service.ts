@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   FavoritesApiResponse,
@@ -21,6 +21,33 @@ export class FavoritesService {
   getFavoritesByProduct(): Observable<FavoritesApiResponse<IFavoritesByProduct[]>> {
     return this._http.get<FavoritesApiResponse<IFavoritesByProduct[]>>(
       `${this.endpoint}/by-product`
+    ).pipe(
+      map(res => {
+        if (res && res.data) {
+          res.data = res.data.map(fav => {
+            if (fav.product) {
+              const prod = fav.product as any;
+              if (!prod.price && prod.prices) {
+                prod.price = {
+                  listPrice: prod.prices.tarjeta_credito_debito || 0,
+                  card_ticket1PayPrice: prod.prices.tarjeta_credito_debito || 0,
+                  cashTransferPrice: prod.prices.efectivo_transferencia || 0,
+                  discountPercentageTransfer: 0,
+                  installments: {
+                    threePaymentsAmount: prod.prices.cuotas?.cuotas_3_si || 0,
+                    sixPaymentsAmount: prod.prices.cuotas?.cuotas_6_si || 0,
+                    hasThreeInstallmentsSeamless: true,
+                    hasSixInstallmentsSeamless: true
+                  }
+                };
+              }
+              delete prod.prices;
+            }
+            return fav;
+          });
+        }
+        return res;
+      })
     );
   }
 

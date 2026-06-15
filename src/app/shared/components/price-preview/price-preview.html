@@ -1,103 +1,142 @@
-@if (prices()) {
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 animate-fade-in-down">
-  <!-- Cash / Transfer -->
-  <div class="bg-success/5 rounded-xl border border-success/20 p-4 hover:border-success/40 transition-colors">
-    <div class="flex items-center gap-2 mb-3">
-      <div class="bg-success/15 rounded-lg p-1.5">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! text-success">payments</mat-icon>
+@if (price()) {
+<div class="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6 max-w-xl mx-auto mt-4 space-y-6 animate-fade-in-down">
+  <!-- PRECIO DE LISTA -->
+  <div class="space-y-3">
+    <div class="flex justify-between items-end">
+      <div>
+        <h4 class="text-xs font-bold text-base-content/40 uppercase tracking-widest">Precio de Lista (Tarjeta/Lanzamiento)</h4>
+        <div class="text-3xl font-black text-base-content mt-1 tabular-nums">
+          {{ price().listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+        </div>
       </div>
-      <span class="text-[10px] font-bold text-success/60 uppercase tracking-wider">Efectivo / Transf</span>
+      <span class="badge badge-lg bg-base-200 text-base-content font-bold border border-base-300">Precio Final</span>
     </div>
-    <div class="text-xl font-bold text-success mb-1">
-      {{ prices().efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
-    </div>
-    <!-- @if (prices().earnings) { -->
-    <div class="flex items-center gap-1">
-      <mat-icon class="text-[12px]! w-3! h-3! text-success/60">trending_up</mat-icon>
-      <span class="text-xs font-bold text-success/70">
-        {{ prices().earnings.cash_transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <span class="text-[10px] text-success/40 ml-0.5">ganancia</span>
-    </div>
-    @if (prices().earnings.cash_transfer > prices().earnings.card_1_installments) {
-    <div class="flex items-center gap-1 mt-0.5">
-      <mat-icon class="text-[11px]! w-3! h-3! text-warning">add_circle</mat-icon>
-      <span class="text-[11px] font-bold text-warning">
-        +{{ prices().earnings.cash_transfer - prices().earnings.card_1_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <span class="text-[10px] text-warning/60 ml-0.5">extra por gross-up</span>
-    </div>
-    }
-    <!-- } -->
-  </div>
 
-  <!-- Debito / Credito 1 pago -->
-  <div class="bg-success/5 rounded-xl border border-success/20 p-4 hover:border-success/40 transition-colors">
-    <div class="flex items-center gap-2 mb-3">
-      <div class="bg-success/15 rounded-lg p-1.5">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! text-success">payments</mat-icon>
+    <!-- Conceptos Breakdown -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+      <!-- Tus Costos -->
+      <div class="bg-base-200/50 rounded-xl p-3 border border-base-300/60 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-secondary text-sm">inventory_2</mat-icon>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-base-content/40 uppercase">Tus Costos</span>
+            <span class="text-xs text-base-content/60 leading-tight">Proveedor + Adicionales</span>
+          </div>
+        </div>
+        <span class="font-extrabold text-sm tabular-nums text-base-content/80">
+          {{ getTotalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+        </span>
       </div>
-      <span class="text-[10px] font-bold text-success/60 uppercase tracking-wider">Debito / Credito 1 pago</span>
-    </div>
-    <div class="text-xl font-bold text-success mb-1">
-      {{ prices().efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
-    </div>
-    <!-- @if (prices().earnings) { -->
-    <div class="flex items-center gap-1">
-      <mat-icon class="text-[12px]! w-3! h-3! text-success/60">trending_up</mat-icon>
-      <span class="text-xs font-bold text-success/70">
-        {{ prices().earnings.card_1_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <span class="text-[10px] text-success/40 ml-0.5">ganancia</span>
-    </div>
-    <!-- } -->
-  </div>
 
-  <!-- 3 Installments -->
-  <div class="bg-info/5 rounded-xl border border-info/20 p-4 hover:border-info/40 transition-colors">
-    <div class="flex items-center gap-2 mb-3">
-      <div class="bg-info/15 rounded-lg p-1.5">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! text-info">credit_card</mat-icon>
+      <!-- Comisiones Pasarela -->
+      <div class="bg-warning/5 rounded-xl p-3 border border-warning/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-warning text-sm">account_balance_wallet</mat-icon>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-warning/70 uppercase">Pasarela (MP)</span>
+            <span class="text-xs text-warning/60 leading-tight">Comisión total c/IVA ({{ getMpCommissionPercent() | number:'1.0-1' }}%)</span>
+          </div>
+        </div>
+        <span class="font-extrabold text-sm tabular-nums text-warning">
+          {{ getMpCommissionAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+        </span>
       </div>
-      <span class="text-[10px] font-bold text-info/60 uppercase tracking-wider">3 Cuotas S/I</span>
-    </div>
-    <div class="text-xl font-bold text-info mb-1">
-      {{ prices().cuotas.cuotas_3_si | currency:'ARS':'symbol-narrow':'1.0-0' }}
-    </div>
-    <div class="flex items-center justify-between text-xs">
-      <span class="text-info/40">
-        Lista: {{ prices().tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <!-- @if (prices().earnings) { -->
-      <span class="flex items-center gap-0.5 text-info/70 font-bold">
-        <mat-icon class="text-[12px]! w-3! h-3!">trending_up</mat-icon>
-        {{ prices().earnings.card_3_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <!-- } -->
+
+      <!-- Tu Ganancia -->
+      <div class="bg-success/5 rounded-xl p-3 border border-success/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-success text-sm">trending_up</mat-icon>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-success/70 uppercase">Tu Ganancia</span>
+            <span class="text-xs text-success/60 leading-tight">Neto en 6 Cuotas</span>
+          </div>
+        </div>
+        <span class="font-extrabold text-sm tabular-nums text-success">
+          {{ (finance()?.calculatedProfits?.card6Installments || 0) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+        </span>
+      </div>
     </div>
   </div>
 
-  <!-- 6 Installments -->
-  <div class="bg-primary/5 rounded-xl border border-primary/20 p-4 hover:border-primary/40 transition-colors">
-    <div class="flex items-center gap-2 mb-3">
-      <div class="bg-primary/15 rounded-lg p-1.5">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! text-primary">credit_card</mat-icon>
+  <!-- SEPARATOR -->
+  <div class="relative flex py-2 items-center">
+    <div class="flex-grow border-t border-dashed border-base-300"></div>
+    <span class="flex-shrink mx-4 text-[10px] font-bold text-base-content/30 uppercase tracking-widest">Pago sin pasarela</span>
+    <div class="flex-grow border-t border-dashed border-base-300"></div>
+  </div>
+
+  <!-- PRECIO SIN PASARELA -->
+  <div class="space-y-4">
+    <div class="flex justify-between items-end">
+      <div>
+        <h4 class="text-xs font-bold text-success/80 uppercase tracking-widest">Transferencia / Efectivo</h4>
+        <div class="text-3xl font-black text-success mt-1 tabular-nums">
+          {{ price().cashTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+        </div>
       </div>
-      <span class="text-[10px] font-bold text-primary/60 uppercase tracking-wider">6 Cuotas S/I</span>
+      <div class="text-right">
+        <span class="badge badge-lg badge-success font-bold text-xs">
+          {{ getDiscountPercent() }}% OFF
+        </span>
+      </div>
     </div>
-    <div class="text-xl font-bold text-primary mb-1">
-      {{ prices().cuotas.cuotas_6_si | currency:'ARS':'symbol-narrow':'1.0-0' }}
+
+    <!-- Tooltip explicativo del descuento -->
+    <div class="bg-success/5 rounded-xl p-4 border border-success/10 space-y-2">
+      <div class="flex items-start gap-2.5">
+        <mat-icon class="text-success text-[18px] w-4.5 h-4.5 shrink-0 mt-0.5">help_outline</mat-icon>
+        <div class="text-xs text-success/80 leading-normal">
+          <p class="font-bold mb-1">Distribución del descuento de Transferencia:</p>
+          <p>
+            Tienes hasta <span class="font-black text-base-content">{{ getSacarPasarela() | number:'1.0-2' }}%</span> financiado por la comisión que te ahorras de la pasarela (Mercado Pago).
+          </p>
+          @if (getSacarGanancia() > 0) {
+            <p class="mt-1">
+              El restante <span class="font-black text-error">{{ getSacarGanancia() | number:'1.0-2' }}%</span> es absorbido directamente de tu margen de ganancia.
+            </p>
+          } @else {
+            <p class="mt-1 font-semibold text-emerald-600">
+              ¡Tu margen de ganancia está 100% protegido para este descuento!
+            </p>
+          }
+        </div>
+      </div>
     </div>
-    <div class="flex items-center justify-between text-xs">
-      <span class="text-primary/40">
-        Lista: {{ prices().tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <!-- @if (prices().earnings) { -->
-      <span class="flex items-center gap-0.5 text-primary/70 font-bold">
-        <mat-icon class="text-[12px]! w-3! h-3!">trending_up</mat-icon>
-        {{ prices().earnings.card_6_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-      </span>
-      <!-- } -->
+  </div>
+
+  <!-- Opciones de Cuotas (Colapsable) -->
+  <div class="collapse collapse-arrow bg-base-200/30 border border-base-300 rounded-xl">
+    <input type="checkbox" /> 
+    <div class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center gap-2">
+      <mat-icon class="text-sm">credit_card</mat-icon>
+      Ver Opciones en Cuotas Sin Interés
+    </div>
+    <div class="collapse-content space-y-3">
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <div class="bg-base-100 p-3 rounded-lg border border-base-300">
+          <span class="text-[9px] font-bold text-base-content/40 uppercase">3 Cuotas de</span>
+          <div class="text-sm font-black text-base-content mt-0.5">
+            {{ price().installments.threePaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}
+          </div>
+          @if (finance()?.calculatedProfits) {
+            <span class="text-[9px] text-success font-semibold mt-1 block">
+              Ganancia: {{ finance()?.calculatedProfits?.card3Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </span>
+          }
+        </div>
+
+        <div class="bg-base-100 p-3 rounded-lg border border-base-300">
+          <span class="text-[9px] font-bold text-base-content/40 uppercase">6 Cuotas de</span>
+          <div class="text-sm font-black text-base-content mt-0.5">
+            {{ price().installments.sixPaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}
+          </div>
+          @if (finance()?.calculatedProfits) {
+            <span class="text-[9px] text-success font-semibold mt-1 block">
+              Ganancia: {{ finance()?.calculatedProfits?.card6Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </span>
+          }
+        </div>
+      </div>
     </div>
   </div>
 </div>

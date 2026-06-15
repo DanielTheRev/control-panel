@@ -10,15 +10,66 @@ export class ProductFormUtils {
       return changes;
     }
 
-    // --- PRECIO ---
-    if (productData.price !== originalProduct.prices.costPrice.inUSD) {
-      console.warn(`[DEBUG] Change detected in price. New: '${productData.price}', Orig: '${originalProduct.prices.costPrice.inUSD}'`);
-      changes.formData.append('price', productData.price);
+    // =============================================
+    // --- BLOQUE DE PRICING (se envía completo) ---
+    // =============================================
+    // Si CUALQUIER campo de pricing cambió, enviamos TODOS los campos
+    // para que el backend tenga el payload completo para recalcular.
+
+    const origPrice = originalProduct.finance?.providerCost?.inARS;
+    const origMargin = originalProduct.finance?.pricingStrategy?.targetProfit;
+    const origHasCustomMargin = origMargin !== undefined && origMargin !== null;
+    const origPricingMethod = originalProduct.finance?.pricingStrategy?.method ?? '';
+    const origAdditionalCosts = originalProduct.finance?.additionalCosts || [];
+
+    // Valores actuales del formulario
+    const newPrice = productData.price;
+    const newUseCustomProfit = !!productData.useCustomProfit;
+    const newMargin = productData.customProfitMargin;
+    const newPricingMethod = (productData.useCustomProfit && productData.pricingMethodChoice !== 'global')
+      ? (productData.pricingMethodChoice || '')
+      : '';
+    const newAdditionalCosts = productData.additionalCosts || [];
+
+    // Normalizar costos adicionales para comparación justa
+    const normalizedOrigCosts = JSON.stringify(origAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type })));
+    const normalizedNewCosts = JSON.stringify(newAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type })));
+
+    // Detectar si ALGO del pricing cambió
+    const pricingChanged =
+      Number(newPrice) !== Number(origPrice) ||
+      newUseCustomProfit !== origHasCustomMargin ||
+      Number(newMargin) !== Number(origMargin ?? 0) ||
+      newPricingMethod !== origPricingMethod ||
+      normalizedNewCosts !== normalizedOrigCosts;
+
+    if (pricingChanged) {
+      console.warn(`[DEBUG] Pricing block changed. Sending complete pricing payload.`);
+      console.warn(`[DEBUG]   providerCost: ${newPrice} (orig: ${origPrice})`);
+      console.warn(`[DEBUG]   useCustomProfit: ${newUseCustomProfit} (orig: ${origHasCustomMargin})`);
+      console.warn(`[DEBUG]   customProfitMargin: ${newMargin} (orig: ${origMargin})`);
+      console.warn(`[DEBUG]   pricingMethodChoice: ${newPricingMethod} (orig: ${origPricingMethod})`);
+      console.warn(`[DEBUG]   additionalCosts: ${normalizedNewCosts} (orig: ${normalizedOrigCosts})`);
+
+      changes.formData.append('providerCost', String(newPrice));
+      changes.formData.append('useCustomProfit', String(newUseCustomProfit));
+      changes.formData.append('customProfitMargin', String(newMargin ?? ''));
+      changes.formData.append('pricingMethodChoice', newPricingMethod || 'global');
+      changes.formData.append('additionalCosts', JSON.stringify(newAdditionalCosts));
       changes.hasChanges = true;
     }
 
-    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'isActive', 'isFeatured'];
+    // --- DISCOUNT PERCENTAGE TRANSFER (separado, no es input del cálculo de precios) ---
+    const origDiscount = originalProduct.price?.discountPercentageTransfer ?? 0;
+    const newDiscount = productData.discountPercentageTransfer ?? 0;
+    if (Number(newDiscount) !== Number(origDiscount)) {
+      console.warn(`[DEBUG] Change detected in discountPercentageTransfer. New: '${newDiscount}', Orig: '${origDiscount}'`);
+      changes.formData.append('discountPercentageTransfer', String(newDiscount));
+      changes.hasChanges = true;
+    }
+
     // --- 1. CAMPOS SIMPLES ---
+    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'isActive', 'isFeatured'];
 
     // --- PROVIDER (comparar contra ._id porque originalProduct.provider es un objeto poblado) ---
     const origProviderId = originalProduct.provider?._id || '';
@@ -26,33 +77,6 @@ export class ProductFormUtils {
     if (newProviderId !== origProviderId) {
       console.warn(`[DEBUG] Change detected in provider. New: '${newProviderId}', Orig: '${origProviderId}'`);
       changes.formData.append('provider', newProviderId);
-      changes.hasChanges = true;
-    }
-
-    // --- PROFIT MARGIN 1 PAY ---
-    const origMargin1Pay = originalProduct.prices?.profitMargin1Pay;
-    const newMargin1Pay = productData.customProfitMargin1Pay;
-    if (String(newMargin1Pay ?? '') !== String(origMargin1Pay ?? '')) {
-      console.warn(`[DEBUG] Change detected in profitMargin1Pay. New: '${newMargin1Pay}', Orig: '${origMargin1Pay}'`);
-      changes.formData.append('customProfitMargin1Pay', newMargin1Pay ?? '');
-      changes.hasChanges = true;
-    }
-
-    // --- PROFIT MARGIN INSTALLMENTS ---
-    const origMarginInstallments = originalProduct.prices?.profitMarginInstallments;
-    const newMarginInstallments = productData.customProfitMarginInstallments;
-    if (String(newMarginInstallments ?? '') !== String(origMarginInstallments ?? '')) {
-      console.warn(`[DEBUG] Change detected in profitMarginInstallments. New: '${newMarginInstallments}', Orig: '${origMarginInstallments}'`);
-      changes.formData.append('customProfitMarginInstallments', newMarginInstallments ?? '');
-      changes.hasChanges = true;
-    }
-
-    // --- PRICING METHOD OVERRIDE ---
-    const origPricingMethod = originalProduct.prices?.customPricingMethod || '';
-    const newPricingMethod = productData.useCustomPricingMethod ? (productData.customPricingMethod || '') : '';
-    if (newPricingMethod !== origPricingMethod) {
-      console.warn(`[DEBUG] Change detected in customPricingMethod. New: '${newPricingMethod}', Orig: '${origPricingMethod}'`);
-      changes.formData.append('customPricingMethod', newPricingMethod);
       changes.hasChanges = true;
     }
 
@@ -74,7 +98,7 @@ export class ProductFormUtils {
     });
 
     // --- 2. CAMPOS ARRAY ---
-    const arrayFields = ['features', 'storage', 'connectivity'];
+    const arrayFields = ['features', 'storage'];
     arrayFields.forEach(field => {
       const originalArray = originalProduct[field] || [];
       const newArray = productData[field] || [];
@@ -176,22 +200,7 @@ export class ProductFormUtils {
       }
     });
 
-    // Composition & Care
-    const origComp = JSON.stringify(originalProduct.composition || []);
-    const newComp = JSON.stringify(productData.composition || []);
-    if (newComp !== origComp) {
-      console.warn(`[DEBUG] Change detected in composition. New: '${newComp}', Orig: '${origComp}'`);
-      changes.formData.append('composition', newComp);
-      changes.hasChanges = true;
-    }
 
-    const origCare = JSON.stringify(originalProduct.careInstructions || []);
-    const newCare = JSON.stringify(productData.careInstructions || []);
-    if (newCare !== origCare) {
-      console.warn(`[DEBUG] Change detected in careInstructions. New: '${newCare}', Orig: '${origCare}'`);
-      changes.formData.append('careInstructions', newCare);
-      changes.hasChanges = true;
-    }
 
     // --- 7. IMÁGENES ---
     if (productData.images && Array.isArray(productData.images)) {

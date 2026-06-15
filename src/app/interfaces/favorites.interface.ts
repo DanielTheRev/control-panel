@@ -1,4 +1,4 @@
-// ============ FAVORITOS POR PRODUCTO ============
+import { IProductPrices } from './product.interface';
 
 export interface IFavoriteProduct {
   _id: string;
@@ -8,10 +8,7 @@ export interface IFavoriteProduct {
   category: string;
   isActive: boolean;
   images: { url: string; public_id: string }[];
-  prices: {
-    efectivo_transferencia: number;
-    tarjeta_credito_debito: number;
-  };
+  price: IProductPrices;
 }
 
 export interface IFavoriteUser {

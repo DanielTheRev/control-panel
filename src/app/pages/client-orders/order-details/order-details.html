@@ -198,7 +198,7 @@
                 </div>
 
                 <!-- Bottom row: price details -->
-                <div class="grid grid-cols-4 gap-2 pt-3 border-t border-base-200/60">
+                <div class="grid grid-cols-5 gap-2 pt-3 border-t border-base-200/60">
                   <div class="flex flex-col">
                     <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Precio</span>
                     <span class="text-sm font-bold text-base-content">
@@ -206,12 +206,18 @@
                     </span>
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Costo</span>
-                    <span class="text-sm text-base-content/50">
-                      En USD: {{ (item.productSnapshot.prices.costPrice.inUSD || 0) | currency:'USD':'symbol-narrow':'1.0-0' }}
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Costo Prov.</span>
+                    <span class="text-[11px] text-base-content/50 font-medium">
+                      USD: {{  item.productSnapshot.finance?.providerCost?.inUSD | currency:'USD':'symbol-narrow':'1.0-0' }}
                     </span>
-                    <span class="text-sm text-base-content/50">
-                      En ARS: {{ (item.productSnapshot.prices.costPrice.inARS || 0) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    <span class="text-[11px] text-base-content/50 font-medium">
+                      ARS: {{  item.productSnapshot.finance?.providerCost?.inARS | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Gastos Adic.</span>
+                    <span class="text-sm font-bold text-error">
+                      {{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}
                     </span>
                   </div>
                   <div class="flex flex-col">
@@ -243,41 +249,74 @@
 
         <!-- Right Column -->
         <div class="flex flex-col gap-6">
-
           <!-- Financial Summary -->
           <div class="bg-base-100 rounded-xl border border-base-300 p-5">
             <div class="flex items-center gap-2 mb-4">
-              <mat-icon class="text-[16px]! w-4! h-4! text-success">trending_up</mat-icon>
-              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Resumen Financiero</h3>
+              <mat-icon class="text-[16px]! w-4! h-4! text-success">insights</mat-icon>
+              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Estado de Resultados (P&L)</h3>
             </div>
-            <div class="flex flex-col gap-3">
-              <div class="flex justify-between items-center text-sm">
-                <span class="text-base-content/50 text-xs">Ingresos (Productos)</span>
-                <span class="font-bold text-base-content">{{ productsSubtotal() | currency:'ARS':'symbol-narrow':'1.0-0'
-                  }}</span>
+
+            <div class="flex flex-col gap-2.5">
+              <div class="flex justify-between items-center text-sm bg-base-200/30 px-2 py-1.5 rounded">
+                <span class="text-base-content/70 text-xs font-medium">Total Abonado (Cliente)</span>
+                <span class="font-bold text-base-content">{{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="flex justify-between items-center text-sm">
-                <span class="text-base-content/50 text-xs">Costo de Ventas</span>
-                <span class="font-bold text-error">- {{ totalCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              
+              <div class="flex justify-between items-center text-sm px-2 mt-1">
+                <span class="text-base-content/50 text-xs">Costo Proveedor</span>
+                <span class="font-medium text-error">- {{ baseProviderCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="flex justify-between items-center text-sm">
-                <span class="text-base-content/50 text-xs">Envío (Cobrado)</span>
-                <span class="font-bold text-info">+ {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="border-t border-base-300 pt-3 mt-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-base-content">Ganancia Bruta</span>
-                  <span class="text-lg font-bold text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0'
-                    }}</span>
+
+              @if (additionalCostsBreakdown().length > 0) {
+              <div class="flex flex-col px-2">
+                <div class="flex justify-between items-center text-sm mb-1">
+                  <span class="text-base-content/50 text-xs">Gastos Adicionales</span>
+                  <span class="font-medium text-error">- {{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                 </div>
-                <div class="flex justify-between items-center mt-1">
-                  <span class="text-[10px] text-base-content/40 uppercase tracking-wider">Margen</span>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded" [class.bg-success/10]="margin() > 0"
-                    [class.text-success]="margin() > 0" [class.bg-error/10]="margin() <= 0"
-                    [class.text-error]="margin() <= 0">
-                    {{ margin() | number:'1.1-2' }}%
+                <div class="pl-2.5 ml-1 border-l-2 border-base-200 flex flex-col gap-0.5 mt-0.5">
+                  @for (cost of additionalCostsBreakdown(); track cost.concept) {
+                  <div class="flex justify-between items-center text-[10px]">
+                    <span class="text-base-content/40">{{ cost.concept }}</span>
+                    <span class="text-base-content/40">{{ cost.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+                  }
+                </div>
+              </div>
+              }
+
+              @if (paymentGatewayFee() > 0) {
+              <div class="flex justify-between items-center text-sm px-2">
+                <span class="text-base-content/50 text-xs">Comisión Medio Pago</span>
+                <span class="font-medium text-error">- {{ paymentGatewayFee() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+              }
+
+              <div class="flex justify-between items-center text-sm px-2">
+                <span class="text-base-content/50 text-xs flex items-center gap-1">
+                  Envío
+                  <span class="text-[9px] font-bold uppercase tracking-wider bg-base-200/60 px-1.5 py-0.5 rounded" [class.text-error]="order()?.shippingInfo?.freeShippingApplied" [class.text-base-content]="!order()?.shippingInfo?.freeShippingApplied">
+                    {{ order()?.shippingInfo?.freeShippingApplied ? 'Lo pagas tú' : 'Lo paga el cliente' }}
                   </span>
-                </div>
+                </span>
+                <span class="font-medium text-error">- {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-base-300 pt-3 mt-3">
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-bold text-base-content">Ganancia Neta</span>
+                <span class="text-lg font-black text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between items-center mt-1">
+                <span class="text-[10px] text-base-content/40 uppercase tracking-wider font-bold">Margen Rentabilidad</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded" 
+                  [class.bg-success]="margin() >= 30" [class.text-success-content]="margin() >= 30"
+                  [class.bg-success-content]="margin() >= 30 && false"
+                  [class.text-success]="margin() > 0 && margin() < 30"
+                  [style.background-color]="margin() > 0 && margin() < 30 ? 'color-mix(in srgb, var(--fallback-su,oklch(var(--su)/1)) 15%, transparent)' : ''"
+                  [class.bg-error]="margin() <= 0" [class.text-error-content]="margin() <= 0">
+                  {{ margin() | number:'1.1-2' }}%
+                </span>
               </div>
             </div>
           </div>

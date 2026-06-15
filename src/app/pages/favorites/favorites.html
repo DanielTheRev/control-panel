@@ -118,10 +118,10 @@
                   <td class="py-2.5">
                     <div class="flex flex-col">
                       <span class="font-bold text-xs text-base-content">
-                        {{ fav.product.prices.efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        {{ fav.product.price.cashTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
                       </span>
                       <span class="text-[10px] text-base-content/40">
-                        Tarjeta: {{ fav.product.prices.tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        Tarjeta: {{ fav.product.price.card_ticket1PayPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
                       </span>
                     </div>
                   </td>
@@ -254,10 +254,10 @@
               <!-- Precio -->
               <div class="flex justify-between items-center px-1">
                 <span class="font-bold text-xs text-base-content">
-                  {{ fav.product.prices.efectivo_transferencia | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  {{ fav.product.price.cashTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
                 <span class="text-[10px] text-base-content/40">
-                  Tarjeta: {{ fav.product.prices.tarjeta_credito_debito | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  Tarjeta: {{ fav.product.price.card_ticket1PayPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
                 </span>
               </div>
 

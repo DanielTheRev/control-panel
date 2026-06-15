@@ -1,9 +1,13 @@
 import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IProduct, ProductType } from '../interfaces/product.interface';
+import {
+  IProduct,
+  ProductType,
+  ICostConcept,
+} from '../interfaces/product.interface';
 import { IPaginatedResult } from '../interfaces/pagination.interface';
-import { ProductService } from '../services/product.service';
+import { ProductService, mapProductPrices } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
 
 @Injectable({
@@ -41,23 +45,28 @@ export class ProductStoreService {
       },
     }));
 
-    this.#allProductsForStats = httpResource<IPaginatedResult<IProduct>>(() => ({
-      url: `${environment.apiUrl}/products/admin/list`,
-      params: {
-        page: 1,
-        limit: 1000,
-        ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
-        ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
-        ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
-        ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
-      },
-    }));
+    this.#allProductsForStats = httpResource<IPaginatedResult<IProduct>>(
+      () => ({
+        url: `${environment.apiUrl}/products/admin/list`,
+        params: {
+          page: 1,
+          limit: 1000,
+          ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
+          ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
+          ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
+          ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+        },
+      }),
+    );
   }
 
   // Public computed state (maintains same shape for backward compatibility)
   readonly products = computed(() => {
     if (this.noSeoOnly()) {
-      const all = this.allProducts().filter(p => !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim());
+      const all = this.allProducts().filter(
+        (p) =>
+          !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim(),
+      );
       const page = this.pageNumber();
       const limit = this.pageSize();
       const startIndex = (page - 1) * limit;
@@ -74,8 +83,9 @@ export class ProductStoreService {
     }
 
     const result = this.#fetchedProducts.value();
+    const data = (result?.data || []).map(mapProductPrices);
     return {
-      data: result?.data || [],
+      data,
       hasData: this.#fetchedProducts.hasValue(),
       hasError: !!this.#fetchedProducts.error(),
       isLoading: this.#fetchedProducts.isLoading(),
@@ -85,7 +95,10 @@ export class ProductStoreService {
 
   readonly pagination = computed(() => {
     if (this.noSeoOnly()) {
-      const all = this.allProducts().filter(p => !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim());
+      const all = this.allProducts().filter(
+        (p) =>
+          !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim(),
+      );
       const limit = this.pageSize();
       const totalPages = Math.ceil(all.length / limit);
 
@@ -98,15 +111,19 @@ export class ProductStoreService {
     }
 
     const result = this.#fetchedProducts.value();
-    return result!.pagination
+    return result!.pagination;
   });
 
   readonly techProducts = computed(() =>
-    (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.TECH)
+    (this.#fetchedProducts.value()?.data || []).filter(
+      (p) => p.productType === ProductType.TECH,
+    ),
   );
 
   readonly clothingProducts = computed(() =>
-    (this.#fetchedProducts.value()?.data || []).filter(p => p.productType === ProductType.CLOTHING)
+    (this.#fetchedProducts.value()?.data || []).filter(
+      (p) => p.productType === ProductType.CLOTHING,
+    ),
   );
 
   // readonly categories = signal(Object.values(IProductCategories));
@@ -118,52 +135,75 @@ export class ProductStoreService {
   readonly currentNoSeoOnlyFilter = computed(() => this.noSeoOnly());
 
   // Statistics signals
-  readonly allProducts = computed(() => this.#allProductsForStats.value()?.data || []);
+  readonly allProducts = computed(() =>
+    (this.#allProductsForStats.value()?.data || []).map(mapProductPrices),
+  );
   readonly statsLoading = computed(() => this.#allProductsForStats.isLoading());
   readonly totalProductsCount = computed(() => this.allProducts().length);
-  readonly activeProductsCount = computed(() => this.allProducts().filter(p => p.isActive).length);
-  readonly inactiveProductsCount = computed(() => this.allProducts().filter(p => !p.isActive).length);
+  readonly activeProductsCount = computed(
+    () => this.allProducts().filter((p) => p.isActive).length,
+  );
+  readonly inactiveProductsCount = computed(
+    () => this.allProducts().filter((p) => !p.isActive).length,
+  );
 
   readonly noSeoCount = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
-      .filter(p => {
-        return !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim();
+      .filter((p) => p.isActive)
+      .filter((p) => {
+        return (
+          !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim()
+        );
       }).length;
   });
 
   readonly estimatedEarningsCash = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
-      .reduce((acc, p) => acc + (p.prices?.earnings?.cash_transfer || 0), 0);
+      .filter((p) => p.isActive)
+      .reduce(
+        (acc, p) => acc + (p.finance?.calculatedProfits?.transfer || 0),
+        0,
+      );
   });
 
   readonly estimatedEarningsCard1 = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
-      .reduce((acc, p) => acc + (p.prices?.earnings?.card_1_installments || 0), 0);
+      .filter((p) => p.isActive)
+      .reduce(
+        (acc, p) => acc + (p.finance?.calculatedProfits?.card_ticket1Pay || 0),
+        0,
+      );
   });
 
   readonly estimatedEarningsCard3 = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
-      .reduce((acc, p) => acc + (p.prices?.earnings?.card_3_installments || 0), 0);
+      .filter((p) => p.isActive)
+      .reduce(
+        (acc, p) =>
+          acc + (p.finance?.calculatedProfits?.card3Installments || 0),
+        0,
+      );
   });
 
   readonly estimatedEarningsCard6 = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
-      .reduce((acc, p) => acc + (p.prices?.earnings?.card_6_installments || 0), 0);
+      .filter((p) => p.isActive)
+      .reduce(
+        (acc, p) =>
+          acc + (p.finance?.calculatedProfits?.card6Installments || 0),
+        0,
+      );
   });
 
   readonly totalStockCount = computed(() => {
     return this.allProducts()
-      .filter(p => p.isActive)
+      .filter((p) => p.isActive)
       .reduce((acc, p) => {
         if (p.totalStock !== undefined) return acc + p.totalStock;
-        const variantsStock = p.variants
-          ?.filter(v => v.isActive)
-          .reduce((sum, v) => sum + v.stock, 0) || 0;
+        const variantsStock =
+          p.variants
+            ?.filter((v) => v.isActive)
+            .reduce((sum, v) => sum + v.stock, 0) || 0;
         return acc + variantsStock;
       }, 0);
   });
@@ -227,14 +267,24 @@ export class ProductStoreService {
     }
   }
 
-  /**
-   * @description Calcula los precios del producto
-   * @param data
-   * @param data.costPrice Precio de costo del producto
-   * @param data.useCustomProfit1Pay Ganancia personalizada para pago en 1 cuota
-   * @param data.useCustomProfitInstallments Ganancia personalizada para pago en cuotas
-   */
-  calculatePrices(data: { costPrice: number, customProfitMargin1Pay: number | string, customProfitMarginInstallments: number | string, customPricingMethod?: string }) {
+  calculateListPrice(data: {
+    providerCost: number;
+    additionalCosts: ICostConcept[];
+    useCustomProfit: boolean;
+    customProfitMargin: number;
+    pricingMethodChoice: 'markup' | 'margin';
+    calculate: boolean;
+  }) {
+    return this.#productService.calculateListPrice(data);
+  }
+
+  calculatePrices(data: {
+    costPrice: number;
+    additionalCosts: ICostConcept[];
+    discountPercentageTransfer: number;
+    customProfitMargin?: number;
+    customPricingMethod?: 'markup' | 'margin';
+  }) {
     return this.#productService.calculatePrices(data);
   }
 
@@ -243,7 +293,7 @@ export class ProductStoreService {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
       this.#allProductsForStats.reload();
-      return product._id
+      return product._id;
     } catch (error) {
       throw error;
     }
@@ -274,7 +324,9 @@ export class ProductStoreService {
       this.#notificationService.success('Producto eliminado con éxito');
     } catch (error) {
       // 4. ROLLBACK: Si falla, restauramos el estado anterior
-      this.#notificationService.error('No se pudo eliminar el producto, restaurando...');
+      this.#notificationService.error(
+        'No se pudo eliminar el producto, restaurando...',
+      );
       this.#fetchedProducts.set(previousState); // Reinstalamos la data vieja
     }
   }
@@ -283,11 +335,13 @@ export class ProductStoreService {
     const previousState = this.#fetchedProducts.value();
 
     // Optimistic Update
-    this.#fetchedProducts.update(state => {
+    this.#fetchedProducts.update((state) => {
       if (!state) return state;
       return {
         ...state,
-        data: state.data.map(p => ids.includes(p._id) ? { ...p, isActive } : p)
+        data: state.data.map((p) =>
+          ids.includes(p._id) ? { ...p, isActive } : p,
+        ),
       };
     });
 
@@ -303,7 +357,7 @@ export class ProductStoreService {
   }
 
   #addProduct(product: IProduct) {
-    this.#fetchedProducts.update(state => {
+    this.#fetchedProducts.update((state) => {
       if (!state) return state;
       return {
         ...state,
@@ -317,21 +371,23 @@ export class ProductStoreService {
   }
 
   #updateProduct(product: Partial<IProduct>) {
-    this.#fetchedProducts.update(state => {
+    this.#fetchedProducts.update((state) => {
       if (!state) return state;
       return {
         ...state,
-        data: state.data.map(p => p._id === product._id ? { ...p, ...product } : p),
+        data: state.data.map((p) =>
+          p._id === product._id ? { ...p, ...product } : p,
+        ),
       };
     });
   }
 
   #deleteProductLocal(id: string) {
-    this.#fetchedProducts.update(state => {
+    this.#fetchedProducts.update((state) => {
       if (!state) return state;
       return {
         ...state,
-        data: state.data.filter(p => p._id !== id),
+        data: state.data.filter((p) => p._id !== id),
         pagination: {
           ...state.pagination,
           totalItems: state.pagination.totalItems - 1,

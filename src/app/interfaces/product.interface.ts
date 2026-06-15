@@ -66,7 +66,9 @@ export interface IProduct {
   largeDescription: string;
   brand: string;
   model: string;
-  prices: IProductPrices;
+  price: IProductPrices;
+  finance?: IProductFinance;
+  isLegacyPrices?: boolean;
   discount: number;
   rating: number | null;
   reviews: number | null;
@@ -144,30 +146,47 @@ export enum ClothingSizeType {
   Unico = 'Talle Único',
 }
 
-export interface IProductPrices {
-  costPrice: {
+export interface ICostConcept {
+  concept: string;
+  value: number;
+  type: 'fixed' | 'percent_over_provider';
+}
+
+export interface IProductFinance {
+  exchangeRateSnapshot: number;
+  mpCommissionSnapshot: {
+    base: number;
+    cft3Cuotas: number;
+    cft6Cuotas: number;
+  };
+  providerCost: {
     inUSD: number;
     inARS: number;
   };
-  dolarPrice: number;
-  // profitMargin: number;
-  profitMargin1Pay?: number;
-  profitMarginInstallments?: number;
-  baseCommission: number;
-  cft6Cuotas: number;
-  customPricingMethod?: 'markup' | 'margin';
-  efectivo_transferencia: number;
-  tarjeta_credito_debito: number;
-  cuotas: {
-    cuotas_3_si: number;
-    cuotas_6_si: number;
+  additionalCosts: ICostConcept[];
+  pricingStrategy: {
+    method: 'markup' | 'margin';
+    targetProfit: number;
   };
-  earnings: {
-    cash_transfer: number;
-    card_1_installments: number;
-    card_3_installments: number;
-    card_6_installments: number;
-    ticket: number;
+  calculatedProfits: {
+    transfer: number;
+    card_ticket1Pay: number;
+    card3Installments: number;
+    card6Installments: number;
+  };
+  maxSafeDiscount?: number;
+}
+
+export interface IProductPrices {
+  listPrice: number;
+  card_ticket1PayPrice: number;
+  cashTransferPrice: number;
+  discountPercentageTransfer: number;
+  installments: {
+    threePaymentsAmount: number;
+    sixPaymentsAmount: number;
+    hasThreeInstallmentsSeamless: boolean;
+    hasSixInstallmentsSeamless: boolean;
   };
 }
 
@@ -219,6 +238,10 @@ export interface IProductCreateDTO {
   sizeType?: string;
   careInstructions?: string[];
   seo?: IProductSeo;
+  // Nuevos campos
+  additionalCosts?: string;
+  discountPercentageTransfer?: number;
+  customProfitMargin?: number | string;
 }
 
 export interface IProductUpdateDTO extends Partial<IProductCreateDTO> {

@@ -92,10 +92,11 @@ export class PosComponent implements OnInit {
 
   getProductPrice(product: any, paymentType?: string): number {
     const type = paymentType || this.selectedPaymentType();
+    const price = product.price;
     if (type === 'card') {
-      return product.prices?.tarjeta_credito_debito || 0;
+      return price?.card_ticket1PayPrice || 0;
     }
-    return product.prices?.efectivo_transferencia || 0;
+    return price?.cashTransferPrice || 0;
   }
 
   async performSearch(query: string) {

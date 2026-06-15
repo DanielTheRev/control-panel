@@ -1,5 +1,5 @@
 import { PaymentType } from './paymentInfo.interface';
-import { IProduct, IProductPrices } from './product.interface';
+import { IProduct, IProductFinance, IProductPrices } from './product.interface';
 import { IProvider } from './provider.interface';
 import { ShippingType } from './shipping.interface';
 import { IUser } from './User.interface';
@@ -10,7 +10,7 @@ export enum OrderStatus {
   PROCESSING_SHIPPING = 'PROCESSING_SHIPPING',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 // Enum para estados de pago
 export enum PaymentStatus {
@@ -18,30 +18,43 @@ export enum PaymentStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
-  WAITING_CONFIRMATION = 'waiting_confirmation'
+  WAITING_CONFIRMATION = 'waiting_confirmation',
+}
+
+export interface IProductSnapshot {
+  _id: string;
+  brand: string;
+  model: string;
+  image?: string;
+  slug?: string;
+  price: IProductPrices;
+  finance?: IProductFinance;
+  providerSnapshot: IProvider;
+}
+
+export interface IVariantSnapshot {
+  sku: string;
+  size?: string; // ClothingProduct (talle)
+  attributes?: { key: string; value: string }[]; // TechProduct
+  color?: { name: string; hex: string };
+  imageReference: {
+    url: string;
+    public_id: string;
+  };
 }
 
 export interface IOrderItem {
+  _id?: string; // Auto-generado por Mongoose
   // Snapshot del producto al momento de la compra (con _id para stock ops)
-  productSnapshot: {
-    _id: string;
-    brand: string;
-    model: string;
-    image?: string;
-    slug: string;
-    // Precios al momento de la compra — necesarios para calcular ganancias post-pago
-    prices: IProductPrices;
-    providerSnapshot: IProvider;
-  };
+  productSnapshot: IProductSnapshot;
   // Snapshot de la variante al momento de la compra
-  variantSnapshot: {
-    sku: string;
-    size?: string;                                  // ClothingProduct (talle)
-    attributes?: { key: string; value: string }[];   // TechProduct
-    color?: { name: string; hex: string };
-  };
+  variantSnapshot: IVariantSnapshot;
   quantity: number;
   price: number;
+	costPriceSnapshot: {
+		inUSD: number;
+		inARS: number;
+	};
 }
 
 // Interface para dirección de envío
@@ -60,12 +73,28 @@ export interface IShippingAddress {
 
 // Interface para información de envío
 export interface IShippingInfo {
+  _id?: string; // Auto-generado por Mongoose
   type: ShippingType;
   pickupPoint?: {
     name: string;
     address: string;
   };
+  shippingAddress?: IShippingAddress;
   cost: number;
+  shippedAt: Date;
+  deliveredAt: Date;
+  freeShippingApplied: boolean;
+}
+
+export interface IOrderFinance {
+  total: number;
+  baseCost: number;
+  earnings: number;
+  totalOppositeCurrency?: number;
+  earningsOppositeCurrency?: number;
+  exchangeRateSnapshot?: number;
+  installments: number;
+  paymentGatewayFee?: number;
 }
 
 // Interface para información de pago
@@ -86,11 +115,11 @@ export interface IOrder {
   shippingInfo: IShippingInfo;
   paymentInfo: IPaymentInfo;
   status: OrderStatus;
-  shippingCost: number;
   buyerData: IFormPayerData;
   total: number;
   orderNumber: string;
   notes?: string;
+  finance: IOrderFinance;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -112,7 +141,6 @@ export interface OrdersApiResponse {
     itemsPerPage: number;
   };
 }
-
 
 // Interface para dirección de envío
 export interface IShippingAddress {
@@ -146,7 +174,7 @@ export interface IPaymentInfo {
   transactionId?: string;
   paymentDate?: Date;
   amount: number;
-  mercadopagoData?: any
+  mercadopagoData?: any;
 }
 
 // Interface para filtros

@@ -601,7 +601,7 @@
                                 class="text-xs font-black text-base-content"
                               >
                                 {{
-                                  p.prices.efectivo_transferencia
+                                  p.price.cashTransferPrice
                                     | currency
                                       : "ARS"
                                       : "symbol-narrow"
@@ -614,11 +614,11 @@
                             >
                               <span
                                 class="text-[9px] font-bold text-base-content/40 uppercase"
-                                >Tarjeta:</span
+                                >Lista:</span
                               >
                               <span class="text-[11px] font-bold text-success">
                                 {{
-                                  p.prices.tarjeta_credito_debito
+                                  p.price.listPrice
                                     | currency
                                       : "ARS"
                                       : "symbol-narrow"
@@ -859,8 +859,6 @@
                         </div>
                       </td>
                     </ng-container>
-
-                    <!-- Cost Price Column -->
                     <ng-container matColumnDef="price_cost">
                       <th
                         mat-header-cell
@@ -883,7 +881,7 @@
                               >ARS</span
                             >
                             <span class="font-bold">{{
-                              p.prices.costPrice.inARS
+                              (p.finance?.providerCost?.inARS || 0)
                                 | currency: "ARS" : "symbol-narrow" : "1.0-0"
                             }}</span>
                           </div>
@@ -895,13 +893,13 @@
                               >USD</span
                             >
                             <span class="font-bold"
-                              >${{ p.prices.costPrice.inUSD }}</span
+                              >${{ p.finance?.providerCost?.inUSD || 0 }}</span
                             >
                           </div>
                         </div>
                       </td>
                     </ng-container>
-
+ 
                     <!-- Sale Price Column -->
                     <ng-container matColumnDef="price_sale">
                       <th
@@ -923,7 +921,7 @@
                               >Efectivo:</span
                             >
                             <span class="font-extrabold text-base-content">{{
-                              p.prices.efectivo_transferencia
+                              p.price.cashTransferPrice
                                 | currency: "ARS" : "symbol-narrow" : "1.0-0"
                             }}</span>
                           </div>
@@ -933,7 +931,7 @@
                               >Tarjeta:</span
                             >
                             <span class="font-bold text-success">{{
-                              p.prices.tarjeta_credito_debito
+                              p.price.card_ticket1PayPrice
                                 | currency: "ARS" : "symbol-narrow" : "1.0-0"
                             }}</span>
                           </div>
@@ -1089,7 +1087,7 @@
                           </div>
                           <p class="text-xs text-success font-bold mt-0.5">
                             {{
-                              p.prices.efectivo_transferencia
+                              p.price.cashTransferPrice
                                 | currency: "ARS" : "symbol-narrow" : "1.0-0"
                             }}
                           </p>
