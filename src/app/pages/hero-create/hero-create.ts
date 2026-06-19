@@ -70,16 +70,20 @@ export class HeroCreateComponent implements OnInit {
     description: ['', Validators.required],
     ctaText: ['', Validators.required],
     ctaLink: ['/', Validators.required],
-    imageDesktop: ['', Validators.required],
-    imageMobile: ['', Validators.required],
+    imageDesktop1: ['', Validators.required],
+    imageDesktop2: [''],
+    imageMobile1: ['', Validators.required],
+    imageMobile2: [''],
     featuredProducts: [[]],
     isActive: [false, Validators.required]
   });
 
   isEditMode = signal(false);
 
-  get imageDesktopValue() { return this.heroForm.get('imageDesktop') as FormControl; }
-  get imageMobileValue() { return this.heroForm.get('imageMobile') as FormControl; }
+  get imageDesktop1Value() { return this.heroForm.get('imageDesktop1') as FormControl; }
+  get imageDesktop2Value() { return this.heroForm.get('imageDesktop2') as FormControl; }
+  get imageMobile1Value() { return this.heroForm.get('imageMobile1') as FormControl; }
+  get imageMobile2Value() { return this.heroForm.get('imageMobile2') as FormControl; }
 
 
   ngOnInit(): void {
@@ -89,8 +93,8 @@ export class HeroCreateComponent implements OnInit {
       this.loadSlide(id);
     }
 
-    this.imageDesktopValue.valueChanges.subscribe(val => this.updatePreview(val, this.previewDesktop));
-    this.imageMobileValue.valueChanges.subscribe(val => this.updatePreview(val, this.previewMobile));
+    this.imageDesktop1Value.valueChanges.subscribe(val => this.updatePreview(val, this.previewDesktop));
+    this.imageMobile1Value.valueChanges.subscribe(val => this.updatePreview(val, this.previewMobile));
 
     this.searchQuery.pipe(
       debounceTime(300),
@@ -141,8 +145,10 @@ export class HeroCreateComponent implements OnInit {
         this.#OriginalSlide.set(slide)
         this.heroForm.reset({
           ...slide,
-          imageDesktop: slide.imageDesktop.url,
-          imageMobile: slide.imageMobile.url,
+          imageDesktop1: slide.imageDesktop1?.url || '',
+          imageDesktop2: slide.imageDesktop2?.url || '',
+          imageMobile1: slide.imageMobile1?.url || '',
+          imageMobile2: slide.imageMobile2?.url || '',
           featuredProducts: slide.featuredProducts.map(p => p._id)
         });
 
@@ -172,24 +178,21 @@ export class HeroCreateComponent implements OnInit {
     formData.append('featuredProducts', JSON.stringify(this.heroForm.value.featuredProducts));
 
     // 2. Agregamos los archivos con LOS MISMOS NOMBRES que pusimos en upload.fields()
-    if (this.imageDesktopValue.value) {
+    const appendImage = (field: string, formValue: any, originalUrl?: string) => {
+      if (!formValue) return;
       if (isEditMode) {
-        if (OriginalSlide && this.imageDesktopValue.value !== OriginalSlide.imageDesktop.url) {
-          formData.append('imageDesktop', this.imageDesktopValue.value);
+        if (OriginalSlide && formValue !== originalUrl) {
+          formData.append(field, formValue);
         }
       } else {
-        formData.append('imageDesktop', this.imageDesktopValue.value);
+        formData.append(field, formValue);
       }
-    }
-    if (this.imageMobileValue.value) {
-      if (isEditMode) {
-        if (OriginalSlide && this.imageMobileValue.value === OriginalSlide.imageDesktop.url) {
-          formData.append('imageMobile', this.imageMobileValue.value);
-        }
-      } else {
-        formData.append('imageMobile', this.imageMobileValue.value);
-      }
-    }
+    };
+
+    appendImage('imageDesktop1', this.imageDesktop1Value.value, OriginalSlide?.imageDesktop1?.url);
+    appendImage('imageDesktop2', this.imageDesktop2Value.value, OriginalSlide?.imageDesktop2?.url);
+    appendImage('imageMobile1', this.imageMobile1Value.value, OriginalSlide?.imageMobile1?.url);
+    appendImage('imageMobile2', this.imageMobile2Value.value, OriginalSlide?.imageMobile2?.url);
     const request = this.isEditMode()
       ? this.#heroStateService.updateSlide(this.slideID(), formData)
       : this.#heroStateService.addSlide(formData);

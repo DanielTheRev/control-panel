@@ -7,8 +7,10 @@ export interface IHeroSlide {
   description: string;
   ctaText: string;
   ctaLink: string;
-  imageDesktop: IProductImage;
-  imageMobile: IProductImage;
+  imageDesktop1: IProductImage;
+  imageDesktop2?: IProductImage;
+  imageMobile1: IProductImage;
+  imageMobile2?: IProductImage;
   featuredProducts: IProduct[];
   isActive: boolean;
   createdAt?: string;
