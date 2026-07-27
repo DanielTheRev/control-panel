@@ -845,7 +845,7 @@ export class ProductCreate {
                   attributesJson: [
                     v.attributes.map((a) => `${a.key}:${a.value}`).join(', '),
                   ],
-                  stock: [v.stock, [Validators.required, Validators.min(0)]],
+                  stock: [v.stock, [Validators.required]],
                   isActive: [v.isActive],
                 }),
               );

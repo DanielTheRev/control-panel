@@ -105,7 +105,7 @@ export class ProductDetail implements OnInit {
     }, 0);
   }
 
-  /** Retorna los segmentos para la barra de composición del precio de lista (6 cuotas) */
+  /** Retorna los segmentos para la barra de composición del precio de lista (3 cuotas) */
   getBreakdownSegments(): { label: string; value: number; percentage: number }[] {
     const p = this.product();
     if (!p?.finance || !p?.price) return [];
@@ -114,8 +114,8 @@ export class ProductDetail implements OnInit {
     const additionalCosts = this.getTotalAdditionalCostsARS();
     const listPrice = p.price.listPrice || 1;
 
-    // La ganancia neta correspondiente a 6 cuotas (el Precio de Lista)
-    const profit = p.finance.calculatedProfits?.card6Installments || 0;
+    // La ganancia neta correspondiente a 3 cuotas (el Precio de Lista)
+    const profit = p.finance.calculatedProfits?.card3Installments || 0;
 
     // La comisión de MercadoPago calculada de forma residual para garantizar cuadre perfecto
     const mpCommission = Math.max(0, listPrice - providerCost - additionalCosts - profit);
@@ -129,19 +129,30 @@ export class ProductDetail implements OnInit {
       segments.push({ label: 'Costo Proveedor', value: providerCost, percentage: Math.round((providerCost / total) * 100) });
     }
     if (additionalCosts > 0) {
-      segments.push({ label: 'Costos Adicionales', value: additionalCosts, percentage: Math.round((additionalCosts / total) * 100) });
+      segments.push({ label: 'Gastos Adicionales', value: additionalCosts, percentage: Math.round((additionalCosts / total) * 100) });
     }
     if (profit > 0) {
-      segments.push({ label: 'Mi Ganancia', value: profit, percentage: Math.round((profit / total) * 100) });
+      segments.push({ label: 'Tu Ganancia', value: profit, percentage: Math.round((profit / total) * 100) });
     }
     if (mpCommission > 0) {
-      segments.push({ label: 'Comisión MercadoPago', value: mpCommission, percentage: Math.round((mpCommission / total) * 100) });
+      segments.push({ label: 'Pasarela MP (Tarifa Base + CFT 3 Cuotas)', value: mpCommission, percentage: Math.round((mpCommission / total) * 100) });
     }
 
     // Ajustar para que sume exactamente 100%
     const sumPerc = segments.reduce((s, seg) => s + seg.percentage, 0);
     if (segments.length > 0 && sumPerc !== 100) {
       segments[segments.length - 1].percentage += (100 - sumPerc);
+    }
+
+    // Actualizar etiquetas con los porcentajes reales ajustados
+    const profitSeg = segments.find(s => s.label === 'Tu Ganancia');
+    if (profitSeg) {
+      profitSeg.label = `Tu Ganancia (${profitSeg.percentage}%)`;
+    }
+
+    const mpSeg = segments.find(s => s.label === 'Pasarela MP (Tarifa Base + CFT 3 Cuotas)');
+    if (mpSeg) {
+      mpSeg.label = `Pasarela MP (Tarifa Base + CFT 3 Cuotas - ${mpSeg.percentage}%)`;
     }
 
     return segments;
