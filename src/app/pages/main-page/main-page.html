@@ -175,6 +175,14 @@
         @if (isExpanded) {
         <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Sistema</span>
         }
+        <a routerLink="/home/recommendations" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Recomendaciones' : ''" matTooltipPosition="right">
+          <mat-icon>auto_awesome</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Recomendaciones</span>
+          }
+        </a>
+
         <a routerLink="/home/settings" routerLinkActive="active" class="menu-item text-primary"
           [matTooltip]="isCollapsed ? 'Tienda' : ''" matTooltipPosition="right">
           <mat-icon>settings</mat-icon>

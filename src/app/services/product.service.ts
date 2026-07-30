@@ -278,4 +278,10 @@ export class ProductService {
         ),
     );
   }
+
+  getQualityAudit() {
+    return firstValueFrom(
+      this.#http.get<any>(`${this.#apiUrl}/admin/quality-audit`)
+    );
+  }
 }

@@ -56,4 +56,35 @@ export class StoreConfigService {
     const response = await firstValueFrom(this.#http.get<IAggregatedPaymentMethodsResponse>(`${this.#apiUrl}/mercadopago-methods`));
     return response.automaticGateways.mercadopago.availableMethods;
   }
+
+  async getRecommendationsConfig(): Promise<{
+    limit: number;
+    rules: Record<string, string[]>;
+    defaultRules: Record<string, string[]>;
+    availableCategories: string[];
+  }> {
+    return firstValueFrom(
+      this.#http.get<{
+        limit: number;
+        rules: Record<string, string[]>;
+        defaultRules: Record<string, string[]>;
+        availableCategories: string[];
+      }>(`${this.#apiUrl}/recommendations`)
+    );
+  }
+
+  async updateRecommendationsConfig(payload: {
+    limit: number;
+    rules: Record<string, string[]>;
+  }): Promise<{
+    success: boolean;
+    data: { limit: number; rules: Record<string, string[]> };
+  }> {
+    return firstValueFrom(
+      this.#http.put<{
+        success: boolean;
+        data: { limit: number; rules: Record<string, string[]> };
+      }>(`${this.#apiUrl}/recommendations`, payload)
+    );
+  }
 }

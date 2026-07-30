@@ -131,12 +131,32 @@ export class ProductList {
     this.ProductState.setNoSeoOnlyFilter(!current);
   }
 
+  toggleNoSeoImageFilter(hasImage?: boolean) {
+    const current = this.ProductState.currentHasSeoImageFilter();
+    if (hasImage === undefined) {
+      this.ProductState.setHasSeoImageFilter(current === false ? undefined : false);
+    } else {
+      this.ProductState.setHasSeoImageFilter(current === hasImage ? undefined : hasImage);
+    }
+  }
+
+  toggleHasSizeGuideFilter(hasGuide?: boolean) {
+    const current = this.ProductState.currentHasSizeGuideFilter();
+    if (hasGuide === undefined) {
+      this.ProductState.setHasSizeGuideFilter(current === false ? undefined : false);
+    } else {
+      this.ProductState.setHasSizeGuideFilter(current === hasGuide ? undefined : hasGuide);
+    }
+  }
+
   clearAllFilters() {
     this.ProductState.setSearchQuery('');
     this.ProductState.setCategoryFilter('');
     this.ProductState.setProviderFilter('');
     this.ProductState.setStatusFilter('');
     this.ProductState.setNoSeoOnlyFilter(false);
+    this.ProductState.setHasSeoImageFilter(undefined);
+    this.ProductState.setHasSizeGuideFilter(undefined);
   }
 
   onPageChange(event: PageEvent) {

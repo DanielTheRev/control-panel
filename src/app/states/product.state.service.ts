@@ -25,6 +25,8 @@ export class ProductStoreService {
   private providerFilter = signal('');
   private statusFilter = signal<string>('');
   private noSeoOnly = signal(false);
+  private hasSizeGuideFilter = signal<boolean | undefined>(undefined);
+  private hasSeoImageFilter = signal<boolean | undefined>(undefined);
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -42,6 +44,8 @@ export class ProductStoreService {
         ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
         ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
         ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+        ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
+        ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
       },
     }));
 
@@ -55,6 +59,8 @@ export class ProductStoreService {
           ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
           ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
           ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+          ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
+          ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
         },
       }),
     );
@@ -133,6 +139,8 @@ export class ProductStoreService {
   readonly currentProviderFilter = computed(() => this.providerFilter());
   readonly currentStatusFilter = computed(() => this.statusFilter());
   readonly currentNoSeoOnlyFilter = computed(() => this.noSeoOnly());
+  readonly currentHasSizeGuideFilter = computed(() => this.hasSizeGuideFilter());
+  readonly currentHasSeoImageFilter = computed(() => this.hasSeoImageFilter());
 
   // Statistics signals
   readonly allProducts = computed(() =>
@@ -155,6 +163,34 @@ export class ProductStoreService {
           !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim()
         );
       }).length;
+  });
+
+  readonly noSeoImageCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive)
+      .filter((p) => !p.seo || !p.seo.metaImage || !p.seo.metaImage.url || p.seo.metaImage.url.trim() === '')
+      .length;
+  });
+
+  readonly hasSeoImageCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive)
+      .filter((p) => p.seo && p.seo.metaImage && p.seo.metaImage.url && p.seo.metaImage.url.trim() !== '')
+      .length;
+  });
+
+  readonly noSizeGuideCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive && p.productType === ProductType.CLOTHING)
+      .filter((p: any) => !p.sizeGuide || !Array.isArray(p.sizeGuide.rows) || p.sizeGuide.rows.length === 0)
+      .length;
+  });
+
+  readonly hasSizeGuideCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive && p.productType === ProductType.CLOTHING)
+      .filter((p: any) => p.sizeGuide && Array.isArray(p.sizeGuide.rows) && p.sizeGuide.rows.length > 0)
+      .length;
   });
 
   readonly estimatedEarningsCash = computed(() => {
@@ -240,6 +276,16 @@ export class ProductStoreService {
 
   setNoSeoOnlyFilter(value: boolean) {
     this.noSeoOnly.set(value);
+    this.pageNumber.set(1);
+  }
+
+  setHasSizeGuideFilter(value: boolean | undefined) {
+    this.hasSizeGuideFilter.set(value);
+    this.pageNumber.set(1);
+  }
+
+  setHasSeoImageFilter(value: boolean | undefined) {
+    this.hasSeoImageFilter.set(value);
     this.pageNumber.set(1);
   }
 

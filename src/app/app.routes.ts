@@ -157,6 +157,11 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'recommendations',
+        title: 'Recomendaciones',
+        loadComponent: () => import('./pages/recommendations/recommendations').then(c => c.RecommendationsComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./pages/store-settings/store-settings').then(c => c.StoreSettings)
       },

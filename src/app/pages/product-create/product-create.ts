@@ -842,6 +842,8 @@ export class ProductCreate {
             if (product.productType === ProductType.TECH && isTechVariant(v)) {
               variantsArray.push(
                 this.#fb.group({
+                  _id: [v._id || ''],
+                  sku: [v.sku || ''],
                   attributesJson: [
                     v.attributes.map((a) => `${a.key}:${a.value}`).join(', '),
                   ],
@@ -855,6 +857,8 @@ export class ProductCreate {
             ) {
               variantsArray.push(
                 this.#fb.group({
+                  _id: [v._id || ''],
+                  sku: [v.sku || ''],
                   size: [v.size, Validators.required],
                   stock: [v.stock, [Validators.required, Validators.min(0)]],
                   isActive: [v.isActive],
@@ -1024,6 +1028,9 @@ export class ProductCreate {
               ? group.imageIndex
               : 0,
         };
+
+        if (v._id) variant._id = v._id;
+        if (v.sku) variant.sku = v.sku;
 
         if (currentType === ProductType.TECH) {
           variant.attributes = v.attributesJson

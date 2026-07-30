@@ -4,124 +4,172 @@
   @let subtitle = Products.itemsCount + " productos en total";
 
   <app-page-header header title="Gestiona tus productos" [subtitle]="subtitle">
-    <div actions>
-      <div class="w-full mb-1">
-        <div class="sm:flex">
-          <!-- Search & Filters -->
-          <div class="hidden sm:flex items-center sm:mb-0">
-            <div class="lg:pr-3">
-              <label for="products-search" class="sr-only">Buscar</label>
-              <div class="relative lg:w-64 xl:w-96">
-                <input
-                  type="search"
-                  name="search"
-                  id="products-search"
-                  class="input input-bordered w-full"
-                  placeholder="Buscar productos..."
-                  [value]="ProductState.currentSearchQuery()"
-                  (input)="$event.preventDefault(); onSearch($event)"
-                />
-              </div>
-            </div>
-            <div class="flex pl-0 mt-3 space-x-2 sm:pl-2 sm:mt-0">
-              <select
-                class="select select-bordered"
-                [value]="ProductState.currentProviderFilter()"
-                (change)="onProviderChange($event)"
-              >
-                <option value="">Todos los proveedores</option>
-                @for (prov of ProviderState().data; track prov._id) {
-                  <option [value]="prov._id">{{ prov.name }}</option>
-                }
-              </select>
-              <select
-                class="select select-bordered"
-                [value]="ProductState.currentStatusFilter()"
-                (change)="onStatusChange($event)"
-              >
-                <option value="">Todos los estados</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
-              </select>
-            </div>
-          </div>
-          <!-- Actions (Add Product) -->
-          <div class="flex items-center ml-auto gap-2 px-2">
-            <!-- Selector de Vista -->
-            <div class="join border border-base-300 bg-base-100 shadow-sm">
-              <button
-                type="button"
-                class="join-item btn btn-sm btn-ghost hover:bg-base-200"
-                [ngClass]="{
-                  'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
-                    viewMode() === 'grid',
-                }"
-                (click)="viewMode.set('grid')"
-                matTooltip="Vista de mosaico"
-              >
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!"
-                  >grid_view</mat-icon
-                >
-                Mosaico
-              </button>
-              <button
-                type="button"
-                class="join-item btn btn-sm btn-ghost hover:bg-base-200"
-                [ngClass]="{
-                  'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
-                    viewMode() === 'list',
-                }"
-                (click)="viewMode.set('list')"
-                matTooltip="Vista de lista"
-              >
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!"
-                  >view_list</mat-icon
-                >
-                Lista
-              </button>
-            </div>
+    <div actions class="flex flex-wrap items-center gap-2">
+      <!-- Search & Filters -->
+      <div class="relative w-full sm:w-48 md:w-60">
+        <label for="products-search" class="sr-only">Buscar</label>
+        <input
+          type="search"
+          name="search"
+          id="products-search"
+          class="input input-bordered input-sm w-full focus:outline-none text-xs"
+          placeholder="Buscar productos..."
+          [value]="ProductState.currentSearchQuery()"
+          (input)="$event.preventDefault(); onSearch($event)"
+        />
+      </div>
 
-            <!-- Panel Toggle Button -->
-            <button
-              type="button"
-              class="btn btn-sm transition-all duration-200"
-              [ngClass]="
-                showStatsSidebar()
-                  ? 'btn-primary'
-                  : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200'
-              "
-              (click)="showStatsSidebar.set(!showStatsSidebar())"
-              matTooltip="Ver Estadísticas"
-            >
-              <mat-icon class="text-[18px]! w-4.5! h-4.5!">analytics</mat-icon>
-              <span>Métricas</span>
-            </button>
+      <select
+        class="select select-bordered select-sm text-xs focus:outline-none"
+        [value]="ProductState.currentProviderFilter()"
+        (change)="onProviderChange($event)"
+      >
+        <option value="">Proveedores: Todos</option>
+        @for (prov of ProviderState().data; track prov._id) {
+          <option [value]="prov._id">{{ prov.name }}</option>
+        }
+      </select>
 
-            <button
-              type="button"
-              routerLink="create"
-              class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <mat-icon class="mr-1 -ml-1 text-[18px]! w-4.5! h-4.5!"
-                >add</mat-icon
-              >
-              Nuevo
-            </button>
-          </div>
-        </div>
+      <select
+        class="select select-bordered select-sm text-xs focus:outline-none"
+        [value]="ProductState.currentStatusFilter()"
+        (change)="onStatusChange($event)"
+      >
+        <option value="">Estado: Todos</option>
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+      </select>
 
-        <!-- Active Filters Badges -->
+      <select
+        class="select select-bordered select-sm text-xs focus:outline-none"
+        [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')"
+        (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+      >
+        <option value="">Imagen SEO: Todas</option>
+        <option value="true">Con Imagen ({{ ProductState.hasSeoImageCount() }})</option>
+        <option value="false">Sin Imagen ({{ ProductState.noSeoImageCount() }})</option>
+      </select>
+
+      <select
+        class="select select-bordered select-sm text-xs focus:outline-none"
+        [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')"
+        (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+      >
+        <option value="">Guía Talles: Todas</option>
+        <option value="true">Con Guía ({{ ProductState.hasSizeGuideCount() }})</option>
+        <option value="false">Sin Guía ({{ ProductState.noSizeGuideCount() }})</option>
+      </select>
+
+      <!-- View Selector -->
+      <div class="join border border-base-300 bg-base-100 shadow-2xs">
+        <button
+          type="button"
+          class="join-item btn btn-sm btn-ghost hover:bg-base-200"
+          [ngClass]="{
+            'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
+              viewMode() === 'grid',
+          }"
+          (click)="viewMode.set('grid')"
+          matTooltip="Vista de mosaico"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">grid_view</mat-icon>
+          Mosaico
+        </button>
+        <button
+          type="button"
+          class="join-item btn btn-sm btn-ghost hover:bg-base-200"
+          [ngClass]="{
+            'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
+              viewMode() === 'list',
+          }"
+          (click)="viewMode.set('list')"
+          matTooltip="Vista de lista"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">view_list</mat-icon>
+          Lista
+        </button>
+      </div>
+
+      <!-- Panel Toggle Button -->
+      <button
+        type="button"
+        class="btn btn-sm transition-all duration-200"
+        [ngClass]="
+          showStatsSidebar()
+            ? 'btn-primary'
+            : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200'
+        "
+        (click)="showStatsSidebar.set(!showStatsSidebar())"
+        matTooltip="Ver Estadísticas"
+      >
+        <mat-icon class="text-[18px]! w-4.5! h-4.5!">analytics</mat-icon>
+        <span>Métricas</span>
+      </button>
+
+      <button
+        type="button"
+        routerLink="create"
+        class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all duration-200"
+      >
+        <mat-icon class="mr-1 -ml-1 text-[18px]! w-4.5! h-4.5!">add</mat-icon>
+        Nuevo
+      </button>
+    </div>
+
+    <!-- Active Filters Badges -->
         @if (
           ProductState.currentSearchQuery() ||
           ProductState.currentCategoryFilter() ||
           ProductState.currentProviderFilter() ||
           ProductState.currentStatusFilter() ||
-          ProductState.currentNoSeoOnlyFilter()
+          ProductState.currentNoSeoOnlyFilter() ||
+          ProductState.currentHasSeoImageFilter() !== undefined ||
+          ProductState.currentHasSizeGuideFilter() !== undefined
         ) {
           <div class="flex flex-wrap items-center gap-2 mt-3 text-sm px-2">
             <span class="text-base-content/60 font-medium"
               >Filtros activos:</span
             >
+
+            @if (ProductState.currentHasSeoImageFilter() !== undefined) {
+              <span
+                class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-purple-800 font-medium shadow-sm"
+              >
+                Imagen SEO: {{ ProductState.currentHasSeoImageFilter() ? 'Con Imagen' : 'Sin Imagen' }}
+                <button
+                  (click)="ProductState.setHasSeoImageFilter(undefined)"
+                  class="ml-2 hover:text-purple-600 focus:outline-none transition-colors"
+                >
+                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                </button>
+              </span>
+            }
+
+            @if (ProductState.currentHasSizeGuideFilter() !== undefined) {
+              <span
+                class="inline-flex items-center rounded-full bg-pink-100 px-3 py-1 text-pink-800 font-medium shadow-sm"
+              >
+                Guía Talles: {{ ProductState.currentHasSizeGuideFilter() ? 'Con Guía' : 'Sin Guía' }}
+                <button
+                  (click)="ProductState.setHasSizeGuideFilter(undefined)"
+                  class="ml-2 hover:text-pink-600 focus:outline-none transition-colors"
+                >
+                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                </button>
+              </span>
+            }
 
             @if (ProductState.currentNoSeoOnlyFilter()) {
               <span
@@ -237,8 +285,6 @@
             </button>
           </div>
         }
-      </div>
-    </div>
     <div sub-menu class="flex gap-2 px-4 sm:px-6 w-max">
       <button
         class="btn btn-sm rounded-full transition-all"
