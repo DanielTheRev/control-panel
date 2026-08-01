@@ -422,13 +422,41 @@
                   </span>
                 </div>
 
+                @if (order()?.paymentInfo?.receiptUrl) {
+                  <div class="border-t border-base-200/60 pt-3 mt-2 bg-success/5 p-3 rounded-lg border border-success/20">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-bold text-success flex items-center gap-1">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">receipt</mat-icon> Comprobante Adjunto
+                      </span>
+                      @if (order()?.paymentInfo?.receiptUploadedAt) {
+                        <span class="text-[10px] text-base-content/40 font-medium">
+                          {{ order()!.paymentInfo.receiptUploadedAt | date:'short' }}
+                        </span>
+                      }
+                    </div>
+
+                    <a [href]="order()!.paymentInfo.receiptUrl!" target="_blank" rel="noopener noreferrer" class="block group relative rounded-lg overflow-hidden border border-base-300 bg-base-200 aspect-video mb-3">
+                      <img [src]="order()!.paymentInfo.receiptUrl!" alt="Comprobante de Pago" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                        <mat-icon class="text-[16px]! w-4! h-4!">visibility</mat-icon> Ver en pantalla completa
+                      </div>
+                    </a>
+
+                    @if (canMarkPaymentReceived()) {
+                      <button class="btn btn-sm btn-success w-full" (click)="markPaymentReceived()" [disabled]="updating()">
+                        <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Aprobar Pago
+                      </button>
+                    }
+                  </div>
+                }
+
                 @if (order()?.paymentInfo?.method === paymentType.ALIAS_TRANSFER || order()?.paymentInfo?.method === paymentType.BANK_TRANSFER) {
                 @let payerData = order()?.buyerData;
                 <div class="border-t border-base-200/60 pt-3 mt-2">
                   <p class="text-[10px] text-base-content/40 mb-2">
-                    {{ order()?.paymentInfo?.status === paymentStatus.PENDING
-                    ? 'Se espera que el pago lo realice:'
-                    : 'Pago realizado por:' }}
+                    {{ order()?.paymentInfo?.status === paymentStatus.APPROVED
+                    ? 'Pago realizado por:'
+                    : 'Se espera que el pago lo realice:' }}
                   </p>
                   <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between">

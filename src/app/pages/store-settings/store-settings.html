@@ -451,28 +451,48 @@
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-[10px] font-bold opacity-60 uppercase tracking-widest">{{
-                  configForm.get('paymentGateways.bankTransfer.active')?.value ? 'Activo' : 'Inactivo' }}</span>
+                  configForm.get('paymentGateways.transfer.active')?.value ? 'Activo' : 'Inactivo' }}</span>
                 <input type="checkbox" formControlName="active" class="toggle toggle-success toggle-sm mx-1" />
               </div>
             </div>
 
-            <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 bg-base-100">
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">CBU / CVU</span></label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <mat-icon class="text-emerald-500/70 text-[18px]">numbers</mat-icon>
+            <div class="p-5 sm:p-6 bg-base-100">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">CBU / CVU</span></label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-emerald-500/70 text-[18px]">numbers</mat-icon>
+                    </div>
+                    <input type="text" formControlName="cbu" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="Ingresá los 22 dígitos" />
                   </div>
-                  <input type="text" formControlName="cbu" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="Ingresa los 22 dígitos" />
                 </div>
-              </div>
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Alias</span></label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <mat-icon class="text-emerald-500/70 text-[18px]">badge</mat-icon>
+                <div class="form-control">
+                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Alias</span></label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-emerald-500/70 text-[18px]">badge</mat-icon>
+                    </div>
+                    <input type="text" formControlName="alias" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="ejemplo.alias.mp" />
                   </div>
-                  <input type="text" formControlName="alias" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="ejemplo.alias.mp" />
+                </div>
+                <div class="form-control">
+                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Banco / Entidad</span></label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-emerald-500/70 text-[18px]">account_balance</mat-icon>
+                    </div>
+                    <input type="text" formControlName="bankName" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-sm" placeholder="ej: Naranja X, Galicia, etc." />
+                  </div>
+                </div>
+                <div class="form-control">
+                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Titular de la Cuenta</span></label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-emerald-500/70 text-[18px]">person</mat-icon>
+                    </div>
+                    <input type="text" formControlName="titular" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-sm" placeholder="ej: Daniel Larrosa" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -500,8 +520,7 @@
                 class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-base-200/50 rounded-lg border border-base-300">
                 <div>
                   <h4 class="font-bold text-sm text-base-content">Vinculación de Cuenta</h4>
-                  <p class="text-xs text-base-content/60">Conecta tu cuenta de Mercado Pago de forma automática y
-                    segura.</p>
+                  <p class="text-xs text-base-content/60">Conectá tu cuenta de Mercado Pago de forma automática y segura.</p>
                 </div>
 
                 @if (configForm.get('paymentGateways.mercadopago.accessToken')?.value) {
@@ -553,6 +572,45 @@
               </div>
             </div>
           </div>
+
+          </div>
+        </section>
+
+        <!-- Horarios de Atención -->
+        <section formGroupName="workingHours">
+          <div class="mb-4">
+            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <mat-icon class="text-[18px]">schedule</mat-icon>
+              </div>
+              Horarios de Atención
+            </h3>
+            <p class="text-sm text-base-content/60 mt-1 pl-10">Configurá los horarios de atención y validación humana de tu tienda.</p>
+          </div>
+
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="form-control">
+                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Lunes a Sábado - Apertura</span></label>
+                <input type="text" formControlName="weekdayStart" class="input input-sm input-bordered" placeholder="10:00" />
+              </div>
+              <div class="form-control">
+                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Lunes a Sábado - Cierre</span></label>
+                <input type="text" formControlName="weekdayEnd" class="input input-sm input-bordered" placeholder="20:00" />
+              </div>
+              <div class="form-control">
+                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Domingos - Apertura</span></label>
+                <input type="text" formControlName="sundayStart" class="input input-sm input-bordered" placeholder="10:00" />
+              </div>
+              <div class="form-control">
+                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Domingos - Cierre</span></label>
+                <input type="text" formControlName="sundayEnd" class="input input-sm input-bordered" placeholder="15:00" />
+              </div>
+            </div>
+            <div class="form-control mt-4">
+              <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Texto Informativo en Pantalla</span></label>
+              <input type="text" formControlName="noticeText" class="input input-sm input-bordered" placeholder="Lun a Sáb 10-20h / Dom 10-15h" />
+            </div>
           </div>
         </section>
       </form>

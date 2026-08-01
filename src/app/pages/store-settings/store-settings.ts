@@ -53,6 +53,13 @@ export class StoreSettings {
       shippingConfig: this.#fb.group({
         freeShippingThreshold: [50000]
       }),
+      workingHours: this.#fb.group({
+        weekdayStart: ['10:00'],
+        weekdayEnd: ['20:00'],
+        sundayStart: ['10:00'],
+        sundayEnd: ['15:00'],
+        noticeText: ['Lun a Sáb 10-20h / Dom 10-15h']
+      }),
       contact: this.#fb.group({
         email: [''],
         phone: [''],
@@ -92,7 +99,10 @@ export class StoreSettings {
         transfer: this.#fb.group({
           active: [false],
           cbu: [''],
-          alias: ['']
+          cbuCvu: [''],
+          alias: [''],
+          bankName: [''],
+          titular: ['']
         })
       })
     });
@@ -102,7 +112,7 @@ export class StoreSettings {
       if (hasData && !hasError && !isLoading) {
         this.configForm.patchValue(config);
         if (config.logo) {
-          this.logoControl.setValue(config.logo, { emitEvent: false });
+          this.logoControl.setValue(config.logo);
         }
       }
     })

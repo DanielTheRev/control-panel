@@ -30,6 +30,13 @@ export interface IEcommerceConfig {
   shippingConfig?: {
     freeShippingThreshold: number;
   },
+  workingHours?: {
+    weekdayStart?: string;
+    weekdayEnd?: string;
+    sundayStart?: string;
+    sundayEnd?: string;
+    noticeText?: string;
+  },
   paymentGateways: {
     uala: {
       active: boolean;
@@ -54,10 +61,20 @@ export interface IEcommerceConfig {
       excludedPaymentMethods: string[];
       excludedPaymentTypes: string[];
     };
-    bankTransfer: {
+    transfer?: {
+      active: boolean;
+      cbuCvu?: string;
+      cbu?: string;
+      alias: string;
+      bankName?: string;
+      titular?: string;
+    };
+    bankTransfer?: {
       active: boolean;
       cbu: string;
       alias: string;
+      bankName?: string;
+      titular?: string;
     };
     customMethods: {
       id: string;

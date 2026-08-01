@@ -104,6 +104,8 @@ export interface IPaymentInfo {
   transactionId?: string;
   paymentDate?: Date;
   amount: number;
+  receiptUrl?: string;
+  receiptUploadedAt?: Date;
 }
 
 // Interface principal de la orden
@@ -111,7 +113,7 @@ export interface IOrder {
   _id: string;
   user?: IUser;
   items: IOrderItem[];
-  history: { status: OrderStatus; timestamp: Date; note?: string }[];
+  history: { status: OrderStatus; timestamp: Date; note?: string; target?: 'client' | 'admin' | 'all' }[];
   shippingInfo: IShippingInfo;
   paymentInfo: IPaymentInfo;
   status: OrderStatus;
