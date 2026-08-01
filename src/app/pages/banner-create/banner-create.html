@@ -5,11 +5,15 @@
 
   <app-page-header header [title]="title" [subtitle]="subtitle">
     <div actions class="flex gap-2">
-      <a routerLink="/home/banners" class="btn btn-ghost text-base-content/50">
+      <a routerLink="/home/banners" class="btn btn-ghost text-base-content/50" [class.btn-disabled]="loading()">
         Cancelar
       </a>
-      <button class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="bannerForm.invalid || loading()">
-        <mat-icon>save</mat-icon> {{ loading() ? 'Guardando...' : 'Guardar Banner' }}
+      <button class="btn btn-primary px-8 flex items-center gap-2" (click)="onSubmit()" [disabled]="bannerForm.invalid || loading()">
+        @if (loading()) {
+          <span class="loading loading-spinner loading-sm"></span> Guardando...
+        } @else {
+          <mat-icon>save</mat-icon> {{ isEditMode ? 'Guardar Cambios' : 'Guardar Banner' }}
+        }
       </button>
     </div>
   </app-page-header>

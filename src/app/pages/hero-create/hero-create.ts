@@ -54,6 +54,7 @@ export class HeroCreateComponent implements OnInit {
   suggestions = signal<any[]>([]);
   selectedProducts = signal<any[]>([]);
   isSearching = signal(false);
+  isSaving = signal(false);
 
   previewDesktop = signal<string | null>(null);
   previewMobile = signal<string | null>(null);
@@ -160,7 +161,9 @@ export class HeroCreateComponent implements OnInit {
   }
 
   async saveSlide() {
-    if (this.heroForm.invalid) return;
+    if (this.heroForm.invalid || this.isSaving()) return;
+    this.isSaving.set(true);
+
     const OriginalSlide = this.#OriginalSlide();
     const isEditMode = this.isEditMode()
 
@@ -203,6 +206,8 @@ export class HeroCreateComponent implements OnInit {
       this.#router.navigate(['/home/hero']);
     } catch (error) {
       this.#NotificationService.error('Error al guardar slide');
+    } finally {
+      this.isSaving.set(false);
     }
   }
 

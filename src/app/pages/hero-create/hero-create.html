@@ -2,10 +2,14 @@
   <app-page-header header [title]="isEditMode() ? 'Editar Slide' : 'Nuevo Slide'"
     [subtitle]="isEditMode() ? 'Modifica los datos del slide principal' : 'Subí una nueva imagen al carrusel para impactar a tus clientes'">
     <div actions class="flex items-center gap-3">
-      <a routerLink="/home/hero" class="btn btn-ghost hover:bg-base-200 text-base-content/60 font-medium">Cancelar</a>
-      <button class="btn btn-neutral shadow-lg hover:shadow-xl transition-all" (click)="saveSlide()"
-        [disabled]="heroForm.invalid">
-        <mat-icon class="text-white text-xl">save</mat-icon> Guardar Cambios
+      <a routerLink="/home/hero" class="btn btn-ghost hover:bg-base-200 text-base-content/60 font-medium" [class.btn-disabled]="isSaving()">Cancelar</a>
+      <button class="btn btn-neutral shadow-lg hover:shadow-xl transition-all flex items-center gap-2" (click)="saveSlide()"
+        [disabled]="heroForm.invalid || isSaving()">
+        @if (isSaving()) {
+          <span class="loading loading-spinner loading-sm"></span> Guardando...
+        } @else {
+          <mat-icon class="text-white text-xl">save</mat-icon> {{ isEditMode() ? 'Guardar Cambios' : 'Guardar Slide' }}
+        }
       </button>
     </div>
   </app-page-header>
