@@ -1,0 +1,86 @@
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+
+  <!-- Top Header & Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-100 p-6 rounded-2xl border border-base-200 shadow-sm">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-bold tracking-tight text-base-content">Suscriptores Newsletter</h1>
+        <span class="badge badge-primary font-bold">{{ subscribers().length }}</span>
+      </div>
+      <p class="text-xs text-base-content/60 mt-1">Lista de correos registrados desde el e-commerce para campañas promocionales.</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button (click)="copyAllEmails()" [disabled]="subscribers().length === 0" class="btn btn-outline btn-sm gap-2">
+        <mat-icon class="text-sm">content_copy</mat-icon>
+        Copiar Emails
+      </button>
+
+      <button (click)="exportCSV()" [disabled]="subscribers().length === 0" class="btn btn-primary btn-sm gap-2">
+        <mat-icon class="text-sm">download</mat-icon>
+        Exportar CSV
+      </button>
+    </div>
+  </div>
+
+  @if (copiedAlert()) {
+    <div class="alert alert-success text-xs font-bold shadow-sm animate-fade-in">
+      <span>¡Correos copiados al portapapeles! Listos para pegar en tu plataforma de e-mail marketing.</span>
+    </div>
+  }
+
+  <!-- Subscribers Table -->
+  <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table w-full">
+        <thead>
+          <tr class="bg-base-200/50 text-xs font-bold uppercase tracking-wider text-base-content/70">
+            <th>Correo Electrónico</th>
+            <th>Fecha de Suscripción</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="4" class="text-center py-12">
+                <span class="loading loading-spinner loading-md"></span>
+              </td>
+            </tr>
+          } @else if (subscribers().length === 0) {
+            <tr>
+              <td colspan="4" class="text-center py-12 text-base-content/40 font-mono text-sm">
+                No hay suscriptores registrados aún.
+              </td>
+            </tr>
+          } @else {
+            @for (sub of subscribers(); track sub._id) {
+              <tr class="hover:bg-base-200/30 transition-colors">
+                <td>
+                  <span class="font-mono font-bold text-sm text-base-content">
+                    {{ sub.email }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-base-content/70 font-sans">
+                    {{ sub.subscribedAt | date: 'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-success badge-xs font-bold uppercase">Activo</span>
+                </td>
+                <td class="text-end">
+                  <button (click)="deleteSubscriber(sub._id)" title="Eliminar suscriptor" class="btn btn-ghost btn-xs text-error">
+                    <mat-icon class="text-sm">delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

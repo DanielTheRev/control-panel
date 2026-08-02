@@ -1,0 +1,310 @@
+<div class="p-3 max-w-8xl mx-auto space-y-6">
+
+  <!-- Header Section -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 p-6 rounded-2xl border border-base-200 shadow-sm">
+    <div>
+      <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+        <mat-icon class="text-primary">local_offer</mat-icon>
+        Cupones de Descuento
+      </h1>
+      <p class="text-xs text-base-content/60 mt-1">
+        Gestioná los códigos promocionales y los descuentos para primera compra.
+      </p>
+    </div>
+    <button (click)="openCreateModal()" class="btn btn-primary btn-sm gap-2">
+      <mat-icon class="text-sm">add</mat-icon>
+      Crear Nuevo Cupón
+    </button>
+  </div>
+
+  <!-- Card Destacado: Descuento de Primera Compra Automático -->
+  <div class="bg-linear-to-br from-amber-500/10 via-base-100 to-amber-500/5 p-3 rounded-2xl border border-amber-500/20 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+        <mat-icon class="text-2xl">card_giftcard</mat-icon>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-extrabold text-base-content">Descuento de Primera Compra Automático</h2>
+          <span class="badge badge-sm font-bold uppercase text-[9px]" [class.badge-success]="firstPurchaseEnabled()" [class.badge-ghost]="!firstPurchaseEnabled()">
+            {{ firstPurchaseEnabled() ? 'Activado' : 'Desactivado' }}
+          </span>
+        </div>
+        <p class="text-xs text-base-content/70 mt-1 max-w-2xl">
+          Aplica un descuento de bienvenida en la bolsa y el checkout para todos los compradores nuevos que hagan su primer pedido.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end bg-base-100/80 p-3 rounded-xl border border-base-200">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-base-content/80">Porcentaje:</span>
+        <div class="join items-center">
+          <input type="number"
+                 [value]="firstPurchasePercentage()"
+                 (change)="updateFirstPurchasePercentage($event)"
+                 class="input input-bordered input-xs w-16 text-center font-bold text-xs" min="1" max="100" />
+          <span class="btn btn-xs btn-ghost no-animation font-bold">% OFF</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 border-l border-base-200 pl-4">
+        <span class="text-xs font-bold text-base-content/70">Estado:</span>
+        <input type="checkbox"
+               [checked]="firstPurchaseEnabled()"
+               (change)="toggleFirstPurchaseDiscount()"
+               [disabled]="isUpdatingFirstPurchase()"
+               class="toggle toggle-primary toggle-sm" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+  } @else {
+
+    <!-- Grid: Lista a la Izquierda (2/3), Guía a la Derecha (1/3) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+      <!-- Columna Izquierda: Tabla de Cupones (En mobile abajo, en desktop izquierda 2/3) -->
+      <div class="lg:col-span-2 order-2 lg:order-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-base-200 bg-base-200/30 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-base-content uppercase tracking-wider">Cupones Promocionales Creados</h3>
+          <span class="badge badge-sm font-bold font-mono">{{ coupons().length }} activos</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table w-full">
+            <thead>
+              <tr class="bg-base-200/50 text-xs font-bold uppercase tracking-wider text-base-content/70">
+                <th>Código</th>
+                <th>Descuento</th>
+                <th>Condición</th>
+                <th>Usos</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (coupon of coupons(); track coupon._id) {
+                <tr class="hover:bg-base-200/30 transition-colors">
+                  <td>
+                    <div class="flex flex-col gap-1 items-start">
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-sm bg-base-200 px-2.5 py-1 rounded-md tracking-wider">
+                          {{ coupon.code }}
+                        </span>
+                        @if (coupon.isFirstPurchaseOnly) {
+                          <span class="badge badge-accent badge-xs uppercase font-bold text-[9px]">1ª Compra</span>
+                        }
+                      </div>
+                      @if (coupon.assignedUserEmail) {
+                        <span class="badge badge-warning badge-xs font-mono text-[9px]">
+                          👤 {{ coupon.assignedUserEmail }}
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="font-bold text-sm text-primary">
+                      @if (coupon.discountType === 'percentage') {
+                        {{ coupon.discountValue }}% OFF
+                      } @else {
+                        {{ coupon.discountValue | currency:'ARS':'symbol-narrow':'1.0-0' }} OFF
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-xs text-base-content/70">
+                      @if (coupon.minOrderAmount && coupon.minOrderAmount > 0) {
+                        Mín: {{ coupon.minOrderAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      } @else {
+                        Sin mínimo
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <div class="text-xs font-semibold">
+                      {{ coupon.usedCount }}
+                      @if (coupon.maxUses) {
+                        <span class="text-base-content/50">/ {{ coupon.maxUses }}</span>
+                      } @else {
+                        <span class="text-base-content/40"> (sin límite)</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="text-xs text-base-content/70">
+                      @if (coupon.expiresAt) {
+                        {{ coupon.expiresAt | date:'dd/MM/yyyy' }}
+                      } @else {
+                        Sin vencimiento
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <button (click)="toggleCouponStatus(coupon)"
+                            class="badge cursor-pointer font-bold text-[10px] uppercase transition-all"
+                            [class.badge-success]="coupon.isActive"
+                            [class.badge-ghost]="!coupon.isActive">
+                      {{ coupon.isActive ? 'Activo' : 'Inactivo' }}
+                    </button>
+                  </td>
+                  <td class="text-end">
+                    <button (click)="deleteCoupon(coupon)" class="btn btn-ghost btn-xs text-error hover:bg-error/10">
+                      <mat-icon class="text-sm">delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center py-8 text-base-content/50">
+                    No hay cupones creados aún. ¡Creá el primero para incentivar las ventas!
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Card Guía Instagram (En mobile arriba de los cupones, en desktop derecha 1/3) -->
+      <div class="lg:col-span-1 order-1 lg:order-2 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-amber-500/10 p-5 rounded-2xl border border-pink-500/20 shadow-sm space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-600 flex items-center justify-center shrink-0">
+            <mat-icon class="text-lg">photo_camera</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-pink-700">Cupones de Instagram</h3>
+            <span class="text-[10px] font-mono text-pink-600 font-bold">@vura.ar</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-base-content/80 leading-relaxed">
+          Cuando un seguidor te escriba por DM en Instagram y pida su 10% OFF:
+        </p>
+
+        <div class="space-y-2 text-[11px] font-mono">
+          <div class="bg-base-100 p-2.5 rounded-lg border border-base-200 shadow-xs space-y-1">
+            <span class="text-base-content/50 block text-[10px] uppercase font-bold">1. Código del cupón</span>
+            <strong class="text-primary font-bold text-xs block">VURAIG-...</strong>
+            <span class="text-[9px] text-base-content/60 block">Ej: VURAIG-FERNANDO o INSTAGRAM10</span>
+          </div>
+
+          <div class="bg-base-100 p-2.5 rounded-lg border border-base-200 shadow-xs space-y-1">
+            <span class="text-base-content/50 block text-[10px] uppercase font-bold">2. Asignar Email</span>
+            <strong class="text-amber-600 font-bold text-xs block">cliente&#64;gmail.com</strong>
+            <span class="text-[9px] text-base-content/60 block">Escribir el mail del cliente que envió el DM</span>
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+          <p class="text-[10px] text-emerald-700 font-semibold leading-snug">
+            ✓ Su card de Instagram pasará a "DISPONIBLE" automáticamente en su perfil.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- Modal Crear Cupón -->
+  @if (showModal()) {
+    <div class="modal modal-open">
+      <div class="modal-box max-w-lg bg-base-100 border border-base-200 shadow-xl">
+        <h3 class="font-bold text-lg text-base-content mb-4 flex items-center gap-2">
+          <mat-icon class="text-primary">local_offer</mat-icon>
+          Crear Nuevo Cupón de Descuento
+        </h3>
+
+        @if (errorMessage()) {
+          <div class="alert alert-error mb-4 text-xs font-semibold py-2">
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Tip Informativo Instagram -->
+        <div class="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-amber-500/10 p-3.5 rounded-xl border border-pink-500/20 mb-4 text-xs">
+          <div class="flex items-center gap-2 text-pink-700 font-bold mb-1">
+            <mat-icon class="text-sm">photo_camera</mat-icon>
+            <span>Tip para Cupones de Instagram (@vura.ar)</span>
+          </div>
+          <p class="text-[11px] text-base-content/80 leading-relaxed">
+            Si el cupón es para un seguidor de Instagram que te envió DM:
+          </p>
+          <ul class="list-disc list-inside mt-1 space-y-0.5 text-[10px] font-mono text-base-content/70">
+            <li>Usá prefijos como <strong>VURAIG</strong> o <strong>INSTAGRAM</strong> (ej: <span class="badge badge-xs font-mono font-bold">VURAIG-CARLA</span>, <span class="badge badge-xs font-mono font-bold">INSTAGRAM-10</span>).</li>
+            <li>Escribí el email del cliente abajo en <strong>"Asignar Exclusivo a Email"</strong>.</li>
+          </ul>
+          <p class="text-[10px] text-emerald-700 font-semibold mt-1">
+            ✨ Esto cambiará su card de Instagram a "DISPONIBLE" automáticamente.
+          </p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submitForm()" class="space-y-4">
+          
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs">Código del Cupón *</span></label>
+            <input type="text" formControlName="code" placeholder="Ej: VURA10, VURAIG-FERNANDO, PRIMERACOMPRA" class="input input-bordered w-full uppercase font-mono tracking-wider text-sm" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Tipo de Descuento *</span></label>
+              <select formControlName="discountType" class="select select-bordered w-full text-xs">
+                <option value="percentage">Porcentaje (%)</option>
+                <option value="fixed">Monto Fijo ($ ARS)</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Valor *</span></label>
+              <input type="number" formControlName="discountValue" placeholder="10" class="input input-bordered w-full text-xs font-bold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Compra Mínima ($ ARS)</span></label>
+              <input type="number" formControlName="minOrderAmount" placeholder="0" class="input input-bordered w-full text-xs" />
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Límite de Usos Totales</span></label>
+              <input type="number" formControlName="maxUses" placeholder="Ej: 100 (vacío = ilimitado)" class="input input-bordered w-full text-xs" />
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs">Asignar Exclusivo a Email de Cliente (Opcional)</span></label>
+            <input type="email" formControlName="assignedUserEmail" placeholder="Ej: cliente@gmail.com (dejar vacío para cupón público)" class="input input-bordered w-full text-xs font-mono" />
+          </div>
+
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs">Fecha de Vencimiento</span></label>
+            <input type="date" formControlName="expiresAt" class="input input-bordered w-full text-xs" />
+          </div>
+
+          <div class="form-control bg-base-200/50 p-3 rounded-lg border border-base-200">
+            <label class="label cursor-pointer justify-start gap-3">
+              <input type="checkbox" formControlName="isFirstPurchaseOnly" class="checkbox checkbox-primary checkbox-sm" />
+              <span class="label-text font-semibold text-xs text-base-content">
+                Exclusivo para la Primera Compra (Clientes nuevos únicamente)
+              </span>
+            </label>
+          </div>
+
+          <div class="modal-action gap-2 pt-2">
+            <button type="button" (click)="closeModal()" class="btn btn-ghost btn-sm">Cancelar</button>
+            <button type="submit" [disabled]="isSubmitting()" class="btn btn-primary btn-sm gap-2">
+              @if (isSubmitting()) { <span class="loading loading-spinner loading-xs"></span> }
+              Guardar Cupón
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

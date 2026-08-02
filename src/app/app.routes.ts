@@ -214,6 +214,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/sales/sales').then(c => c.SalesComponent)
       },
       {
+        path: 'coupons',
+        title: 'Cupones de Descuento',
+        loadComponent: () => import('./pages/coupons/coupons').then(c => c.CouponsComponent)
+      },
+      {
+        path: 'subscribers',
+        title: 'Suscriptores Newsletter',
+        loadComponent: () => import('./pages/newsletter/newsletter').then(c => c.NewsletterComponent)
+      },
+      {
         path: '**',
         pathMatch: 'full',
         redirectTo: 'products',

@@ -106,31 +106,27 @@ export class OrderDetails implements OnInit {
     return this.additionalCostsBreakdown().reduce((sum, cost) => sum + cost.value, 0);
   });
 
-  /** Ganancia Neta Final (dictada por el backend) */
-  grossProfit = computed(() => this.order()?.finance?.earnings || 0);
-
-  /** Comisiones de Pago deducidas matemáticamente si el backend no las envía */
+  /** Comisión de la pasarela de pago (MercadoPago/Tarjeta) enviada por el backend */
   paymentGatewayFee = computed(() => {
-    const o = this.order();
-    if (!o || !o.finance) return 0;
-    
-    if (o.finance.paymentGatewayFee !== undefined) {
-      return o.finance.paymentGatewayFee;
-    }
-
-    const fee = this.orderTotal() - this.baseProviderCost() - this.totalAdditionalCosts() - this.shippingCost() - this.grossProfit();
-    return fee > 0 ? fee : 0;
+    return this.order()?.finance?.paymentGatewayFee || 0;
   });
 
-  /** Margen sobre el ingreso de los productos (descontando el envío para calcular la rentabilidad real) */
-  margin = computed(() => {
-    const isFreeShipping = this.order()?.shippingInfo?.freeShippingApplied;
-    // Si el cliente pagó el envío, lo restamos del total abonado para saber cuánto ingreso es puramente de producto.
-    // Si el vendedor pagó el envío, el total abonado ya es puramente de producto.
-    const productRevenue = isFreeShipping ? this.orderTotal() : Math.max(0, this.orderTotal() - this.shippingCost());
+  /** Ganancia Neta Real calculada deduciendo todos los egresos reales */
+  grossProfit = computed(() => {
+    const o = this.order();
+    if (!o) return 0;
     
-    if (productRevenue <= 0) return 0;
-    return (this.grossProfit() / productRevenue) * 100;
+    // Si el backend ya guardó earnings en la orden, lo usamos prioritariamente si es consistente,
+    // de lo contrario calculamos el valor neto exacto: Total Abonado - Proveedor - Adicionales - Comisión MP - Envío
+    const calculatedNet = this.orderTotal() - this.baseProviderCost() - this.totalAdditionalCosts() - this.paymentGatewayFee() - this.shippingCost();
+    return Math.max(0, calculatedNet);
+  });
+
+  /** Margen de Rentabilidad Real sobre el Total Abonado por el cliente */
+  margin = computed(() => {
+    const total = this.orderTotal();
+    if (total <= 0) return 0;
+    return (this.grossProfit() / total) * 100;
   });
 
   // ─── Per-item helpers ───

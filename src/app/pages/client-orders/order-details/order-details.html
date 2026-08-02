@@ -238,11 +238,22 @@
             </div>
 
             <!-- Order total footer -->
-            <div class="mt-4 pt-4 border-t border-base-300 flex items-center justify-between">
-              <span class="text-xs text-base-content/40 uppercase tracking-wider font-bold">Total de la orden</span>
-              <span class="text-xl font-bold text-base-content">
-                {{ order()!.total | currency:'ARS':'symbol-narrow':'1.0-0' }}
-              </span>
+            <div class="mt-4 pt-4 border-t border-base-300 space-y-2">
+              @if (order()?.finance?.couponDiscount) {
+                <div class="flex items-center justify-between text-xs text-base-content/70">
+                  <span class="flex items-center gap-1.5">
+                    <span class="badge badge-neutral badge-xs font-mono font-bold">{{ order()?.finance?.couponCode || 'CUPÓN' }}</span>
+                    Descuento de Cupón
+                  </span>
+                  <span class="font-bold text-success">-{{ order()?.finance?.couponDiscount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              }
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-base-content/40 uppercase tracking-wider font-bold">Total de la orden</span>
+                <span class="text-xl font-bold text-base-content">
+                  {{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -257,20 +268,34 @@
             </div>
 
             <div class="flex flex-col gap-2.5">
-              <div class="flex justify-between items-center text-sm bg-base-200/30 px-2 py-1.5 rounded">
-                <span class="text-base-content/70 text-xs font-medium">Total Abonado (Cliente)</span>
-                <span class="font-bold text-base-content">{{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              @if (order()?.finance?.couponDiscount) {
+                <div class="flex justify-between items-center text-xs text-base-content/50 px-2">
+                  <span>Subtotal Original (Productos + Envío)</span>
+                  <span>{{ (orderTotal() + order()!.finance!.couponDiscount!) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs px-2 -mt-1">
+                  <span class="text-base-content/60 flex items-center gap-1">
+                    <span class="badge badge-neutral badge-xs font-mono font-bold">{{ order()?.finance?.couponCode }}</span>
+                    Cupón Aplicado
+                  </span>
+                  <span class="font-bold text-success">- {{ order()?.finance?.couponDiscount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              }
+
+              <div class="flex justify-between items-center text-sm bg-base-200/50 px-2.5 py-2 rounded-lg border border-base-200">
+                <span class="text-base-content/80 text-xs font-bold uppercase tracking-wider">Total Abonado (Cliente)</span>
+                <span class="font-black text-base-content text-base">{{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
               </div>
               
               <div class="flex justify-between items-center text-sm px-2 mt-1">
-                <span class="text-base-content/50 text-xs">Costo Proveedor</span>
+                <span class="text-base-content/60 text-xs">Costo Proveedor (Prendas)</span>
                 <span class="font-medium text-error">- {{ baseProviderCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
               </div>
 
               @if (additionalCostsBreakdown().length > 0) {
               <div class="flex flex-col px-2">
                 <div class="flex justify-between items-center text-sm mb-1">
-                  <span class="text-base-content/50 text-xs">Gastos Adicionales</span>
+                  <span class="text-base-content/60 text-xs">Gastos Adicionales (Reposición, Arca, Bolsas)</span>
                   <span class="font-medium text-error">- {{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                 </div>
                 <div class="pl-2.5 ml-1 border-l-2 border-base-200 flex flex-col gap-0.5 mt-0.5">
@@ -286,16 +311,16 @@
 
               @if (paymentGatewayFee() > 0) {
               <div class="flex justify-between items-center text-sm px-2">
-                <span class="text-base-content/50 text-xs">Comisión Medio Pago</span>
+                <span class="text-base-content/60 text-xs">Comisión Mercado Pago / Pasarela</span>
                 <span class="font-medium text-error">- {{ paymentGatewayFee() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
               </div>
               }
 
               <div class="flex justify-between items-center text-sm px-2">
-                <span class="text-base-content/50 text-xs flex items-center gap-1">
-                  Envío
+                <span class="text-base-content/60 text-xs flex items-center gap-1">
+                  Costo de Envío (Courier)
                   <span class="text-[9px] font-bold uppercase tracking-wider bg-base-200/60 px-1.5 py-0.5 rounded" [class.text-error]="order()?.shippingInfo?.freeShippingApplied" [class.text-base-content]="!order()?.shippingInfo?.freeShippingApplied">
-                    {{ order()?.shippingInfo?.freeShippingApplied ? 'Lo pagas tú' : 'Lo paga el cliente' }}
+                    {{ order()?.shippingInfo?.freeShippingApplied ? 'Envío Gratis (Lo pagás vos)' : 'Lo paga el cliente' }}
                   </span>
                 </span>
                 <span class="font-medium text-error">- {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>

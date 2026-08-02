@@ -43,6 +43,22 @@
           }
         </a>
 
+        <a routerLink="/home/coupons" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Cupones' : ''" matTooltipPosition="right">
+          <mat-icon>local_offer</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Cupones</span>
+          }
+        </a>
+
+        <a routerLink="/home/subscribers" routerLinkActive="active" class="menu-item"
+          [matTooltip]="isCollapsed ? 'Newsletter / Suscriptores' : ''" matTooltipPosition="right">
+          <mat-icon>mark_email_read</mat-icon>
+          @if (isExpanded) {
+          <span class="menu-text">Newsletter</span>
+          }
+        </a>
+
         @if (isExpanded) {
         <span class="px-4 text-[11px] font-bold mb-1 mt-4 uppercase tracking-widest text-base-content/40">Punto de
           Venta</span>

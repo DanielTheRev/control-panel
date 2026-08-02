@@ -95,6 +95,8 @@ export interface IOrderFinance {
   exchangeRateSnapshot?: number;
   installments: number;
   paymentGatewayFee?: number;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 // Interface para información de pago

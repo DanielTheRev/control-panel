@@ -41,7 +41,7 @@ export class PaymentMethodsCreate implements OnInit {
     description: ['', Validators.required],
     isActive: [true],
     alias: [''],
-    cbuCvu: ['', [Validators.pattern(/^\d{22}$/)]],
+    cbuCvu: [''],
     bankName: [''],
     titular: ['']
   });
