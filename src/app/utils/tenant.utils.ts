@@ -1,4 +1,4 @@
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 
 /**
  * Returns the tenant slug for the current session.

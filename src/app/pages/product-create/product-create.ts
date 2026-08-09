@@ -162,6 +162,7 @@ export class ProductCreate {
   productForm: FormGroup = this.#fb.group({
     productType: ['', Validators.required],
     provider: ['', Validators.required],
+    linkProductProvider: [''],
     model: ['', Validators.required],
     brand: ['', Validators.required],
     category: ['', Validators.required],
@@ -722,6 +723,7 @@ export class ProductCreate {
       this.productForm.patchValue({
         productType: type,
         provider: product.provider ? product.provider._id : '',
+        linkProductProvider: product.linkProductProvider || '',
         model: product.model,
         brand: product.brand,
         category: product.category,
@@ -1162,6 +1164,9 @@ export class ProductCreate {
   #buildCreateFormData(formData: FormData, data: any) {
     formData.append('productType', data.productType);
     formData.append('provider', data.provider);
+    if (data.linkProductProvider !== undefined && data.linkProductProvider !== null) {
+      formData.append('linkProductProvider', data.linkProductProvider);
+    }
     formData.append('model', data.model);
     formData.append('brand', data.brand);
     formData.append('category', data.category);

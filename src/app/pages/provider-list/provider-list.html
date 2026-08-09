@@ -105,7 +105,11 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center justify-end pt-2 border-t border-base-200/60 mt-auto">
+          <div class="flex items-center justify-between pt-2 border-t border-base-200/60 mt-auto">
+            <button (click)="deleteProvider(provider)" class="btn btn-xs btn-ghost text-error hover:bg-error/10 gap-1" title="Eliminar proveedor">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+              Eliminar
+            </button>
             <a [routerLink]="['/home/providers/edit', provider._id]" class="btn btn-xs btn-ghost text-primary gap-1">
               <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon>
               Editar

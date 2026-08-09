@@ -79,6 +79,7 @@ export interface IProduct {
   lowStockThreshold?: number;
   isActive?: boolean;
   isFeatured?: boolean;
+  linkProductProvider?: string;
   // Virtuals
   totalStock: number;
   hasStock: boolean;
@@ -242,6 +243,7 @@ export interface IProductCreateDTO {
   additionalCosts?: string;
   discountPercentageTransfer?: number;
   customProfitMargin?: number | string;
+  linkProductProvider?: string;
 }
 
 export interface IProductUpdateDTO extends Partial<IProductCreateDTO> {

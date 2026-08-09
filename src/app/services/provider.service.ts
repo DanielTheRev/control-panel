@@ -24,4 +24,8 @@ export class ProviderService {
   getProvider(id: string) {
     return firstValueFrom(this.#http.get<IProvider>(`${this.apiURL}/${id}`));
   }
+
+  deleteProvider(id: string) {
+    return firstValueFrom(this.#http.delete<{ success: boolean; message: string }>(`${this.apiURL}/${id}`));
+  }
 }

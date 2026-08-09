@@ -1,6 +1,6 @@
 import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { IShopTheLook } from '../interfaces/shop-the-look.interface';
 import { ShopTheLookService } from '../services/shop-the-look.service';
 import { NotificationsService } from '../services/notifications.service';

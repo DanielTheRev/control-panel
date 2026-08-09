@@ -33,6 +33,14 @@ export class ProviderStateService {
     this.#updateProvider(provider);
   }
 
+  async deleteProvider(id: string) {
+    await this.#providerService.deleteProvider(id);
+    this.#State.update((state) => {
+      if (!state) return state;
+      return state.filter((p) => p._id !== id);
+    });
+  }
+
   reload() {
     this.#State.reload();
   }

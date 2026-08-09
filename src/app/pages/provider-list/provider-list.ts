@@ -6,6 +6,9 @@ import { ProviderStateService } from '../../states/provider.state.service';
 import { RouterLink } from '@angular/router';
 import { SidebarService } from '../../services/sidebar.service';
 
+import { NotificationsService } from '../../services/notifications.service';
+import { IProvider } from '../../interfaces/provider.interface';
+
 @Component({
   selector: 'app-provider-list',
   imports: [PageLayout, PageHeader, MatIcon, RouterLink],
@@ -15,6 +18,7 @@ import { SidebarService } from '../../services/sidebar.service';
 export class ProviderList {
   #ProviderStateService = inject(ProviderStateService);
   #SidebarService = inject(SidebarService);
+  #NotificationService = inject(NotificationsService);
 
   readonly ProviderState = this.#ProviderStateService.ProviderState;
 
@@ -27,6 +31,19 @@ export class ProviderList {
 
   reload() {
     this.#ProviderStateService.reload();
+  }
+
+  async deleteProvider(provider: IProvider) {
+    const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar al proveedor "${provider.name}"?`);
+    if (!confirmDelete) return;
+
+    try {
+      await this.#ProviderStateService.deleteProvider(provider._id);
+      this.#NotificationService.success(`Proveedor "${provider.name}" eliminado con éxito.`);
+    } catch (err: any) {
+      const message = err?.error?.messageToSendClient || err?.error?.message || err?.message || 'Error al intentar eliminar el proveedor';
+      this.#NotificationService.error(message);
+    }
   }
 
 }

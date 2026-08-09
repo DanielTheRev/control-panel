@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { IShopTheLook } from '../interfaces/shop-the-look.interface';
 
 @Injectable({

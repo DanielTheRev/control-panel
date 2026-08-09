@@ -27,6 +27,7 @@ export class ProductStoreService {
   private noSeoOnly = signal(false);
   private hasSizeGuideFilter = signal<boolean | undefined>(undefined);
   private hasSeoImageFilter = signal<boolean | undefined>(undefined);
+  private hasLinkProviderFilter = signal<boolean | undefined>(undefined);
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -46,6 +47,7 @@ export class ProductStoreService {
         ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
         ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
         ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
+        ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
       },
     }));
 
@@ -61,6 +63,7 @@ export class ProductStoreService {
           ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
           ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
           ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
+          ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
         },
       }),
     );
@@ -141,6 +144,7 @@ export class ProductStoreService {
   readonly currentNoSeoOnlyFilter = computed(() => this.noSeoOnly());
   readonly currentHasSizeGuideFilter = computed(() => this.hasSizeGuideFilter());
   readonly currentHasSeoImageFilter = computed(() => this.hasSeoImageFilter());
+  readonly currentHasLinkProviderFilter = computed(() => this.hasLinkProviderFilter());
 
   // Statistics signals
   readonly allProducts = computed(() =>
@@ -190,6 +194,20 @@ export class ProductStoreService {
     return this.allProducts()
       .filter((p) => p.isActive && p.productType === ProductType.CLOTHING)
       .filter((p: any) => p.sizeGuide && Array.isArray(p.sizeGuide.rows) && p.sizeGuide.rows.length > 0)
+      .length;
+  });
+
+  readonly noLinkProviderCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive)
+      .filter((p) => !p.linkProductProvider || p.linkProductProvider.trim() === '')
+      .length;
+  });
+
+  readonly hasLinkProviderCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive)
+      .filter((p) => p.linkProductProvider && p.linkProductProvider.trim() !== '')
       .length;
   });
 
@@ -289,6 +307,11 @@ export class ProductStoreService {
     this.pageNumber.set(1);
   }
 
+  setHasLinkProviderFilter(value: boolean | undefined) {
+    this.hasLinkProviderFilter.set(value);
+    this.pageNumber.set(1);
+  }
+
   changePage(page: number, size: number) {
     this.pageSize.set(size);
     this.pageNumber.set(page);
@@ -339,6 +362,7 @@ export class ProductStoreService {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
       this.#allProductsForStats.reload();
+      this.#fetchedProducts.reload();
       return product._id;
     } catch (error) {
       throw error;
@@ -350,6 +374,7 @@ export class ProductStoreService {
       const response = await this.#productService.updateProduct(id, data);
       this.#updateProduct(response);
       this.#allProductsForStats.reload();
+      this.#fetchedProducts.reload();
     } catch (error) {
       throw error;
     }

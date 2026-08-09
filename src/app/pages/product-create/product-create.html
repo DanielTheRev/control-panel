@@ -128,30 +128,41 @@
               Información Principal
             </h3>
 
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend w-full">
-                <div class="flex justify-between items-center w-full gap-2">
-                  Proveedor / Vendedor
-                  <!-- <button class="btn btn-success btn-soft btn-sm" (click)="addProvider()">
-                                        <mat-icon>add</mat-icon>
-                                        Agregar
-                                    </button> -->
-                </div>
-              </legend>
-              <select
-                class="select select-bordered w-full"
-                formControlName="provider"
-              >
-                @for (provider of providers().data; track provider._id) {
-                  <option
-                    [value]="provider._id"
-                    id="provider-{{ provider._id }}"
-                  >
-                    {{ provider.name }}
-                  </option>
-                }
-              </select>
-            </fieldset>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend w-full">
+                  <div class="flex justify-between items-center w-full gap-2">
+                    Proveedor / Vendedor
+                  </div>
+                </legend>
+                <select
+                  class="select select-bordered w-full"
+                  formControlName="provider"
+                >
+                  @for (provider of providers().data; track provider._id) {
+                    <option
+                      [value]="provider._id"
+                      id="provider-{{ provider._id }}"
+                    >
+                      {{ provider.name }}
+                    </option>
+                  }
+                </select>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend w-full flex items-center justify-between">
+                  <span>Enlace del Producto en Proveedor</span>
+                  <span class="text-xs text-base-content/50 font-normal">(Opcional)</span>
+                </legend>
+                <input
+                  type="url"
+                  class="input input-bordered w-full"
+                  placeholder="https://proveedor.com/producto/123"
+                  formControlName="linkProductProvider"
+                />
+              </fieldset>
+            </div>
 
             <fieldset class="fieldset w-full">
               <legend class="fieldset-legend">Modelo</legend>
