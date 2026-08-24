@@ -50,8 +50,20 @@ export class ProductList {
   activeFilter = signal<string>('all');
   viewMode = signal<'grid' | 'list'>('grid');
   showStatsSidebar = signal<boolean>(false);
+  showFiltersDrawer = signal<boolean>(false);
+  showMobileFilters = signal<boolean>(false);
   dataSource = new MatTableDataSource<IProduct>([]);
   private searchSubject = new Subject<string>();
+
+  activeFiltersCount = computed(() => {
+    let count = 0;
+    if (this.ProductState.currentProviderFilter()) count++;
+    if (this.ProductState.currentStatusFilter()) count++;
+    if (this.ProductState.currentHasSeoImageFilter() !== undefined) count++;
+    if (this.ProductState.currentHasSizeGuideFilter() !== undefined) count++;
+    if (this.ProductState.currentHasLinkProviderFilter() !== undefined) count++;
+    return count;
+  });
 
   simulateUnits = signal<number>(1);
 
@@ -328,6 +340,131 @@ export class ProductList {
       this.#snackBar.open('Error al cambiar el estado del producto', 'Cerrar', {
         duration: 3000,
       });
+    }
+  }
+
+  isCopyingForAi = signal<boolean>(false);
+
+  async copyForAi() {
+    const products = this.ProductState.products().data;
+    if (!products || products.length === 0) {
+      this.#snackBar.open('No hay productos en la lista para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isCopyingForAi.set(true);
+
+    try {
+      const activeFilters: string[] = [];
+      if (this.ProductState.currentSearchQuery()) activeFilters.push(`Búsqueda: "${this.ProductState.currentSearchQuery()}"`);
+      if (this.ProductState.currentCategoryFilter()) activeFilters.push(`Categoría: "${this.ProductState.currentCategoryFilter()}"`);
+      if (this.ProductState.currentProviderFilter()) activeFilters.push(`Proveedor: "${this.getProviderName(this.ProductState.currentProviderFilter())}"`);
+      if (this.ProductState.currentStatusFilter()) activeFilters.push(`Estado: ${this.ProductState.currentStatusFilter() === 'true' ? 'Activos' : 'Inactivos'}`);
+      if (this.ProductState.currentHasSeoImageFilter() !== undefined) activeFilters.push(`Imagen SEO: ${this.ProductState.currentHasSeoImageFilter() ? 'Con Foto' : 'Sin Foto'}`);
+      if (this.ProductState.currentHasSizeGuideFilter() !== undefined) activeFilters.push(`Guía Talles: ${this.ProductState.currentHasSizeGuideFilter() ? 'Con Guía' : 'Sin Guía'}`);
+      if (this.ProductState.currentHasLinkProviderFilter() !== undefined) activeFilters.push(`Link Proveedor: ${this.ProductState.currentHasLinkProviderFilter() ? 'Con Link' : 'Sin Link'}`);
+
+      let content = `# REPORTE DE PRODUCTOS PARA ANÁLISIS DE IA (LLM CONTEXT)\n`;
+      content += `• Fecha y Hora: ${new Date().toLocaleString('es-AR')}\n`;
+      content += `• Cantidad de productos en esta vista: ${products.length} (Total en catálogo: ${this.ProductState.products().itemsCount})\n`;
+      content += `• Filtros aplicados: ${activeFilters.length > 0 ? activeFilters.join(' | ') : 'Ninguno (Catálogo completo)'}\n\n`;
+      content += `======================================================================\n\n`;
+
+      products.forEach((p, idx) => {
+        const stock = this.getTotalStock(p);
+        content += `### [${idx + 1}] ${p.model}\n`;
+        content += `- ID: ${p._id}\n`;
+        content += `- Marca: ${p.brand || 'N/A'}\n`;
+        content += `- Categoría: ${p.category}\n`;
+        if (p.subtitle) content += `- Subtítulo / Descripción corta: ${p.subtitle}\n`;
+        content += `- Estado: ${p.isActive ? 'ACTIVO (Visible en tienda)' : 'INACTIVO (Pausado)'}\n`;
+        content += `- Destacado: ${p.isFeatured ? 'SÍ' : 'NO'}\n`;
+        content += `- Proveedor: ${p.provider ? p.provider.name : 'N/A'}\n`;
+        if (p.linkProductProvider) content += `- Enlace Directo Proveedor: ${p.linkProductProvider}\n`;
+        
+        content += `- Precios y Desglose Financiero:\n`;
+        content += `  * Precio Venta Efectivo / Transferencia: $${p.price?.cashTransferPrice?.toLocaleString('es-AR') || 0}\n`;
+        content += `  * Precio Venta Lista (Tarjetas / Cuotas): $${p.price?.listPrice?.toLocaleString('es-AR') || 0}\n`;
+        
+        if (p.finance?.providerCost?.inARS) {
+          content += `  * Costo Proveedor: $${p.finance.providerCost.inARS.toLocaleString('es-AR')} ARS`;
+          if (p.finance.providerCost.inUSD) {
+            content += ` (USD ${p.finance.providerCost.inUSD} @ $${p.finance.exchangeRateSnapshot || 0}/USD)`;
+          }
+          content += `\n`;
+        }
+
+        // Costos adicionales (packaging, flete, etc.)
+        if (p.finance?.additionalCosts && p.finance.additionalCosts.length > 0) {
+          content += `  * Costos Adicionales / Operativos:\n`;
+          p.finance.additionalCosts.forEach((c) => {
+            const valStr = c.type === 'percent_over_provider' ? `${c.value}% s/proveedor` : `$${c.value.toLocaleString('es-AR')}`;
+            content += `    - ${c.concept}: ${valStr}\n`;
+          });
+        }
+
+        // Comisiones pasarela (Mercado Pago)
+        if (p.finance?.mpCommissionSnapshot) {
+          content += `  * Comisiones Pasarela de Pago (Mercado Pago):\n`;
+          content += `    - Comisión Base: ${p.finance.mpCommissionSnapshot.base}%\n`;
+          if (p.finance.mpCommissionSnapshot.cft3Cuotas) content += `    - CFT 3 Cuotas: ${p.finance.mpCommissionSnapshot.cft3Cuotas}%\n`;
+          if (p.finance.mpCommissionSnapshot.cft6Cuotas) content += `    - CFT 6 Cuotas: ${p.finance.mpCommissionSnapshot.cft6Cuotas}%\n`;
+        }
+
+        // Ganancias Netas en mano del vendedor
+        if (p.finance?.calculatedProfits) {
+          content += `  * Ganancia Neta Estimada (Bolsillo del Vendedor):\n`;
+          content += `    - Por Transferencia / Efectivo: +$${p.finance.calculatedProfits.transfer?.toLocaleString('es-AR') || 0} netos\n`;
+          content += `    - Con Tarjeta 1 Pago: +$${p.finance.calculatedProfits.card_ticket1Pay?.toLocaleString('es-AR') || 0} netos\n`;
+          if (p.finance.calculatedProfits.card3Installments) {
+            content += `    - En 3 Cuotas: +$${p.finance.calculatedProfits.card3Installments?.toLocaleString('es-AR') || 0} netos\n`;
+          }
+          if (p.finance.calculatedProfits.card6Installments) {
+            content += `    - En 6 Cuotas: +$${p.finance.calculatedProfits.card6Installments?.toLocaleString('es-AR') || 0} netos\n`;
+          }
+        }
+
+        if (p.finance?.pricingStrategy) {
+          content += `  * Estrategia de Precio: ${p.finance.pricingStrategy.method === 'margin' ? 'Margen sobre venta' : 'Markup sobre costo'} (${p.finance.pricingStrategy.targetProfit}% objetivo)\n`;
+        }
+        
+        content += `- Stock Total: ${stock} unidades\n`;
+        
+        // Stock por talle/color si existe
+        if (p.variants && p.variants.length > 0) {
+          const varSummary = p.variants.map((v: any) => `${v.size || v.sku || 'Variante'}${v.color ? ' (' + v.color.name + ')' : ''}: ${v.stock} uds`).join(' | ');
+          content += `  * Variantes: ${varSummary}\n`;
+        }
+
+        // SEO
+        content += `- SEO:\n`;
+        content += `  * Meta Título: ${p.seo?.metaTitle || 'Sin configurar'}\n`;
+        content += `  * Meta Descripción: ${p.seo?.metaDescription || 'Sin configurar'}\n`;
+        content += `  * Imagen SEO: ${p.seo?.metaImage ? p.seo.metaImage : 'Sin imagen dedicada'}\n`;
+
+        // Imágenes
+        if (p.images && p.images.length > 0) {
+          content += `- Galería de Imágenes (${p.images.length}):\n`;
+          p.images.forEach((img, imgIdx) => {
+            content += `  [Foto ${imgIdx + 1}] ${img.url}\n`;
+          });
+        }
+
+        // Recomendaciones
+        if (p.recommendationsMode) {
+          content += `- Modo de Recomendación: ${p.recommendationsMode}\n`;
+        }
+
+        content += `\n----------------------------------------------------------------------\n\n`;
+      });
+
+      await navigator.clipboard.writeText(content);
+      this.#snackBar.open(`✨ ¡Listado de ${products.length} productos copiado para la IA!`, 'Genial', { duration: 4000 });
+    } catch (err) {
+      console.error('Error al copiar al portapapeles:', err);
+      this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
+    } finally {
+      this.isCopyingForAi.set(false);
     }
   }
 }

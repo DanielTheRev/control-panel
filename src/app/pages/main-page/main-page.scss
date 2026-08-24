@@ -4,6 +4,7 @@
 mat-drawer-container.mat-drawer-container {
   background-color: #ede9fe !important;
   /* violet-100 */
+  overflow-x: hidden !important;
 }
 
 mat-drawer {
@@ -15,6 +16,8 @@ mat-drawer {
 mat-drawer-content {
   @include mat.sidenav-overrides((content-background-color: transparent,
     ));
+  overflow-x: hidden !important;
+  max-width: 100% !important;
 }
 
 mat-toolbar {

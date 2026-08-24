@@ -229,14 +229,14 @@
     [class.margin-expanded]="sidebarService.SidebarStatus().isExpanded"
     [class.margin-collapsed]="!sidebarService.SidebarStatus().isExpanded">
     <!-- Main Content Card -->
-    <div class="flex-1 flex flex-col m-2 ml-1 rounded-md bg-base-100 overflow-hidden">
+    <div class="flex-1 min-w-0 min-h-0 flex flex-col m-0 sm:m-2 sm:ml-1 rounded-none sm:rounded-md bg-base-100 overflow-hidden">
       <!-- Topbar -->
-      <div class="shrink-0">
+      <div class="shrink-0 w-full">
         <app-navbar class="w-full" />
       </div>
 
       <!-- Main Workspace -->
-      <main class="flex-1 w-full overflow-y-auto flex flex-col pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pb-0">
+      <main class="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden flex flex-col pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-0">
         <router-outlet />
       </main>
     </div>

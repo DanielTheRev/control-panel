@@ -66,6 +66,7 @@ export interface IProduct {
   largeDescription: string;
   brand: string;
   model: string;
+  subtitle?: string;
   price: IProductPrices;
   finance?: IProductFinance;
   isLegacyPrices?: boolean;
@@ -80,6 +81,8 @@ export interface IProduct {
   isActive?: boolean;
   isFeatured?: boolean;
   linkProductProvider?: string;
+  recommendationsMode?: 'auto' | 'manual';
+  manualRecommendations?: string[] | IProduct[];
   // Virtuals
   totalStock: number;
   hasStock: boolean;

@@ -164,15 +164,30 @@
               </fieldset>
             </div>
 
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Modelo</legend>
-              <input
-                type="text"
-                class="input input-bordered w-full"
-                placeholder="Ej. iPhone 15 Pro"
-                formControlName="model"
-              />
-            </fieldset>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend">Modelo / Nombre</legend>
+                <input
+                  type="text"
+                  class="input input-bordered w-full"
+                  [placeholder]="modelPlaceholder()"
+                  formControlName="model"
+                />
+              </fieldset>
+
+              <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend flex items-center justify-between">
+                  <span>Subtítulo</span>
+                  <span class="text-xs text-base-content/50 font-normal">(Opcional)</span>
+                </legend>
+                <input
+                  type="text"
+                  class="input input-bordered w-full"
+                  [placeholder]="subtitlePlaceholder()"
+                  formControlName="subtitle"
+                />
+              </fieldset>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 sm:mt-4">
               <fieldset class="fieldset">
@@ -1981,6 +1996,109 @@
             </div>
 
             @if (sizeGuideState().enabled) {
+              <!-- Smart Paste / Import Box -->
+              <div class="mb-6 bg-base-200/50 border border-base-300 rounded-xl p-4 transition-all">
+                <div class="flex items-center justify-between cursor-pointer select-none" (click)="toggleQuickPaste()">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                      <mat-icon class="text-[18px]">bolt</mat-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold flex items-center gap-2">
+                        Pegado Rápido / Importar Texto
+                        <span class="badge badge-xs badge-primary font-semibold">Recomendado</span>
+                      </h4>
+                      <p class="text-xs text-base-content/60">
+                        Copiá y pegá texto o tablas de Excel para armar la guía en 1 segundo.
+                      </p>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-xs btn-circle">
+                    <mat-icon class="text-[18px]">{{ showQuickPaste() ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                </div>
+
+                @if (showQuickPaste()) {
+                  <div class="mt-4 space-y-3 pt-3 border-t border-base-300">
+                    <!-- Presets rápidos -->
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-xs font-semibold text-base-content/70">Plantillas rápidas:</span>
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-outline btn-neutral"
+                        (click)="loadSizeGuidePreset('remera')"
+                      >
+                        👕 Remera / Buzo
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-outline btn-neutral"
+                        (click)="loadSizeGuidePreset('pantalon')"
+                      >
+                        👖 Pantalón / Jean
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-outline btn-neutral"
+                        (click)="loadSizeGuidePreset('calzado')"
+                      >
+                        👟 Calzado
+                      </button>
+                    </div>
+
+                    <!-- Input / Textarea -->
+                    <div class="relative">
+                      <textarea
+                        class="textarea textarea-bordered w-full h-32 text-xs font-mono bg-white leading-relaxed"
+                        [(ngModel)]="sizeGuideRawText"
+                        [ngModelOptions]="{standalone: true}"
+                        placeholder="Ejemplo:&#10;Talle, Ancho Pecho, Largo Total&#10;S: 50, 68&#10;M: 52, 70&#10;L: 54, 72&#10;* Las medidas son en centímetros."
+                      ></textarea>
+                    </div>
+
+                    <!-- Mensaje de Ayuda y Sintaxis -->
+                    <div class="bg-info/10 border border-info/20 text-info-content rounded-lg p-3 text-xs space-y-1.5">
+                      <div class="font-bold flex items-center gap-1.5 text-info">
+                        <mat-icon class="text-[16px] w-4 h-4">help_outline</mat-icon>
+                        ¿Cómo cargar las medidas rápidamente?
+                      </div>
+                      <ul class="list-disc list-inside space-y-1 text-base-content/80 text-[11px]">
+                        <li><strong>Línea 1 (Encabezados):</strong> Los nombres de las columnas separados por comas (ej: <code class="bg-base-200 px-1 rounded font-mono">Talle, Pecho, Largo, Manga</code>).</li>
+                        <li><strong>Líneas siguientes (Talles):</strong> El talle seguido de dos puntos y sus medidas (ej: <code class="bg-base-200 px-1 rounded font-mono">S: 50, 68, 20</code>) o formato Excel con tabulaciones.</li>
+                        <li><strong>Nota de Tolerancia:</strong> Empezá la última línea con un asterisco <code class="bg-base-200 px-1 rounded font-mono">*</code> para aclaraciones (ej: <code class="bg-base-200 px-1 rounded font-mono">* +/- 1cm de tolerancia</code>).</li>
+                      </ul>
+                    </div>
+
+                    <!-- Mensaje de Error de parseo si hay -->
+                    @if (sizeGuideParserError()) {
+                      <div class="text-xs text-error font-medium bg-error/10 p-2.5 rounded-lg flex items-center gap-2">
+                        <mat-icon class="text-[16px] w-4 h-4 shrink-0">error</mat-icon>
+                        {{ sizeGuideParserError() }}
+                      </div>
+                    }
+
+                    <!-- Botón de acción -->
+                    <div class="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-ghost text-base-content/50 hover:text-base-content"
+                        (click)="sizeGuideRawText.set(''); sizeGuideParserError.set(null)"
+                      >
+                        Limpiar texto
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary gap-2 font-bold"
+                        (click)="parseAndApplySizeGuide()"
+                      >
+                        <mat-icon class="text-[16px]">sync</mat-icon>
+                        Procesar y Cargar en la Tabla
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+
               <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <!-- Edición -->
                 <div class="space-y-4">

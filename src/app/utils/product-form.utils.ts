@@ -69,7 +69,7 @@ export class ProductFormUtils {
     }
 
     // --- 1. CAMPOS SIMPLES ---
-    const simpleFields = ['model', 'brand', 'category', 'shortDescription', 'largeDescription', 'productType', 'isActive', 'isFeatured', 'linkProductProvider'];
+    const simpleFields = ['model', 'brand', 'subtitle', 'category', 'shortDescription', 'largeDescription', 'productType', 'isActive', 'isFeatured', 'linkProductProvider'];
 
     // --- PROVIDER (comparar contra ._id porque originalProduct.provider es un objeto poblado) ---
     const origProviderId = originalProduct.provider?._id || '';

@@ -17,6 +17,7 @@ import {
   FormBuilder,
   FormControl,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -79,6 +80,7 @@ interface SizeGuideState {
   selector: 'app-product-create',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     CommonModule,
     PageLayout,
     PageHeader,
@@ -164,6 +166,7 @@ export class ProductCreate {
     provider: ['', Validators.required],
     linkProductProvider: [''],
     model: ['', Validators.required],
+    subtitle: [''],
     brand: ['', Validators.required],
     category: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
@@ -290,12 +293,30 @@ export class ProductCreate {
     return this.productForm.get('discountPercentageTransfer')?.value ?? 0;
   });
 
+  roundCharmPrice(price: number): number {
+    if (!price || price <= 0) return 0;
+    const rounded100 = Math.round(price / 100) * 100;
+    const remainder = rounded100 % 1000;
+
+    if (remainder >= 700) {
+      return Math.floor(rounded100 / 1000) * 1000 + 900;
+    }
+    if (remainder >= 300 && remainder <= 600) {
+      return Math.floor(rounded100 / 1000) * 1000 + 500;
+    }
+    if (remainder < 300 && rounded100 >= 1000) {
+      return Math.floor(rounded100 / 1000) * 1000;
+    }
+    return rounded100;
+  }
+
   /** The transfer/cash price after applying the discount to the list price */
   transferPrice = computed(() => {
     const lp = this.calculatedListPrice();
     if (!lp) return 0;
     const discount = this.transferDiscountPercent();
-    return Math.round(lp.listPrice * (1 - discount / 100));
+    const rawTransfer = lp.listPrice * (1 - discount / 100);
+    return this.roundCharmPrice(rawTransfer);
   });
 
   /** How much of the discount is "free" — funded by savings from not using the payment gateway */
@@ -328,6 +349,18 @@ export class ProductCreate {
   selectedType = linkedSignal(
     toSignal(this.productForm.get('productType')!.valueChanges),
   );
+
+  modelPlaceholder = computed(() => {
+    return this.selectedType() === ProductType.TECH
+      ? 'Ej. iPhone 15 Pro / Galaxy S24 / Smart TV 55"'
+      : 'Ej. Remera Lino Roma / Pantalón Sastrero Florencia';
+  });
+
+  subtitlePlaceholder = computed(() => {
+    return this.selectedType() === ProductType.TECH
+      ? 'Ej. 256GB Titanium / 4K UHD 120Hz / 16GB RAM'
+      : 'Ej. 100% Lino Importado / Fit Oversize / Algodón Peinado';
+  });
 
   isUsingGlobalMargin = signal<boolean>(false);
   tabs = signal([
@@ -442,6 +475,170 @@ export class ProductCreate {
   updateSizeGuideTolerance(e: Event) {
     const value = (e.target as HTMLTextAreaElement).value;
     this.sizeGuideState.update((s) => ({ ...s, tolerance: value }));
+  }
+
+  // ============ SMART SIZE GUIDE PARSER & PRESETS ============
+  sizeGuideRawText = signal<string>('');
+  sizeGuideParserError = signal<string | null>(null);
+  showQuickPaste = signal<boolean>(true);
+
+  toggleQuickPaste() {
+    this.showQuickPaste.update((v) => !v);
+  }
+
+  tokenizeLine(line: string): string[] {
+    if (line.includes('|')) {
+      return line
+        .split('|')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    }
+    if (line.includes('\t')) {
+      return line.split('\t').map((s) => s.trim());
+    }
+    if (line.includes(';')) {
+      return line.split(';').map((s) => s.trim());
+    }
+    return line.split(',').map((s) => s.trim());
+  }
+
+  tokenizeValues(rest: string): string[] {
+    if (rest.includes('\t')) return rest.split('\t').map((s) => s.trim());
+    if (rest.includes('|'))
+      return rest
+        .split('|')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    if (rest.includes(';')) return rest.split(';').map((s) => s.trim());
+    return rest.split(',').map((s) => s.trim());
+  }
+
+  parseAndApplySizeGuide(rawText?: string) {
+    const text = (rawText !== undefined ? rawText : this.sizeGuideRawText()).trim();
+    if (!text) {
+      this.sizeGuideParserError.set('Por favor ingresa texto para procesar.');
+      return;
+    }
+
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    if (lines.length < 2) {
+      this.sizeGuideParserError.set(
+        'El texto debe tener al menos 2 líneas (encabezados y al menos un talle).'
+      );
+      return;
+    }
+
+    let tolerance = this.sizeGuideState().tolerance || '';
+    const cleanDataLines: string[] = [];
+
+    for (const line of lines) {
+      if (/^(\*|nota:|tolerancia:)/i.test(line)) {
+        tolerance = line.replace(/^(\*|nota:|tolerancia:)\s*/i, '').trim();
+      } else if (!/^[-|_|\s|=]+$/.test(line)) {
+        cleanDataLines.push(line);
+      }
+    }
+
+    if (cleanDataLines.length < 2) {
+      this.sizeGuideParserError.set('No se encontraron suficientes filas válidas.');
+      return;
+    }
+
+    // Encabezados (Línea 0)
+    const headerLine = cleanDataLines[0];
+    const headerTokens = this.tokenizeLine(headerLine);
+
+    if (headerTokens.length < 2) {
+      this.sizeGuideParserError.set(
+        'La primera línea debe tener al menos dos columnas (ej: Talle, Pecho, Largo).'
+      );
+      return;
+    }
+
+    const headers = headerTokens.map((h, i) => (i === 0 && !h ? 'Talle' : h));
+    const expectedCols = headers.length - 1;
+    const rows: Array<{ size: string; values: string[] }> = [];
+
+    // Filas de talles
+    for (let i = 1; i < cleanDataLines.length; i++) {
+      const line = cleanDataLines[i];
+      let size = '';
+      let values: string[] = [];
+
+      if (line.includes(':')) {
+        const colonParts = line.split(':');
+        size = colonParts[0].trim();
+        const rest = colonParts.slice(1).join(':').trim();
+        values = this.tokenizeValues(rest);
+      } else {
+        const tokens = this.tokenizeLine(line);
+        if (tokens.length > 0) {
+          size = tokens[0];
+          values = tokens.slice(1);
+        }
+      }
+
+      if (size) {
+        while (values.length < expectedCols) {
+          values.push('');
+        }
+        if (values.length > expectedCols) {
+          values = values.slice(0, expectedCols);
+        }
+        rows.push({ size, values });
+      }
+    }
+
+    if (rows.length === 0) {
+      this.sizeGuideParserError.set('No se pudieron extraer filas de talles.');
+      return;
+    }
+
+    this.sizeGuideState.set({
+      enabled: true,
+      headers,
+      rows,
+      tolerance,
+    });
+
+    this.sizeGuideParserError.set(null);
+  }
+
+  loadSizeGuidePreset(type: 'remera' | 'pantalon' | 'calzado') {
+    let sample = '';
+    if (type === 'remera') {
+      sample = `Talle, Ancho de Pecho (cm), Largo Total (cm), Hombro (cm)
+S: 50, 68, 44
+M: 52, 70, 46
+L: 54, 72, 48
+XL: 56, 74, 50
+XXL: 58, 76, 52
+* Las medidas pueden variar +/- 1.5 cm debido al proceso de confección.`;
+    } else if (type === 'pantalon') {
+      sample = `Talle, Cintura (cm), Cadera (cm), Largo (cm), Tiro (cm)
+38: 38, 48, 100, 28
+40: 40, 50, 102, 29
+42: 42, 52, 104, 30
+44: 44, 54, 106, 31
+46: 46, 56, 108, 32
+* Medidas tomadas en plano sobre la prenda sin estirar.`;
+    } else if (type === 'calzado') {
+      sample = `Talle AR, US, EUR, Plantilla (cm)
+39: 7, 40, 25.5
+40: 7.5, 41, 26.0
+41: 8.5, 42, 27.0
+42: 9, 43, 27.5
+43: 10, 44, 28.5
+44: 10.5, 45, 29.0
+* Te recomendamos medir la plantilla de tu calzado habitual.`;
+    }
+
+    this.sizeGuideRawText.set(sample);
+    this.parseAndApplySizeGuide(sample);
   }
 
   setActiveTab(label: string) {
@@ -725,6 +922,7 @@ export class ProductCreate {
         provider: product.provider ? product.provider._id : '',
         linkProductProvider: product.linkProductProvider || '',
         model: product.model,
+        subtitle: product.subtitle || '',
         brand: product.brand,
         category: product.category,
         price: Math.ceil(
