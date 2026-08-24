@@ -35,7 +35,7 @@ export class Login {
   ) {
     const storeParam = this.route.snapshot.queryParams['store'] || this.route.snapshot.queryParams['tenant'];
     const savedTenant = localStorage.getItem('lastTenantSlug');
-    const initialTenant = (storeParam || savedTenant || getTenantSlug() || '').trim().toLowerCase();
+    const initialTenant = (storeParam || savedTenant || '').trim().toLowerCase();
 
     this.loginForm = this.formBuilder.group({
       tenantSlug: [initialTenant, [Validators.required, Validators.minLength(2)]],

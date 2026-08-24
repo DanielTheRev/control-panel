@@ -8,11 +8,9 @@ import { environment } from '../../environments/environment';
 export function getTenantSlug(): string {
   const hostname = window.location.hostname;
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return environment.tenantSlug;
+    return environment.tenantSlug || '';
   }
-  // Actualmente no tengo el dominio de nexocommerce.com asi que el dominio seria asi dashboard.paginadelcliente.com.ar
-  // return hostname.split('.')[0];
-  return hostname.split('.')[1];
+  return localStorage.getItem('lastTenantSlug') || '';
 }
 
 /**
