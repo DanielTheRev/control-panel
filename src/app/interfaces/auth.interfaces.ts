@@ -1,6 +1,7 @@
 import { IUser } from './User.interface';
 
 export interface LoginCredentials {
+  tenantSlug: string;
   email: string;
   password: string;
 }
@@ -9,6 +10,8 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   user: IUser;
+  token?: string;
+  tenantSlug?: string;
 }
 
 export interface AuthState {

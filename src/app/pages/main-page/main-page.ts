@@ -29,5 +29,12 @@ import { Navbar } from '../../shared/components/navbar/navbar';
 export class MainPage {
   sidebarService = inject(SidebarService);
   authService = inject(AuthService);
-  brandName = environment.brandName;
+
+  get brandName(): string {
+    const tenant = localStorage.getItem('lastTenantSlug');
+    if (tenant) {
+      return tenant.charAt(0).toUpperCase() + tenant.slice(1);
+    }
+    return environment.brandName;
+  }
 }

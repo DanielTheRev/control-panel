@@ -105,14 +105,16 @@ export class AuthService {
       })
       .pipe(
         tap((response: LoginResponse) => {
-          console.log(response);
           if (response.success) {
+            if (credentials.tenantSlug) {
+              localStorage.setItem('lastTenantSlug', credentials.tenantSlug.trim().toLowerCase());
+            }
             this.setAuthenticatedState(response.user);
             console.log('✅ Login exitoso:', response.user);
           }
         }),
         catchError((error: HttpErrorResponse) => {
-          const errorMessage = error.error?.message || 'Error de conexión';
+          const errorMessage = error.error?.message || 'Error de conexión o credenciales inválidas';
           this.setUnauthenticatedState(errorMessage);
           console.error('❌ Error en login:', error);
           return throwError(() => error);

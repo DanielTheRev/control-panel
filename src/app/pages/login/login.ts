@@ -6,10 +6,11 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LoginCredentials } from '../../interfaces/auth.interfaces';
 import { environment } from '../../../environments/environment';
+import { getTenantSlug } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +21,7 @@ import { environment } from '../../../environments/environment';
 export class Login {
   loginForm: FormGroup;
   formB = inject(FormBuilder);
+  route = inject(ActivatedRoute);
   brandName = environment.brandName;
 
   // Estado local del componente
@@ -31,11 +33,15 @@ export class Login {
     private authService: AuthService,
     private router: Router
   ) {
+    const storeParam = this.route.snapshot.queryParams['store'] || this.route.snapshot.queryParams['tenant'];
+    const savedTenant = localStorage.getItem('lastTenantSlug');
+    const initialTenant = (storeParam || savedTenant || getTenantSlug() || '').trim().toLowerCase();
+
     this.loginForm = this.formBuilder.group({
+      tenantSlug: [initialTenant, [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
-
   }
 
   // Computed properties del servicio
@@ -59,12 +65,14 @@ export class Login {
     this.submitAttempted.set(true);
 
     if (this.loginForm.valid) {
+      const tenantSlug = (this.loginForm.get('tenantSlug')?.value || '').trim().toLowerCase();
       const credentials: LoginCredentials = {
-        email: this.loginForm.get('email')?.value,
+        tenantSlug,
+        email: this.loginForm.get('email')?.value?.trim().toLowerCase(),
         password: this.loginForm.get('password')?.value,
       };
-
-      console.log('🔐 Intentando login con:', { email: credentials.email });
+      
+      console.log('🔐 Intentando login con:', { tenantSlug: credentials.tenantSlug, email: credentials.email });
 
       this.authService.login(credentials).subscribe({
         next: (response) => {
@@ -107,12 +115,14 @@ export class Login {
     const field = this.loginForm.get(fieldName);
     if (field?.errors) {
       if (field.errors['required']) {
+        if (fieldName === 'tenantSlug') return 'El identificador de tienda es requerido';
         return `${fieldName === 'email' ? 'Email' : 'Contraseña'} es requerido`;
       }
       if (field.errors['email']) {
         return 'Email no válido';
       }
       if (field.errors['minlength']) {
+        if (fieldName === 'tenantSlug') return 'El nombre de tienda debe tener al menos 2 caracteres';
         return 'La contraseña debe tener al menos 6 caracteres';
       }
     }
