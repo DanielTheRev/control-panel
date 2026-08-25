@@ -363,6 +363,77 @@ export class ProductCreate {
   });
 
   isUsingGlobalMargin = signal<boolean>(false);
+
+  // Stepper & Section Navigation
+  currentStep = signal<number>(0);
+  activeSection = signal<string>('info');
+
+  sections = computed(() => {
+    const isTech = this.selectedType() === ProductType.TECH;
+    return [
+      { id: 'info', title: '1. Info & Fotos', shortTitle: '1. Info', icon: 'photo_library', desc: 'Datos básicos y multimedia' },
+      { id: 'pricing', title: '2. Precios & Finanzas', shortTitle: '2. Precios', icon: 'payments', desc: 'Costo, margen y cuotas' },
+      {
+        id: 'variants',
+        title: isTech ? '3. Variantes & Stock' : '3. Talles & Stock',
+        shortTitle: isTech ? '3. Variantes' : '3. Talles',
+        icon: 'inventory_2',
+        desc: isTech ? 'Modelos y stock' : 'Talles e inventario',
+      },
+      { id: 'details', title: '4. Ficha & SEO', shortTitle: '4. Ficha', icon: 'tune', desc: 'Specs, copy y Google' },
+    ];
+  });
+
+  isSectionInvalid(sectionId: string): boolean {
+    const c = this.productForm.controls;
+    if (sectionId === 'info') {
+      return !!(c['model']?.invalid || c['brand']?.invalid || c['category']?.invalid || c['provider']?.invalid || c['images']?.invalid);
+    }
+    if (sectionId === 'pricing') {
+      return !!(c['price']?.invalid || c['discountPercentageTransfer']?.invalid || (c['useCustomProfit']?.value && c['customProfitMargin']?.invalid));
+    }
+    if (sectionId === 'variants') {
+      return !!c['colorGroups']?.invalid;
+    }
+    if (sectionId === 'details') {
+      return !!(c['shortDescription']?.invalid || c['largeDescription']?.invalid || !this.isSizeGuideValid());
+    }
+    return false;
+  }
+
+  setStep(index: number) {
+    const total = this.sections().length;
+    if (index >= 0 && index < total) {
+      this.currentStep.set(index);
+      this.activeSection.set(this.sections()[index].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  nextStep() {
+    if (this.currentStep() < this.sections().length - 1) {
+      this.setStep(this.currentStep() + 1);
+    }
+  }
+
+  prevStep() {
+    if (this.currentStep() > 0) {
+      this.setStep(this.currentStep() - 1);
+    }
+  }
+
+  scrollToSection(id: string) {
+    this.activeSection.set(id);
+    const index = this.sections().findIndex((s) => s.id === id);
+    if (index !== -1) {
+      this.currentStep.set(index);
+    }
+    const element = document.getElementById('section-' + id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   tabs = signal([
     { label: 'Información Principal', active: true },
     { label: 'Precios', active: false },
@@ -1040,13 +1111,16 @@ XXL: 58, 76, 52
 
           variants.forEach((v) => {
             if (product.productType === ProductType.TECH && isTechVariant(v)) {
+              const attrStr =
+                v.attributes && Array.isArray(v.attributes) && v.attributes.length > 0
+                  ? v.attributes.map((a) => `${a.key}:${a.value}`).join(', ')
+                  : 'Versión: Estándar';
+
               variantsArray.push(
                 this.#fb.group({
                   _id: [v._id || ''],
                   sku: [v.sku || ''],
-                  attributesJson: [
-                    v.attributes.map((a) => `${a.key}:${a.value}`).join(', '),
-                  ],
+                  attributesJson: [attrStr, [Validators.required]],
                   stock: [v.stock, [Validators.required]],
                   isActive: [v.isActive],
                 }),
@@ -1102,17 +1176,23 @@ XXL: 58, 76, 52
     this.#typeSpecificValues.set(value);
   }
 
-  addBulkSpecifications(value: string) {
-    if (!value.trim()) return;
-    const pairs = value.split(',');
+  bulkSpecsInput = signal<string>('');
+  showBulkSpecs = signal<boolean>(false);
+
+  toggleBulkSpecs() {
+    this.showBulkSpecs.update((v) => !v);
+  }
+
+  addBulkSpecifications(value?: string) {
+    const text = (value !== undefined ? value : this.bulkSpecsInput()).trim();
+    if (!text) return;
+    const pairs = text.split(/[,;\n\r]+/);
     pairs.forEach((pair) => {
       const indexOfColon = pair.indexOf(':');
       if (indexOfColon !== -1) {
         const key = pair.substring(0, indexOfColon).trim();
         const val = pair.substring(indexOfColon + 1).trim();
         if (key && val) {
-          // Al pushear al FormArray, se dispara el valueChanges del form,
-          // lo que actualiza formChanges() y recalcula hasChanges automáticamente.
           this.specificationsControls.push(
             this.#fb.group({
               key: [key, Validators.required],
@@ -1122,7 +1202,72 @@ XXL: 58, 76, 52
         }
       }
     });
+    this.bulkSpecsInput.set('');
+    this.showBulkSpecs.set(false);
   }
+
+  // Bulk Features Tags
+  bulkTagsInput = signal<string>('');
+  showBulkTags = signal<boolean>(false);
+
+  toggleBulkTags() {
+    this.showBulkTags.update((v) => !v);
+  }
+
+  addBulkTags(value?: string) {
+    const text = (value !== undefined ? value : this.bulkTagsInput()).trim();
+    if (!text) return;
+
+    const tags = text.split(/[,;\n\r]+/).map((t) => t.trim()).filter((t) => t.length > 0);
+    tags.forEach((tag) => {
+      this.featuresControls.push(new FormControl(tag));
+    });
+    this.bulkTagsInput.set('');
+    this.showBulkTags.set(false);
+  }
+
+  addQuickTag(tag: string) {
+    const existing = (this.featuresControls.value || []) as string[];
+    if (!existing.includes(tag)) {
+      this.featuresControls.push(new FormControl(tag));
+    }
+  }
+
+  quickTagSuggestions = computed(() => {
+    if (this.selectedType() === ProductType.TECH) {
+      return [
+        '5G',
+        'Pantalla OLED',
+        'Carga Rápida',
+        'Garantía Oficial',
+        'Dual SIM',
+        'Liberado',
+        'Batería Larga Duración',
+        'Cámara Pro',
+      ];
+    }
+    return [
+      '100% Algodón',
+      'Calce Regular',
+      'Fit Oversize',
+      'Tela Premium',
+      'Industria Argentina',
+      'Suave al Tacto',
+      'No Achica',
+      'Lavar con Agua Fría',
+    ];
+  });
+
+  presetSpecText = computed(() => {
+    if (this.selectedType() === ProductType.TECH) {
+      return 'Pantalla: 6.7" OLED, Procesador: Octa-Core, Batería: 5000 mAh, Conector: USB-C, Garantía: 12 meses';
+    }
+    return 'Material: 100% Algodón, Calce: Regular, Origen: Argentina, Cuidados: Lavar con agua fría';
+  });
+
+  presetSpecLabel = computed(() => {
+    return this.selectedType() === ProductType.TECH ? '+ Preset Celular/Tech' : '+ Preset Remera';
+  });
 
   onImageDeleted(publicId: string) {
     this.#deletedImages.update((imgs) => [...imgs, publicId]);
@@ -1185,7 +1330,7 @@ XXL: 58, 76, 52
     if (this.selectedType() === ProductType.TECH) {
       variantsArray.push(
         this.#fb.group({
-          attributesJson: [''],
+          attributesJson: ['Versión: Estándar', [Validators.required]],
           stock: [8, [Validators.required, Validators.min(1)]],
           isActive: [true],
         }),
@@ -1233,17 +1378,35 @@ XXL: 58, 76, 52
         if (v.sku) variant.sku = v.sku;
 
         if (currentType === ProductType.TECH) {
-          variant.attributes = v.attributesJson
-            ? v.attributesJson
-                .split(',')
-                .map((a: string) => {
-                  const [key, value] = a.trim().split(':');
-                  return { key: key?.trim() || '', value: value?.trim() || '' };
-                })
-                .filter((a: any) => a.key && a.value)
-            : [];
+          let parsedAttrs: { key: string; value: string }[] = [];
+          const rawAttr = typeof v.attributesJson === 'string' ? v.attributesJson.trim() : '';
+
+          if (rawAttr) {
+            parsedAttrs = rawAttr
+              .split(/[,;]+/)
+              .map((a: string) => {
+                const str = a.trim();
+                const colonIdx = str.indexOf(':');
+                if (colonIdx !== -1) {
+                  const k = str.substring(0, colonIdx).trim();
+                  const val = str.substring(colonIdx + 1).trim();
+                  return { key: k || 'Versión', value: val || str };
+                } else if (str.length > 0) {
+                  return { key: 'Versión', value: str };
+                }
+                return { key: '', value: '' };
+              })
+              .filter((a: any) => a.key && a.value);
+          }
+
+          // Fallback garantizado: si quedó vacío, le asignamos al menos 1 atributo para satisfacer Zod
+          if (parsedAttrs.length === 0) {
+            parsedAttrs = [{ key: 'Versión', value: group.colorName?.trim() || 'Estándar' }];
+          }
+
+          variant.attributes = parsedAttrs;
         } else if (currentType === ProductType.CLOTHING) {
-          variant.size = String(v.size).trim();
+          variant.size = String(v.size || 'Único').trim();
         }
 
         if (group.colorName) {

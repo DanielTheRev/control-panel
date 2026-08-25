@@ -4,7 +4,8 @@ import { computed, Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class SidebarService {
-  private Expanded = signal(false);
+  private Expanded = signal(true);
+  public mobileOpen = signal(false);
 
   navbarTitle = signal({
     title: 'Dashboard',
@@ -12,12 +13,14 @@ export class SidebarService {
 
   constructor() {
     const isExpanded = localStorage.getItem('sidebar-expanded');
-    this.Expanded.set(isExpanded === 'true');
+    // En pantallas grandes default a expandido (true), en mobile cerrado
+    this.Expanded.set(isExpanded !== null ? isExpanded === 'true' : true);
   }
 
   SidebarStatus = computed(() => ({
     isExpanded: this.Expanded(),
-    isCollapsed: this.Expanded() ? false : true,
+    isCollapsed: !this.Expanded(),
+    isMobileOpen: this.mobileOpen(),
   }));
 
   public toggleExpanded() {
@@ -26,6 +29,17 @@ export class SidebarService {
       localStorage.setItem('sidebar-expanded', newState.toString());
       return newState;
     });
+  }
 
+  public toggleMobile() {
+    this.mobileOpen.update((open) => !open);
+  }
+
+  public closeMobile() {
+    this.mobileOpen.set(false);
+  }
+
+  public openMobile() {
+    this.mobileOpen.set(true);
   }
 }

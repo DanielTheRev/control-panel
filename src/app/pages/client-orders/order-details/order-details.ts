@@ -169,22 +169,147 @@ export class OrderDetails implements OnInit {
     // return item.productSnapshot.finance?.calculatedProfits;
   }
 
+  // ─── Contact & Utility Helpers ───
+
+  copied = signal<boolean>(false);
+
+  copyText(text: string) {
+    navigator.clipboard.writeText(text);
+    this.copied.set(true);
+    setTimeout(() => this.copied.set(false), 2000);
+  }
+
+  getWhatsAppUrl(): string {
+    const o = this.order();
+    if (!o) return '';
+    const phone = o.shippingInfo?.shippingAddress?.phone || '';
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone) return '';
+    const clientName = o.user?.name || o.buyerData?.firstName || 'cliente';
+    const text = encodeURIComponent(
+      `¡Hola ${clientName}! Te contactamos de VURA por tu pedido #${o.orderNumber}. Queríamos informarte sobre el estado de tu compra.`
+    );
+    const formattedPhone = cleanPhone.startsWith('54') ? cleanPhone : `549${cleanPhone.replace(/^0+/, '')}`;
+    return `https://wa.me/${formattedPhone}?text=${text}`;
+  }
+
+  getEmailUrl(): string {
+    const o = this.order();
+    if (!o) return '';
+    const email = o.user?.email || o.buyerData?.email || '';
+    const subject = encodeURIComponent(`Tu pedido #${o.orderNumber} en VURA`);
+    return `mailto:${email}?subject=${subject}`;
+  }
+
+  /** Current Step index (0: Pendiente, 1: Pago Aprobado, 2: En Preparación, 3: En Camino, 4: Entregado) */
+  orderStep = computed<number>(() => {
+    const s = this.order()?.status;
+    const ps = this.order()?.paymentInfo?.status;
+    if (s === OrderStatus.DELIVERED) return 4;
+    if (s === OrderStatus.SHIPPED) return 3;
+    if (s === OrderStatus.PROCESSING_SHIPPING) return 2;
+    if (ps === PaymentStatus.APPROVED) return 1;
+    return 0;
+  });
+
+  getOrderStatusBadgeClass(status?: string): string {
+    const base = 'badge badge-sm font-bold gap-1 shadow-2xs';
+    switch (status) {
+      case OrderStatus.PENDING_PAYMENT:
+      case 'PENDING':
+        return `${base} bg-amber-500/15 text-amber-600 border border-amber-500/30`;
+      case OrderStatus.PROCESSING_SHIPPING:
+        return `${base} bg-info/15 text-info border border-info/30`;
+      case OrderStatus.SHIPPED:
+        return `${base} bg-purple-500/15 text-purple-600 border border-purple-500/30`;
+      case OrderStatus.DELIVERED:
+        return `${base} bg-success/15 text-success border border-success/30`;
+      case OrderStatus.CANCELLED:
+      case 'PAYMENT_FAILED':
+      case 'REJECTED':
+        return `${base} bg-error/15 text-error border border-error/30`;
+      default:
+        return `${base} bg-base-200 text-base-content/60 border-base-300`;
+    }
+  }
+
+  getOrderStatusIcon(status?: string): string {
+    switch (status) {
+      case OrderStatus.PENDING_PAYMENT:
+      case 'PENDING':
+        return 'hourglass_top';
+      case OrderStatus.PROCESSING_SHIPPING:
+        return 'inventory_2';
+      case OrderStatus.SHIPPED:
+        return 'local_shipping';
+      case OrderStatus.DELIVERED:
+        return 'check_circle';
+      case OrderStatus.CANCELLED:
+      case 'PAYMENT_FAILED':
+      case 'REJECTED':
+        return 'cancel';
+      default:
+        return 'help_outline';
+    }
+  }
+
+  getOrderStatusLabel(status?: string): string {
+    if (!status) return '';
+    const map: Record<string, string> = {
+      [OrderStatus.PENDING_PAYMENT]: 'Pendiente de Pago',
+      [OrderStatus.PROCESSING_SHIPPING]: 'En Preparación / Embalaje',
+      [OrderStatus.SHIPPED]: 'Enviado / En Camino',
+      [OrderStatus.DELIVERED]: 'Entregado al Cliente',
+      [OrderStatus.CANCELLED]: 'Pedido Cancelado',
+      'PAYMENT_FAILED': 'Pago Rechazado',
+      'PENDING': 'Pendiente',
+      'APPROVED': 'Aprobado',
+      'REJECTED': 'Rechazado',
+    };
+    return map[status] || status;
+  }
+
+  getPaymentStatusBadgeClass(status?: string): string {
+    const base = 'badge badge-xs font-bold';
+    switch (status) {
+      case PaymentStatus.PENDING:
+      case 'PENDING':
+        return `${base} bg-amber-500/15 text-amber-600 border border-amber-500/30`;
+      case PaymentStatus.APPROVED:
+      case 'APPROVED':
+        return `${base} bg-success/15 text-success border border-success/30`;
+      case PaymentStatus.REJECTED:
+      case 'REJECTED':
+      case 'PAYMENT_FAILED':
+        return `${base} bg-error/15 text-error border border-error/30`;
+      case PaymentStatus.CANCELLED:
+      case 'CANCELLED':
+        return `${base} bg-base-200 text-base-content/50 border border-base-300`;
+      case PaymentStatus.WAITING_CONFIRMATION:
+      case 'waiting_confirmation':
+        return `${base} bg-info/15 text-info border border-info/30`;
+      default:
+        return `${base} bg-base-200 text-base-content/50 border border-base-300`;
+    }
+  }
+
+  getPaymentStatusLabel(status?: string): string {
+    if (!status) return '';
+    const map: Record<string, string> = {
+      [PaymentStatus.PENDING]: 'Pendiente',
+      [PaymentStatus.APPROVED]: 'Aprobado',
+      [PaymentStatus.REJECTED]: 'Rechazado',
+      [PaymentStatus.CANCELLED]: 'Cancelado',
+      [PaymentStatus.WAITING_CONFIRMATION]: 'En Revisión',
+      'PAYMENT_FAILED': 'Rechazado',
+    };
+    return map[status] || status;
+  }
+
   // ─── Navigation ───
 
   goBack() {
     this.location.back();
-  }
-
-  getOrderStatusBadgeClass(status: OrderStatus): string {
-    const base = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-    switch (status) {
-      case OrderStatus.PENDING_PAYMENT: return `${base} bg-yellow-100 text-yellow-800`;
-      case OrderStatus.PROCESSING_SHIPPING: return `${base} bg-blue-100 text-blue-800`;
-      case OrderStatus.SHIPPED: return `${base} bg-indigo-100 text-indigo-800`;
-      case OrderStatus.DELIVERED: return `${base} bg-green-100 text-green-800`;
-      case OrderStatus.CANCELLED: return `${base} bg-red-100 text-red-800`;
-      default: return `${base} bg-gray-100 text-gray-800`;
-    }
   }
 
   async printTicket() {

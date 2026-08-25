@@ -5,3 +5,11 @@
   height: 100%;
   overflow: auto;
 }
+
+/* Remove default browser marker for details/summary */
+summary.collapse-title {
+  list-style: none;
+  &::-webkit-details-marker {
+    display: none;
+  }
+}

@@ -1,20 +1,40 @@
-<div class="space-y-2">
-  <div class="flex gap-2">
-    <input #tagInput type="text" [placeholder]="placeholder()" class="input w-full"
-      (keydown.enter)="$event.preventDefault(); add()" />
-    <button type="button" class="btn btn-primary" (click)="add()">
-      <mat-icon>add</mat-icon>
+<div class="space-y-3">
+  <div class="join w-full">
+    <input
+      #tagInput
+      type="text"
+      [placeholder]="placeholder()"
+      class="join-item input input-sm input-bordered w-full text-xs focus:border-primary/50"
+      (keydown.enter)="$event.preventDefault(); add()"
+    />
+    <button
+      type="button"
+      class="join-item btn btn-sm btn-primary px-3.5 font-bold"
+      (click)="add()"
+    >
+      <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
     </button>
   </div>
 
-  <div class="flex flex-wrap gap-2">
-    @for (control of formArray().controls; track $index) {
-    <div class="badge badge-warning badge-outline badge-lg gap-2 pr-1">
-      {{ control.value }}
-      <button type="button" class="btn btn-ghost btn-xs btn-circle text-error" (click)="remove($index)">
-        <mat-icon class="icon-sm">delete</mat-icon>
-      </button>
+  @if (formArray().controls.length === 0) {
+    <p class="text-xs text-base-content/40 italic py-1">
+      Sin características agregadas. Escribe arriba o selecciona de las sugerencias.
+    </p>
+  } @else {
+    <div class="flex flex-wrap gap-1.5 pt-0.5">
+      @for (control of formArray().controls; track $index) {
+        <div class="inline-flex items-center gap-1.5 bg-base-200/70 hover:bg-base-200 text-base-content text-xs font-semibold px-2.5 py-1 rounded-lg border border-base-300/80 transition-all group shadow-2xs">
+          <span>{{ control.value }}</span>
+          <button
+            type="button"
+            class="text-base-content/40 hover:text-error hover:bg-error/10 rounded-full w-4 h-4 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            (click)="remove($index)"
+            title="Eliminar"
+          >
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
+          </button>
+        </div>
+      }
     </div>
-    }
-  </div>
+  }
 </div>

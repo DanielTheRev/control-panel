@@ -1,337 +1,542 @@
 <app-page-layout>
-  <app-page-header header title="Pedidos" [withMB]="false" [subtitle]="
-    isLoading()
-      ? 'Cargando pedidos...'
-      : pagination().totalItems + ' pedidos encontrados'
-  ">
-    <div actions class="flex items-center gap-2">
-      <select [value]="status()" (change)="updateStatusFilter($any($event.target).value)" [disabled]="isLoading()"
-        class="select select-sm select-bordered focus:outline-none">
-        @for (option of statusOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+  <app-page-header
+    header
+    title="Pedidos & Ventas"
+    [subtitle]="
+      isLoading()
+        ? 'Cargando pedidos...'
+        : pagination().totalItems + ' pedidos registrados'
+    "
+  >
+    <div actions class="w-full sm:w-auto space-y-1.5 sm:space-y-0">
+      <!-- Fila 1: Buscador + Acciones -->
+      <div class="flex items-center gap-1.5 w-full sm:w-auto">
+        <!-- Buscador Omnibox Compacto -->
+        <label class="input input-xs sm:input-sm input-bordered flex items-center gap-1.5 flex-1 sm:w-56 lg:w-64 bg-base-100 rounded-xl focus-within:border-primary/50 shadow-2xs">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
+          <input
+            type="text"
+            class="grow text-xs"
+            placeholder="Buscar orden o cliente..."
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+          />
+          @if (searchQuery()) {
+            <button type="button" class="btn btn-ghost btn-2xs btn-circle text-base-content/50" (click)="searchQuery.set('')">
+              <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+            </button>
+          }
+        </label>
 
-      <select [value]="dateRange()" (change)="updateDateFilter($any($event.target).value)" [disabled]="isLoading()"
-        class="select select-sm select-bordered focus:outline-none">
-        @for (option of dateRangeOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+        <!-- Selector Fecha Desktop (oculto en mobile) -->
+        <select
+          [value]="dateRange()"
+          (change)="updateDateFilter($any($event.target).value)"
+          [disabled]="isLoading()"
+          class="hidden sm:inline-flex select select-sm select-bordered rounded-xl text-xs bg-base-100 shadow-2xs focus:outline-none"
+        >
+          @for (option of dateRangeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
 
-      <div class="flex gap-1">
-        <button (click)="resetFilters()" [disabled]="isLoading()" class="btn btn-sm btn-ghost btn-square" title="Limpiar filtros">
-          <mat-icon class="text-[16px]! w-4! h-4!">filter_alt_off</mat-icon>
-        </button>
-        <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-sm btn-ghost btn-square" title="Actualizar">
-          <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
-        </button>
+        <!-- Botones Reset / Refresh -->
+        <div class="flex gap-0.5 items-center shrink-0">
+          @if (status() !== 'all' || dateRange() !== 'all' || searchQuery()) {
+            <button
+              (click)="resetFilters(); searchQuery.set('')"
+              [disabled]="isLoading()"
+              class="btn btn-xs sm:btn-sm btn-ghost btn-square text-error"
+              title="Limpiar filtros"
+            >
+              <mat-icon class="text-[14px]! sm:text-[16px]! w-3.5! sm:w-4! h-3.5! sm:h-4!">filter_alt_off</mat-icon>
+            </button>
+          }
+          <button
+            (click)="refreshData()"
+            [disabled]="isLoading()"
+            class="btn btn-xs sm:btn-sm btn-ghost btn-square text-base-content/60 hover:text-base-content"
+            title="Actualizar datos"
+          >
+            <mat-icon class="text-[14px]! sm:text-[16px]! w-3.5! sm:w-4! h-3.5! sm:h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Fila 2 en Mobile: Estado y Fecha 50/50 uno al lado del otro -->
+      <div class="grid sm:hidden grid-cols-2 gap-1.5 w-full">
+        <!-- Selector Estado (Azul) -->
+        <select
+          [value]="status()"
+          (change)="updateStatusFilter($any($event.target).value)"
+          [disabled]="isLoading()"
+          class="select select-xs select-primary font-bold rounded-xl text-xs shadow-2xs focus:outline-none w-full"
+        >
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+
+        <!-- Selector Fecha -->
+        <select
+          [value]="dateRange()"
+          (change)="updateDateFilter($any($event.target).value)"
+          [disabled]="isLoading()"
+          class="select select-xs select-bordered rounded-xl text-xs bg-base-100 shadow-2xs focus:outline-none w-full"
+        >
+          @for (option of dateRangeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
       </div>
     </div>
 
-    <!-- Status filter bar -->
-    <div sub-menu class="flex items-center gap-1.5 px-6 py-2 border-b border-base-300 overflow-x-auto">
-      <button (click)="updateStatusFilter('all')"
-        class="badge badge-sm cursor-pointer transition-colors whitespace-nowrap"
-        [class.badge-primary]="status() === 'all'"
-        [class.badge-ghost]="status() !== 'all'">
+    <!-- Pestañas de Estado (Sub-Menu) solo visible en Desktop sm+ -->
+    <div sub-menu class="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2.5 border-b border-base-200 overflow-x-auto custom-scrollbar bg-base-100/90 backdrop-blur-md">
+      <button
+        (click)="updateStatusFilter('all')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap shadow-2xs"
+        [ngClass]="status() === 'all' ? 'btn-primary' : 'btn-ghost text-base-content/60 hover:bg-base-200'"
+      >
         Todos
+        <span class="badge badge-xs ml-1 font-mono" [ngClass]="status() === 'all' ? 'badge-primary-content text-primary' : 'badge-ghost'">
+          {{ pagination().totalItems }}
+        </span>
       </button>
+
       @for (s of statusFilterOptions; track s.value) {
-      <button (click)="updateStatusFilter(s.value)"
-        class="badge badge-sm cursor-pointer transition-colors gap-1 whitespace-nowrap"
-        [style.background-color]="status() === s.value ? s.bgColor : ''"
-        [style.color]="status() === s.value ? s.textColor : ''"
-        [class.badge-ghost]="status() !== s.value">
-        <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="s.dotColor"></span>
-        {{ s.label }} {{ getStatusCount(s.value) > 0 ? '(' + getStatusCount(s.value) + ')' : '' }}
-      </button>
+        <button
+          (click)="updateStatusFilter(s.value)"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="status() === s.value ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!" [style.color]="status() === s.value ? 'currentColor' : s.dotColor">
+            {{ s.icon }}
+          </mat-icon>
+          <span>{{ s.label }}</span>
+          @if (getStatusCount(s.value) > 0) {
+            <span class="badge badge-xs ml-0.5 font-mono" [ngClass]="status() === s.value ? 'badge-primary-content text-primary font-black' : 'bg-base-300 text-base-content/70'">
+              {{ getStatusCount(s.value) }}
+            </span>
+          }
+        </button>
       }
     </div>
   </app-page-header>
 
   <ng-container content>
-    <!-- Error -->
-    @if (error()) {
-    <div class="flex flex-col items-center justify-center py-16 gap-3">
-      <div class="bg-error/10 rounded-full p-4">
-        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
+    <div class="p-3 sm:p-5 space-y-4 w-full">
+
+      <!-- ========================================================================= -->
+      <!-- MOBILE COMPACT STATS STRIP (< sm)                                         -->
+      <!-- ========================================================================= -->
+      <div class="sm:hidden flex items-center gap-2 overflow-x-auto custom-scrollbar pb-0.5">
+        <div class="inline-flex items-center gap-1.5 bg-base-100 px-3 py-1.5 rounded-xl border border-base-200 text-xs font-bold shrink-0 shadow-2xs">
+          <span class="text-base-content/50 text-[10px]">TOTAL:</span>
+          <span class="text-base-content">{{ pagination().totalItems }}</span>
+        </div>
+        <div class="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-600 px-3 py-1.5 rounded-xl border border-amber-500/20 text-xs font-bold shrink-0">
+          <span class="text-[10px]">PEND. PAGO:</span>
+          <span>{{ pendingCount() }}</span>
+        </div>
+        <div class="inline-flex items-center gap-1.5 bg-info/10 text-info px-3 py-1.5 rounded-xl border border-info/20 text-xs font-bold shrink-0">
+          <span class="text-[10px]">P/DESPACHAR:</span>
+          <span>{{ readyToShipCount() }}</span>
+        </div>
+        <div class="inline-flex items-center gap-1.5 bg-success/10 text-success px-3 py-1.5 rounded-xl border border-success/20 text-xs font-bold shrink-0">
+          <span class="text-[10px]">FACTURADO:</span>
+          <span>{{ totalRevenue() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+        </div>
       </div>
-      <h2 class="text-base font-bold text-base-content">Error al cargar pedidos</h2>
-      <p class="text-sm text-base-content/50">No se pudieron cargar las órdenes. Intentá de nuevo.</p>
-      <button class="btn btn-sm btn-primary" (click)="refreshData()">
-        <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon> Reintentar
-      </button>
-    </div>
-    }
 
-    <!-- Loading Skeleton -->
-    @if (isLoading() && !hasData()) {
-    <div class="p-3 space-y-2">
-      @for (i of [1,2,3,4,5,6,7]; track i) {
-      <div class="skeleton w-full h-12 rounded-lg"></div>
-      }
-    </div>
-    }
+      <!-- ========================================================================= -->
+      <!-- TOP KPI METRICS BENTO (DESKTOP sm+)                                       -->
+      <!-- ========================================================================= -->
+      <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- 1. Total Pedidos -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-xs p-4 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">Total Pedidos</span>
+            <span class="text-xl sm:text-2xl font-black text-base-content">{{ pagination().totalItems }}</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <mat-icon class="text-[20px]! w-5! h-5!">receipt_long</mat-icon>
+          </div>
+        </div>
 
-    <!-- Empty State -->
-    @if (!isLoading() && !hasData() && !error()) {
-    <div class="flex flex-col items-center justify-center py-16 gap-3">
-      <div class="bg-base-200 rounded-full p-5">
-        <mat-icon class="text-5xl! w-12! h-12! text-base-content/30">inbox</mat-icon>
+        <!-- 2. Pendientes de Atención -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-xs p-4 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">Pend. Pago / Revisión</span>
+            <span class="text-xl sm:text-2xl font-black text-amber-500">{{ pendingCount() }}</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[20px]! w-5! h-5!">hourglass_top</mat-icon>
+          </div>
+        </div>
+
+        <!-- 3. Listos p/ Despachar -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-xs p-4 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">Por Despachar</span>
+            <span class="text-xl sm:text-2xl font-black text-info">{{ readyToShipCount() }}</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center shrink-0">
+            <mat-icon class="text-[20px]! w-5! h-5!">local_shipping</mat-icon>
+          </div>
+        </div>
+
+        <!-- 4. Facturación & Ganancia -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-xs p-4 flex items-center justify-between">
+          <div class="space-y-0.5 min-w-0">
+            <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">Facturación / Ganancia</span>
+            <div class="flex items-baseline gap-1.5 truncate">
+              <span class="text-lg sm:text-xl font-black text-base-content truncate">
+                {{ totalRevenue() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+              @if (totalProfit() > 0) {
+                <span class="text-[10px] font-bold text-success truncate">
+                  (+{{ totalProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }})
+                </span>
+              }
+            </div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center shrink-0">
+            <mat-icon class="text-[20px]! w-5! h-5!">trending_up</mat-icon>
+          </div>
+        </div>
       </div>
-      <h2 class="text-base font-bold text-base-content">Sin pedidos</h2>
-      <p class="text-sm text-base-content/50 max-w-xs text-center">
-        No se encontraron órdenes con los filtros seleccionados.
-      </p>
-      @if (status() !== 'all' || dateRange() !== 'all') {
-      <button class="btn btn-sm btn-ghost" (click)="resetFilters()">
-        <mat-icon class="text-[16px]! w-4! h-4!">filter_alt_off</mat-icon> Limpiar filtros
-      </button>
-      }
-    </div>
-    }
 
-    <!-- Orders Table -->
-    @if (!isLoading() && hasData()) {
-    <div class="flex flex-col flex-1 min-h-0">
-      
-      <!-- Table: Solo visible md+ -->
-      <div class="hidden md:flex flex-col flex-1 min-h-0 overflow-auto mx-3 mt-3">
-        <div class="rounded-xl border border-base-300 overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="table table-sm w-full">
+      <!-- ========================================================================= -->
+      <!-- ERROR / LOADING / EMPTY STATES                                            -->
+      <!-- ========================================================================= -->
+      @if (error()) {
+        <div class="bg-base-100 rounded-2xl border border-error/20 p-8 flex flex-col items-center justify-center text-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center">
+            <mat-icon class="text-[24px]! w-6! h-6!">error_outline</mat-icon>
+          </div>
+          <h3 class="text-sm font-bold text-base-content">Hubo un problema al cargar pedidos</h3>
+          <p class="text-xs text-base-content/50 max-w-sm">No pudimos conectar con el servidor para obtener las órdenes. Por favor, reintenta.</p>
+          <button class="btn btn-sm btn-primary rounded-xl gap-1.5" (click)="refreshData()">
+            <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon> Reintentar
+          </button>
+        </div>
+      }
+
+      @if (isLoading() && !hasData()) {
+        <div class="bg-base-100 rounded-2xl border border-base-200 p-4 space-y-3">
+          @for (i of [1,2,3,4,5]; track i) {
+            <div class="skeleton w-full h-14 rounded-xl"></div>
+          }
+        </div>
+      }
+
+      @if (!isLoading() && displayedOrders().length === 0 && !error()) {
+        <div class="bg-base-100 rounded-2xl border border-base-200 p-12 flex flex-col items-center justify-center text-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/30">
+            <mat-icon class="text-[28px]! w-7! h-7!">inbox</mat-icon>
+          </div>
+          <h3 class="text-sm font-bold text-base-content">No se encontraron pedidos</h3>
+          <p class="text-xs text-base-content/50 max-w-xs">
+            {{ searchQuery() ? 'No hay órdenes que coincidan con "' + searchQuery() + '".' : 'No hay pedidos registrados con los filtros seleccionados.' }}
+          </p>
+          @if (status() !== 'all' || dateRange() !== 'all' || searchQuery()) {
+            <button class="btn btn-xs btn-ghost text-primary font-bold mt-1" (click)="resetFilters(); searchQuery.set('')">
+              Limpiar todos los filtros
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ========================================================================= -->
+      <!-- TABLA DE PEDIDOS (DESKTOP md+)                                             -->
+      <!-- ========================================================================= -->
+      @if (!isLoading() && displayedOrders().length > 0) {
+        <div class="hidden md:block bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="table w-full text-xs">
               <thead>
-                <tr class="bg-base-200/60">
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider pl-4 py-2.5">#ID</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Cliente</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Fecha</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Total</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Estado</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Pago</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Envío</th>
-                  <th class="py-2.5 pr-4"></th>
+                <tr class="bg-base-200/50 border-b border-base-200 text-base-content/60 text-[10px] uppercase font-bold tracking-wider">
+                  <th class="py-3 px-4"># Orden</th>
+                  <th class="py-3 px-3">Cliente</th>
+                  <th class="py-3 px-3">Fecha</th>
+                  <th class="py-3 px-3">Prendas</th>
+                  <th class="py-3 px-3">Total / Ganancia</th>
+                  <th class="py-3 px-3">Estado Orden</th>
+                  <th class="py-3 px-3">Pago</th>
+                  <th class="py-3 px-3">Envío</th>
+                  <th class="py-3 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                @for (order of orders(); track order._id) {
-                <tr class="hover:bg-base-200/40 transition-colors border-b border-base-200 last:border-0">
+              <tbody class="divide-y divide-base-200">
+                @for (order of displayedOrders(); track order._id) {
+                  <tr class="hover:bg-base-200/30 transition-colors group cursor-pointer" [routerLink]="['/home/client-orders', order._id]">
+                    
+                    <!-- # Orden -->
+                    <td class="py-3.5 px-4 font-mono font-bold text-xs" (click)="$event.stopPropagation()">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-base-content/80 group-hover:text-primary transition-colors">
+                          {{ order.orderNumber }}
+                        </span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-primary"
+                          (click)="copyOrderNumber(order.orderNumber, $event)"
+                          [title]="copiedOrderId() === order.orderNumber ? '¡Copiado!' : 'Copiar número de orden'"
+                        >
+                          <mat-icon class="text-[12px]! w-3! h-3!">
+                            {{ copiedOrderId() === order.orderNumber ? 'check' : 'content_copy' }}
+                          </mat-icon>
+                        </button>
+                      </div>
+                    </td>
 
-                  <!-- #ID -->
-                  <td class="pl-4 py-2.5">
-                    <span class="font-mono text-[11px] text-base-content/50">{{ order.orderNumber }}</span>
-                  </td>
-
-                  <!-- Cliente -->
-                  <td class="py-2.5">
-                    <div class="flex items-center gap-2">
-                      <div class="bg-primary/10 rounded-full w-7 h-7 flex items-center justify-center shrink-0">
-                        <span class="text-[11px] font-bold text-primary">
+                    <!-- Cliente -->
+                    <td class="py-3.5 px-3">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0 border border-primary/20">
                           {{ (order.user?.name || order.buyerData.firstName || '?').charAt(0).toUpperCase() }}
+                        </div>
+                        <div class="flex flex-col min-w-0 max-w-44">
+                          <span class="font-bold text-xs text-base-content truncate">
+                            {{ order.user?.name || (order.buyerData.firstName + ' ' + (order.buyerData.lastName || '')) }}
+                          </span>
+                          <span class="text-[10px] text-base-content/50 truncate">
+                            {{ order.user?.email || order.buyerData.email }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Fecha -->
+                    <td class="py-3.5 px-3 text-base-content/70">
+                      <div class="flex flex-col">
+                        <span class="font-bold text-xs">{{ order.createdAt | date:'dd/MM/yyyy' }}</span>
+                        <span class="text-[10px] text-base-content/40">{{ order.createdAt | date:'HH:mm' }} hs</span>
+                      </div>
+                    </td>
+
+                    <!-- Prendas / Items -->
+                    <td class="py-3.5 px-3">
+                      <div class="flex items-center gap-1.5">
+                        <span class="badge badge-xs bg-base-200 border-base-300 font-bold text-[10px] py-2 px-2 text-base-content/80">
+                          {{ order.items.length }} {{ order.items.length === 1 ? 'item' : 'items' }}
                         </span>
                       </div>
-                      <div class="flex flex-col min-w-0">
-                        <span class="font-semibold text-xs text-base-content leading-tight truncate w-40">
-                          {{ order.user?.name || order.buyerData.firstName }} {{ order.user?.name || order.buyerData.lastName }}
+                    </td>
+
+                    <!-- Total / Ganancia -->
+                    <td class="py-3.5 px-3">
+                      <div class="flex flex-col">
+                        <span class="font-black text-xs text-base-content">
+                          {{ getOrderTotal(order) | currency:'ARS':'symbol-narrow':'1.0-0' }}
                         </span>
-                        <span class="text-[10px] text-base-content/40 truncate w-40">{{ order.user?.email || order.buyerData.email }}</span>
+                        @if (order.finance.earnings) {
+                          <span class="text-[10px] font-bold text-success flex items-center gap-0.5">
+                            +{{ order.finance.earnings | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                          </span>
+                        }
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <!-- Fecha -->
-                  <td class="py-2.5">
-                    <div class="flex flex-col">
-                      <span class="text-xs text-base-content">{{ order.createdAt | date:'dd/MM/yy' }}</span>
-                      <span class="text-[10px] text-base-content/40">{{ order.createdAt | date:'HH:mm' }}</span>
-                    </div>
-                  </td>
-
-                  <!-- Total -->
-                  <td class="py-2.5">
-                    <div class="flex flex-col">
-                      <span class="font-bold text-xs text-base-content">{{ order.total | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                      @if (order.finance.earnings) {
-                      <span class="text-[9px] text-success font-semibold tracking-wide">+{{ order.finance.earnings | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                      }
-                    </div>
-                  </td>
-
-                  <!-- Estado -->
-                  <td class="py-2.5">
-                    <span [class]="getOrderStatusBadgeClass(order.status)">{{ getOrderStatusLabel(order.status) }}</span>
-                  </td>
-
-                  <!-- Pago -->
-                  <td class="py-2.5">
-                    <div class="flex flex-col items-start gap-0.5">
-                      <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">{{ getPaymentStatusLabel(order.paymentInfo.status) }}</span>
-                      <span class="text-[9px] text-base-content/30 uppercase tracking-wider">{{ order.paymentInfo.method }}</span>
-                    </div>
-                  </td>
-
-                  <!-- Envío -->
-                  <td class="py-2.5">
-                    <div class="flex flex-col">
-                      <div class="flex items-center gap-1">
-                        <mat-icon class="text-[13px]! w-3! h-3! text-base-content/40">
-                          {{ order.shippingInfo.type === ShippingType.PICKUP ? 'store' : 'local_shipping' }}
+                    <!-- Estado de la Orden -->
+                    <td class="py-3.5 px-3">
+                      <span [class]="getOrderStatusBadgeClass(order.status)">
+                        <mat-icon class="text-[12px]! w-3! h-3!">
+                          {{ getOrderStatusIcon(order.status) }}
                         </mat-icon>
-                        <span class="text-[11px] text-base-content/60">{{ getShippingTypeText(order.shippingInfo.type) }}</span>
-                      </div>
-                      <span class="text-[9px] text-base-content/50 truncate w-32" [title]="order.shippingInfo.pickupPoint?.name || (order.shippingInfo.shippingAddress?.street + ' ' + order.shippingInfo.shippingAddress?.number)">
-                        {{ order.shippingInfo.pickupPoint?.name || (order.shippingInfo.shippingAddress?.street + ' ' + order.shippingInfo.shippingAddress?.number) }}
+                        <span>{{ getOrderStatusLabel(order.status) }}</span>
                       </span>
-                    </div>
-                  </td>
+                    </td>
 
-                  <!-- Acciones -->
-                  <td class="py-2.5 pr-3">
-                    <div class="flex items-center justify-end gap-1">
-                      
-                      @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type)) {
-                      <button class="btn btn-xs btn-info btn-soft h-6 min-h-0 px-2" (click)="startShipping(order._id)" title="Iniciar envío">
-                        <mat-icon class="text-[13px]! w-3! h-3!">local_shipping</mat-icon>
-                      </button>
-                      }
-                      
-                      @if (canMarkAsShipped(order.status)) {
-                      <button class="btn btn-xs btn-primary btn-soft h-6 min-h-0 px-2" (click)="markAsShipped(order._id)" title="Marcar como enviado">
-                        <mat-icon class="text-[13px]! w-3! h-3!">flight_takeoff</mat-icon>
-                      </button>
-                      }
+                    <!-- Estado del Pago -->
+                    <td class="py-3.5 px-3">
+                      <div class="flex flex-col items-start gap-0.5">
+                        <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">
+                          {{ getPaymentStatusLabel(order.paymentInfo.status) }}
+                        </span>
+                        <span class="text-[9px] text-base-content/40 uppercase font-semibold tracking-wider">
+                          {{ order.paymentInfo.method }}
+                        </span>
+                      </div>
+                    </td>
 
-                      @if (canMarkPaymentReceived(order.paymentInfo.status)) {
-                      <button class="btn btn-xs btn-success btn-soft h-6 min-h-0 px-2" (click)="markPaymentReceived(order._id)" title="Marcar pago recibido">
-                        <mat-icon class="text-[13px]! w-3! h-3!">attach_money</mat-icon>
-                      </button>
-                      }
+                    <!-- Envío -->
+                    <td class="py-3.5 px-3">
+                      <div class="flex flex-col max-w-36">
+                        <div class="flex items-center gap-1 font-semibold text-xs text-base-content/80">
+                          <mat-icon class="text-[13px]! w-3! h-3! text-base-content/40">
+                            {{ order.shippingInfo.type === ShippingType.PICKUP ? 'store' : 'local_shipping' }}
+                          </mat-icon>
+                          <span class="truncate">{{ getShippingTypeText(order.shippingInfo.type) }}</span>
+                        </div>
+                        <span
+                          class="text-[10px] text-base-content/40 truncate"
+                          [title]="order.shippingInfo.pickupPoint?.name || (order.shippingInfo.shippingAddress?.street + ' ' + order.shippingInfo.shippingAddress?.number)"
+                        >
+                          {{ order.shippingInfo.pickupPoint?.name || (order.shippingInfo.shippingAddress?.street + ' ' + (order.shippingInfo.shippingAddress?.number || '')) }}
+                        </span>
+                      </div>
+                    </td>
 
-                      <a [routerLink]="['/home/client-orders', order._id]"
-                        class="btn btn-xs btn-ghost btn-square h-6 w-6 min-h-0" title="Ver detalles">
-                        <mat-icon class="text-[15px]! w-4! h-4!">visibility</mat-icon>
-                      </a>
-                      <button [matMenuTriggerFor]="menu" class="btn btn-xs btn-ghost btn-square h-6 w-6 min-h-0">
-                        <mat-icon class="text-[15px]! w-4! h-4!">more_vert</mat-icon>
-                      </button>
-                      <mat-menu #menu="matMenu">
-                        @if (canMarkPaymentReceived(order.paymentInfo.status)) {
-                        <button mat-menu-item (click)="markPaymentReceived(order._id)">
-                          <mat-icon class="text-success">attach_money</mat-icon>
-                          <span>Marcar pago recibido</span>
-                        </button>
-                        }
+                    <!-- Acciones -->
+                    <td class="py-3.5 px-4 text-right" (click)="$event.stopPropagation()">
+                      <div class="flex items-center justify-end gap-1.5">
                         @if (canStartShipping(order.status, order.paymentInfo.status, order.shippingInfo.type)) {
-                        <button mat-menu-item (click)="startShipping(order._id)">
-                          <mat-icon class="text-info">local_shipping</mat-icon>
-                          <span>Iniciar envío</span>
-                        </button>
+                          <button
+                            class="btn btn-xs btn-info btn-outline gap-1 font-bold"
+                            (click)="startShipping(order._id)"
+                            title="Iniciar preparación/envío"
+                          >
+                            <mat-icon class="text-[12px]! w-3! h-3!">local_shipping</mat-icon>
+                            <span class="hidden xl:inline">Preparar</span>
+                          </button>
                         }
+                        
                         @if (canMarkAsShipped(order.status)) {
-                        <button mat-menu-item (click)="markAsShipped(order._id)">
-                          <mat-icon class="text-primary">flight_takeoff</mat-icon>
-                          <span>Marcar como enviado</span>
-                        </button>
-                        }
-                        @if (canMarkAsDelivered(order.status, order.shippingInfo.type, order.paymentInfo.status)) {
-                          @if (order.shippingInfo.type === ShippingType.PICKUP) {
-                          <button mat-menu-item (click)="markAsDeliveredPickup(order._id)">
-                            <mat-icon class="text-success">check_circle</mat-icon>
-                            <span>Entregar (Retiro)</span>
+                          <button
+                            class="btn btn-xs btn-primary btn-outline gap-1 font-bold"
+                            (click)="markAsShipped(order._id)"
+                            title="Marcar como despachado"
+                          >
+                            <mat-icon class="text-[12px]! w-3! h-3!">flight_takeoff</mat-icon>
+                            <span class="hidden xl:inline">Despachar</span>
                           </button>
-                          } @else {
-                          <button mat-menu-item (click)="markAsDelivered(order._id)">
-                            <mat-icon class="text-success">check_circle</mat-icon>
-                            <span>Entregar (Domicilio)</span>
-                          </button>
-                          }
                         }
-                        @if (canCancelOrder(order.status)) {
-                        <button mat-menu-item (click)="cancelOrder(order._id)">
-                          <mat-icon class="text-error">cancel</mat-icon>
-                          <span class="text-error">Cancelar orden</span>
-                        </button>
-                        }
-                      </mat-menu>
-                    </div>
-                  </td>
 
-                </tr>
+                        <a
+                          [routerLink]="['/home/client-orders', order._id]"
+                          class="btn btn-xs btn-ghost text-primary hover:bg-primary/10 gap-1 font-bold"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">visibility</mat-icon>
+                          <span>Ver</span>
+                        </a>
+                      </div>
+                    </td>
+
+                  </tr>
                 }
               </tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      <!-- Mobile Cards: visibilidad < md -->
-      <div class="flex md:hidden flex-col flex-1 min-h-0 bg-base-200">
-        <div class="overflow-y-auto flex-1 min-h-0 p-2">
-          <div class="grid grid-cols-1 gap-2 content-start">
-            @for (order of orders(); track order._id) {
-            <div class="flex flex-col p-3 rounded-xl border border-base-300 bg-base-100 shadow-sm gap-2 active:bg-base-200 transition-colors"
-              routerLink="{{ order._id }}">
-              <div class="flex justify-between items-center">
-                <span class="font-mono text-[11px] text-base-content/50">#{{ order.orderNumber }}</span>
-                <span class="text-xs font-bold">{{ order.total | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span>
+        <!-- ========================================================================= -->
+        <!-- FEED DE TARJETAS (MOBILE < md)                                            -->
+        <!-- ========================================================================= -->
+        <div class="md:hidden space-y-3">
+          @for (order of displayedOrders(); track order._id) {
+            <div
+              class="bg-base-100 rounded-2xl border border-base-200 shadow-xs p-4 space-y-3 cursor-pointer hover:border-primary/40 transition-colors"
+              [routerLink]="['/home/client-orders', order._id]"
+            >
+              <!-- Top Row: #ID + Status -->
+              <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200">
+                <div class="flex items-center gap-1.5" (click)="$event.stopPropagation()">
+                  <span class="font-mono font-bold text-xs text-base-content">{{ order.orderNumber }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-primary"
+                    (click)="copyOrderNumber(order.orderNumber, $event)"
+                  >
+                    <mat-icon class="text-[12px]! w-3! h-3!">
+                      {{ copiedOrderId() === order.orderNumber ? 'check' : 'content_copy' }}
+                    </mat-icon>
+                  </button>
+                </div>
+                <span [class]="getOrderStatusBadgeClass(order.status)">
+                  <mat-icon class="text-[12px]! w-3! h-3!">
+                    {{ getOrderStatusIcon(order.status) }}
+                  </mat-icon>
+                  <span>{{ getOrderStatusLabel(order.status) }}</span>
+                </span>
               </div>
-              <div class="flex items-center gap-2">
-                <div class="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
-                  <span class="text-xs font-bold text-primary">
+
+              <!-- Middle: Client & Date -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0 border border-primary/20">
                     {{ (order.user?.name || order.buyerData.firstName || '?').charAt(0).toUpperCase() }}
-                  </span>
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="font-bold text-xs text-base-content truncate">
+                      {{ order.user?.name || (order.buyerData.firstName + ' ' + (order.buyerData.lastName || '')) }}
+                    </span>
+                    <span class="text-[10px] text-base-content/40 truncate">{{ order.user?.email || order.buyerData.email }}</span>
+                  </div>
                 </div>
-                <div class="flex flex-col min-w-0 flex-1">
-                  <span class="font-semibold text-sm text-base-content leading-tight truncate">
-                    {{ order.user?.name || order.buyerData.firstName }} {{ order.user?.name || order.buyerData.lastName }}
-                  </span>
-                  <span class="text-[10px] text-base-content/40">{{ order.createdAt | date:'short' }}</span>
+
+                <div class="text-right shrink-0">
+                  <span class="text-[11px] font-semibold text-base-content/70 block">{{ order.createdAt | date:'dd/MM/yy' }}</span>
+                  <span class="text-[10px] text-base-content/40">{{ order.createdAt | date:'HH:mm' }} hs</span>
                 </div>
-                <mat-icon class="text-[16px] text-base-content/30 w-4 h-4">chevron_right</mat-icon>
               </div>
-              <div class="flex gap-1.5 mt-1">
-                <span class="badge badge-sm badge-outline text-[10px]">{{ order.status }}</span>
-                <span class="badge badge-sm badge-outline text-[10px]">{{ order.paymentInfo.status }}</span>
+
+              <!-- Bottom Row: Items + Total + View Button -->
+              <div class="flex items-center justify-between pt-2 border-t border-base-200/60">
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-xs bg-base-200 font-bold text-[10px]">
+                    {{ order.items.length }} {{ order.items.length === 1 ? 'item' : 'items' }}
+                  </span>
+                  <span [class]="getPaymentStatusBadgeClass(order.paymentInfo.status)">
+                    {{ getPaymentStatusLabel(order.paymentInfo.status) }}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <div class="text-right">
+                    <span class="font-black text-sm text-base-content block">
+                      {{ getOrderTotal(order) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                    @if (order.finance.earnings) {
+                      <span class="text-[9px] font-bold text-success block">
+                        +{{ order.finance.earnings | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                    }
+                  </div>
+                  <mat-icon class="text-base-content/30 text-[18px]! w-4.5! h-4.5!">chevron_right</mat-icon>
+                </div>
               </div>
             </div>
+          }
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PAGINACIÓN                                                                -->
+        <!-- ========================================================================= -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+          <span class="text-xs text-base-content/50">
+            Mostrando <strong>{{ displayedOrders().length }}</strong> de <strong>{{ pagination().totalItems }}</strong> pedidos
+          </span>
+
+          <div class="join">
+            <button
+              class="join-item btn btn-xs btn-ghost text-xs"
+              [disabled]="page() <= 1"
+              (click)="changePage(page() - 1)"
+            >
+              « Anterior
+            </button>
+            @for (p of getPageNumbers(); track p) {
+              <button
+                class="join-item btn btn-xs font-bold text-xs"
+                [ngClass]="page() === p ? 'btn-primary' : 'btn-ghost'"
+                (click)="changePage(p)"
+              >
+                {{ p }}
+              </button>
             }
+            <button
+              class="join-item btn btn-xs btn-ghost text-xs"
+              [disabled]="page() >= pagination().totalPages"
+              (click)="changePage(page() + 1)"
+            >
+              Siguiente »
+            </button>
           </div>
         </div>
-      </div>
+      }
 
-      <!-- Pagination — always visible -->
-      <div class="shrink-0 px-3 py-2 flex justify-between items-center border-t border-base-200">
-        <span class="text-xs text-base-content/40">
-          {{ (pagination().currentPage - 1) * pagination().itemsPerPage + 1 }}–{{ Math.min(pagination().currentPage * pagination().itemsPerPage, pagination().totalItems) }}
-          de {{ pagination().totalItems }}
-        </span>
-        <div class="flex items-center gap-1">
-          <!-- Page number buttons -->
-          @for (p of getPageNumbers(); track p) {
-          <button
-            class="btn btn-xs"
-            [class.btn-primary]="p === pagination().currentPage"
-            [class.btn-ghost]="p !== pagination().currentPage"
-            (click)="changePage(p)">
-            {{ p }}
-          </button>
-          }
-          <!-- Always show prev/next -->
-        </div>
-        <div class="join">
-          <button class="join-item btn btn-xs btn-ghost" [disabled]="pagination().currentPage === 1"
-            (click)="changePage(pagination().currentPage - 1)">
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
-          </button>
-          <button class="join-item btn btn-xs btn-ghost"
-            [disabled]="pagination().currentPage === pagination().totalPages"
-            (click)="changePage(pagination().currentPage + 1)">
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
-          </button>
-        </div>
-      </div>
     </div>
-    }
   </ng-container>
-
 </app-page-layout>

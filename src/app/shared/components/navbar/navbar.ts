@@ -14,7 +14,7 @@ import { UserDropdown } from './components/user-dropdown/user-dropdown';
 })
 export class Navbar {
   private wsService = inject(WebSocketService);
-  private sidebarService = inject(SidebarService);
+  public sidebarService = inject(SidebarService);
 
   navbarTitle = computed(() => this.sidebarService.navbarTitle());
 

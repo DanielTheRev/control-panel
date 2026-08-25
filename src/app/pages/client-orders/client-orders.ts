@@ -1,5 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -39,13 +39,48 @@ export class ClientOrders {
   private orderStateService = inject(OrdersStateService);
   #SidebarService = inject(SidebarService);
 
+  // Search & Filtering
+  searchQuery = signal<string>('');
+  copiedOrderId = signal<string | null>(null);
+
   // Exponer propiedades del servicio para el template
-  /** Uses real API data when available, falls back to mock data for visual testing */
   readonly orders = this.orderStateService.orders;
   readonly pagination = this.orderStateService.pagination;
   readonly isLoading = this.orderStateService.isLoading;
   readonly error = this.orderStateService.error;
   readonly hasData = computed(() => this.orders().length > 0);
+
+  // Filtered orders in memory if searching
+  readonly displayedOrders = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.orders();
+    return this.orders().filter((o) => {
+      const orderNum = (o.orderNumber || '').toLowerCase();
+      const clientName = `${o.user?.name || o.buyerData?.firstName || ''} ${o.buyerData?.lastName || ''}`.toLowerCase();
+      const email = (o.user?.email || o.buyerData?.email || '').toLowerCase();
+      const street = (o.shippingInfo?.shippingAddress?.street || '').toLowerCase();
+      return orderNum.includes(q) || clientName.includes(q) || email.includes(q) || street.includes(q);
+    });
+  });
+
+  // KPIs
+  readonly totalRevenue = computed(() => {
+    return this.orders().reduce((acc, o) => acc + (o.total || o.finance?.total || o.paymentInfo?.amount || 0), 0);
+  });
+
+  readonly totalProfit = computed(() => {
+    return this.orders().reduce((acc, o) => acc + (o.finance?.earnings || 0), 0);
+  });
+
+  readonly readyToShipCount = computed(() => {
+    return this.orders().filter(
+      (o) =>
+        (o.paymentInfo?.status === PaymentStatus.APPROVED || o.status === OrderStatus.PROCESSING_SHIPPING) &&
+        o.status !== OrderStatus.SHIPPED &&
+        o.status !== OrderStatus.DELIVERED &&
+        o.status !== OrderStatus.CANCELLED,
+    ).length;
+  });
 
   // Estadísticas (por si se quieren mostrar arriba)
   readonly pendingCount = this.orderStateService.pendingCount;
@@ -72,20 +107,24 @@ export class ClientOrders {
 
   /** Opciones para los badges de filtro rápido en el sub-menu */
   readonly statusFilterOptions = [
-    { value: OrderStatus.PENDING_PAYMENT,             label: 'Pendientes',   dotColor: '#f59e0b', bgColor: '#fef3c7', textColor: '#92400e' },
-    { value: OrderStatus.PROCESSING_SHIPPING, label: 'Procesando',   dotColor: '#3b82f6', bgColor: '#dbeafe', textColor: '#1e40af' },
-    { value: OrderStatus.SHIPPED,             label: 'Enviados',     dotColor: '#8b5cf6', bgColor: '#ede9fe', textColor: '#4c1d95' },
-    { value: OrderStatus.DELIVERED,           label: 'Entregados',   dotColor: '#22c55e', bgColor: '#dcfce7', textColor: '#14532d' },
-    { value: OrderStatus.CANCELLED,           label: 'Cancelados',   dotColor: '#ef4444', bgColor: '#fee2e2', textColor: '#7f1d1d' },
+    { value: OrderStatus.PENDING_PAYMENT,     label: 'Pendientes',   icon: 'hourglass_top',  dotColor: '#f59e0b' },
+    { value: OrderStatus.PROCESSING_SHIPPING, label: 'En Prep.',     icon: 'inventory_2',    dotColor: '#3b82f6' },
+    { value: OrderStatus.SHIPPED,             label: 'Enviados',     icon: 'local_shipping', dotColor: '#8b5cf6' },
+    { value: OrderStatus.DELIVERED,           label: 'Entregados',   icon: 'check_circle',   dotColor: '#22c55e' },
+    { value: OrderStatus.CANCELLED,           label: 'Cancelados',   icon: 'cancel',         dotColor: '#ef4444' },
   ];
 
   /** Mapa de etiquetas legibles para el estado de la orden */
   private readonly orderStatusLabels: Record<string, string> = {
-    [OrderStatus.PENDING_PAYMENT]:             'Pendiente de pago',
-    [OrderStatus.PROCESSING_SHIPPING]: 'Procesando envío',
-    [OrderStatus.SHIPPED]:             'Pedido Enviado',
-    [OrderStatus.DELIVERED]:           'Pedido Entregado',
-    [OrderStatus.CANCELLED]:           'Pedido Cancelado',
+    [OrderStatus.PENDING_PAYMENT]:     'Pendiente de pago',
+    [OrderStatus.PROCESSING_SHIPPING]: 'En preparación',
+    [OrderStatus.SHIPPED]:             'Enviado / En camino',
+    [OrderStatus.DELIVERED]:           'Entregado',
+    [OrderStatus.CANCELLED]:           'Cancelado',
+    'PAYMENT_FAILED':                  'Pago rechazado',
+    'PENDING':                         'Pendiente',
+    'APPROVED':                        'Aprobado',
+    'REJECTED':                        'Rechazado',
   };
 
   /** Mapa de etiquetas legibles para el estado del pago */
@@ -95,12 +134,26 @@ export class ClientOrders {
     [PaymentStatus.REJECTED]:             'Rechazado',
     [PaymentStatus.CANCELLED]:            'Cancelado',
     [PaymentStatus.WAITING_CONFIRMATION]: 'En revisión',
+    'PAYMENT_FAILED':                     'Rechazado',
   };
 
   constructor() {
     this.#SidebarService.navbarTitle.set({
-      title: 'Pedidos'
+      title: 'Pedidos',
     });
+  }
+
+  getOrderTotal(order: IOrder): number {
+    return order.total || order.finance?.total || order.paymentInfo?.amount || 0;
+  }
+
+  copyOrderNumber(orderNumber: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    navigator.clipboard.writeText(orderNumber);
+    this.copiedOrderId.set(orderNumber);
+    setTimeout(() => {
+      this.copiedOrderId.set(null);
+    }, 2000);
   }
 
   /**
@@ -135,21 +188,48 @@ export class ClientOrders {
    * Obtener clases CSS para el badge de estado de orden
    */
   getOrderStatusBadgeClass(status: string): string {
-    const baseClasses = 'badge badge-sm border-0 font-medium';
+    const baseClasses = 'badge badge-sm gap-1 font-bold shadow-2xs';
     switch (status) {
-      case OrderStatus.PENDING_PAYMENT:             return `${baseClasses} bg-amber-100  text-amber-800`;
-      case OrderStatus.PROCESSING_SHIPPING: return `${baseClasses} bg-blue-100   text-blue-800`;
-      case OrderStatus.SHIPPED:             return `${baseClasses} bg-purple-100 text-purple-800`;
-      case OrderStatus.DELIVERED:           return `${baseClasses} bg-green-100  text-green-800`;
-      case OrderStatus.CANCELLED:           return `${baseClasses} bg-red-100    text-red-800`;
-      // Valores crudos del backend (por si el enum no matchea todavía)
-      case 'PROCESSING_SHIPPING':           return `${baseClasses} bg-blue-100   text-blue-800`;
-      case 'PENDING':                       return `${baseClasses} bg-amber-100  text-amber-800`;
-      case 'PENDING_PAYMENT':               return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'SHIPPED':                       return `${baseClasses} bg-purple-100 text-purple-800`;
-      case 'DELIVERED':                     return `${baseClasses} bg-green-100  text-green-800`;
-      case 'CANCELLED':                     return `${baseClasses} bg-red-100    text-red-800`;
-      default:                              return `${baseClasses} bg-base-200   text-base-content/60`;
+      case OrderStatus.PENDING_PAYMENT:
+      case 'PENDING':
+      case 'PENDING_PAYMENT':
+        return `${baseClasses} bg-amber-500/15 text-amber-600 border border-amber-500/30`;
+      case OrderStatus.PROCESSING_SHIPPING:
+      case 'PROCESSING_SHIPPING':
+        return `${baseClasses} bg-info/15 text-info border border-info/30`;
+      case OrderStatus.SHIPPED:
+      case 'SHIPPED':
+        return `${baseClasses} bg-purple-500/15 text-purple-600 border border-purple-500/30`;
+      case OrderStatus.DELIVERED:
+      case 'DELIVERED':
+        return `${baseClasses} bg-success/15 text-success border border-success/30`;
+      case OrderStatus.CANCELLED:
+      case 'CANCELLED':
+      case 'PAYMENT_FAILED':
+      case 'REJECTED':
+        return `${baseClasses} bg-error/15 text-error border border-error/30`;
+      default:
+        return `${baseClasses} bg-base-200 text-base-content/60 border-base-300`;
+    }
+  }
+
+  getOrderStatusIcon(status: string): string {
+    switch (status) {
+      case OrderStatus.PENDING_PAYMENT:
+      case 'PENDING':
+        return 'hourglass_top';
+      case OrderStatus.PROCESSING_SHIPPING:
+        return 'inventory_2';
+      case OrderStatus.SHIPPED:
+        return 'local_shipping';
+      case OrderStatus.DELIVERED:
+        return 'check_circle';
+      case OrderStatus.CANCELLED:
+      case 'PAYMENT_FAILED':
+      case 'REJECTED':
+        return 'cancel';
+      default:
+        return 'help_outline';
     }
   }
 
@@ -166,7 +246,7 @@ export class ClientOrders {
   /** Cuenta de ordenes por estado para los badges del sub-menu */
   getStatusCount(statusValue: string): number {
     switch (statusValue) {
-      case OrderStatus.PENDING_PAYMENT:             return this.pendingCount();
+      case OrderStatus.PENDING_PAYMENT:     return this.pendingCount();
       case OrderStatus.PROCESSING_SHIPPING: return this.processingCount();
       case OrderStatus.SHIPPED:             return this.shippedCount();
       case OrderStatus.DELIVERED:           return this.deliveredCount();
@@ -184,19 +264,26 @@ export class ClientOrders {
    * Obtener clases CSS para el badge de estado de pago
    */
   getPaymentStatusBadgeClass(status: string): string {
-    const baseClasses = 'badge badge-xs border-0';
+    const baseClasses = 'badge badge-xs font-bold';
     switch (status) {
       case PaymentStatus.PENDING:
-      case 'PENDING':              return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case 'PENDING':
+        return `${baseClasses} bg-amber-500/15 text-amber-600 border border-amber-500/30`;
       case PaymentStatus.APPROVED:
-      case 'APPROVED':             return `${baseClasses} bg-green-100  text-green-800`;
+      case 'APPROVED':
+        return `${baseClasses} bg-success/15 text-success border border-success/30`;
       case PaymentStatus.REJECTED:
-      case 'REJECTED':             return `${baseClasses} bg-red-100    text-red-800`;
+      case 'REJECTED':
+      case 'PAYMENT_FAILED':
+        return `${baseClasses} bg-error/15 text-error border border-error/30`;
       case PaymentStatus.CANCELLED:
-      case 'CANCELLED':            return `${baseClasses} bg-base-200   text-base-content/50`;
+      case 'CANCELLED':
+        return `${baseClasses} bg-base-200 text-base-content/50 border border-base-300`;
       case PaymentStatus.WAITING_CONFIRMATION:
-      case 'waiting_confirmation': return `${baseClasses} bg-blue-100   text-blue-800`;
-      default:                     return `${baseClasses} bg-base-200   text-base-content/50`;
+      case 'waiting_confirmation':
+        return `${baseClasses} bg-info/15 text-info border border-info/30`;
+      default:
+        return `${baseClasses} bg-base-200 text-base-content/50 border border-base-300`;
     }
   }
 

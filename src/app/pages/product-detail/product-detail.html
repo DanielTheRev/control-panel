@@ -1,581 +1,490 @@
 <app-page-layout>
-  <app-page-header header [title]="product()?.brand + ' ' + product()?.model" subtitle="Detalles del producto">
-    <div actions class="w-full">
-      <div class="flex flex-wrap items-center gap-2 w-full justify-between sm:justify-end">
-        <button class="btn btn-sm btn-ghost flex-1 sm:flex-none" (click)="goBack()">
-          <mat-icon>arrow_back</mat-icon> <span class="hidden sm:inline">Volver</span>
-        </button>
-        <button class="btn btn-sm btn-ghost flex-1 sm:flex-none" (click)="copyLink()">
-          <mat-icon>link</mat-icon> <span class="hidden sm:inline">Copiar</span> Enlace
-        </button>
-        <button class="btn btn-sm btn-warning flex-1 sm:flex-none" [routerLink]="['/home/products/edit', productID()]">
-          <mat-icon>edit</mat-icon> Editar
-        </button>
-        <button class="btn btn-sm btn-error flex-1 sm:flex-none" (click)="deleteProduct()">
-          <mat-icon>delete_outline</mat-icon> Eliminar
-        </button>
-      </div>
+  <app-page-header header [title]="(product()?.brand || '') + ' ' + (product()?.model || '')" [subtitle]="(product()?.category || '') + ' • ' + (product()?.brand || '') + ' • #' + (product()?._id || '')">
+    <div actions class="flex items-center gap-1.5 sm:gap-2">
+      <button class="btn btn-sm btn-ghost" (click)="goBack()">
+        <mat-icon class="text-[18px]">arrow_back</mat-icon> <span class="hidden sm:inline">Volver</span>
+      </button>
+      <button class="btn btn-sm btn-ghost" (click)="copyLink()">
+        <mat-icon class="text-[18px]">link</mat-icon> <span class="hidden sm:inline">Copiar Enlace</span>
+      </button>
+      <button class="btn btn-sm btn-warning font-bold" [routerLink]="['/home/products/edit', productID()]">
+        <mat-icon class="text-[18px]">edit</mat-icon> Editar
+      </button>
+      <button class="btn btn-sm btn-error font-bold" (click)="deleteProduct()">
+        <mat-icon class="text-[18px]">delete_outline</mat-icon> Eliminar
+      </button>
     </div>
   </app-page-header>
 
   <ng-container content>
     <!-- Loading -->
     @if (isLoading()) {
-    <div class="flex items-center justify-center w-full h-full">
-      <span class="loading loading-ring loading-xl"></span>
-    </div>
+      <div class="flex items-center justify-center w-full h-full py-20">
+        <span class="loading loading-ring loading-xl text-primary"></span>
+      </div>
     }
 
     <!-- Error -->
     @if (hasError()) {
-    <div role="alert" class="alert alert-error m-4">
-      <span>Error al cargar el producto</span>
-      <button class="btn btn-sm" (click)="goBack()">Volver</button>
-    </div>
+      <div role="alert" class="alert alert-error m-4">
+        <span>Error al cargar el producto</span>
+        <button class="btn btn-sm" (click)="goBack()">Volver</button>
+      </div>
     }
 
-    <!-- Product Content -->
+    <!-- Product Content (Mobile-First + Tablet 2-Col + Widescreen 3-Col Bento) -->
     @if (product(); as p) {
-    <div class="flex-1 overflow-y-auto p-6">
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-1 sm:p-2 pb-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 w-full">
 
-      <!-- Top: Info + Image -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <!-- ========================================================================= -->
+          <!-- COLUMNA 1: IDENTIDAD, FOTO, PROVEEDOR & DESCRIPCIÓN                      -->
+          <!-- (Mobile: contents / Tablet: col-span-5 / Widescreen XL: col-span-4)       -->
+          <!-- ========================================================================= -->
+          <div class="contents lg:flex lg:flex-col lg:col-span-5 xl:col-span-4 gap-4">
 
-        <!-- Images -->
-        <div class="lg:col-span-1">
-          <div class="bg-base-100 rounded-xl border border-base-300 overflow-hidden">
-            @if (p.images && p.images.length > 0) {
-            <div class="carousel rounded-box">
-              @for (img of p.images; track $index) {
-              <div class="carousel-item w-full max-h-128 ">
-                <img [src]="img.url" class="w-full object-contain" alt="Product image {{ $index + 1 }}" />
-              </div>
-              }
-            </div>
-            @if (p.images.length > 1) {
-            <div class="grid grid-cols-4 gap-1 p-2 border-t border-base-300">
-              @for (img of p.images; track $index) {
-              <div
-                class="aspect-square rounded-md overflow-hidden border border-base-300 cursor-pointer hover:opacity-80 transition-opacity">
-                <img [src]="img.url" class="w-full h-full object-cover" />
-              </div>
-              }
-            </div>
-            }
-            } @else {
-            <div class="aspect-square flex items-center justify-center text-base-content/30">
-              <mat-icon class="text-6xl! w-16! h-16!">image</mat-icon>
-            </div>
-            }
-          </div>
-        </div>
+            <!-- 1. Galería de Imágenes + Badges (order-1 en Mobile) -->
+            <div class="order-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-3 sm:p-4 flex flex-col gap-2.5 sm:gap-3">
+              <!-- Foto Principal (Aspect 4/3 en Mobile, 4/5 en Desktop) -->
+              <div class="relative w-full aspect-[4/3] sm:aspect-[4/5] rounded-xl overflow-hidden bg-base-200/50 flex items-center justify-center">
+                @if (p.images && p.images.length > 0) {
+                  <img
+                    [src]="p.images[selectedImageIndex()]?.url || p.images[0]?.url"
+                    class="w-full h-full object-cover object-top transition-all duration-300"
+                    alt="{{ p.model }}"
+                  />
+                } @else {
+                  <div class="flex flex-col items-center justify-center text-base-content/30 gap-2">
+                    <mat-icon class="text-6xl! w-16! h-16!">image</mat-icon>
+                    <span class="text-xs">Sin imágenes</span>
+                  </div>
+                }
 
-        <!-- Info -->
-        <div class="lg:col-span-2 flex flex-col gap-4">
-
-          <!-- Header badges -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-              [ngClass]="getProductTypeClass()">
-              {{ getProductTypeLabel() }}
-            </span>
-            <span
-              class="bg-base-200 text-base-content/60 text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded border border-base-300">
-              {{ p.category }}
-            </span>
-            <span class="text-xs font-bold text-primary uppercase tracking-widest">{{ p.brand }}</span>
-            <span class="text-xs font-bold badge badge-primary uppercase tracking-widest"
-              [class.badge-primary]="p.isActive" [class.badge-warning]="!p.isActive">
-              {{ p.isActive ? 'Activo' : 'Desactivado' }}
-            </span>
-             <span class="badge badge-info">
-              Método de ganancia:
-              {{ p.finance?.pricingStrategy?.method || 'Global' }}
-            </span>
-            @if (p.discount > 0) {
-            <span class="bg-error/10 text-error text-[10px] font-bold px-2 py-1 rounded uppercase">
-              {{ p.discount }}% OFF
-            </span>
-            }
-            @if (p.linkProductProvider) {
-            <a [href]="p.linkProductProvider" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase transition-colors shadow-xs" title="Abrir link del proveedor original">
-              <mat-icon class="text-[12px]! w-3! h-3!">open_in_new</mat-icon>
-              <span>Link Proveedor</span>
-            </a>
-            }
-          </div>
-
-          @if (p.isLegacyPrices) {
-            <div class="alert alert-warning shadow-sm border border-warning/20 bg-warning/5 text-warning-content rounded-xl p-4 flex gap-3 text-xs leading-normal mb-4">
-              <mat-icon class="text-warning text-lg shrink-0">warning</mat-icon>
-              <div>
-                <strong class="block mb-0.5">Precios con estructura legada</strong>
-                <span>Este producto tiene guardada la estructura de precios antigua. Te sugerimos editar el producto y volver a guardarlo para que calcule y guarde los valores correctos en base al nuevo sistema financiero de costos y pasarelas.</span>
-              </div>
-            </div>
-          }
-
-          <!-- Pricing Card -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Precios</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Costo
-                  (USD)</span>
-                <span class="text-lg font-bold text-base-content">{{ (p.finance?.providerCost?.inUSD || 0) | currency:
-                  'USD':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Costo
-                  (ARS)</span>
-                <span class="text-lg font-bold text-base-content">{{ (p.finance?.providerCost?.inARS || 0) | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Transferencia</span>
-                <span class="text-lg font-bold text-base-content">{{ p.price.cashTransferPrice | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Lista</span>
-                <span class="text-lg font-bold text-success">{{ p.price.listPrice | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Debito/Pagofacil</span>
-                <span class="text-lg font-bold text-success">{{ p.price.card_ticket1PayPrice| currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-            </div>
-
-            <!-- Installments + Margin -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-base-300">
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">3 Cuotas
-                  S/I</span>
-                <span class="text-sm font-bold text-base-content">{{ p.price.installments.threePaymentsAmount | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">6 Cuotas
-                  S/I</span>
-                <span class="text-sm font-bold text-base-content">{{ p.price.installments.sixPaymentsAmount | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Margen 1
-                  Pago</span>
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold px-2 py-0.5 rounded w-fit" [class.bg-success/10]="getMargin1Pay() > 20"
-                    [class.text-success]="getMargin1Pay() > 20" [class.bg-warning/10]="getMargin1Pay() <= 20"
-                    [class.text-warning]="getMargin1Pay() <= 20">
-                    {{ getMargin1Pay() }}%
+                <!-- Badges Flotantes -->
+                <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap gap-1.5 z-10">
+                  <span class="badge badge-sm font-bold shadow-sm" [ngClass]="p.isActive ? 'badge-success text-white' : 'badge-neutral'">
+                    {{ p.isActive ? 'Activo' : 'Pausado' }}
                   </span>
-                  @if (isUsingGlobalMargin()) {
-                  <div class="tooltip tooltip-bottom sm:tooltip-top"
-                    data-tip="Se está aplicando el Margen Global al no tener un margen propio definido.">
-                    <span class="badge badge-sm badge-info gap-1 cursor-help">
-                      <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon> Global
-                    </span>
-                  </div>
-                  }
-                </div>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Margen
-                  Cuotas</span>
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold px-2 py-0.5 rounded w-fit"
-                    [class.bg-success/10]="getMarginInstallments() > 20"
-                    [class.text-success]="getMarginInstallments() > 20"
-                    [class.bg-warning/10]="getMarginInstallments() <= 20"
-                    [class.text-warning]="getMarginInstallments() <= 20">
-                    {{ getMarginInstallments() }}%
+                  <span class="badge badge-sm font-bold shadow-sm" [ngClass]="getProductTypeClass()">
+                    {{ getProductTypeLabel() }}
                   </span>
-                  @if (isUsingGlobalMargin()) {
-                  <div class="tooltip tooltip-bottom sm:tooltip-top"
-                    data-tip="Se está aplicando el Margen Global al no tener un margen propio definido.">
-                    <span class="badge badge-sm badge-info gap-1 cursor-help">
-                      <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon> Global
-                    </span>
-                  </div>
-                  }
+                  <span class="badge badge-sm badge-ghost font-bold bg-base-100/90 backdrop-blur-md shadow-sm">
+                    {{ p.category }}
+                  </span>
                 </div>
-              </div>
-              <div class="flex flex-col col-span-2 md:col-span-1">
-                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">Dólar</span>
-                <span class="text-sm font-bold text-base-content">{{ (p.finance?.exchangeRateSnapshot || 0) | currency:
-                  'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-            </div>
 
-            <!-- Breakdown Bar: Composición del Precio de Lista -->
-            @if (p.finance) {
-            <div class="mt-5 pt-5 border-t border-base-300 space-y-3">
-              <h5 class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">donut_small</mat-icon>
-                Composición del Precio de Lista
-              </h5>
-              <p class="text-[10px] text-base-content/40 -mt-1">El margen bruto incluye comisiones de pasarela + ganancia neta</p>
-
-              <!-- Precio de lista hero -->
-              <div class="flex items-end justify-between">
-                <div>
-                  <span class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Precio de Lista</span>
-                  <div class="text-3xl font-black text-base-content tabular-nums tracking-tight">
-                    {{ p.price.listPrice | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
-                  </div>
-                </div>
-                @if (p.price.discountPercentageTransfer > 0) {
-                <span class="badge badge-lg badge-success font-bold text-xs">
-                  {{ p.price.discountPercentageTransfer }}% OFF Transferencia
-                </span>
+                @if (p.linkProductProvider) {
+                  <a
+                    [href]="p.linkProductProvider"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 btn btn-xs btn-primary gap-1 shadow-md hover:scale-105 transition-transform"
+                    title="Abrir enlace del proveedor">
+                    <mat-icon class="text-[14px]">open_in_new</mat-icon>
+                    <span>Link Proveedor</span>
+                  </a>
                 }
               </div>
 
-              <!-- Stacked Bar -->
-              @if (getBreakdownSegments().length > 0) {
-              <div class="w-full h-8 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40" style="min-width: 0">
-                @for (item of getBreakdownSegments(); track item.label; let i = $index) {
-                <div class="h-full flex items-center justify-center transition-all duration-500 ease-out relative group"
-                  [style.width.%]="item.percentage"
-                  [class]="i === 0 ? 'bg-secondary/70' : i === 1 ? 'bg-info/60' : i === 2 ? 'bg-success/70' : 'bg-warning/70'">
-                  @if (item.percentage >= 10) {
-                  <span class="text-[10px] font-black text-white drop-shadow-sm tabular-nums">{{ item.percentage }}%</span>
+              <!-- Miniaturas -->
+              @if (p.images && p.images.length > 1) {
+                <div class="grid grid-cols-5 gap-2 pt-0.5">
+                  @for (img of p.images; track $index) {
+                    <div
+                      class="aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:opacity-90"
+                      [class.border-primary]="selectedImageIndex() === $index"
+                      [class.border-base-200]="selectedImageIndex() !== $index"
+                      (click)="selectImage($index)">
+                      <img [src]="img.url" class="w-full h-full object-cover object-top" />
+                    </div>
                   }
-                  <!-- Tooltip on hover -->
-                  <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-content text-base-100 text-[10px] font-bold px-2.5 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                    {{ item.label }}: {{ item.value | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
-                  </div>
                 </div>
-                }
-              </div>
-
-              <!-- Itemized Legend -->
-              <div class="space-y-1.5">
-                @for (item of getBreakdownSegments(); track item.label; let i = $index) {
-                <div class="flex items-center justify-between rounded-lg px-3 py-2 transition-colors"
-                  [class]="i === 0 ? 'bg-secondary/5 border border-secondary/10' : i === 1 ? 'bg-info/5 border border-info/10' : i === 2 ? 'bg-success/5 border border-success/10' : 'bg-warning/5 border border-warning/10'">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-2.5 h-2.5 rounded-full shrink-0"
-                      [class]="i === 0 ? 'bg-secondary' : i === 1 ? 'bg-info' : i === 2 ? 'bg-success' : 'bg-warning'"></div>
-                    <span class="text-xs font-semibold text-base-content/80">{{ item.label }}</span>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <span class="text-xs font-black tabular-nums"
-                      [class]="i === 0 ? 'text-secondary' : i === 1 ? 'text-info' : i === 2 ? 'text-success' : 'text-warning'">
-                      {{ item.value | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
-                    </span>
-                    <span class="badge badge-sm font-bold tabular-nums border-none"
-                      [class]="i === 0 ? 'bg-secondary/15 text-secondary' : i === 1 ? 'bg-info/15 text-info' : i === 2 ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'">
-                      {{ item.percentage }}%
-                    </span>
-                  </div>
-                </div>
-                }
-              </div>
-
-              <!-- Total Row -->
-              <div class="flex items-center justify-between bg-base-200/60 rounded-lg px-3 py-2 border border-base-300">
-                <span class="text-xs font-black text-base-content/60 uppercase tracking-wider">Total = Precio de Lista</span>
-                <span class="text-sm font-black text-base-content tabular-nums">
-                  {{ p.price.listPrice | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
-                </span>
-              </div>
               }
             </div>
 
-            <!-- Divider -->
-            <div class="relative flex py-3 items-center">
-              <div class="grow border-t border-dashed border-base-300"></div>
-              <span class="shrink mx-3 text-[9px] font-bold text-blue-500 uppercase tracking-widest">Detalle por método de pago</span>
-              <div class="grow border-t border-dashed border-base-300"></div>
-            </div>
-
-            <!-- Comisiones de Pasarela -->
-            <div class="space-y-2">
-              <h5 class="text-[10px] font-bold text-warning/70 uppercase tracking-wider flex items-center gap-1.5">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-warning">account_balance_wallet</mat-icon>
-                Comisiones de Pasarela (Mercado Pago)
-              </h5>
-              <div class="grid grid-cols-3 gap-2">
-                <div class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center">
-                  <span class="text-[9px] font-bold text-warning/60 uppercase block">Base</span>
-                  <span class="text-sm font-black text-warning tabular-nums">{{ p.finance.mpCommissionSnapshot.base | number: '1.1-2' }}%</span>
-                  <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('base') | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
-                </div>
-                <div class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center">
-                  <span class="text-[9px] font-bold text-warning/60 uppercase block">CFT 3 Cuotas</span>
-                  <span class="text-sm font-black text-warning tabular-nums">{{ p.finance.mpCommissionSnapshot.cft3Cuotas | number: '1.1-2' }}%</span>
-                  <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('cft3') | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
-                </div>
-                <div class="bg-warning/5 rounded-lg p-2.5 border border-warning/10 text-center">
-                  <span class="text-[9px] font-bold text-warning/60 uppercase block">CFT 6 Cuotas</span>
-                  <span class="text-sm font-black text-warning tabular-nums">{{ p.finance.mpCommissionSnapshot.cft6Cuotas | number: '1.1-2' }}%</span>
-                  <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('cft6') | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Ganancias por Método -->
-            @if (p.finance.calculatedProfits) {
-            <div class="space-y-2 mt-4">
-              <h5 class="text-[10px] font-bold text-success/70 uppercase tracking-wider flex items-center gap-1.5">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-success">trending_up</mat-icon>
-                Tu ganancia neta por método de pago
-              </h5>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div class="bg-success/5 rounded-lg p-2.5 border border-success/10">
-                  <span class="text-[9px] font-bold text-success/60 uppercase block">Transferencia</span>
-                  <span class="text-sm font-black text-success tabular-nums">
-                    {{ p.finance.calculatedProfits.transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                  </span>
-                </div>
-                <div class="bg-success/5 rounded-lg p-2.5 border border-success/10">
-                  <span class="text-[9px] font-bold text-success/60 uppercase block">1 Pago Tarjeta</span>
-                  <span class="text-sm font-black text-success tabular-nums">
-                    {{ p.finance.calculatedProfits.card_ticket1Pay | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                  </span>
-                </div>
-                <div class="bg-info/5 rounded-lg p-2.5 border border-info/10">
-                  <span class="text-[9px] font-bold text-info/60 uppercase block">3 Cuotas</span>
-                  <span class="text-sm font-black text-info tabular-nums">
-                    {{ p.finance.calculatedProfits.card3Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                  </span>
-                </div>
-                <div class="bg-primary/5 rounded-lg p-2.5 border border-primary/10">
-                  <span class="text-[9px] font-bold text-primary/60 uppercase block">6 Cuotas</span>
-                  <span class="text-sm font-black text-primary tabular-nums">
-                    {{ p.finance.calculatedProfits.card6Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            }
-
-            <!-- Costos Adicionales -->
-            @if (p.finance.additionalCosts && p.finance.additionalCosts.length > 0) {
-            <div class="space-y-2 mt-4">
-              <h5 class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">receipt_long</mat-icon>
-                Costos Adicionales
-              </h5>
-              <div class="space-y-1">
-                @for (cost of p.finance.additionalCosts; track cost.concept) {
-                <div class="flex items-center justify-between bg-base-200/40 rounded-lg px-3 py-2 border border-base-300/50">
-                  <span class="text-xs font-semibold text-base-content/70">{{ cost.concept }}</span>
+            <!-- 7. Proveedor (Colapsable / order-7 en Mobile) -->
+            @if (p.provider) {
+              <details class="order-7 collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm group" open>
+                <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3 px-4 min-h-0 pr-10">
                   <div class="flex items-center gap-2">
-                    @if (cost.type === 'fixed') {
-                    <span class="text-xs font-black text-base-content tabular-nums">{{ cost.value | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
-                    <span class="badge badge-xs badge-ghost font-bold">Fijo</span>
-                    } @else {
-                    <span class="text-xs font-black text-base-content tabular-nums">{{ cost.value }}%</span>
-                    <span class="badge badge-xs badge-ghost font-bold">% s/costo</span>
+                    <mat-icon class="text-[16px] text-amber-500">domain</mat-icon>
+                    <span>Proveedor / Fabricante</span>
+                  </div>
+                  <span class="badge badge-xs" [ngClass]="p.provider.active ? 'badge-success text-white' : 'badge-ghost'">
+                    {{ p.provider.active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </summary>
+                <div class="collapse-content px-4 pb-4 pt-1">
+                  <div class="flex flex-col gap-2 text-xs">
+                    <div class="flex justify-between items-center py-1 border-b border-base-200/60">
+                      <span class="text-base-content/50 font-medium">Nombre</span>
+                      <span class="font-bold text-base-content">{{ p.provider.name }}</span>
+                    </div>
+                    @if (p.provider.cuit) {
+                      <div class="flex justify-between items-center py-1 border-b border-base-200/60">
+                        <span class="text-base-content/50 font-medium">CUIT</span>
+                        <span class="font-mono text-base-content/80">{{ p.provider.cuit }}</span>
+                      </div>
+                    }
+                    @if (p.provider.phone) {
+                      <div class="flex justify-between items-center py-1 border-b border-base-200/60">
+                        <span class="text-base-content/50 font-medium">Teléfono</span>
+                        <span class="text-base-content/80">{{ p.provider.phone }}</span>
+                      </div>
+                    }
+                    @if (p.provider.contactEmail) {
+                      <div class="flex justify-between items-center py-1 border-b border-base-200/60">
+                        <span class="text-base-content/50 font-medium">Email</span>
+                        <span class="text-base-content/80 truncate max-w-[200px]">{{ p.provider.contactEmail }}</span>
+                      </div>
                     }
                   </div>
                 </div>
-                }
-                <!-- Total adicionales -->
-                <div class="flex items-center justify-between bg-info/5 rounded-lg px-3 py-2 border border-info/10">
-                  <span class="text-xs font-bold text-info/70">Total Adicionales</span>
-                  <span class="text-xs font-black text-info tabular-nums">{{ getTotalAdditionalCostsARS() | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
+              </details>
+            }
+
+            <!-- 8. Descripción (Colapsable / order-8 en Mobile) -->
+            <details class="order-8 collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm group" open>
+              <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center gap-2 cursor-pointer select-none py-3 px-4 min-h-0">
+                <mat-icon class="text-[16px] text-base-content/40">description</mat-icon>
+                <span>Descripción del Producto</span>
+              </summary>
+              <div class="collapse-content px-4 pb-4 pt-1">
+                <div [innerHTML]="getDescription()" class="text-xs text-base-content/70 leading-relaxed prose prose-sm max-w-none">
+                </div>
+              </div>
+            </details>
+
+          </div>
+
+          <!-- ========================================================================= -->
+          <!-- COLUMNA 2: PRECIOS, GANANCIAS, STOCK & FINANZAS                          -->
+          <!-- (Mobile: contents / Tablet: col-span-7 / Widescreen XL: col-span-5)       -->
+          <!-- ========================================================================= -->
+          <div class="contents lg:flex lg:flex-col lg:col-span-7 xl:col-span-5 gap-4">
+            
+            @if (p.isLegacyPrices) {
+              <div class="order-2 alert alert-warning shadow-sm border border-warning/20 bg-warning/5 text-warning-content rounded-xl p-3.5 flex gap-3 text-xs leading-normal">
+                <mat-icon class="text-warning text-lg shrink-0">warning</mat-icon>
+                <div>
+                  <strong class="block mb-0.5">Precios con estructura legada</strong>
+                  <span>Este producto tiene guardada la estructura de precios antigua. Editá y guardá para recalcular costos y comisiones.</span>
+                </div>
+              </div>
+            }
+
+            <!-- 2. Hero Pricing Cards + Cuotas (order-2 en Mobile) -->
+            <div class="order-2 flex flex-col gap-3">
+              <!-- 4 Cards Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                <!-- Precio Lista -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3 sm:p-3.5 shadow-sm flex flex-col justify-between">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Precio Lista</span>
+                  <div class="text-lg sm:text-xl font-black text-primary tracking-tight mt-1">
+                    {{ p.price.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  </div>
+                  <span class="text-[10px] text-base-content/50 mt-1">Tarjetas en cuotas</span>
+                </div>
+
+                <!-- Transferencia -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3 sm:p-3.5 shadow-sm flex flex-col justify-between">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Transferencia</span>
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span class="text-lg sm:text-xl font-black text-emerald-600 tracking-tight">
+                      {{ p.price.cashTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                    @if (p.price.discountPercentageTransfer > 0) {
+                      <span class="badge badge-xs badge-success text-[9px] font-bold text-white shadow-2xs">
+                        {{ p.price.discountPercentageTransfer }}% OFF
+                      </span>
+                    }
+                  </div>
+                  <span class="text-[10px] text-base-content/50 mt-1">Pago directo</span>
+                </div>
+
+                <!-- Costo Proveedor -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3 sm:p-3.5 shadow-sm flex flex-col justify-between">
+                  <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Costo Prov.</span>
+                  <div class="text-lg sm:text-xl font-black text-base-content tracking-tight mt-1">
+                    {{ (p.finance?.providerCost?.inARS || 0) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  </div>
+                  <span class="text-[10px] text-base-content/50 mt-1">USD {{ p.finance?.providerCost?.inUSD || 0 }} (Dólar ${{ p.finance?.exchangeRateSnapshot || 0 }})</span>
+                </div>
+
+                <!-- Margen de Ganancia -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3 sm:p-3.5 shadow-sm flex flex-col justify-between">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Margen</span>
+                    @if (isUsingGlobalMargin()) {
+                      <span class="badge badge-xs badge-info text-[9px] font-bold">Global</span>
+                    }
+                  </div>
+                  <div class="text-lg sm:text-xl font-black text-indigo-600 tracking-tight mt-1">
+                    {{ getMargin1Pay() }}%
+                  </div>
+                  <span class="text-[10px] text-base-content/50 mt-1">Estrategia {{ p.finance?.pricingStrategy?.method || 'Markup' }}</span>
+                </div>
+              </div>
+
+              <!-- Cuotas Breakdown Chips -->
+              <div class="bg-base-100 rounded-2xl border border-base-200 p-2.5 sm:p-3 shadow-sm flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-info/10 text-info flex items-center justify-center font-bold text-xs">3x</div>
+                  <div>
+                    <span class="text-[9px] sm:text-[10px] text-base-content/50 font-bold block">3 Cuotas S/I</span>
+                    <span class="font-black text-base-content text-xs sm:text-sm">{{ p.price.installments.threePaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }} / mes</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">6x</div>
+                  <div>
+                    <span class="text-[9px] sm:text-[10px] text-base-content/50 font-bold block">6 Cuotas S/I</span>
+                    <span class="font-black text-base-content text-xs sm:text-sm">{{ p.price.installments.sixPaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }} / mes</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">1x</div>
+                  <div>
+                    <span class="text-[9px] sm:text-[10px] text-base-content/50 font-bold block">Débito / 1 Pago</span>
+                    <span class="font-black text-base-content text-xs sm:text-sm">{{ p.price.card_ticket1PayPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
                 </div>
               </div>
             </div>
-            }
-            }
-          </div>
 
-          <!-- Stock Overview -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Stock & Variantes</h3>
-              <span class="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-md border border-primary/20">
-                {{ getTotalStock() }} unidades
-              </span>
+            <!-- 3. Inventario & Variantes (order-3 en Mobile) -->
+            <div class="order-3 bg-base-100 rounded-2xl border border-base-200 p-3.5 sm:p-4 shadow-sm flex flex-col gap-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
+                  <mat-icon class="text-[16px] text-primary">inventory</mat-icon>
+                  Inventario & Variantes
+                </h3>
+                <span class="badge badge-primary font-bold text-xs">
+                  {{ getTotalStock() }} u. totales
+                </span>
+              </div>
+
+              @if (p.variants && p.variants.length > 0) {
+                <div class="overflow-x-auto w-full">
+                  <table class="table table-xs sm:table-sm w-full">
+                    <thead>
+                      <tr class="text-[10px] text-base-content/40 uppercase tracking-wider">
+                        <th>SKU</th>
+                        @if (p.productType === ProductType.CLOTHING) { <th>Talle / Color</th> }
+                        @if (p.productType === ProductType.TECH) { <th>Atributos</th> }
+                        <th class="text-center">Stock</th>
+                        <th class="text-right">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (v of p.variants; track v.sku) {
+                        <tr class="hover:bg-base-200/30">
+                          <td class="font-mono text-[11px] sm:text-xs text-base-content/60">{{ v.sku }}</td>
+                          <td>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                              @if (p.productType === ProductType.CLOTHING) {
+                                <span class="badge badge-xs sm:badge-sm badge-ghost font-bold">{{ asClothing(v).size }}</span>
+                              }
+                              @if (v.color) {
+                                <span class="inline-flex items-center gap-1 badge badge-xs sm:badge-sm badge-ghost">
+                                  <span class="w-2.5 h-2.5 rounded-full border border-black/20" [style.background-color]="v.color.hex"></span>
+                                  {{ v.color.name }}
+                                </span>
+                              }
+                            </div>
+                          </td>
+                          <td class="text-center font-black" [ngClass]="v.stock > 0 ? 'text-success' : 'text-error'">
+                            {{ v.stock }}
+                          </td>
+                          <td class="text-right">
+                            <span class="badge badge-xs font-bold" [ngClass]="v.isActive ? 'badge-success text-white' : 'badge-ghost'">
+                              {{ v.isActive ? 'Activo' : 'Inactivo' }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="text-xs text-base-content/40 italic">Este producto no tiene variantes registradas.</p>
+              }
             </div>
 
-            @if (p.variants && p.variants.length > 0) {
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="text-left text-[10px] uppercase tracking-widest text-base-content/40 font-bold">
-                    <th class="pb-3 pr-4">SKU</th>
-                    @if(p.productType === ProductType.TECH){
-                    <th class="pb-3 pr-4">Atributos</th>
-                    }
-                    @if(p.productType === ProductType.CLOTHING){
-                    <th class="pb-3 pr-4">Talle</th>
-                    }
-                    <th class="pb-3 pr-4">Stock</th>
-                    <th class="pb-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (v of p.variants; track v.sku) {
-                  <tr class="border-t border-base-300/50">
-                    <td class="py-2.5 pr-4 font-mono text-xs text-base-content/50">{{ v.sku }}</td>
-                    <td class="py-2.5 pr-4">
-                      <div class="flex gap-1 flex-wrap">
+            <!-- 4. Composición del Precio & Rentabilidad (order-4 en Mobile) -->
+            <div class="order-4 flex flex-col gap-3">
+              <!-- Composición del Precio de Lista (Stacked Bar) -->
+              @if (p.finance) {
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3.5 sm:p-4 shadow-sm flex flex-col gap-2.5">
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
+                      <mat-icon class="text-[16px] text-primary">donut_small</mat-icon>
+                      Composición del Precio de Lista
+                    </h3>
+                    <span class="text-xs font-black text-base-content">{{ p.price.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
 
-                        @if (p.productType === ProductType.TECH) {
-                        @for (attr of asTech(v).attributes; track attr.key) {
-                        <span class="badge badge-xs badge-ghost h-auto py-0.5">{{ attr.key }}: {{ attr.value }}</span>
-                        }
-                        }
+                  <!-- Stacked Progress Bar -->
+                  @if (getBreakdownSegments().length > 0) {
+                    <div class="w-full h-7 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40">
+                      @for (item of getBreakdownSegments(); track item.label; let i = $index) {
+                        <div class="h-full flex items-center justify-center transition-all duration-300 relative group"
+                          [style.width.%]="item.percentage"
+                          [class]="i === 0 ? 'bg-secondary/70' : i === 1 ? 'bg-info/60' : i === 2 ? 'bg-success/70' : 'bg-warning/70'">
+                          @if (item.percentage >= 10) {
+                            <span class="text-[10px] font-black text-white drop-shadow-sm tabular-nums">{{ item.percentage }}%</span>
+                          }
+                        </div>
+                      }
+                    </div>
 
-                        @if (p.productType === ProductType.CLOTHING) {
-                        <span class="badge badge-xs badge-ghost h-auto py-0.5">{{ asClothing(v).size }}</span>
-                        }
-
-                        @if (v.color) {
-                        <span class="inline-flex items-center gap-1 badge badge-xs badge-ghost h-auto py-0.5">
-                          <span class="w-3 h-3 rounded-full border" [style.background-color]="v.color.hex"></span>
-                          {{ v.color.name }}
-                        </span>
-                        }
-                      </div>
-                    </td>
-                    <td class="py-2.5 pr-4 font-bold" [class.text-success]="v.stock > 0"
-                      [class.text-error]="v.stock === 0">
-                      {{ v.stock }}
-                    </td>
-                    <td class="py-2.5">
-                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
-                        [class.bg-success/10]="v.isActive" [class.text-success]="v.isActive"
-                        [class.bg-base-200]="!v.isActive" [class.text-base-content/40]="!v.isActive">
-                        {{ v.isActive ? 'Activo' : 'Inactivo' }}
-                      </span>
-                    </td>
-                  </tr>
+                    <!-- Legend Rows -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                      @for (item of getBreakdownSegments(); track item.label; let i = $index) {
+                        <div class="p-2 rounded-xl flex flex-col border text-xs"
+                          [class]="i === 0 ? 'bg-secondary/5 border-secondary/15' : i === 1 ? 'bg-info/5 border-info/15' : i === 2 ? 'bg-success/5 border-success/15' : 'bg-warning/5 border-warning/15'">
+                          <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full" [class]="i === 0 ? 'bg-secondary' : i === 1 ? 'bg-info' : i === 2 ? 'bg-success' : 'bg-warning'"></div>
+                            <span class="text-[10px] font-bold truncate" [class]="i === 0 ? 'text-secondary' : i === 1 ? 'text-info' : i === 2 ? 'text-success' : 'text-warning'">{{ item.label }}</span>
+                          </div>
+                          <span class="font-black text-base-content mt-1">{{ item.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                        </div>
+                      }
+                    </div>
                   }
-                </tbody>
-              </table>
+                </div>
+              }
+
+              <!-- Ganancia Neta en Bolsillo -->
+              @if (p.finance?.calculatedProfits) {
+                <div class="bg-base-100 rounded-2xl border border-base-200 p-3.5 sm:p-4 shadow-sm flex flex-col gap-2.5">
+                  <h3 class="text-xs font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <mat-icon class="text-[16px] text-success">trending_up</mat-icon>
+                    Ganancia Neta en Bolsillo
+                  </h3>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div class="p-2.5 rounded-xl bg-success/5 border border-success/15 flex flex-col">
+                      <span class="text-[10px] font-bold text-success/70 uppercase">Transferencia</span>
+                      <span class="text-xs sm:text-sm font-black text-success mt-1">{{ p.finance?.calculatedProfits?.transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-success/5 border border-success/15 flex flex-col">
+                      <span class="text-[10px] font-bold text-success/70 uppercase">1 Pago Tarjeta</span>
+                      <span class="text-xs sm:text-sm font-black text-success mt-1">{{ p.finance?.calculatedProfits?.card_ticket1Pay | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-info/5 border border-info/15 flex flex-col">
+                      <span class="text-[10px] font-bold text-info/70 uppercase">3 Cuotas S/I</span>
+                      <span class="text-xs sm:text-sm font-black text-info mt-1">{{ p.finance?.calculatedProfits?.card3Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-primary/5 border border-primary/15 flex flex-col">
+                      <span class="text-[10px] font-bold text-primary/70 uppercase">6 Cuotas S/I</span>
+                      <span class="text-xs sm:text-sm font-black text-primary mt-1">{{ p.finance?.calculatedProfits?.card6Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
-            } @else {
-            <span class="text-xs text-base-content/40 italic">Sin variantes</span>
-            }
+
+            <!-- 9. Gastos Adicionales & Comisiones MP (Colapsable / order-9 en Mobile) -->
+            <details class="order-9 collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm group">
+              <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center gap-2 cursor-pointer select-none py-3 px-4 min-h-0">
+                <mat-icon class="text-[16px] text-amber-500">tune</mat-icon>
+                <span>Detalle de Gastos Adicionales y Tarifas MP</span>
+              </summary>
+              <div class="collapse-content px-4 pb-4 pt-1 space-y-3">
+                <!-- Gastos Adicionales -->
+                @if (p.finance?.additionalCosts && (p.finance?.additionalCosts?.length || 0) > 0) {
+                  <div class="space-y-1 text-xs">
+                    <span class="text-[10px] font-bold text-base-content/40 uppercase">Costos Operativos</span>
+                    @for (cost of p.finance?.additionalCosts; track cost.concept) {
+                      <div class="flex justify-between items-center py-1 border-b border-base-200/50">
+                        <span class="text-base-content/70">{{ cost.concept }}</span>
+                        <span class="font-bold text-base-content">
+                          {{ cost.type === 'fixed' ? (cost.value | currency:'ARS':'symbol-narrow':'1.0-0') : (cost.value + '%') }}
+                        </span>
+                      </div>
+                    }
+                    <div class="flex justify-between items-center py-1 font-bold text-primary">
+                      <span>Total Adicionales</span>
+                      <span>{{ getTotalAdditionalCostsARS() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                }
+
+                <!-- Tarifas MP -->
+                @if (p.finance?.mpCommissionSnapshot) {
+                  <div class="pt-2 border-t border-base-200/60 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="p-2 rounded-xl bg-warning/5 border border-warning/15">
+                      <span class="text-[9px] font-bold text-warning/70 uppercase block">Base</span>
+                      <span class="font-black text-warning">{{ p.finance?.mpCommissionSnapshot?.base }}%</span>
+                      <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('base') | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-warning/5 border border-warning/15">
+                      <span class="text-[9px] font-bold text-warning/70 uppercase block">CFT 3 Cuotas</span>
+                      <span class="font-black text-warning">{{ p.finance?.mpCommissionSnapshot?.cft3Cuotas }}%</span>
+                      <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('cft3') | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-warning/5 border border-warning/15">
+                      <span class="text-[9px] font-bold text-warning/70 uppercase block">CFT 6 Cuotas</span>
+                      <span class="font-black text-warning">{{ p.finance?.mpCommissionSnapshot?.cft6Cuotas }}%</span>
+                      <span class="text-[10px] text-base-content/40 block">{{ getMPCommissionAmount('cft6') | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </details>
+
           </div>
+
+          <!-- ========================================================================= -->
+          <!-- COLUMNA 3: ESPECIFICACIONES & ATRIBUTOS TÉCNICOS                          -->
+          <!-- (Mobile: contents / Tablet: col-span-12 / Widescreen XL: col-span-3)      -->
+          <!-- ========================================================================= -->
+          <div class="contents lg:col-span-12 lg:grid lg:grid-cols-2 xl:flex xl:flex-col xl:col-span-3 gap-4">
+
+            <!-- 5. Especificaciones & Atributos (Colapsable / order-5 en Mobile) -->
+            @if (p.specifications && p.specifications.length > 0) {
+              <details class="order-5 collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm group" open>
+                <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center gap-2 cursor-pointer select-none py-3 px-4 min-h-0">
+                  <mat-icon class="text-[16px] text-primary">straighten</mat-icon>
+                  <span>Especificaciones Técnicas</span>
+                </summary>
+                <div class="collapse-content px-4 pb-4 pt-1">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2 text-xs">
+                    @for (spec of p.specifications; track spec.key) {
+                      <div class="p-2.5 rounded-xl bg-base-200/40 border border-base-200 flex flex-col">
+                        <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">{{ spec.key }}</span>
+                        <span class="font-semibold text-base-content mt-0.5 break-words">{{ spec.value }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </details>
+            }
+
+            <!-- 6. Características Clave (Colapsable / order-6 en Mobile) -->
+            @if (p.features && p.features.length > 0) {
+              <details class="order-6 collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm group" open>
+                <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center gap-2 cursor-pointer select-none py-3 px-4 min-h-0">
+                  <mat-icon class="text-[16px] text-secondary">check_circle</mat-icon>
+                  <span>Características Clave</span>
+                </summary>
+                <div class="collapse-content px-4 pb-4 pt-1">
+                  <ul class="flex flex-col gap-2">
+                    @for (f of p.features; track $index) {
+                      <li class="text-xs text-base-content/80 flex items-start gap-2 bg-base-200/30 p-2 rounded-lg border border-base-200/60">
+                        <mat-icon class="text-[14px] text-primary shrink-0 mt-0.5">done</mat-icon>
+                        <span class="leading-tight">{{ f }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </details>
+            }
+
+          </div>
+
         </div>
       </div>
-
-      <!-- Description -->
-      <div class="bg-base-100 rounded-xl border border-base-300 p-5 mb-6">
-        <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-3">Descripción</h3>
-        <div [innerHTML]="getDescription()" class="text-base-content/60 leading-relaxed prose prose-sm max-w-none">
-        </div>
-      </div>
-
-      <!-- Additional Info -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-
-        @if (p.specifications && p.specifications.length > 0) {
-        <div class="bg-base-100 rounded-xl border border-base-300 p-5 h-fit">
-          <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Especificaciones</h3>
-          <div class="flex flex-col gap-3">
-            @for (spec of p.specifications; track spec.key) {
-            <div
-              class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3 last:border-0 last:pb-0">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">{{ spec.key }}</span>
-              <span class="font-medium text-base-content text-sm text-right leading-snug">{{ spec.value }}</span>
-            </div>
-            }
-          </div>
-        </div>
-        }
-
-        @if (p.features && p.features.length > 0) {
-        <div class="bg-base-100 rounded-xl border border-base-300 p-5 h-fit">
-          <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Características</h3>
-          <ul class="flex flex-col gap-2.5">
-            @for (feature of p.features; track $index) {
-            <li class="text-sm text-base-content/80 flex items-start gap-2.5">
-              <mat-icon class="text-[16px]! w-4! h-4! text-primary mt-0.5 shrink-0">check_circle</mat-icon>
-              <span class="leading-snug">{{ feature }}</span>
-            </li>
-            }
-          </ul>
-        </div>
-        }
-
-        <!-- Provider -->
-        @if (p.provider) {
-        <div class="bg-base-100 rounded-xl border border-base-300 p-5 h-fit">
-          <div class="flex items-center gap-2 mb-4">
-            <mat-icon class="text-[16px]! w-4! h-4! text-amber-500">local_shipping</mat-icon>
-            <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Proveedor</h3>
-          </div>
-          <div class="flex flex-col gap-3">
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Nombre</span>
-              <span class="font-bold text-base-content text-sm text-right">{{ p.provider.name }}</span>
-            </div>
-            @if (p.provider.cuit) {
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">CUIT</span>
-              <span class="font-mono text-sm text-base-content/80 text-right">{{ p.provider.cuit }}</span>
-            </div>
-            }
-            @if (p.provider.contactEmail) {
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Email</span>
-              <span class="text-sm text-base-content/80 text-right break-all">{{ p.provider.contactEmail }}</span>
-            </div>
-            }
-            @if (p.provider.phone) {
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Teléfono</span>
-              <span class="text-sm text-base-content/80 text-right">{{ p.provider.phone }}</span>
-            </div>
-            }
-            @if (p.provider.address?.street) {
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Dirección</span>
-              <span class="text-sm text-base-content/80 text-right">
-                {{ p.provider.address?.street }} {{ p.provider.address?.number }},
-                {{ p.provider.address?.city }}{{ p.provider.address?.province ? ', ' + p.provider.address?.province : ''
-                }}
-              </span>
-            </div>
-            }
-            <div class="flex justify-between items-center gap-4">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0">Estado</span>
-              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase" [class.bg-success/10]="p.provider.active"
-                [class.text-success]="p.provider.active" [class.bg-base-200]="!p.provider.active"
-                [class.text-base-content/40]="!p.provider.active">
-                {{ p.provider.active ? 'Activo' : 'Inactivo' }}
-              </span>
-            </div>
-          </div>
-        </div>
-        }
-
-        <div class="bg-base-100 rounded-xl border border-base-300 p-5 h-fit">
-          <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Info</h3>
-          <div class="flex flex-col gap-3">
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Marca</span>
-              <span class="font-bold text-base-content text-sm text-right">{{ p.brand }}</span>
-            </div>
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Categoría</span>
-              <span class="font-medium text-base-content/80 text-sm text-right">{{ p.category }}</span>
-            </div>
-            <div class="flex justify-between items-start gap-4 border-b border-base-200/60 pb-3">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">Slug</span>
-              <span class="font-mono text-[11px] text-base-content/50 text-right break-all leading-relaxed">{{ p.slug
-                }}</span>
-            </div>
-            <div class="flex justify-between items-start gap-4">
-              <span class="text-base-content/50 text-[10px] font-bold uppercase shrink-0 pt-0.5">ID</span>
-              <span class="font-mono text-[11px] text-base-content/40 text-right break-all">#{{ p._id }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
     }
   </ng-container>
-
 </app-page-layout>

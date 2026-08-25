@@ -1,3 +1,43 @@
+export interface IMetaPixelConfig {
+  active: boolean;
+  pixelId: string;
+  accessToken: string;
+  testEventCode?: string;
+}
+
+export interface IGoogleAnalyticsConfig {
+  active: boolean;
+  measurementId: string;
+}
+
+export interface IGoogleAuthConfig {
+  active: boolean;
+  clientId: string;
+}
+
+export interface IResendConfig {
+  active: boolean;
+  apiKey?: string;
+  fromEmail?: string;
+  fromName?: string;
+}
+
+export interface IEcommerceIntegrations {
+  metaPixel?: IMetaPixelConfig;
+  googleAnalytics?: IGoogleAnalyticsConfig;
+  googleAuth?: IGoogleAuthConfig;
+  resend?: IResendConfig;
+}
+
+export interface IPricingStrategy {
+  method: 'markup' | 'margin';
+  transferGrossUp: boolean;
+  absorbInstallments: boolean;
+  maxInstallmentsToAbsorb?: number;
+  transferDiscountPercentage?: number;
+  cashDiscountPercentage?: number;
+}
+
 export interface IEcommerceConfig {
   name: string;
   logo?: string;
@@ -8,15 +48,13 @@ export interface IEcommerceConfig {
     iva: number;
   };
   costCurrency?: 'USD' | 'ARS';
-  pricingStrategy?: {
-    method: 'markup' | 'margin';
-    transferGrossUp: boolean;
-    absorbInstallments: boolean;
-  };
+  pricingStrategy?: IPricingStrategy;
+  integrations?: IEcommerceIntegrations;
   contact: {
     email: string;
     phone: string;
     address: string;
+    whatsapp?: string;
   };
   social: {
     instagram: string;
@@ -24,19 +62,19 @@ export interface IEcommerceConfig {
     twitter: string;
     tiktok: string;
   };
-  brands: string[],
-  categories: string[],
-  clothingFits: string[],
+  brands: string[];
+  categories: string[];
+  clothingFits: string[];
   shippingConfig?: {
     freeShippingThreshold: number;
-  },
+  };
   workingHours?: {
     weekdayStart?: string;
     weekdayEnd?: string;
     sundayStart?: string;
     sundayEnd?: string;
     noticeText?: string;
-  },
+  };
   paymentGateways: {
     uala: {
       active: boolean;
@@ -58,29 +96,15 @@ export interface IEcommerceConfig {
       publicKey: string;
       webhookSecret?: string;
       maxInstallments: number;
-      excludedPaymentMethods: string[];
-      excludedPaymentTypes: string[];
+      excludedPaymentMethods?: string[];
+      excludedPaymentTypes?: string[];
     };
-    transfer?: {
+    transfer: {
       active: boolean;
-      cbuCvu?: string;
-      cbu?: string;
       alias: string;
+      cbuCvu: string;
       bankName?: string;
       titular?: string;
     };
-    bankTransfer?: {
-      active: boolean;
-      cbu: string;
-      alias: string;
-      bankName?: string;
-      titular?: string;
-    };
-    customMethods: {
-      id: string;
-      name: string;
-      description: string;
-      active: boolean;
-    }[];
   };
 }

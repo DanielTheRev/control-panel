@@ -1,656 +1,717 @@
 @let state = configState.StoreConfig();
 <app-page-layout>
-  <app-page-header header title="Configuración Global" subtitle="Configura márgenes, impuestos y pasarelas de pago.">
-    <div actions>
-      <button class="btn btn-primary" [disabled]="state.isLoading" (click)="saveConfig()">
+  <app-page-header
+    header
+    title="Configuración de la Tienda"
+    subtitle="Personalizá identidad, estrategias de precios, pasarelas de pago e integraciones."
+  >
+    <div actions class="flex items-center gap-2">
+      <button
+        class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4"
+        [disabled]="state.isLoading"
+        (click)="saveConfig()"
+      >
         @if (state.isLoading) {
-        <span class="loading loading-spinner text-primary"></span>
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
         } @else {
-        <mat-icon class="mr-1 -ml-1 text-sm">save</mat-icon>
-        Guardar Cambios
+          <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+          <span>Guardar Cambios</span>
         }
+      </button>
+    </div>
+
+    <!-- Pestañas de Navegación Rápida (Sub-Menu) -->
+    <div sub-menu class="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-b border-base-200 overflow-x-auto custom-scrollbar bg-base-100/90 backdrop-blur-md">
+      <button
+        type="button"
+        (click)="activeTab.set('general')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'general' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">store</mat-icon>
+        <span>General & Logo</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('pricing')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'pricing' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">trending_up</mat-icon>
+        <span>Precios & Márgenes</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('gateways')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'gateways' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">payments</mat-icon>
+        <span>Pasarelas de Pago</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('integrations')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'integrations' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">extension</mat-icon>
+        <span>Integraciones (Google, Resend, Meta)</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('contact')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'contact' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">contact_phone</mat-icon>
+        <span>Contacto & Redes</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('clothing')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'clothing' ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
+        <span>Indumentaria</span>
       </button>
     </div>
   </app-page-header>
 
   <ng-container content>
-    <div class="w-full max-w-5xl mx-auto py-2">
+    <div class="p-3 sm:p-6 w-full max-w-6xl mx-auto space-y-6">
+
       @if (state.hasError) {
-      <div class="alert alert-error mb-4">Error al cargar la configuración de la tienda.</div>
+        <div class="bg-error/10 border border-error/20 text-error p-4 rounded-2xl flex items-center gap-3 text-xs font-bold shadow-xs">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">error</mat-icon>
+          <span>Error al conectar con el servidor para cargar la configuración de la tienda.</span>
+        </div>
       }
 
-      <form [formGroup]="configForm" class="flex flex-col gap-8 pb-8">
+      <form [formGroup]="configForm" class="space-y-6">
 
-        <!-- Datos de la Tienda -->
-        <section>
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <mat-icon class="text-[18px]">store</mat-icon>
+        <!-- ========================================================================= -->
+        <!-- 1. GENERAL & LOGO                                                         -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'general') {
+          <div class="space-y-6">
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">store</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Identidad de la Tienda</h3>
+                  <p class="text-xs text-base-content/50">Nombre visible del comercio y logotipo para web y comprobantes.</p>
+                </div>
               </div>
-              Datos Principales
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Información básica y pública de la tienda.</p>
-          </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-md divide-y divide-base-200">
-            <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-medium text-base-content">Nombre del Comercio</label>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Nombre del Comercio -->
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-base-content block">Nombre del Comercio</label>
+                  <input
+                    type="text"
+                    formControlName="name"
+                    class="input input-sm input-bordered w-full rounded-xl bg-base-100 shadow-2xs font-semibold text-xs"
+                    placeholder="Ej. Mi Tienda Online"
+                  />
+                  <p class="text-[11px] text-base-content/40">Se mostrará en la barra de navegación, emails y tickets de compra.</p>
+                </div>
+
+                <!-- Moneda de Costo Base -->
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-base-content block">Moneda de Costo del Proveedor</label>
+                  <select
+                    formControlName="costCurrency"
+                    class="select select-sm select-bordered w-full rounded-xl bg-base-100 shadow-2xs text-xs font-bold"
+                  >
+                    <option value="USD">Dólares Estadounidenses (USD)</option>
+                    <option value="ARS">Pesos Argentinos (ARS)</option>
+                  </select>
+                  <p class="text-[11px] text-base-content/40">Define en qué moneda ingresás el costo base de los productos.</p>
+                </div>
               </div>
-              <div class="sm:w-2/3">
-                <input type="text" formControlName="name" class="input input-bordered w-full max-w-md focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                  placeholder="Nombre de tu tienda" />
+
+              <!-- Logotipo -->
+              <div class="pt-4 border-t border-base-200 flex flex-col sm:flex-row gap-6 items-start">
+                <div class="sm:w-1/3">
+                  <span class="text-xs font-bold text-base-content block">Logotipo Oficial</span>
+                  <p class="text-[11px] text-base-content/50 mt-1">Formato PNG, JPG o WEBP con fondo transparente o cuadrado.</p>
+                </div>
+                <div class="sm:w-2/3 flex flex-col gap-3 max-w-sm">
+                  <app-single-image-upload
+                    title="Logo del Comercio"
+                    ratioBadge="SQUARE"
+                    [control]="logoControl"
+                  />
+                  @if (isNewLogoSelected) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-xl font-bold gap-1 self-start shadow-xs"
+                      [disabled]="isUploadingLogo()"
+                      (click)="uploadLogo()"
+                    >
+                      @if (isUploadingLogo()) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <mat-icon class="text-[16px]! w-4! h-4!">cloud_upload</mat-icon>
+                      }
+                      Subir Logo
+                    </button>
+                  }
+                </div>
               </div>
             </div>
-            
-            <div class="p-5 sm:p-6 flex flex-col sm:flex-row gap-4">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-medium text-base-content block">Logotipo de la Tienda</label>
-                <p class="text-xs text-base-content/60 mt-1 max-w-62.5">
-                  Sube una imagen (PNG, JPG, WEBP) para identificar tu tienda. Se recomienda formato cuadrado.
+
+            <!-- Horarios de Atención -->
+            <div formGroupName="workingHours" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">schedule</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Horarios de Atención</h3>
+                  <p class="text-xs text-base-content/50">Horarios visibles en el pie de página y checkout para entregas/retiros.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Lunes a Sábados</label>
+                  <div class="flex items-center gap-2">
+                    <input type="time" formControlName="weekdayStart" class="input input-sm input-bordered rounded-xl text-xs flex-1 font-mono" />
+                    <span class="text-xs text-base-content/40">a</span>
+                    <input type="time" formControlName="weekdayEnd" class="input input-sm input-bordered rounded-xl text-xs flex-1 font-mono" />
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Domingos</label>
+                  <div class="flex items-center gap-2">
+                    <input type="time" formControlName="sundayStart" class="input input-sm input-bordered rounded-xl text-xs flex-1 font-mono" />
+                    <span class="text-xs text-base-content/40">a</span>
+                    <input type="time" formControlName="sundayEnd" class="input input-sm input-bordered rounded-xl text-xs flex-1 font-mono" />
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                  <label class="text-xs font-bold text-base-content/80">Texto Informativo</label>
+                  <input type="text" formControlName="noticeText" class="input input-sm input-bordered rounded-xl text-xs w-full" placeholder="Lun a Sáb 10-20h" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 2. PRECIOS, MÁRGENES & ESTRATEGIA                                         -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'pricing') {
+          <div class="space-y-6">
+            <!-- Estrategia Global de Precios -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-success/10 text-success flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">trending_up</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Márgenes de Ganancia Globales</h3>
+                  <p class="text-xs text-base-content/50">Porcentaje de ganancia aplicado a todos los productos que no tengan margen individual.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Margen Contado / 1 Pago -->
+                <div class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Margen Contado / 1 Pago</span>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      formControlName="profit1Pay"
+                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
+                      placeholder="60"
+                    />
+                    <span class="badge badge-sm font-bold bg-base-300">%</span>
+                  </div>
+                  <p class="text-[10px] text-base-content/40">Ganancia para transferencias y tarjeta en 1 cuota.</p>
+                </div>
+
+                <!-- Margen Cuotas -->
+                <div class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Margen para Cuotas</span>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      formControlName="profitInstallments"
+                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
+                      placeholder="80"
+                    />
+                    <span class="badge badge-sm font-bold bg-base-300">%</span>
+                  </div>
+                  <p class="text-[10px] text-base-content/40">Ganancia para planes financiados en cuotas.</p>
+                </div>
+
+                <!-- IVA / Impuesto -->
+                <div formGroupName="taxes" class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Alícuota IVA</span>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      formControlName="iva"
+                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
+                      placeholder="21"
+                    />
+                    <span class="badge badge-sm font-bold bg-base-300">%</span>
+                  </div>
+                  <p class="text-[10px] text-base-content/40">Porcentaje de impuesto al valor agregado.</p>
+                </div>
+              </div>
+
+              <!-- Envío Gratis -->
+              <div formGroupName="shippingConfig" class="pt-4 border-t border-base-200 flex items-center justify-between gap-4">
+                <div>
+                  <span class="text-xs font-bold text-base-content block">Umbral de Envío Gratis</span>
+                  <p class="text-[11px] text-base-content/50 mt-0.5">Monto mínimo de compra para bonificar el envío al cliente.</p>
+                </div>
+                <div class="w-48">
+                  <label class="input input-sm input-bordered flex items-center gap-1.5 rounded-xl">
+                    <span class="text-xs text-base-content/40 font-bold">$</span>
+                    <input type="number" formControlName="freeShippingThreshold" class="grow font-bold text-xs" placeholder="50000" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Estrategia de Pricing & Cuotas -->
+            <div formGroupName="pricingStrategy" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">calculate</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Estrategia de Cálculo y Cuotas</h3>
+                  <p class="text-xs text-base-content/50">Elegí la fórmula de cálculo de precios y la absorción de intereses.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Método de Cálculo -->
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-base-content block">Fórmula de Cálculo</label>
+                  <select formControlName="method" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                    <option value="markup">Markup (Sobre el Costo Base)</option>
+                    <option value="margin">Margen Real (Sobre el Precio de Venta)</option>
+                  </select>
+                  <div class="p-3 bg-base-200/50 rounded-xl text-[11px] text-base-content/60 leading-relaxed border border-base-200">
+                    @if (configForm.get('pricingStrategy.method')?.value === 'markup') {
+                      <strong class="text-primary">Markup:</strong> Se añade el % directo sobre el costo del producto.
+                    } @else {
+                      <strong class="text-primary">Margen:</strong> Calcula el precio para que el % sea la ganancia neta de la venta.
+                    }
+                  </div>
+                </div>
+
+                <!-- Cuotas sin Interés -->
+                <div class="space-y-3">
+                  <label class="text-xs font-bold text-base-content block">Cuotas Sin Interés</label>
+                  <label class="flex items-center justify-between p-3 bg-base-200/40 rounded-xl border border-base-200 cursor-pointer">
+                    <div class="space-y-0.5">
+                      <span class="text-xs font-bold block">Ofrecer Cuotas Sin Interés</span>
+                      <span class="text-[10px] text-base-content/50 block">Absorbe el costo financiero en el precio de lista.</span>
+                    </div>
+                    <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="absorbInstallments" />
+                  </label>
+
+                  @if (configForm.get('pricingStrategy.absorbInstallments')?.value) {
+                    <div class="space-y-1.5">
+                      <label class="text-[11px] font-bold text-base-content/70 block">Máximo de Cuotas a Absorber</label>
+                      <select formControlName="maxInstallmentsToAbsorb" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                        <option [value]="3">Hasta 3 Cuotas sin interés</option>
+                        <option [value]="6">Hasta 6 Cuotas sin interés</option>
+                        <option [value]="12">Hasta 12 Cuotas sin interés</option>
+                      </select>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Descuentos por Medio de Pago -->
+              <div class="pt-4 border-t border-base-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Descuento Transferencia</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="transferDiscountPercentage" class="grow text-xs font-bold" placeholder="10" />
+                    <span class="font-bold text-xs text-success">% OFF</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Descuento Efectivo (En Local)</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="cashDiscountPercentage" class="grow text-xs font-bold" placeholder="15" />
+                    <span class="font-bold text-xs text-success">% OFF</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 3. PASARELAS DE PAGO                                                      -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'gateways') {
+          <div formGroupName="paymentGateways" class="space-y-6">
+
+            <!-- Mercado Pago -->
+            <div formGroupName="mercadopago" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#009ee3]/10 text-[#009ee3] flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">credit_card</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Mercado Pago</h3>
+                    <p class="text-xs text-base-content/50">Cobros con tarjeta de crédito, débito y dinero en cuenta.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-info" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Public Key (Clave Pública)</label>
+                  <input type="text" formControlName="publicKey" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-..." />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Comisión Base (%)</label>
+                  <input type="number" formControlName="baseCommission" class="input input-sm input-bordered w-full rounded-xl text-xs font-bold" placeholder="6" />
+                </div>
+              </div>
+
+              <div class="pt-2 flex items-center justify-between">
+                <button type="button" class="btn btn-sm btn-outline btn-info rounded-xl font-bold gap-1.5" (click)="syncMercadoPago()">
+                  <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon> Sincronizar Mercado Pago
+                </button>
+              </div>
+            </div>
+
+            <!-- Transferencia Bancaria -->
+            <div formGroupName="transfer" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">account_balance</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Transferencia Bancaria</h3>
+                    <p class="text-xs text-base-content/50">Datos bancarios que se le muestran al cliente para transferir.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-success" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Alias</label>
+                  <input type="text" formControlName="alias" class="input input-sm input-bordered w-full rounded-xl text-xs font-bold text-success font-mono" placeholder="MI.TIENDA.PAGOS" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">CBU / CVU</label>
+                  <input type="text" formControlName="cbuCvu" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="000000310001000..." />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Banco / Entidad</label>
+                  <input type="text" formControlName="bankName" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Mercado Pago / Banco Galicia" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Titular de la Cuenta</label>
+                  <input type="text" formControlName="titular" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Nombre completo o Razón Social" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 4. INTEGRACIONES & APIS (GOOGLE, RESEND, META)                            -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'integrations') {
+          <div formGroupName="integrations" class="space-y-6">
+
+            <!-- 🔑 Google Sign-In (OAuth) -->
+            <div formGroupName="googleAuth" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">lock_person</mat-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Google Sign-In (Login con Google)</h3>
+                      <span class="badge badge-xs badge-neutral text-[9px] font-bold">POR TIENDA</span>
+                    </div>
+                    <p class="text-xs text-base-content/50">Permite que tus clientes inicien sesión y compren usando su cuenta de Google.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-error" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content block">Google OAuth Client ID</label>
+                <input
+                  type="text"
+                  formControlName="clientId"
+                  class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
+                  placeholder="ej. 454689294878-lkugek83r3g7ot0vurcpumoc1rr8fd66.apps.googleusercontent.com"
+                />
+                <p class="text-[11px] text-base-content/50">
+                  Obtenelo en tu <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="link link-primary font-bold">Google Cloud Console</a> en la sección de Credenciales OAuth 2.0.
                 </p>
               </div>
-              <div class="sm:w-2/3 flex flex-col gap-4 max-w-md">
-                <app-single-image-upload
-                  title="Logo del Comercio"
-                  ratioBadge="SQUARE"
-                  [control]="logoControl"
+            </div>
+
+            <!-- ✉️ Resend (Email Transaccional) -->
+            <div formGroupName="resend" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-neutral/10 text-base-content flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">mail</mat-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Resend (Correos Transaccionales)</h3>
+                      <span class="badge badge-xs badge-neutral text-[9px] font-bold">PROPIO</span>
+                    </div>
+                    <p class="text-xs text-base-content/50">Envío automático de emails de confirmación de compra y despacho con tu dominio.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="space-y-1.5 sm:col-span-3">
+                  <label class="text-xs font-bold text-base-content/80">API Key de Resend</label>
+                  <input type="password" formControlName="apiKey" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="re_123456789_..." />
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                  <label class="text-xs font-bold text-base-content/80">Email Remitente (From Email)</label>
+                  <input type="email" formControlName="fromEmail" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="pedidos@mitienda.com" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Nombre Remitente</label>
+                  <input type="text" formControlName="fromName" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Mi Tienda" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 📊 Google Analytics 4 -->
+            <div formGroupName="googleAnalytics" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">analytics</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Google Analytics 4 (GA4)</h3>
+                    <p class="text-xs text-base-content/50">Seguimiento de visitas, carritos abandonados y fuentes de tráfico.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-warning" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content block">ID de Medición (Measurement ID)</label>
+                <input
+                  type="text"
+                  formControlName="measurementId"
+                  class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
+                  placeholder="G-XXXXXXXXXX"
                 />
-                
-                @if (isNewLogoSelected) {
-                  <button
-                    type="button"
-                    class="btn btn-primary self-start shadow-md hover:shadow-lg transition-all"
-                    [disabled]="isUploadingLogo()"
-                    (click)="uploadLogo()"
-                  >
-                    @if (isUploadingLogo()) {
-                      <span class="loading loading-spinner loading-xs"></span>
-                      Subiendo...
-                    } @else {
-                      <mat-icon class="mr-1 -ml-1 text-sm">cloud_upload</mat-icon>
-                      Actualizar Logotipo
-                    }
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Información Útil (Contacto & Redes Sociales) -->
-        <section>
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center text-info">
-                <mat-icon class="text-[18px]">public</mat-icon>
-              </div>
-              Información Pública
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Datos de contacto y perfiles en redes sociales visibles para tus
-              clientes.</p>
-          </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden divide-y divide-base-200 hover:border-info/30 transition-all duration-300 hover:shadow-md">
-            <div formGroupName="contact" class="p-5 sm:p-6 flex flex-col gap-6">
-              <h4 class="text-sm font-bold text-base-content/50 uppercase tracking-wider mb-2">Canales de Contacto</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-medium text-base-content/80">Email Oficial</span></label>
-                  <label class="input input-bordered flex items-center gap-2 focus-within:border-info focus-within:ring-1 focus-within:ring-info/50 transition-all duration-300 bg-base-200/50 focus-within:bg-base-100">
-                    <mat-icon class="text-info/70 text-[18px] w-4.5 h-4.5">mail</mat-icon>
-                    <input type="email" formControlName="email" class="grow w-full bg-transparent" placeholder="ventas@mitienda.com" />
-                  </label>
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-medium text-base-content/80">Teléfono / WhatsApp</span></label>
-                  <label class="input input-bordered flex items-center gap-2 focus-within:border-success focus-within:ring-1 focus-within:ring-success/50 transition-all duration-300 bg-base-200/50 focus-within:bg-base-100">
-                    <mat-icon class="text-success/70 text-[18px] w-4.5 h-4.5">phone</mat-icon>
-                    <input type="text" formControlName="phone" class="grow w-full bg-transparent" placeholder="+54 9 11 1234-5678" />
-                  </label>
-                </div>
-                <div class="form-control md:col-span-2 lg:col-span-1">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-medium text-base-content/80">Dirección Física</span></label>
-                  <label class="input input-bordered flex items-center gap-2 focus-within:border-error focus-within:ring-1 focus-within:ring-error/50 transition-all duration-300 bg-base-200/50 focus-within:bg-base-100">
-                    <mat-icon class="text-error/70 text-[18px] w-4.5 h-4.5">location_on</mat-icon>
-                    <input type="text" formControlName="address" class="grow w-full bg-transparent"
-                      placeholder="Av. Corrientes 1234" />
-                  </label>
-                </div>
+                <p class="text-[11px] text-base-content/50">Copiá tu ID desde Google Analytics en Administrador ➔ Flujos de datos (Web).</p>
               </div>
             </div>
 
-            <div formGroupName="social" class="p-5 sm:p-6 flex flex-col gap-6 bg-base-100/30">
-              <h4 class="text-sm font-bold text-base-content/50 uppercase tracking-wider mb-2">Redes Sociales</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span
-                      class="label-text font-bold text-pink-600 flex items-center gap-1"><mat-icon class="text-[14px] w-3.5 h-3.5">camera_alt</mat-icon>Instagram</span></label>
-                  <input type="url" formControlName="instagram" class="input input-bordered w-full text-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                    placeholder="https://instagram.com/mitienda" />
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span
-                      class="label-text font-bold text-blue-600 flex items-center gap-1"><mat-icon class="text-[14px] w-3.5 h-3.5">thumb_up</mat-icon>Facebook</span></label>
-                  <input type="url" formControlName="facebook" class="input input-bordered w-full text-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                    placeholder="https://facebook.com/mitienda" />
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-blue-400 flex items-center gap-1"><mat-icon class="text-[14px] w-3.5 h-3.5">tag</mat-icon>Twitter
-                      (X)</span></label>
-                  <input type="url" formControlName="twitter" class="input input-bordered w-full text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                    placeholder="https://twitter.com/mitienda" />
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span
-                      class="label-text font-bold text-base-content flex items-center gap-1"><mat-icon class="text-[14px] w-3.5 h-3.5">music_note</mat-icon>TikTok</span></label>
-                  <input type="url" formControlName="tiktok" class="input input-bordered w-full text-sm focus:border-base-content focus:ring-1 focus:ring-base-content/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                    placeholder="https://tiktok.com/@mitienda" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Atributos de Indumentaria -->
-        <section>
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-500">
-                <mat-icon class="text-[18px]">checkroom</mat-icon>
-              </div>
-              Atributos de Indumentaria
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Gestioná los cortes/fits disponibles para los productos de ropa.</p>
-          </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden hover:border-pink-500/30 transition-all duration-300 hover:shadow-md">
-            <div class="p-5 sm:p-6 flex flex-col gap-6">
-              <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div class="sm:w-1/3 shrink-0">
-                  <label class="text-sm font-medium text-base-content">Cortes / Fits</label>
-                  <p class="text-xs text-base-content/60 mt-1">Estos valores aparecerán en el selector al crear o editar indumentaria.</p>
-                </div>
-                <div class="sm:w-2/3 flex flex-col gap-4">
-                  <div class="flex items-center gap-2">
-                    <input type="text" #newFitInput (keyup.enter)="addFit(newFitInput); $event.preventDefault()" class="input input-bordered w-full max-w-xs focus:border-pink-500 focus:ring-1 focus:ring-pink-500/50 transition-all duration-300 bg-base-200/50 focus:bg-base-100"
-                      placeholder="Ej. Slim, Oversize..." />
-                    <button type="button" class="btn btn-primary" (click)="addFit(newFitInput)">
-                      <mat-icon class="text-sm mr-1">add</mat-icon> Agregar
-                    </button>
+            <!-- 🔵 Meta Pixel -->
+            <div formGroupName="metaPixel" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">track_changes</mat-icon>
                   </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (fit of clothingFits; track fit) {
-                      <div class="badge badge-lg badge-outline gap-2 py-3 px-3 border-base-300 bg-base-200/30 text-base-content hover:border-error/50 transition-colors">
-                        {{ fit }}
-                        <button type="button" class="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-error hover:bg-error/10" (click)="removeFit(fit)">
-                          <mat-icon class="text-[14px]">close</mat-icon>
-                        </button>
-                      </div>
-                    } @empty {
-                      <span class="text-sm text-base-content/50 italic">No hay cortes configurados. Agrega uno arriba.</span>
-                    }
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Meta Pixel (Facebook / Instagram Ads)</h3>
+                    <p class="text-xs text-base-content/50">Mide conversiones y optimiza tus campañas publicitarias.</p>
                   </div>
                 </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
               </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- Reglas Financieras y Tributarias -->
-        <section>
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center text-warning">
-                <mat-icon class="text-[18px]">account_balance_wallet</mat-icon>
-              </div>
-              Reglas Financieras y Tributarias
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Estos valores definirán automáticamente los precios de tus
-              productos.</p>
-          </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden divide-y divide-base-200 hover:border-warning/30 transition-all duration-300 hover:shadow-md">
-            <!-- Margen Contado -->
-            <div
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-success flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">trending_up</mat-icon>
-                  Margen Contado / 1 Pago
-                </label>
-                <p class="text-[10px] text-base-content/50 mt-0.5 ml-6.5">Transferencia, débito y crédito 1 cuota</p>
-              </div>
-              <div class="sm:w-2/3">
-                <label
-                  class="input input-bordered flex items-center gap-2 max-w-xs border-success/30 focus-within:border-success">
-                  <input type="number" formControlName="profit1Pay" class="grow font-medium" placeholder="30" />
-                  <span class="text-success font-bold">%</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Margen Cuotas -->
-            <div
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-info flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">credit_card</mat-icon>
-                  Margen Cuotas
-                </label>
-                <p class="text-[10px] text-base-content/50 mt-0.5 ml-6.5">Tarjeta crédito en cuotas (3 y 6)</p>
-              </div>
-              <div class="sm:w-2/3">
-                <label
-                  class="input input-bordered flex items-center gap-2 max-w-xs border-info/30 focus-within:border-info">
-                  <input type="number" formControlName="profitInstallments" class="grow font-medium" placeholder="30" />
-                  <span class="text-info font-bold">%</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Margen Base (legacy fallback) -->
-            <div
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20 opacity-60">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-base-content/60 flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">tune</mat-icon>
-                  Margen Base (fallback)
-                </label>
-                <p class="text-[10px] text-base-content/40 mt-0.5 ml-6.5">Se usa cuando no hay margen específico</p>
-              </div>
-              <div class="sm:w-2/3">
-                <label
-                  class="input input-bordered flex items-center gap-2 max-w-xs">
-                  <input type="number" formControlName="profit" class="grow font-medium" placeholder="10" />
-                  <span class="font-bold">%</span>
-                </label>
-              </div>
-            </div>
-
-            <div
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-base-content flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">payments</mat-icon>
-                  Moneda de Precio de Costo
-                </label>
-              </div>
-              <div class="sm:w-2/3">
-                <select formControlName="costCurrency" class="select select-bordered w-full max-w-xs focus:border-base-content/50">
-                  <option value="USD">Dólares (USD)</option>
-                  <option value="ARS">Pesos Argentinos (ARS)</option>
-                </select>
-              </div>
-            </div>
-
-            <div formGroupName="taxes"
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-info flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">receipt_long</mat-icon>
-                  Impuesto IVA
-                </label>
-              </div>
-              <div class="sm:w-2/3">
-                <label
-                  class="input input-bordered flex items-center gap-2 max-w-xs border-info/30 focus-within:border-info">
-                  <input type="number" formControlName="iva" class="grow font-medium" placeholder="21" />
-                  <span class="text-info font-bold">%</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Envío Gratis -->
-            <div formGroupName="shippingConfig"
-              class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-primary flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">local_shipping</mat-icon>
-                  Envío Gratis (Umbral)
-                </label>
-              </div>
-              <div class="sm:w-2/3">
-                <label
-                  class="input input-bordered flex items-center gap-2 max-w-xs border-primary/30 focus-within:border-primary">
-                  <span class="text-primary font-bold">$</span>
-                  <input type="number" formControlName="freeShippingThreshold" class="grow font-medium" placeholder="50000" />
-                </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Pixel ID / Dataset ID</label>
+                  <input type="text" formControlName="pixelId" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="Ej. 2378085269345446" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Test Event Code (Opcional)</label>
+                  <input type="text" formControlName="testEventCode" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="TEST12345" />
+                </div>
               </div>
             </div>
 
           </div>
-        </section>
+        }
 
-        <!-- Estrategia de Precios -->
-        <section formGroupName="pricingStrategy">
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
-                <mat-icon class="text-[18px]">psychology</mat-icon>
-              </div>
-              Estrategia de Precios
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Controlá cómo se calculan los precios finales de tus productos.</p>
-          </div>
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden divide-y divide-base-200 hover:border-secondary/30 transition-all duration-300 hover:shadow-md">
-
-            <!-- Método de Cálculo -->
-            <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-secondary flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">calculate</mat-icon>
-                  Método de Cálculo
-                </label>
-                <p class="text-[10px] text-base-content/50 mt-1 ml-6.5 leading-tight">Define cómo se interpreta el porcentaje de ganancia que configurás.</p>
-              </div>
-              <div class="sm:w-2/3 flex flex-col gap-3">
-                <select formControlName="method" class="select select-bordered w-full max-w-xs focus:border-secondary/50">
-                  <option value="markup">Sobre el Costo (Markup)</option>
-                  <option value="margin">Sobre la Venta (Margin)</option>
-                </select>
-                @if (configForm.get('pricingStrategy.method')?.value === 'markup') {
-                <div class="text-[11px] text-base-content/60 bg-base-200/50 p-3 rounded-lg border border-base-300/50 max-w-sm leading-relaxed">
-                  <span class="font-bold text-secondary">Markup:</span> El margen se suma al costo.
-                  <br>Ej: Costo $10.000 + 50% = <span class="font-bold">Precio $15.000</span> → Ganancia $5.000 (33% de la venta)
+        <!-- ========================================================================= -->
+        <!-- 5. CONTACTO & REDES SOCIALES                                              -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'contact') {
+          <div class="space-y-6">
+            <!-- Contacto -->
+            <div formGroupName="contact" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">contacts</mat-icon>
                 </div>
-                } @else {
-                <div class="text-[11px] text-base-content/60 bg-base-200/50 p-3 rounded-lg border border-base-300/50 max-w-sm leading-relaxed">
-                  <span class="font-bold text-secondary">Margin:</span> El margen es sobre el precio final.
-                  <br>Ej: Costo $10.000 con 50% = <span class="font-bold">Precio $20.000</span> → Ganancia $10.000 (50% de la venta)
-                  <br><span class="text-warning font-bold">⚠️ El margen debe ser menor a 100%</span>
-                </div>
-                }
-              </div>
-            </div>
-
-            <!-- Precio Transferencia -->
-            <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-emerald-600 flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">account_balance</mat-icon>
-                  Precio Transferencia
-                </label>
-                <p class="text-[10px] text-base-content/50 mt-1 ml-6.5 leading-tight">¿El precio de transferencia incluye la comisión de la pasarela?</p>
-              </div>
-              <div class="sm:w-2/3 flex flex-col gap-3">
-                <label class="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" class="toggle toggle-success mt-0.5" formControlName="transferGrossUp" />
-                  <div class="flex-1">
-                    <span class="text-sm font-bold block">Igualar al precio de tarjeta</span>
-                    <span class="text-xs text-base-content/60 leading-tight block mt-0.5">
-                      @if (configForm.get('pricingStrategy.transferGrossUp')?.value) {
-                        Transferencia y tarjeta 1 pago cuestan lo mismo. En transferencia ganás un poco más porque no se paga comisión.
-                      } @else {
-                        El precio de transferencia será más económico que tarjeta. El cliente ve un beneficio real al pagar por transferencia.
-                      }
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Cuotas Sin Interés -->
-            <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start gap-4 transition-colors hover:bg-base-200/20">
-              <div class="sm:w-1/3 shrink-0">
-                <label class="text-sm font-bold text-[#009ee3] flex items-center gap-2">
-                  <mat-icon class="text-[18px] w-4.5 h-4.5">credit_score</mat-icon>
-                  Cuotas sin Interés
-                </label>
-                <p class="text-[10px] text-base-content/50 mt-1 ml-6.5 leading-tight">¿Absorbés el costo financiero de las cuotas?</p>
-              </div>
-              <div class="sm:w-2/3 flex flex-col gap-3">
-                <label class="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" class="toggle toggle-info mt-0.5" formControlName="absorbInstallments" />
-                  <div class="flex-1">
-                    <span class="text-sm font-bold block">Ofrecer cuotas sin interés</span>
-                    <span class="text-xs text-base-content/60 leading-tight block mt-0.5">
-                      @if (configForm.get('pricingStrategy.absorbInstallments')?.value) {
-                        El precio de cuotas se infla para absorber el costo financiero. El comprador ve "cuotas sin interés".
-                      } @else {
-                        No se ofrecen cuotas sin interés. El precio es el mismo para todos los medios de pago con tarjeta.
-                      }
-                    </span>
-                  </div>
-                </label>
-                @if (!configForm.get('pricingStrategy.absorbInstallments')?.value) {
-                <div class="flex items-start gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg max-w-md">
-                  <mat-icon class="text-warning text-[18px] w-4.5 h-4.5 shrink-0 mt-0.5">warning</mat-icon>
-                  <span class="text-[11px] text-warning leading-tight font-medium">
-                    Importante: Si desactivás esto, andá al panel de MercadoPago y desactivá también
-                    "Ofrecer cuotas sin interés" para evitar inconsistencias.
-                  </span>
-                </div>
-                }
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- Configuración de Pasarelas (Solo credenciales y costos) -->
-        <section formGroupName="paymentGateways">
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center text-success shrink-0">
-                <mat-icon class="text-[18px]">payments</mat-icon>
-              </div>
-              Pasarelas de Pago
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Configuración de métodos de cobro, credenciales y comisiones.</p>
-          </div>
-
-          <div class="flex flex-col gap-6">
-
-          <!-- Transferencia Bancaria -->
-          <div formGroupName="transfer"
-            class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:border-emerald-500/30 group">
-            <div class="p-4 bg-emerald-500/5 flex items-center justify-between border-b border-base-200 group-hover:bg-emerald-500/10 transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white shadow-sm shadow-emerald-500/30">
-                  <mat-icon class="text-sm">account_balance</mat-icon>
-                </div>
-                <span class="text-sm font-bold text-emerald-600 uppercase tracking-wide">Transferencia Bancaria</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold opacity-60 uppercase tracking-widest">{{
-                  configForm.get('paymentGateways.transfer.active')?.value ? 'Activo' : 'Inactivo' }}</span>
-                <input type="checkbox" formControlName="active" class="toggle toggle-success toggle-sm mx-1" />
-              </div>
-            </div>
-
-            <div class="p-5 sm:p-6 bg-base-100">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">CBU / CVU</span></label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-emerald-500/70 text-[18px]">numbers</mat-icon>
-                    </div>
-                    <input type="text" formControlName="cbuCvu" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="Ingresá los 22 dígitos" />
-                  </div>
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Alias</span></label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-emerald-500/70 text-[18px]">badge</mat-icon>
-                    </div>
-                    <input type="text" formControlName="alias" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm" placeholder="ejemplo.alias.mp" />
-                  </div>
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Banco / Entidad</span></label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-emerald-500/70 text-[18px]">account_balance</mat-icon>
-                    </div>
-                    <input type="text" formControlName="bankName" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-sm" placeholder="ej: Naranja X, Galicia, etc." />
-                  </div>
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1.5"><span class="label-text font-bold text-base-content/80 text-xs uppercase tracking-wider">Titular de la Cuenta</span></label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-emerald-500/70 text-[18px]">person</mat-icon>
-                    </div>
-                    <input type="text" formControlName="titular" class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-sm" placeholder="ej: Daniel Larrosa" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Mercado Pago -->
-          <div formGroupName="mercadopago"
-            class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:border-[#009ee3]/30 group">
-            <div class="p-4 bg-[#009ee3]/5 flex items-center justify-between border-b border-base-200 group-hover:bg-[#009ee3]/10 transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#009ee3] flex items-center justify-center text-white shadow-sm shadow-[#009ee3]/30">
-                  <mat-icon class="text-sm">bolt</mat-icon>
-                </div>
-                <span class="text-sm font-bold text-[#009ee3] uppercase tracking-wide">Mercado Pago</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold opacity-50 uppercase">{{
-                  configForm.get('paymentGateways.mercadopago.active')?.value ? 'Activo' : 'Inactivo' }}</span>
-                <input type="checkbox" formControlName="active" class="toggle toggle-info toggle-xs" />
-              </div>
-            </div>
-
-            <div class="p-5 flex flex-col gap-6">
-              <div
-                class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-base-200/50 rounded-lg border border-base-300">
                 <div>
-                  <h4 class="font-bold text-sm text-base-content">Vinculación de Cuenta</h4>
-                  <p class="text-xs text-base-content/60">Conectá tu cuenta de Mercado Pago de forma automática y segura.</p>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Canales de Contacto Directo</h3>
+                  <p class="text-xs text-base-content/50">Datos que se muestran en el pie de página y botones de ayuda.</p>
                 </div>
+              </div>
 
-                @if (configForm.get('paymentGateways.mercadopago.accessToken')?.value) {
-                <div class="flex flex-col sm:flex-row items-center gap-3">
-                  <div class="badge badge-success gap-1 text-xs py-3">
-                    <mat-icon class="text-[14px] w-3.5 h-3.5">check_circle</mat-icon>
-                    Cuenta Vinculada
-                  </div>
-                  <button type="button" (click)="syncMercadoPago()" class="btn btn-outline btn-sm text-xs">
-                    <mat-icon class="text-[14px] w-3.5 h-3.5">autorenew</mat-icon>
-                    Actualizar conexión
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Email de Soporte / Ventas</label>
+                  <input type="email" formControlName="email" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="contacto@mitienda.com" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">WhatsApp Directo</label>
+                  <input type="text" formControlName="whatsapp" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="5491112345678" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Teléfono</label>
+                  <input type="text" formControlName="phone" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="+54 9 11 1234-5678" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Dirección Física / Local</label>
+                  <input type="text" formControlName="address" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Av. Siempre Viva 123" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Redes Sociales -->
+            <div formGroupName="social" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Perfiles en Redes Sociales</h3>
+                  <p class="text-xs text-base-content/50">Enlaces directos a tus redes para la tienda online.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-pink-600">Instagram URL</label>
+                  <input type="url" formControlName="instagram" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://instagram.com/mitienda" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-blue-600">Facebook URL</label>
+                  <input type="url" formControlName="facebook" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://facebook.com/mitienda" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content">TikTok URL</label>
+                  <input type="url" formControlName="tiktok" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://tiktok.com/@mitienda" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-info">Twitter / X URL</label>
+                  <input type="url" formControlName="twitter" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://twitter.com/mitienda" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 6. INDUMENTARIA (FITS & CORTES)                                           -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'clothing') {
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+              <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                <mat-icon class="text-[20px]! w-5! h-5!">checkroom</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cortes y Fits de Indumentaria</h3>
+                <p class="text-xs text-base-content/50">Opciones que aparecen en el selector al cargar ropa.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 max-w-sm">
+              <input
+                type="text"
+                #newFitInput
+                (keyup.enter)="addFit(newFitInput); $event.preventDefault()"
+                class="input input-sm input-bordered rounded-xl text-xs flex-1"
+                placeholder="Ej. Oversize, Boxy, Slim..."
+              />
+              <button type="button" class="btn btn-sm btn-primary rounded-xl font-bold gap-1" (click)="addFit(newFitInput)">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Agregar
+              </button>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-2">
+              @for (fit of clothingFits; track fit) {
+                <div class="badge badge-sm bg-base-200 border-base-300 font-bold py-3 px-3 text-xs gap-1.5">
+                  {{ fit }}
+                  <button type="button" class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-error" (click)="removeFit(fit)">
+                    <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
                   </button>
                 </div>
-                } @else {
-                <button type="button" (click)="syncMercadoPago()"
-                  class="btn btn-sm bg-[#009ee3] hover:bg-[#008bcb] text-white border-none">
-                  <mat-icon class="text-sm">link</mat-icon>
-                  Vincular con Mercado Pago
-                </button>
-                }
-              </div>
-
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span
-                      class="label-text text-[10px] uppercase font-bold opacity-50">Comisión Base %</span></label>
-                  <input type="number" formControlName="baseCommission" class="input input-sm input-bordered" />
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span
-                      class="label-text text-[10px] uppercase font-bold opacity-50">Máx. Cuotas</span></label>
-                  <select formControlName="maxInstallments" class="select select-sm select-bordered">
-                    <option [value]="1">1 Pago</option>
-                    <option [value]="3">3 Cuotas</option>
-                    <option [value]="6">6 Cuotas</option>
-                    <option [value]="12">12 Cuotas</option>
-                  </select>
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span class="label-text text-[10px] uppercase font-bold opacity-50">CFT
-                      3 Cuotas %</span></label>
-                  <input type="number" formControlName="cft3cuotas" class="input input-sm input-bordered" />
-                </div>
-                <div class="form-control">
-                  <label class="label py-0 mb-1"><span class="label-text text-[10px] uppercase font-bold opacity-50">CFT
-                      6 Cuotas %</span></label>
-                  <input type="number" formControlName="cft6Cuotas" class="input input-sm input-bordered" />
-                </div>
-              </div>
+              } @empty {
+                <span class="text-xs text-base-content/40 italic">No hay cortes configurados todavía.</span>
+              }
             </div>
           </div>
+        }
 
-          </div>
-        </section>
-
-        <!-- Horarios de Atención -->
-        <section formGroupName="workingHours">
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-base-content flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <mat-icon class="text-[18px]">schedule</mat-icon>
-              </div>
-              Horarios de Atención
-            </h3>
-            <p class="text-sm text-base-content/60 mt-1 pl-10">Configurá los horarios de atención y validación humana de tu tienda.</p>
-          </div>
-
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Lunes a Sábado - Apertura</span></label>
-                <input type="text" formControlName="weekdayStart" class="input input-sm input-bordered" placeholder="10:00" />
-              </div>
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Lunes a Sábado - Cierre</span></label>
-                <input type="text" formControlName="weekdayEnd" class="input input-sm input-bordered" placeholder="20:00" />
-              </div>
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Domingos - Apertura</span></label>
-                <input type="text" formControlName="sundayStart" class="input input-sm input-bordered" placeholder="10:00" />
-              </div>
-              <div class="form-control">
-                <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Domingos - Cierre</span></label>
-                <input type="text" formControlName="sundayEnd" class="input input-sm input-bordered" placeholder="15:00" />
-              </div>
-            </div>
-            <div class="form-control mt-4">
-              <label class="label py-0 mb-1.5"><span class="label-text text-xs font-bold uppercase opacity-60">Texto Informativo en Pantalla</span></label>
-              <input type="text" formControlName="noticeText" class="input input-sm input-bordered" placeholder="Lun a Sáb 10-20h / Dom 10-15h" />
-            </div>
-          </div>
-        </section>
       </form>
     </div>
   </ng-container>
 </app-page-layout>
 
-<!-- Modal de Recálculo Masivo -->
+<!-- Modal de Recalcular Precios -->
 @if (showRecalculateModal()) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-  <div class="bg-base-100 rounded-2xl shadow-2xl border border-base-200 p-6 sm:p-8 max-w-md w-full mx-4 animate-slide-in-down">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center">
-        <mat-icon class="text-warning">autorenew</mat-icon>
+  <div class="modal modal-open">
+    <div class="modal-box rounded-2xl border border-base-200 shadow-xl space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning flex items-center justify-center">
+        <mat-icon class="text-[24px]! w-6! h-6!">update</mat-icon>
       </div>
-      <div>
-        <h3 class="text-lg font-bold text-base-content">Recalcular Precios</h3>
-        <p class="text-xs text-base-content/60">Se detectaron cambios que afectan los precios</p>
+      <h3 class="font-bold text-base text-base-content">¿Deseas recalcular los precios de tus productos?</h3>
+      <p class="text-xs text-base-content/60 leading-relaxed">
+        Detectamos cambios en los márgenes de ganancia o impuestos globales. Podés actualizar automáticamente los precios de venta de todo tu catálogo según esta nueva configuración.
+      </p>
+      <div class="modal-action flex gap-2">
+        <button class="btn btn-sm btn-ghost rounded-xl text-xs font-bold" (click)="cancelRecalculate()">
+          Omitir por ahora
+        </button>
+        <button class="btn btn-sm btn-primary rounded-xl text-xs font-bold gap-1" [disabled]="isRecalculating()" (click)="confirmRecalculate()">
+          @if (isRecalculating()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          }
+          Recalcular Precios
+        </button>
       </div>
-    </div>
-
-    <p class="text-sm text-base-content/80 mb-6 leading-relaxed">
-      Modificaste parámetros que afectan los precios de todos los productos (márgenes, método de cálculo, etc).
-      <span class="font-bold">¿Querés recalcular todos los precios existentes</span> con la nueva configuración?
-    </p>
-
-    <div class="flex flex-col sm:flex-row gap-3 justify-end">
-      <button class="btn btn-ghost" (click)="cancelRecalculate()" [disabled]="isRecalculating()">
-        No, los dejo como están
-      </button>
-      <button class="btn btn-warning" (click)="confirmRecalculate()" [disabled]="isRecalculating()">
-        @if (isRecalculating()) {
-        <span class="loading loading-spinner loading-sm"></span>
-        Recalculando...
-        } @else {
-        <mat-icon class="text-sm">autorenew</mat-icon>
-        Sí, recalcular todo
-        }
-      </button>
     </div>
   </div>
-</div>
 }

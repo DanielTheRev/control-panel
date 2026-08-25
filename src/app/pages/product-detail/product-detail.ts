@@ -18,7 +18,6 @@ import { getStoreUrl } from '../../utils/tenant.utils';
     PageHeader,
     MatIcon,
     CurrencyPipe,
-    DecimalPipe,
     NgClass,
     RouterLink,
     MatSnackBarModule,
@@ -39,7 +38,12 @@ export class ProductDetail implements OnInit {
   isLoading = signal(true);
   hasError = signal(false);
   isUsingGlobalMargin = signal<boolean>(false);
+  selectedImageIndex = signal<number>(0);
   ProductType = ProductType;
+
+  selectImage(index: number) {
+    this.selectedImageIndex.set(index);
+  }
 
   constructor() {
     this.#SidebarService.navbarTitle.set({

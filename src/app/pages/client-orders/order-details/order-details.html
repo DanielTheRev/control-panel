@@ -1,511 +1,637 @@
 <app-page-layout>
-  <app-page-header header [title]="'Orden #' + (order()?.orderNumber || '...')"
-    [subtitle]="loading() ? 'Cargando detalles...' : 'Detalles de la orden'">
+  <app-page-header
+    header
+    [title]="'Orden #' + (order()?.orderNumber || '...')"
+    [subtitle]="
+      loading()
+        ? 'Cargando detalles...'
+        : 'Registrada el ' + (order()!.createdAt | date:'dd MMMM yyyy, HH:mm') + ' hs'
+    "
+  >
     <div actions class="flex items-center gap-2 flex-wrap">
-      <button class="btn btn-sm btn-ghost" (click)="goBack()">
+      <button class="btn btn-sm btn-ghost gap-1 font-bold text-xs" (click)="goBack()">
         <mat-icon class="text-[16px]! w-4! h-4!">arrow_back</mat-icon> Volver
       </button>
 
       @if (order() && !loading()) {
-      <!-- Completed states: just show badge -->
-      @if (isDelivered()) {
-      <span class="badge badge-success gap-1">
-        <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon> Entregado
-      </span>
-      } @else if (isCancelled()) {
-      <span class="badge badge-error gap-1">
-        <mat-icon class="text-[14px]! w-3.5! h-3.5!">cancel</mat-icon> Cancelado
-      </span>
-      } @else {
-      <!-- Action buttons -->
-      @if (canMarkPaymentReceived()) {
-      <button class="btn btn-sm btn-success btn-soft" (click)="markPaymentReceived()" [disabled]="updating()">
-        <mat-icon class="text-[16px]! w-4! h-4!">attach_money</mat-icon> Pago recibido
-      </button>
-      }
+        <!-- Acciones Principales según Estado -->
+        @if (isDelivered()) {
+          <span class="badge badge-success gap-1 font-bold py-3 px-3 shadow-xs">
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon> Entregado
+          </span>
+        } @else if (isCancelled()) {
+          <span class="badge badge-error gap-1 font-bold py-3 px-3 shadow-xs">
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">cancel</mat-icon> Cancelado
+          </span>
+        } @else {
+          @if (canMarkPaymentReceived()) {
+            <button
+              class="btn btn-sm btn-success text-white gap-1.5 font-bold shadow-xs"
+              (click)="markPaymentReceived()"
+              [disabled]="updating()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">payments</mat-icon> Aprobar Pago
+            </button>
+          }
 
-      @if (canStartShipping()) {
-      <button class="btn btn-sm btn-info btn-soft" (click)="startShipping()" [disabled]="updating()">
-        <mat-icon class="text-[16px]! w-4! h-4!">local_shipping</mat-icon> Iniciar envío
-      </button>
-      }
+          @if (canStartShipping()) {
+            <button
+              class="btn btn-sm btn-info text-white gap-1.5 font-bold shadow-xs"
+              (click)="startShipping()"
+              [disabled]="updating()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">inventory_2</mat-icon> Iniciar Preparación
+            </button>
+          }
 
-      @if (canMarkAsShipped()) {
-      <button class="btn btn-sm btn-primary btn-soft" (click)="markAsShipped()" [disabled]="updating()">
-        <mat-icon class="text-[16px]! w-4! h-4!">flight_takeoff</mat-icon> Enviado
-      </button>
-      }
+          @if (canMarkAsShipped()) {
+            <button
+              class="btn btn-sm btn-primary gap-1.5 font-bold shadow-xs"
+              (click)="markAsShipped()"
+              [disabled]="updating()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">flight_takeoff</mat-icon> Despachar Pedido
+            </button>
+          }
 
-      @if (canMarkAsDelivered()) {
-      <button class="btn btn-sm btn-success" (click)="markAsDelivered()" [disabled]="updating()">
-        <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Entregado
-      </button>
-      }
+          @if (canMarkAsDelivered()) {
+            <button
+              class="btn btn-sm btn-success text-white gap-1.5 font-bold shadow-xs"
+              (click)="markAsDelivered()"
+              [disabled]="updating()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Marcar Entregado
+            </button>
+          }
 
-      @if (canCancelOrder()) {
-      <button class="btn btn-sm btn-ghost text-error" (click)="cancelOrder()" [disabled]="updating()">
-        <mat-icon class="text-[16px]! w-4! h-4!">cancel</mat-icon>
-      </button>
-      }
-      }
+          @if (canCancelOrder()) {
+            <button
+              class="btn btn-sm btn-ghost text-error hover:bg-error/10"
+              (click)="cancelOrder()"
+              [disabled]="updating()"
+              title="Cancelar Orden"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">cancel</mat-icon>
+            </button>
+          }
+        }
 
-      <button class="btn btn-sm btn-neutral" (click)="printTicket()">
-        <mat-icon class="text-[16px]! w-4! h-4!">print</mat-icon> Ticket
-      </button>
+        <!-- Botón Imprimir Remito / Ticket -->
+        <button class="btn btn-sm btn-neutral gap-1.5 font-bold shadow-xs" (click)="printTicket()">
+          <mat-icon class="text-[16px]! w-4! h-4!">print</mat-icon> Imprimir Ticket
+        </button>
       }
     </div>
   </app-page-header>
 
   <ng-container content>
-    <!-- Loading -->
+    <!-- Loading State -->
     @if (loading()) {
-    <div class="flex items-center justify-center w-full h-64">
-      <span class="loading loading-ring loading-xl"></span>
-    </div>
-    }
-
-    <!-- Error -->
-    @if (error()) {
-    <div class="flex flex-col items-center justify-center py-20 gap-4">
-      <div class="bg-error/10 rounded-full p-4">
-        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
-      </div>
-      <h2 class="text-lg font-bold text-base-content">Error al cargar la orden</h2>
-      <p class="text-sm text-base-content/50">{{ error() }}</p>
-      <button class="btn btn-sm btn-primary" (click)="goBack()">Volver</button>
-    </div>
-    }
-
-    <!-- Order Content -->
-    @if (order() && !loading() && !error()) {
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Left Column -->
-        <div class="lg:col-span-2 flex flex-col gap-6">
-
-          <!-- Status Card -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Estado del Pedido</h3>
-              <span class="text-xs text-base-content/40">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! align-middle mr-0.5">calendar_today</mat-icon>
-                {{ order()!.createdAt | date:'medium' }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-3 mb-5">
-              <span [ngClass]="getOrderStatusBadgeClass(order()!.status)">
-                {{ order()!.status }}
-              </span>
-            </div>
-
-            <!-- Timeline -->
-            @if (order()!.history && order()!.history.length > 0) {
-            <div class="border-t border-base-300 pt-4">
-              <div class="flex flex-wrap gap-0">
-                @for (entry of order()!.history; track entry.timestamp; let i = $index; let last = $last) {
-                <div class="flex items-center gap-2">
-                  <div class="flex flex-col items-center">
-                    <div class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary/20"></div>
-                  </div>
-                  <div class="flex flex-col py-1">
-                    <span class="text-xs font-bold text-base-content">{{ entry.status }}</span>
-                    <span class="text-[10px] text-base-content/40">{{ entry.timestamp | date:'short' }}</span>
-                  </div>
-                  @if (!last) {
-                  <div class="w-6 h-px bg-base-300 mx-1"></div>
-                  }
-                </div>
-                }
-              </div>
-            </div>
-            }
-          </div>
-
-          <!-- Products Cards -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Productos</h3>
-              <span class="bg-base-200 text-base-content/50 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                {{ items().length }} item{{ items().length === 1 ? '' : 's' }}
-              </span>
-            </div>
-
-            <div class="flex flex-col gap-3">
-              @for (item of items(); track $index) {
-              <div class="border border-base-300 rounded-lg p-4 hover:border-primary/20 transition-colors">
-                <!-- Top row: image + product info -->
-                <div class="flex gap-3 mb-3">
-                  <!-- Image -->
-                  <a [routerLink]="['/home/products', item.productSnapshot._id]"
-                    class="w-14 h-14 rounded-lg overflow-hidden bg-base-200 shrink-0">
-                    @if (item.productSnapshot.image) {
-                    <img [src]="item.productSnapshot.image" [alt]="item.productSnapshot.model"
-                      class="w-full h-full object-cover" />
-                    } @else {
-                    <div class="w-full h-full flex items-center justify-center">
-                      <mat-icon class="text-[20px]! w-5! h-5! text-base-content/20">image</mat-icon>
-                    </div>
-                    }
-                  </a>
-
-                  <!-- Name + variant + provider -->
-                  <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-sm text-base-content leading-tight">
-                      {{ item.productSnapshot.brand }}
-                      {{ item.productSnapshot.model }}
-                    </h4>
-
-                    <!-- Variant badges -->
-                    @let variant = item.variantSnapshot;
-                    <div class="flex flex-wrap gap-1 mt-1.5">
-                      @if (variant.size) {
-                      <span class="badge badge-xs badge-ghost h-auto py-0.5 font-mono">{{ variant.size }}</span>
-                      }
-                      @if (variant.color) {
-                      <span class="inline-flex items-center gap-1 badge badge-xs badge-ghost h-auto py-0.5">
-                        <span class="w-2 h-2 rounded-full border" [style.background-color]="variant.color.hex"></span>
-                        {{ variant.color.name }}
-                      </span>
-                      }
-                      @if (variant.attributes) {
-                      @for (attr of variant.attributes; track attr.key) {
-                      <span class="badge badge-xs badge-ghost h-auto py-0.5 font-mono">{{ attr.key }}: {{ attr.value
-                        }}</span>
-                      }
-                      }
-                    </div>
-
-                    <!-- Provider -->
-                    @if (item.productSnapshot.providerSnapshot) {
-                    <div class="mt-1.5">
-                      <span
-                        class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        <mat-icon class="text-[10px]! w-2.5! h-2.5!">storefront</mat-icon>
-                        {{ item.productSnapshot.providerSnapshot.name }}
-                      </span>
-                    </div>
-                    }
-                  </div>
-
-                  <!-- Quantity badge -->
-                  <div class="shrink-0 flex flex-col items-end">
-                    <span class="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-md">
-                      ×{{ item.quantity }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Bottom row: price details -->
-                <div class="grid grid-cols-5 gap-2 pt-3 border-t border-base-200/60">
-                  <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Precio</span>
-                    <span class="text-sm font-bold text-base-content">
-                      {{ getItemPrice(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Costo Prov.</span>
-                    <span class="text-[11px] text-base-content/50 font-medium">
-                      USD: {{  item.productSnapshot.finance?.providerCost?.inUSD | currency:'USD':'symbol-narrow':'1.0-0' }}
-                    </span>
-                    <span class="text-[11px] text-base-content/50 font-medium">
-                      ARS: {{  item.productSnapshot.finance?.providerCost?.inARS | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Gastos Adic.</span>
-                    <span class="text-sm font-bold text-error">
-                      {{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Ganancia</span>
-                    <span class="text-sm font-bold text-success">
-                      {{ getItemEarnings(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col items-end">
-                    <span class="text-[9px] font-bold text-base-content/30 uppercase tracking-wider">Total</span>
-                    <span class="text-sm font-bold text-base-content">
-                      {{ (getItemPrice(item) * item.quantity) | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              }
-            </div>
-
-            <!-- Order total footer -->
-            <div class="mt-4 pt-4 border-t border-base-300 space-y-2">
-              @if (order()?.finance?.couponDiscount) {
-                <div class="flex items-center justify-between text-xs text-base-content/70">
-                  <span class="flex items-center gap-1.5">
-                    <span class="badge badge-neutral badge-xs font-mono font-bold">{{ order()?.finance?.couponCode || 'CUPÓN' }}</span>
-                    Descuento de Cupón
-                  </span>
-                  <span class="font-bold text-success">-{{ order()?.finance?.couponDiscount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                </div>
-              }
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-base-content/40 uppercase tracking-wider font-bold">Total de la orden</span>
-                <span class="text-xl font-bold text-base-content">
-                  {{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                </span>
-              </div>
-            </div>
-          </div>
+      <div class="p-3 sm:p-6 space-y-4 w-full">
+        <div class="skeleton h-24 w-full rounded-2xl"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 skeleton h-96 rounded-2xl"></div>
+          <div class="skeleton h-96 rounded-2xl"></div>
         </div>
+      </div>
+    }
 
-        <!-- Right Column -->
-        <div class="flex flex-col gap-6">
-          <!-- Financial Summary -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <div class="flex items-center gap-2 mb-4">
-              <mat-icon class="text-[16px]! w-4! h-4! text-success">insights</mat-icon>
-              <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider">Estado de Resultados (P&L)</h3>
+    <!-- Error State -->
+    @if (error()) {
+      <div class="p-8 max-w-md mx-auto my-12 bg-base-100 rounded-2xl border border-error/20 text-center space-y-4 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error mx-auto flex items-center justify-center">
+          <mat-icon class="text-[24px]! w-6! h-6!">error_outline</mat-icon>
+        </div>
+        <h3 class="text-base font-bold text-base-content">{{ error() }}</h3>
+        <p class="text-xs text-base-content/50">No pudimos cargar los detalles de esta orden. Verificá si el ID existe.</p>
+        <button class="btn btn-sm btn-primary rounded-xl" (click)="goBack()">Volver a Pedidos</button>
+      </div>
+    }
+
+    <!-- Order Details View -->
+    @if (order() && !loading() && !error()) {
+      <div class="p-3 sm:p-6 space-y-6 w-full">
+
+        <!-- ===================================================================== -->
+        <!-- 1. TRACKER VISUAL DE ESTADO (PROGRESS STEPPER)                         -->
+        <!-- ===================================================================== -->
+        @if (order()!.status === OrderStatus.CANCELLED || order()!.paymentInfo.status === paymentStatus.REJECTED) {
+          <!-- Banner de Alerta por Cancelación / Rechazo -->
+          <div class="bg-error/10 border border-error/30 rounded-2xl p-4 sm:p-5 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-error/20 text-error flex items-center justify-center shrink-0">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5!">error</mat-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-bold text-error">
+                {{ order()!.status === OrderStatus.CANCELLED ? 'Esta orden fue cancelada' : 'El pago fue rechazado por la pasarela' }}
+              </h3>
+              <p class="text-xs text-error/80 mt-0.5">
+                {{ order()!.notes || 'No se registraron movimientos posteriores. Podés reactivarla aprobando el pago si el cliente abonó por otro canal.' }}
+              </p>
+            </div>
+          </div>
+        } @else {
+          <!-- Stepper de 4 Pasos Normal -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span [class]="getOrderStatusBadgeClass(order()!.status)">
+                  <mat-icon class="text-[13px]! w-3.5! h-3.5!">
+                    {{ getOrderStatusIcon(order()!.status) }}
+                  </mat-icon>
+                  <span>{{ getOrderStatusLabel(order()!.status) }}</span>
+                </span>
+                <span class="text-xs text-base-content/40 hidden sm:inline">•</span>
+                <span class="text-xs text-base-content/50 hidden sm:inline">
+                  {{ order()!.paymentInfo.method }} - {{ getPaymentStatusLabel(order()!.paymentInfo.status) }}
+                </span>
+              </div>
+
+              <span class="text-xs text-base-content/40 font-medium">
+                Actualizado: {{ order()!.updatedAt | date:'short' }}
+              </span>
             </div>
 
-            <div class="flex flex-col gap-2.5">
-              @if (order()?.finance?.couponDiscount) {
-                <div class="flex justify-between items-center text-xs text-base-content/50 px-2">
-                  <span>Subtotal Original (Productos + Envío)</span>
-                  <span>{{ (orderTotal() + order()!.finance!.couponDiscount!) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+            <!-- Steps Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 relative pt-2">
+              <!-- Step 1: Pago -->
+              <div class="flex items-center gap-3 p-2.5 rounded-xl border transition-all"
+                [ngClass]="orderStep() >= 1 ? 'bg-success/10 border-success/30 text-success' : 'bg-base-200/40 border-base-200 text-base-content/40'">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                  [ngClass]="orderStep() >= 1 ? 'bg-success text-white' : 'bg-base-300 text-base-content/50'">
+                  <mat-icon class="text-[16px]! w-4! h-4!">
+                    {{ orderStep() >= 1 ? 'check' : 'payments' }}
+                  </mat-icon>
                 </div>
-                <div class="flex justify-between items-center text-xs px-2 -mt-1">
-                  <span class="text-base-content/60 flex items-center gap-1">
-                    <span class="badge badge-neutral badge-xs font-mono font-bold">{{ order()?.finance?.couponCode }}</span>
-                    Cupón Aplicado
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-base-content">1. Pago Aprobado</span>
+                  <span class="text-[10px] text-base-content/50 truncate">
+                    {{ order()!.paymentInfo.status === paymentStatus.APPROVED ? 'Acreditado' : 'Pendiente' }}
                   </span>
-                  <span class="font-bold text-success">- {{ order()?.finance?.couponDiscount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                </div>
-              }
-
-              <div class="flex justify-between items-center text-sm bg-base-200/50 px-2.5 py-2 rounded-lg border border-base-200">
-                <span class="text-base-content/80 text-xs font-bold uppercase tracking-wider">Total Abonado (Cliente)</span>
-                <span class="font-black text-base-content text-base">{{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              
-              <div class="flex justify-between items-center text-sm px-2 mt-1">
-                <span class="text-base-content/60 text-xs">Costo Proveedor (Prendas)</span>
-                <span class="font-medium text-error">- {{ baseProviderCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-
-              @if (additionalCostsBreakdown().length > 0) {
-              <div class="flex flex-col px-2">
-                <div class="flex justify-between items-center text-sm mb-1">
-                  <span class="text-base-content/60 text-xs">Gastos Adicionales (Reposición, Arca, Bolsas)</span>
-                  <span class="font-medium text-error">- {{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                </div>
-                <div class="pl-2.5 ml-1 border-l-2 border-base-200 flex flex-col gap-0.5 mt-0.5">
-                  @for (cost of additionalCostsBreakdown(); track cost.concept) {
-                  <div class="flex justify-between items-center text-[10px]">
-                    <span class="text-base-content/40">{{ cost.concept }}</span>
-                    <span class="text-base-content/40">{{ cost.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                  </div>
-                  }
                 </div>
               </div>
-              }
 
-              @if (paymentGatewayFee() > 0) {
-              <div class="flex justify-between items-center text-sm px-2">
-                <span class="text-base-content/60 text-xs">Comisión Mercado Pago / Pasarela</span>
-                <span class="font-medium text-error">- {{ paymentGatewayFee() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              <!-- Step 2: Preparación -->
+              <div class="flex items-center gap-3 p-2.5 rounded-xl border transition-all"
+                [ngClass]="orderStep() >= 2 ? 'bg-info/10 border-info/30 text-info' : 'bg-base-200/40 border-base-200 text-base-content/40'">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                  [ngClass]="orderStep() >= 2 ? 'bg-info text-white' : 'bg-base-300 text-base-content/50'">
+                  <mat-icon class="text-[16px]! w-4! h-4!">
+                    {{ orderStep() >= 2 ? 'check' : 'inventory_2' }}
+                  </mat-icon>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-base-content">2. En Preparación</span>
+                  <span class="text-[10px] text-base-content/50 truncate">Embalaje y stock</span>
+                </div>
               </div>
-              }
 
-              <div class="flex justify-between items-center text-sm px-2">
-                <span class="text-base-content/60 text-xs flex items-center gap-1">
-                  Costo de Envío (Courier)
-                  <span class="text-[9px] font-bold uppercase tracking-wider bg-base-200/60 px-1.5 py-0.5 rounded" [class.text-error]="order()?.shippingInfo?.freeShippingApplied" [class.text-base-content]="!order()?.shippingInfo?.freeShippingApplied">
-                    {{ order()?.shippingInfo?.freeShippingApplied ? 'Envío Gratis (Lo pagás vos)' : 'Lo paga el cliente' }}
-                  </span>
-                </span>
-                <span class="font-medium text-error">- {{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+              <!-- Step 3: Despacho / En camino -->
+              <div class="flex items-center gap-3 p-2.5 rounded-xl border transition-all"
+                [ngClass]="orderStep() >= 3 ? 'bg-purple-500/10 border-purple-500/30 text-purple-600' : 'bg-base-200/40 border-base-200 text-base-content/40'">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                  [ngClass]="orderStep() >= 3 ? 'bg-purple-500 text-white' : 'bg-base-300 text-base-content/50'">
+                  <mat-icon class="text-[16px]! w-4! h-4!">
+                    {{ orderStep() >= 3 ? 'check' : 'local_shipping' }}
+                  </mat-icon>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-base-content">3. En Camino</span>
+                  <span class="text-[10px] text-base-content/50 truncate">Con Courier / En tránsito</span>
+                </div>
               </div>
-            </div>
 
-            <div class="border-t border-base-300 pt-3 mt-3">
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-bold text-base-content">Ganancia Neta</span>
-                <span class="text-lg font-black text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-              </div>
-              <div class="flex justify-between items-center mt-1">
-                <span class="text-[10px] text-base-content/40 uppercase tracking-wider font-bold">Margen Rentabilidad</span>
-                <span class="text-xs font-bold px-2 py-0.5 rounded" 
-                  [class.bg-success]="margin() >= 30" [class.text-success-content]="margin() >= 30"
-                  [class.bg-success-content]="margin() >= 30 && false"
-                  [class.text-success]="margin() > 0 && margin() < 30"
-                  [style.background-color]="margin() > 0 && margin() < 30 ? 'color-mix(in srgb, var(--fallback-su,oklch(var(--su)/1)) 15%, transparent)' : ''"
-                  [class.bg-error]="margin() <= 0" [class.text-error-content]="margin() <= 0">
-                  {{ margin() | number:'1.1-2' }}%
-                </span>
+              <!-- Step 4: Entregado -->
+              <div class="flex items-center gap-3 p-2.5 rounded-xl border transition-all"
+                [ngClass]="orderStep() >= 4 ? 'bg-success/15 border-success/40 text-success' : 'bg-base-200/40 border-base-200 text-base-content/40'">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                  [ngClass]="orderStep() >= 4 ? 'bg-success text-white' : 'bg-base-300 text-base-content/50'">
+                  <mat-icon class="text-[16px]! w-4! h-4!">
+                    {{ orderStep() >= 4 ? 'check_circle' : 'home' }}
+                  </mat-icon>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold text-base-content">4. Entregado</span>
+                  <span class="text-[10px] text-base-content/50 truncate">Finalizado con éxito</span>
+                </div>
               </div>
             </div>
           </div>
+        }
 
-          <!-- Customer Info -->
-          <div class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-4">Cliente</h3>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center shrink-0">
-                <span class="text-lg font-bold text-primary">
-                  {{ order()!.user?.name?.charAt(0)?.toUpperCase() ||
-                  order()!.buyerData.firstName.charAt(0).toUpperCase() }}
+        <!-- ===================================================================== -->
+        <!-- 2. GRID PRINCIPAL (2 COLUMNAS)                                        -->
+        <!-- ===================================================================== -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- COLUMNA IZQUIERDA: PRODUCTOS COMPRADOS (lg:col-span-2) -->
+          <div class="lg:col-span-2 space-y-6">
+
+            <!-- Card: Productos -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-primary text-[20px]! w-5! h-5!">checkroom</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">
+                    Artículos en el Pedido
+                  </h3>
+                </div>
+                <span class="badge badge-sm bg-base-200 border-base-300 font-bold text-xs">
+                  {{ items().length }} {{ items().length === 1 ? 'artículo' : 'artículos' }}
                 </span>
               </div>
-              <div class="flex flex-col">
-                <span class="font-bold text-sm text-base-content">
-                  {{ order()!.user?.name || order()!.buyerData.firstName }} {{ order()!.buyerData.lastName }}
-                </span>
-                <span class="text-[11px] text-base-content/40">{{ order()!.user?.email || order()!.buyerData.email
-                  }}</span>
-              </div>
-            </div>
 
-            <!-- Shipping -->
-            <div class="border-t border-base-300 pt-4 mt-3">
-              <div class="flex items-center gap-2 mb-3">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">local_shipping</mat-icon>
-                <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Envío</h4>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-start">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Tipo</span>
-                  <span class="text-xs text-base-content/70 font-medium">{{ order()!.shippingInfo.type }}</span>
-                </div>
-                @if (order()!.shippingInfo.pickupPoint) {
-                <div class="flex justify-between items-start gap-4">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Punto</span>
-                  <div class="text-right">
-                    <span class="text-xs text-base-content/70 font-medium block">{{
-                      order()!.shippingInfo.pickupPoint?.name }}</span>
-                    <span class="text-[10px] text-base-content/40">{{ order()!.shippingInfo.pickupPoint?.address
-                      }}</span>
-                  </div>
-                </div>
-                }
-                @if (order()!.shippingInfo.shippingAddress) {
-                @let addr = order()!.shippingInfo.shippingAddress!;
-                <div class="border-t border-base-200/60 pt-3 mt-2 flex flex-col gap-1.5 text-xs">
-                  @if (addr.recipientName) {
-                  <div class="flex justify-between items-start gap-4">
-                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Destinatario</span>
-                    <span class="text-right text-base-content/70 font-medium">{{ addr.recipientName }}</span>
-                  </div>
-                  }
-                  @if (addr.phone) {
-                  <div class="flex justify-between items-start gap-4">
-                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Teléfono</span>
-                    <span class="text-right text-base-content/70 font-medium">{{ addr.phone }}</span>
-                  </div>
-                  }
-                  <div class="flex justify-between items-start gap-4">
-                    <span class="text-[10px] font-bold text-base-content/40 uppercase shrink-0">Dirección</span>
-                    <div class="text-right">
-                      <span class="text-base-content/70 font-medium block">
-                        {{ addr.street }} {{ addr.number }}
-                        @if (addr.apartment) {
-                          - {{ addr.apartment }}
+              <!-- Lista de Items -->
+              <div class="space-y-3">
+                @for (item of items(); track $index) {
+                  <div class="bg-base-200/30 hover:bg-base-200/60 rounded-2xl border border-base-200 p-3 sm:p-4 space-y-3 transition-colors">
+                    
+                    <!-- Fila Superior: Foto + Título + Cantidad -->
+                    <div class="flex gap-3 items-start">
+                      <!-- Imagen Thumbnail HD -->
+                      <a
+                        [routerLink]="['/home/products', item.productSnapshot._id]"
+                        class="w-16 h-16 rounded-xl overflow-hidden bg-base-200 shrink-0 border border-base-300 group block relative shadow-2xs"
+                      >
+                        @if (item.productSnapshot.image) {
+                          <img
+                            [src]="item.productSnapshot.image"
+                            [alt]="item.productSnapshot.model"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        } @else {
+                          <div class="w-full h-full flex items-center justify-center text-base-content/30">
+                            <mat-icon class="text-[20px]! w-5! h-5!">image</mat-icon>
+                          </div>
                         }
-                      </span>
-                      <span class="text-[10px] text-base-content/40 block">
-                        {{ addr.city }}, {{ addr.state }}
-                        @if (addr.zipCode) {
-                          (CP {{ addr.zipCode }})
-                        }
-                      </span>
+                      </a>
+
+                      <!-- Título + Badges de Variante -->
+                      <div class="flex-1 min-w-0 space-y-1">
+                        <a
+                          [routerLink]="['/home/products', item.productSnapshot._id]"
+                          class="font-bold text-xs sm:text-sm text-base-content hover:text-primary transition-colors block truncate"
+                        >
+                          {{ item.productSnapshot.brand }} {{ item.productSnapshot.model }}
+                        </a>
+
+                        @let variant = item.variantSnapshot;
+                        <div class="flex flex-wrap gap-1.5 items-center">
+                          <!-- Color -->
+                          @if (variant.color) {
+                            <span class="inline-flex items-center gap-1 badge badge-xs bg-base-100 border-base-300 text-[10px] font-semibold py-2 px-2">
+                              <span class="w-2.5 h-2.5 rounded-full border border-base-300" [style.background-color]="variant.color.hex"></span>
+                              {{ variant.color.name }}
+                            </span>
+                          }
+
+                          <!-- Talle -->
+                          @if (variant.size) {
+                            <span class="badge badge-xs bg-base-100 border-base-300 text-[10px] font-bold py-2 px-2 font-mono">
+                              Talle: {{ variant.size }}
+                            </span>
+                          }
+
+                          <!-- Atributos Tech -->
+                          @if (variant.attributes) {
+                            @for (attr of variant.attributes; track attr.key) {
+                              <span class="badge badge-xs bg-base-100 border-base-300 text-[10px] font-semibold py-2 px-2">
+                                {{ attr.key }}: {{ attr.value }}
+                              </span>
+                            }
+                          }
+
+                          <!-- Proveedor Tag -->
+                          @if (item.productSnapshot.providerSnapshot) {
+                            <span class="badge badge-xs bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[9px] font-bold uppercase tracking-wider py-2 px-1.5">
+                              {{ item.productSnapshot.providerSnapshot.name }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Cantidad Pill -->
+                      <div class="shrink-0 text-right">
+                        <span class="badge badge-md bg-primary/10 text-primary font-black text-xs border border-primary/20">
+                          × {{ item.quantity }}
+                        </span>
+                      </div>
                     </div>
+
+                    <!-- Fila Inferior: Desglose Financiero por Unidad -->
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2.5 border-t border-base-300/50 text-xs">
+                      <div>
+                        <span class="text-[9px] font-bold text-base-content/40 uppercase tracking-wider block">Precio Unit.</span>
+                        <span class="font-bold text-base-content">{{ getItemPrice(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                      </div>
+
+                      <div>
+                        <span class="text-[9px] font-bold text-base-content/40 uppercase tracking-wider block">Costo Prov.</span>
+                        <span class="text-xs font-semibold text-base-content/60 block">
+                          {{ item.productSnapshot.finance?.providerCost?.inARS | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span class="text-[9px] font-bold text-base-content/40 uppercase tracking-wider block">Gastos Adic.</span>
+                        <span class="text-xs font-semibold text-error block">
+                          -{{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span class="text-[9px] font-bold text-base-content/40 uppercase tracking-wider block">Ganancia Unit.</span>
+                        <span class="font-bold text-success block">
+                          +{{ getItemEarnings(item) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+
+                      <div class="text-right sm:text-right col-span-2 sm:col-span-1">
+                        <span class="text-[9px] font-bold text-base-content/40 uppercase tracking-wider block">Subtotal Item</span>
+                        <span class="font-black text-sm text-base-content">
+                          {{ (getItemPrice(item) * item.quantity) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+                    </div>
+
                   </div>
-                </div>
                 }
               </div>
-            </div>
 
-            <!-- Payment -->
-            <div class="border-t border-base-300 pt-4 mt-3">
-              <div class="flex items-center gap-2 mb-3">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">payments</mat-icon>
-                <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Pago</h4>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Método</span>
-                  <span class="text-xs text-base-content/70 font-medium">{{ order()!.paymentInfo.method }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase">Estado</span>
-                  <span class="badge badge-sm" [ngClass]="{
-                      'badge-success': order()!.paymentInfo.status === paymentStatus.APPROVED,
-                      'badge-warning': order()!.paymentInfo.status === paymentStatus.PENDING,
-                      'badge-error': order()!.paymentInfo.status === paymentStatus.REJECTED,
-                      'badge-info': order()!.paymentInfo.status === paymentStatus.CANCELLED || order()!.paymentInfo.status === paymentStatus.WAITING_CONFIRMATION
-                    }">
-                    {{ order()!.paymentInfo.status }}
+              <!-- Resumen de Totales del Pedido -->
+              <div class="bg-base-200/50 rounded-2xl p-4 space-y-2.5 border border-base-200 mt-4">
+                <!-- Cupón de Descuento si aplica -->
+                @if (order()?.finance?.couponDiscount) {
+                  <div class="flex items-center justify-between text-xs text-base-content/70">
+                    <span class="flex items-center gap-1.5">
+                      <span class="badge badge-neutral badge-xs font-mono font-bold">{{ order()?.finance?.couponCode || 'CUPÓN' }}</span>
+                      Descuento Cupón de Bienvenida
+                    </span>
+                    <span class="font-bold text-success">-{{ order()?.finance?.couponDiscount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+                }
+
+                <!-- Costo de Envío -->
+                <div class="flex items-center justify-between text-xs text-base-content/70">
+                  <span>Costo de Envío (Courier)</span>
+                  <span class="font-medium text-base-content">
+                    {{ shippingCost() > 0 ? (shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0') : 'Gratis' }}
                   </span>
                 </div>
 
-                @if (order()?.paymentInfo?.receiptUrl) {
-                  <div class="border-t border-base-200/60 pt-3 mt-2 bg-success/5 p-3 rounded-lg border border-success/20">
-                    <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-bold text-success flex items-center gap-1">
-                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">receipt</mat-icon> Comprobante Adjunto
-                      </span>
-                      @if (order()?.paymentInfo?.receiptUploadedAt) {
-                        <span class="text-[10px] text-base-content/40 font-medium">
-                          {{ order()!.paymentInfo.receiptUploadedAt | date:'short' }}
-                        </span>
+                <!-- Total Definitivo -->
+                <div class="pt-2 border-t border-base-300 flex items-center justify-between">
+                  <span class="text-xs font-bold text-base-content uppercase tracking-wider">Total Abonado por Cliente</span>
+                  <span class="text-xl sm:text-2xl font-black text-base-content">
+                    {{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- COLUMNA DERECHA: P&L FINANCIERO + CLIENTE + ENVÍO + PAGO -->
+          <div class="space-y-6">
+
+            <!-- Card 1: P&L (Estado de Resultados Financiero) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-4">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-success text-[18px]! w-4.5! h-4.5!">insights</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">
+                    Estado de Resultados (P&L)
+                  </h3>
+                </div>
+                <span class="badge badge-xs badge-ghost font-mono text-[10px]">REAL NET</span>
+              </div>
+
+              <div class="space-y-2.5 text-xs">
+                <div class="flex justify-between items-center bg-base-200/60 p-2.5 rounded-xl border border-base-200 font-bold">
+                  <span class="text-base-content/70 uppercase text-[10px]">Total Cobrado</span>
+                  <span class="text-sm font-black text-base-content">{{ orderTotal() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+
+                <div class="flex justify-between items-center px-1">
+                  <span class="text-base-content/60">Costo Mercadería (CMV Prov.)</span>
+                  <span class="font-semibold text-error">-{{ baseProviderCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+
+                @if (additionalCostsBreakdown().length > 0) {
+                  <div class="space-y-1 px-1">
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/60">Gastos de Operación (Bolsas/Arca)</span>
+                      <span class="font-semibold text-error">-{{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="pl-2 border-l-2 border-base-300 space-y-0.5 text-[10px] text-base-content/40">
+                      @for (cost of additionalCostsBreakdown(); track cost.concept) {
+                        <div class="flex justify-between items-center">
+                          <span>• {{ cost.concept }}</span>
+                          <span>{{ cost.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                        </div>
                       }
                     </div>
+                  </div>
+                }
 
-                    <a [href]="order()!.paymentInfo.receiptUrl!" target="_blank" rel="noopener noreferrer" class="block group relative rounded-lg overflow-hidden border border-base-300 bg-base-200 aspect-video mb-3">
-                      <img [src]="order()!.paymentInfo.receiptUrl!" alt="Comprobante de Pago" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                        <mat-icon class="text-[16px]! w-4! h-4!">visibility</mat-icon> Ver en pantalla completa
+                @if (paymentGatewayFee() > 0) {
+                  <div class="flex justify-between items-center px-1">
+                    <span class="text-base-content/60">Comisión Pasarela (MP / Tarjeta)</span>
+                    <span class="font-semibold text-error">-{{ paymentGatewayFee() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+                }
+
+                <div class="flex justify-between items-center px-1">
+                  <span class="text-base-content/60">Costo Courier / Envío</span>
+                  <span class="font-semibold text-error">-{{ shippingCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+
+                <!-- Ganancia Neta & Rentabilidad -->
+                <div class="pt-3 border-t border-base-200 mt-2 bg-success/5 p-3 rounded-xl border border-success/20 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-xs text-base-content">Ganancia Neta Real</span>
+                    <span class="text-lg font-black text-success">{{ grossProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-base-content/50 uppercase">Margen de Rentabilidad</span>
+                    <span class="badge badge-sm bg-success text-white font-black text-xs">
+                      {{ margin() | number:'1.1-2' }}% ROI
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Cliente & Contacto Directo -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-4">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">person</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">Cliente</h3>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-primary/10 text-primary font-black text-sm flex items-center justify-center shrink-0 border border-primary/20">
+                  {{ (order()!.user?.name || order()!.buyerData.firstName || '?').charAt(0).toUpperCase() }}
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-bold text-sm text-base-content leading-tight">
+                    {{ order()!.user?.name || (order()!.buyerData.firstName + ' ' + (order()!.buyerData.lastName || '')) }}
+                  </span>
+                  <span class="text-xs text-base-content/50 truncate">
+                    {{ order()!.user?.email || order()!.buyerData.email }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Contact Buttons (WhatsApp + Email) -->
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                @if (getWhatsAppUrl()) {
+                  <a
+                    [href]="getWhatsAppUrl()"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-xs btn-success text-white gap-1.5 font-bold shadow-2xs"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">chat</mat-icon> WhatsApp
+                  </a>
+                } @else {
+                  <button class="btn btn-xs btn-ghost text-base-content/30" disabled>
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">chat</mat-icon> Sin teléfono
+                  </button>
+                }
+
+                @if (getEmailUrl()) {
+                  <a
+                    [href]="getEmailUrl()"
+                    class="btn btn-xs btn-outline btn-ghost gap-1.5 font-bold"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">mail</mat-icon> Email
+                  </a>
+                }
+              </div>
+            </div>
+
+            <!-- Card 3: Datos de Envío & Logística -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">local_shipping</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">Logística de Envío</h3>
+                </div>
+                <span class="badge badge-xs bg-base-200 font-bold uppercase text-[9px]">
+                  {{ order()!.shippingInfo.type }}
+                </span>
+              </div>
+
+              @if (order()!.shippingInfo.pickupPoint) {
+                <div class="space-y-1 text-xs bg-base-200/40 p-2.5 rounded-xl border border-base-200">
+                  <span class="font-bold text-base-content block">{{ order()!.shippingInfo.pickupPoint?.name }}</span>
+                  <span class="text-[11px] text-base-content/50 block">{{ order()!.shippingInfo.pickupPoint?.address }}</span>
+                </div>
+              }
+
+              @if (order()!.shippingInfo.shippingAddress) {
+                @let addr = order()!.shippingInfo.shippingAddress!;
+                <div class="space-y-2 text-xs">
+                  <div class="flex justify-between items-start">
+                    <span class="text-base-content/40 font-bold uppercase text-[10px]">Destinatario:</span>
+                    <span class="font-semibold text-base-content text-right">{{ addr.recipientName || (order()!.buyerData.firstName + ' ' + order()!.buyerData.lastName) }}</span>
+                  </div>
+
+                  @if (addr.phone) {
+                    <div class="flex justify-between items-start">
+                      <span class="text-base-content/40 font-bold uppercase text-[10px]">Teléfono:</span>
+                      <span class="font-mono text-base-content text-right">{{ addr.phone }}</span>
+                    </div>
+                  }
+
+                  <div class="flex justify-between items-start">
+                    <span class="text-base-content/40 font-bold uppercase text-[10px]">Dirección:</span>
+                    <div class="text-right">
+                      <span class="font-bold text-base-content block">
+                        {{ addr.street }} {{ addr.number }}
+                        @if (addr.apartment) { (Depto {{ addr.apartment }}) }
+                      </span>
+                      <span class="text-[10px] text-base-content/50 block">
+                        {{ addr.city }}, {{ addr.state }} @if (addr.zipCode) { (CP {{ addr.zipCode }}) }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Card 4: Método y Comprobante de Pago -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-secondary text-[18px]! w-4.5! h-4.5!">payments</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">Detalles del Pago</h3>
+                </div>
+                <span [class]="getPaymentStatusBadgeClass(order()!.paymentInfo.status)">
+                  {{ getPaymentStatusLabel(order()!.paymentInfo.status) }}
+                </span>
+              </div>
+
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="text-base-content/40 font-bold uppercase text-[10px]">Método:</span>
+                  <span class="font-bold text-base-content uppercase">{{ order()!.paymentInfo.method }}</span>
+                </div>
+
+                @if (order()!.paymentInfo.transactionId) {
+                  <div class="flex justify-between items-center">
+                    <span class="text-base-content/40 font-bold uppercase text-[10px]">ID Transacción:</span>
+                    <span class="font-mono text-[11px] text-base-content/70">{{ order()!.paymentInfo.transactionId }}</span>
+                  </div>
+                }
+
+                <!-- Comprobante de Transferencia Adjunto -->
+                @if (order()?.paymentInfo?.receiptUrl) {
+                  <div class="pt-2 border-t border-base-200 space-y-2">
+                    <span class="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1">
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">receipt</mat-icon> Comprobante del Cliente
+                    </span>
+
+                    <a
+                      [href]="order()!.paymentInfo.receiptUrl!"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="block group relative rounded-xl overflow-hidden border border-base-300 bg-base-200 aspect-video shadow-2xs"
+                    >
+                      <img
+                        [src]="order()!.paymentInfo.receiptUrl!"
+                        alt="Comprobante"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                        <mat-icon class="text-[16px]! w-4! h-4!">visibility</mat-icon> Ver Pantalla Completa
                       </div>
                     </a>
 
                     @if (canMarkPaymentReceived()) {
-                      <button class="btn btn-sm btn-success w-full" (click)="markPaymentReceived()" [disabled]="updating()">
-                        <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Aprobar Pago
+                      <button
+                        class="btn btn-sm btn-success text-white w-full font-bold shadow-xs gap-1"
+                        (click)="markPaymentReceived()"
+                        [disabled]="updating()"
+                      >
+                        <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon> Aprobar este Pago
                       </button>
                     }
                   </div>
                 }
-
-                @if (order()?.paymentInfo?.method === paymentType.ALIAS_TRANSFER || order()?.paymentInfo?.method === paymentType.BANK_TRANSFER) {
-                @let payerData = order()?.buyerData;
-                <div class="border-t border-base-200/60 pt-3 mt-2">
-                  <p class="text-[10px] text-base-content/40 mb-2">
-                    {{ order()?.paymentInfo?.status === paymentStatus.APPROVED
-                    ? 'Pago realizado por:'
-                    : 'Se espera que el pago lo realice:' }}
-                  </p>
-                  <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between">
-                      <span class="text-[10px] text-base-content/40">Nombre</span>
-                      <span class="text-xs text-base-content/70">{{ payerData?.firstName }} {{ payerData?.lastName
-                        }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-[10px] text-base-content/40">Email</span>
-                      <span class="text-xs text-base-content/70">{{ payerData?.email }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-[10px] text-base-content/40">{{ payerData?.identificationType }}</span>
-                      <span class="text-xs text-base-content/70 font-mono">{{ payerData?.identificationNumber }}</span>
-                    </div>
-                  </div>
-                </div>
-                }
               </div>
             </div>
+
           </div>
+
         </div>
+
       </div>
-    </div>
     }
   </ng-container>
 </app-page-layout>

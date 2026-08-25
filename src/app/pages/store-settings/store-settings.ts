@@ -33,8 +33,10 @@ export class StoreSettings {
   showRecalculateModal = signal(false);
   isRecalculating = signal(false);
 
+  activeTab = signal<'general' | 'pricing' | 'gateways' | 'integrations' | 'contact' | 'clothing'>('general');
+
   constructor() {
-    this.#sidebarService.navbarTitle.set({ title: 'Configuración Global' });
+    this.#sidebarService.navbarTitle.set({ title: 'Configuración de la Tienda' });
 
     this.configForm = this.#fb.group({
       name: [''],
@@ -48,7 +50,32 @@ export class StoreSettings {
       pricingStrategy: this.#fb.group({
         method: ['markup'],
         transferGrossUp: [true],
-        absorbInstallments: [true]
+        absorbInstallments: [true],
+        maxInstallmentsToAbsorb: [3],
+        transferDiscountPercentage: [0],
+        cashDiscountPercentage: [0]
+      }),
+      integrations: this.#fb.group({
+        metaPixel: this.#fb.group({
+          active: [false],
+          pixelId: [''],
+          accessToken: [''],
+          testEventCode: ['']
+        }),
+        googleAnalytics: this.#fb.group({
+          active: [false],
+          measurementId: ['']
+        }),
+        googleAuth: this.#fb.group({
+          active: [true],
+          clientId: ['']
+        }),
+        resend: this.#fb.group({
+          active: [false],
+          apiKey: [''],
+          fromEmail: [''],
+          fromName: ['']
+        })
       }),
       shippingConfig: this.#fb.group({
         freeShippingThreshold: [50000]
@@ -63,7 +90,8 @@ export class StoreSettings {
       contact: this.#fb.group({
         email: [''],
         phone: [''],
-        address: ['']
+        address: [''],
+        whatsapp: ['']
       }),
       social: this.#fb.group({
         instagram: [''],

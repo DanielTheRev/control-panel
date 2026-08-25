@@ -1,30 +1,43 @@
-<div class="space-y-4">
-  @for (group of formArray().controls; track $index) {
-  <div [formGroup]="asFormGroup(group)" class="flex gap-2 items-start">
-    <label class="form-control w-full">
-      @if($first){
-      <div class="label"><span class="label-text">{{ keyPlaceholder() }}</span></div>
+<div class="space-y-2.5">
+  @if (formArray().controls.length === 0) {
+    <p class="text-xs text-base-content/40 italic py-2.5 text-center border border-dashed border-base-300 rounded-xl bg-base-200/20">
+      Sin atributos definidos. Usa "Pegar en Lote" o agrega uno nuevo.
+    </p>
+  } @else {
+    <div class="space-y-2">
+      @for (group of formArray().controls; track $index; let i = $index) {
+        <div [formGroup]="asFormGroup(group)" class="flex gap-2 items-center bg-base-200/30 hover:bg-base-200/60 p-1.5 rounded-xl border border-base-200 transition-colors">
+          <input
+            type="text"
+            formControlName="key"
+            [placeholder]="keyPlaceholder()"
+            class="input input-sm input-bordered flex-1 text-xs font-bold bg-base-100 focus:border-primary/50"
+          />
+          <input
+            type="text"
+            formControlName="value"
+            [placeholder]="valuePlaceholder()"
+            class="input input-sm input-bordered flex-1 text-xs bg-base-100 focus:border-primary/50"
+          />
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10 shrink-0"
+            (click)="remove(i)"
+            title="Eliminar atributo"
+          >
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">delete_outline</mat-icon>
+          </button>
+        </div>
       }
-      <input type="text" formControlName="key" [placeholder]="keyPlaceholder()" class="input input-bordered w-full" />
-    </label>
-
-    <label class="form-control w-full">
-      @if($first){
-      <div class="label"><span class="label-text">{{ valuePlaceholder() }}</span></div>
-      }
-      <input type="text" formControlName="value" [placeholder]="valuePlaceholder()"
-        class="input input-bordered w-full" />
-    </label>
-
-    <button type="button" class="btn btn-square btn-error mt-auto mb-0.5" [class.mt-[36px]]="$first"
-      (click)="remove($index)">
-      <mat-icon>delete</mat-icon>
-    </button>
-  </div>
+    </div>
   }
 
-  <button type="button" class="btn btn-outline btn-block border-dashed" (click)="add()">
-    <mat-icon>add</mat-icon>
-    Agregar {{ entityName() }}
+  <button
+    type="button"
+    class="btn btn-ghost btn-outline btn-xs w-full border-dashed border-base-300 text-base-content/60 hover:text-primary hover:border-primary gap-1 font-bold mt-1"
+    (click)="add()"
+  >
+    <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+    Agregar Atributo
   </button>
 </div>
