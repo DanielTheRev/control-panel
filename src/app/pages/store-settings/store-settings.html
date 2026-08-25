@@ -386,20 +386,63 @@
                 <input type="checkbox" formControlName="active" class="toggle toggle-info" />
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Public Key -->
+                <div class="space-y-1.5 sm:col-span-2">
                   <label class="text-xs font-bold text-base-content/80">Public Key (Clave Pública)</label>
                   <input type="text" formControlName="publicKey" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-..." />
                 </div>
+
+                <!-- Access Token (Opcional manual) -->
+                <div class="space-y-1.5 sm:col-span-2">
+                  <label class="text-xs font-bold text-base-content/80">Access Token (Manual / Sandbox)</label>
+                  <input type="password" formControlName="accessToken" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-... o TEST-..." />
+                </div>
+
+                <!-- Comisión Base -->
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Comisión Base (%)</label>
-                  <input type="number" formControlName="baseCommission" class="input input-sm input-bordered w-full rounded-xl text-xs font-bold" placeholder="6" />
+                  <label class="text-xs font-bold text-base-content/80">Comisión Base 1 Pago</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="6" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <!-- Costo Financiero 3 Cuotas -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <!-- Costo Financiero 6 Cuotas -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="18.9" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <!-- Máximo de Cuotas -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Máximo de Cuotas</label>
+                  <select formControlName="maxInstallments" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                    <option [value]="1">1 Cuota</option>
+                    <option [value]="3">3 Cuotas</option>
+                    <option [value]="6">6 Cuotas</option>
+                    <option [value]="12">12 Cuotas</option>
+                    <option [value]="18">18 Cuotas</option>
+                    <option [value]="24">24 Cuotas</option>
+                  </select>
                 </div>
               </div>
 
-              <div class="pt-2 flex items-center justify-between">
-                <button type="button" class="btn btn-sm btn-outline btn-info rounded-xl font-bold gap-1.5" (click)="syncMercadoPago()">
-                  <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon> Sincronizar Mercado Pago
+              <div class="pt-2 flex items-center justify-between border-t border-base-200">
+                <button type="button" class="btn btn-sm btn-outline btn-info rounded-xl font-bold gap-1.5 shadow-2xs" (click)="syncMercadoPago()">
+                  <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon> Sincronizar con Cuenta de Mercado Pago
                 </button>
               </div>
             </div>
