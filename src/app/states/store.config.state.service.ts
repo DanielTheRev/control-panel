@@ -29,7 +29,7 @@ export class StoreConfigStateService {
   signMercadoPago() {
     const clientId = this.#configService.getMasterClientID();
     const tenantSlug = this.#configService.getTenantID() || localStorage.getItem('lastTenantSlug') || 'vura';
-    const redirectUri = 'https://www.vura.com.ar/api/config/mercadopago/callback';
+    const redirectUri = 'https://api.vura.com.ar/config/mercadopago/callback';
 
     const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${tenantSlug}`;
     window.location.href = authUrl;
