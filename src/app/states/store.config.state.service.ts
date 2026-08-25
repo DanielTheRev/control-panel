@@ -27,21 +27,11 @@ export class StoreConfigStateService {
   }))
 
   signMercadoPago() {
-    // Estas variables luego las podés llevar a tus environment variables
     const clientId = this.#configService.getMasterClientID();
+    const tenantSlug = this.#configService.getTenantID() || localStorage.getItem('lastTenantSlug') || 'vura';
+    const redirectUri = 'https://www.vura.com.ar/api/config/mercadopago/callback';
 
-    // Acá podés sacar el ID del cliente actual para mandarlo en el state. 
-    // Por ejemplo, si tenés el nombre de la tienda (vura, electromix) o el ID del tenant:
-    const tenantId = this.#configService.getTenantID();
-    const redirectUri = `https://www.${tenantId}.com.ar/api/config/mercadopago/callback`;
-
-    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${tenantId}`;
-    alert(`
-        clientID: ${clientId}
-        redirectURI: ${redirectUri}
-        tenantID: ${tenantId}
-        authURL: ${authUrl}
-      `)
+    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${tenantSlug}`;
     window.location.href = authUrl;
   }
 
