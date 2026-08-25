@@ -1,8 +1,8 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://vura.com.ar/api',
+  apiUrl: 'https://api.vura.com.ar',
   socket_config: {
-    url: 'https://vura.com.ar',
+    url: 'https://api.vura.com.ar',
     path: '/api/socket.io',
   },
   tenantSlug: '',
