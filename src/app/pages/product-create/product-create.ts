@@ -1093,17 +1093,20 @@ XXL: 58, 76, 52
 
         groupedVariants.forEach((variants, colorName) => {
           const firstV = variants[0];
-          let imgIdx = null;
-          if (firstV.imageReference?.url) {
-            imgIdx = product.images.findIndex(
+          let imgIdx = 0;
+          if (firstV.imageIndex !== undefined && firstV.imageIndex !== null && Number(firstV.imageIndex) >= 0) {
+            imgIdx = Number(firstV.imageIndex);
+          } else if (firstV.imageReference?.url && product.images) {
+            const found = product.images.findIndex(
               (img: any) => (img.url || img) === firstV.imageReference.url,
             );
+            if (found !== -1) imgIdx = found;
           }
 
           const colorGroup = this.#fb.group({
             colorName: [colorName],
             colorHex: [firstV.color?.hex || '#000000'],
-            imageIndex: [imgIdx !== -1 ? imgIdx : 0],
+            imageIndex: [imgIdx],
             variants: this.#fb.array([]),
           });
 
@@ -1279,12 +1282,23 @@ XXL: 58, 76, 52
   getColorGroupImageLink(group: any): string {
     const images = this.imagesControls.value;
     if (!images || images.length === 0) return '';
-    let idx = group.get('imageIndex')?.value ?? 0;
+    let idx = Number(group.get('imageIndex')?.value ?? 0);
+    if (isNaN(idx) || idx < 0) idx = 0;
     if (idx >= images.length) {
       idx = images.length - 1;
     }
-    if (idx < 0) idx = 0;
     return images[idx]?.link || '';
+  }
+
+  /** Cycle to next uploaded image when clicking on the color's thumbnail */
+  cycleColorGroupImage(group: any) {
+    const total = this.imagesControls.length;
+    if (total <= 1) return;
+    let current = Number(group.get('imageIndex')?.value ?? 0);
+    if (isNaN(current)) current = 0;
+    const next = (current + 1) % total;
+    group.get('imageIndex')?.setValue(next);
+    group.markAsDirty();
   }
 
   /** Clamp all color group imageIndex values to valid range after images change */
@@ -1370,7 +1384,7 @@ XXL: 58, 76, 52
           images: [],
           imageIndex:
             group.imageIndex !== null && group.imageIndex !== undefined
-              ? group.imageIndex
+              ? Number(group.imageIndex) || 0
               : 0,
         };
 

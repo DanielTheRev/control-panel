@@ -461,7 +461,23 @@
                         </span>
                         <span class="badge badge-xs badge-success text-white font-bold">Pago directo</span>
                       </div>
-                      <span class="text-[10px] text-base-content/50 mt-1">Precio final en efectivo o transferencia bancaria</span>
+                      
+                      <!-- Indicador de Descuento Máximo Seguro -->
+                      <div class="mt-2 pt-2 border-t border-base-200 space-y-1">
+                        <div class="flex items-center gap-1.5 text-[11px] font-bold" [ngClass]="(productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount ? 'text-warning' : 'text-emerald-700'">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">info</mat-icon>
+                          <span>
+                            Máximo sugerido: <strong>{{ lp.maxSafeDiscount }}% OFF</strong>
+                          </span>
+                        </div>
+                        <p class="text-[10px] text-base-content/50 leading-tight">
+                          @if ((productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount) {
+                            <span class="text-warning font-semibold">⚠️ Con este descuento estás absorbiendo parte con tu margen de ganancia.</span>
+                          } @else {
+                            Hasta este % descontás solo comisión de tarjeta sin reducir tu ganancia neta.
+                          }
+                        </p>
+                      </div>
                     </div>
 
                   </div>
@@ -488,22 +504,45 @@
                     </div>
                   </div>
 
-                  <!-- Stacked Bar de Composición -->
+                  <!-- Desglose Numérico Completo y Visual -->
                   @if (lp.breakdown && lp.breakdown.length > 0) {
-                    <div class="pt-2 space-y-2">
-                      <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider block">
-                        Composición del Precio de Lista
-                      </span>
-                      <div class="w-full h-6 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40">
+                    <div class="pt-2 space-y-2.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">
+                          Desglose Numérico del Precio de Lista
+                        </span>
+                        <span class="text-[10px] font-bold text-base-content/70">
+                          Total: {{ lp.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+
+                      <!-- Stacked Bar de Composición -->
+                      <div class="w-full h-4 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40">
                         @for (item of lp.breakdown; track item.label; let i = $index) {
                           <div
-                            class="h-full flex items-center justify-center transition-all duration-300 relative group"
+                            class="h-full transition-all duration-300 relative group"
                             [style.width.%]="item.percentage"
-                            [class]="i === 0 ? 'bg-secondary/70' : i === 1 ? 'bg-info/60' : i === 2 ? 'bg-success/70' : 'bg-warning/70'"
-                          >
-                            @if (item.percentage >= 10) {
-                              <span class="text-[9px] font-black text-white drop-shadow-xs">{{ item.percentage }}%</span>
-                            }
+                            [class]="i === 0 ? 'bg-secondary/80' : i === 1 ? 'bg-amber-500/80' : i === 2 ? 'bg-emerald-500/80' : 'bg-primary/80'"
+                            [title]="item.label + ': $' + (item.value | number:'1.0-0') + ' (' + item.percentage + '%)'"
+                          ></div>
+                        }
+                      </div>
+
+                      <!-- Tarjetas con Montos Exactos en Pesos y Porcentaje -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        @for (item of lp.breakdown; track item.label; let i = $index) {
+                          <div class="p-2.5 rounded-xl border border-base-200 bg-base-100 flex flex-col justify-between shadow-2xs">
+                            <div class="flex items-center gap-1.5">
+                              <span
+                                class="w-2.5 h-2.5 rounded-full shrink-0"
+                                [class]="i === 0 ? 'bg-secondary' : i === 1 ? 'bg-amber-500' : i === 2 ? 'bg-emerald-500' : 'bg-primary'"
+                              ></span>
+                              <span class="text-[10px] font-bold text-base-content/70 truncate" [title]="item.label">{{ item.label }}</span>
+                            </div>
+                            <div class="flex items-baseline justify-between mt-1.5 pt-1.5 border-t border-base-200/60">
+                              <span class="text-xs font-black text-base-content">{{ item.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                              <span class="text-[10px] font-black" [class]="i === 2 ? 'text-success' : 'text-base-content/50'">{{ item.percentage }}%</span>
+                            </div>
                           </div>
                         }
                       </div>
@@ -644,25 +683,82 @@
                       <div [formGroupName]="gIndex" class="bg-base-200/40 rounded-2xl border border-base-200 p-4 space-y-3">
                         
                         <!-- Header del Grupo de Color -->
-                        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-base-300/50">
-                          <div class="flex items-center gap-2">
-                            <input
-                              type="color"
-                              formControlName="colorHex"
-                              class="w-7 h-7 rounded-lg border border-base-300 cursor-pointer p-0"
-                            />
-                            <input
-                              type="text"
-                              formControlName="colorName"
-                              class="input input-xs input-bordered font-bold text-xs w-36"
-                              placeholder="Nombre del Color (Ej: Negro)"
-                            />
+                        <div class="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-base-300/60 bg-base-100/60 p-3 rounded-xl">
+                          <div class="flex flex-wrap items-center gap-3">
+                            <!-- Selector Visual de Foto Grande -->
+                            <div class="flex items-center gap-2.5">
+                              <div
+                                class="relative group/pic cursor-pointer shrink-0"
+                                (click)="cycleColorGroupImage(group)"
+                                title="Clic para rotar entre las fotos del producto"
+                              >
+                                @if (getColorGroupImageLink(group)) {
+                                  <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-base-300 group-hover/pic:border-primary shadow-xs transition-all">
+                                    <img
+                                      [src]="getColorGroupImageLink(group)"
+                                      alt="Foto color"
+                                      class="w-full h-full object-cover group-hover/pic:scale-110 transition-transform duration-300"
+                                    />
+                                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover/pic:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                      <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon>
+                                    </div>
+                                  </div>
+                                } @else {
+                                  <div class="w-12 h-12 rounded-xl bg-base-200 border-2 border-dashed border-base-300 flex flex-col items-center justify-center text-base-content/30 group-hover/pic:text-primary transition-colors" title="Sin foto asociada">
+                                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">add_photo_alternate</mat-icon>
+                                    <span class="text-[8px] font-bold">Foto</span>
+                                  </div>
+                                }
+                              </div>
+
+                              <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Foto Asignada</span>
+                                @if (imagesControls.length > 0) {
+                                  <select
+                                    formControlName="imageIndex"
+                                    class="select select-xs select-bordered font-bold text-xs h-7 min-h-0 bg-base-100 rounded-lg max-w-36"
+                                    title="Foto de la galería que se muestra al hacer clic en este color en la web"
+                                  >
+                                    @for (img of imagesControls.controls; track $index; let imgIdx = $index) {
+                                      <option [value]="imgIdx">Foto #{{ imgIdx + 1 }} {{ imgIdx === 0 ? '(Portada)' : '' }}</option>
+                                    }
+                                  </select>
+                                } @else {
+                                  <span class="text-[10px] text-warning italic font-semibold">Subí fotos arriba</span>
+                                }
+                              </div>
+                            </div>
+
+                            <div class="divider divider-horizontal mx-0 hidden sm:flex"></div>
+
+                            <!-- Color Picker & Nombre -->
+                            <div class="flex items-center gap-2">
+                              <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Tono / Hex</span>
+                                <input
+                                  type="color"
+                                  formControlName="colorHex"
+                                  class="w-8 h-7 rounded-lg border border-base-300 cursor-pointer p-0 shadow-2xs"
+                                  title="Elegir color visual"
+                                />
+                              </div>
+
+                              <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Nombre del Color</span>
+                                <input
+                                  type="text"
+                                  formControlName="colorName"
+                                  class="input input-xs input-bordered font-bold text-xs w-36 h-7 rounded-lg bg-base-100"
+                                  placeholder="Ej: Negro, Azul..."
+                                />
+                              </div>
+                            </div>
                           </div>
 
                           <div class="flex items-center gap-2">
                             <button
                               type="button"
-                              class="btn btn-xs btn-ghost text-primary font-bold gap-1"
+                              class="btn btn-xs btn-primary btn-outline font-bold gap-1 rounded-lg shadow-2xs"
                               (click)="addVariantToGroup(gIndex)"
                             >
                               <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
@@ -670,8 +766,9 @@
                             </button>
                             <button
                               type="button"
-                              class="btn btn-xs btn-ghost text-error"
+                              class="btn btn-xs btn-ghost text-error rounded-lg"
                               (click)="removeColorGroup(gIndex)"
+                              title="Eliminar este color y sus variantes"
                             >
                               <mat-icon class="text-[16px]! w-4! h-4!">delete</mat-icon>
                             </button>
