@@ -171,8 +171,13 @@ export class ProductList {
     this.ProductState.setHasSizeGuideFilter(undefined);
   }
 
-  onPageChange(event: PageEvent) {
+  onPageChange(event: PageEvent | { pageIndex: number; pageSize: number; length: number; previousPageIndex?: number }) {
     this.ProductState.changePage(event.pageIndex + 1, event.pageSize);
+  }
+
+  onPageSizeChange(newSize: number | string) {
+    const size = Number(newSize);
+    this.ProductState.changePage(1, size);
   }
 
   getProductTypeLabel(type: string): string {

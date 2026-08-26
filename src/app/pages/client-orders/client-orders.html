@@ -92,11 +92,11 @@
     </div>
 
     <!-- Pestañas de Estado (Sub-Menu) solo visible en Desktop sm+ -->
-    <div sub-menu class="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2.5 border-b border-base-200 overflow-x-auto custom-scrollbar bg-base-100/90 backdrop-blur-md">
+    <div sub-menu class="hidden sm:inline-flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs overflow-x-auto max-w-full custom-scrollbar">
       <button
         (click)="updateStatusFilter('all')"
         class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap shadow-2xs"
-        [ngClass]="status() === 'all' ? 'btn-primary' : 'btn-ghost text-base-content/60 hover:bg-base-200'"
+        [ngClass]="status() === 'all' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
       >
         Todos
         <span class="badge badge-xs ml-1 font-mono" [ngClass]="status() === 'all' ? 'badge-primary-content text-primary' : 'badge-ghost'">
@@ -108,7 +108,7 @@
         <button
           (click)="updateStatusFilter(s.value)"
           class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="status() === s.value ? 'btn-primary' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+          [ngClass]="status() === s.value ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
         >
           <mat-icon class="text-[13px]! w-3.5! h-3.5!" [style.color]="status() === s.value ? 'currentColor' : s.dotColor">
             {{ s.icon }}
@@ -125,7 +125,7 @@
   </app-page-header>
 
   <ng-container content>
-    <div class="p-3 sm:p-5 space-y-4 w-full">
+    <div class="p-3 sm:p-4 space-y-4 w-full">
 
       <!-- ========================================================================= -->
       <!-- MOBILE COMPACT STATS STRIP (< sm)                                         -->

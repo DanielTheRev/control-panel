@@ -1334,63 +1334,66 @@
               </div>
             }
 
-            <!-- ====== CONTROL DE PAGINACIÓN COMPARTIDO ====== -->
-            <div class="mt-auto pt-3 shrink-0 w-full">
-              <!-- Paginación Desktop (md+) -->
-              <div class="hidden md:flex items-center justify-between bg-base-100 border border-base-200 rounded-xl px-4 py-1 shadow-xs">
-                <mat-paginator
-                  [length]="ProductState.pagination().totalItems"
-                  [pageSize]="ProductState.pagination().itemsPerPage"
-                  [pageIndex]="ProductState.pagination().currentPage - 1"
-                  [pageSizeOptions]="[10, 20, 50]"
-                  (page)="onPageChange($event)"
-                  class="w-full bg-transparent! flex items-center justify-between"
-                >
-                </mat-paginator>
-              </div>
+            <!-- ====== CONTROL DE PAGINACIÓN COMPARTIDO (100% ESPAÑOL & COMPACTO) ====== -->
+            <div class="mt-auto pt-2.5 shrink-0 w-full">
+              @let p = ProductState.pagination();
+              @let startItem = (p.currentPage - 1) * p.itemsPerPage + 1;
+              @let endItem = p.totalItems === 0 ? 0 : (p.currentPage * p.itemsPerPage > p.totalItems ? p.totalItems : p.currentPage * p.itemsPerPage);
 
-              <!-- Paginación Mobile (< md) -->
-              <div
-                class="flex md:hidden px-3 py-2.5 justify-between items-center bg-base-100 border border-base-200 rounded-xl shadow-xs"
-              >
-                <span class="text-xs text-base-content/60 font-semibold">
-                  Pág. {{ ProductState.pagination().currentPage }} /
-                  {{ ProductState.pagination().totalPages }}
-                </span>
-                <div class="join border border-base-300 bg-base-100/50">
-                  <button
-                    class="join-item btn btn-xs btn-ghost hover:bg-base-200"
-                    [disabled]="ProductState.pagination().currentPage === 1"
-                    (click)="
-                      onPageChange({
-                        pageIndex: ProductState.pagination().currentPage - 2,
-                        pageSize: ProductState.pagination().itemsPerPage,
-                        length: ProductState.pagination().totalItems,
-                        previousPageIndex:
-                          ProductState.pagination().currentPage - 1,
-                      })
-                    "
-                  >
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
-                  </button>
-                  <button
-                    class="join-item btn btn-xs btn-ghost hover:bg-base-200"
-                    [disabled]="
-                      ProductState.pagination().currentPage >=
-                      ProductState.pagination().totalPages
-                    "
-                    (click)="
-                      onPageChange({
-                        pageIndex: ProductState.pagination().currentPage,
-                        pageSize: ProductState.pagination().itemsPerPage,
-                        length: ProductState.pagination().totalItems,
-                        previousPageIndex:
-                          ProductState.pagination().currentPage - 1,
-                      })
-                    "
-                  >
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
-                  </button>
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-base-100 border border-base-200 rounded-2xl px-3.5 py-1.5 shadow-2xs text-xs">
+                <!-- Info de Items -->
+                <div class="flex items-center gap-1.5 text-base-content/60 font-medium">
+                  <span>Mostrando</span>
+                  <span class="font-bold text-base-content">{{ startItem }} - {{ endItem }}</span>
+                  <span>de</span>
+                  <span class="font-bold text-base-content">{{ p.totalItems }}</span>
+                  <span class="hidden sm:inline">productos</span>
+                </div>
+
+                <!-- Selector de Tamaño de Página & Botones de Navegación -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                  <!-- Dropdown Items por página -->
+                  <div class="flex items-center gap-1">
+                    <span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span>
+                    <select
+                      [value]="p.itemsPerPage"
+                      (change)="onPageSizeChange($any($event.target).value)"
+                      class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"
+                    >
+                      <option [value]="10">10</option>
+                      <option [value]="20">20</option>
+                      <option [value]="50">50</option>
+                    </select>
+                  </div>
+
+                  <!-- Botones Anterior / Siguiente -->
+                  <div class="join border border-base-200 rounded-xl overflow-hidden shadow-2xs">
+                    <button
+                      type="button"
+                      class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
+                      [disabled]="p.currentPage <= 1"
+                      (click)="onPageChange({ pageIndex: p.currentPage - 2, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
+                      title="Página anterior"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
+                      <span class="hidden sm:inline text-xs font-semibold">Anterior</span>
+                    </button>
+
+                    <div class="join-item px-2.5 flex items-center bg-base-200/40 text-xs font-bold text-base-content/80 border-x border-base-200">
+                      {{ p.currentPage }} / {{ p.totalPages || 1 }}
+                    </div>
+
+                    <button
+                      type="button"
+                      class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
+                      [disabled]="p.currentPage >= p.totalPages"
+                      (click)="onPageChange({ pageIndex: p.currentPage, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
+                      title="Página siguiente"
+                    >
+                      <span class="hidden sm:inline text-xs font-semibold">Siguiente</span>
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
