@@ -1,4 +1,12 @@
 
+import { environment } from '../../environments/environment';
+
+const debugWarn = (...args: any[]) => {
+  if (!environment.production) {
+    console.warn(...args);
+  }
+};
+
 export class ProductFormUtils {
   static hasChanges(productData: any, originalProduct: any, deletedImages: string[]): { hasChanges: boolean, formData: FormData } {
     let changes = {
@@ -44,12 +52,12 @@ export class ProductFormUtils {
       normalizedNewCosts !== normalizedOrigCosts;
 
     if (pricingChanged) {
-      console.warn(`[DEBUG] Pricing block changed. Sending complete pricing payload.`);
-      console.warn(`[DEBUG]   providerCost: ${newPrice} (orig: ${origPrice})`);
-      console.warn(`[DEBUG]   useCustomProfit: ${newUseCustomProfit} (orig: ${origHasCustomMargin})`);
-      console.warn(`[DEBUG]   customProfitMargin: ${newMargin} (orig: ${origMargin})`);
-      console.warn(`[DEBUG]   pricingMethodChoice: ${newPricingMethod} (orig: ${origPricingMethod})`);
-      console.warn(`[DEBUG]   additionalCosts: ${normalizedNewCosts} (orig: ${normalizedOrigCosts})`);
+      debugWarn(`[DEBUG] Pricing block changed. Sending complete pricing payload.`);
+      debugWarn(`[DEBUG]   providerCost: ${newPrice} (orig: ${origPrice})`);
+      debugWarn(`[DEBUG]   useCustomProfit: ${newUseCustomProfit} (orig: ${origHasCustomMargin})`);
+      debugWarn(`[DEBUG]   customProfitMargin: ${newMargin} (orig: ${origMargin})`);
+      debugWarn(`[DEBUG]   pricingMethodChoice: ${newPricingMethod} (orig: ${origPricingMethod})`);
+      debugWarn(`[DEBUG]   additionalCosts: ${normalizedNewCosts} (orig: ${normalizedOrigCosts})`);
 
       changes.formData.append('providerCost', String(newPrice));
       changes.formData.append('useCustomProfit', String(newUseCustomProfit));
@@ -63,7 +71,7 @@ export class ProductFormUtils {
     const origDiscount = originalProduct.price?.discountPercentageTransfer ?? 0;
     const newDiscount = productData.discountPercentageTransfer ?? 0;
     if (Number(newDiscount) !== Number(origDiscount)) {
-      console.warn(`[DEBUG] Change detected in discountPercentageTransfer. New: '${newDiscount}', Orig: '${origDiscount}'`);
+      debugWarn(`[DEBUG] Change detected in discountPercentageTransfer. New: '${newDiscount}', Orig: '${origDiscount}'`);
       changes.formData.append('discountPercentageTransfer', String(newDiscount));
       changes.hasChanges = true;
     }
@@ -75,7 +83,7 @@ export class ProductFormUtils {
     const origProviderId = originalProduct.provider?._id || '';
     const newProviderId = productData.provider || '';
     if (newProviderId !== origProviderId) {
-      console.warn(`[DEBUG] Change detected in provider. New: '${newProviderId}', Orig: '${origProviderId}'`);
+      debugWarn(`[DEBUG] Change detected in provider. New: '${newProviderId}', Orig: '${origProviderId}'`);
       changes.formData.append('provider', newProviderId);
       changes.hasChanges = true;
     }
@@ -91,7 +99,7 @@ export class ProductFormUtils {
       const normalizedOrigVal = origVal !== undefined && origVal !== null ? String(origVal).trim() : '';
 
       if (normalizedProdVal !== normalizedOrigVal) {
-        console.warn(`[DEBUG] Change detected in simple field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'. Normalized: '${normalizedProdVal}' vs '${normalizedOrigVal}'`);
+        debugWarn(`[DEBUG] Change detected in simple field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'. Normalized: '${normalizedProdVal}' vs '${normalizedOrigVal}'`);
         changes.formData.append(field, prodVal !== undefined && prodVal !== null ? prodVal : '');
         changes.hasChanges = true;
       }
@@ -104,7 +112,7 @@ export class ProductFormUtils {
       const newArray = productData[field] || [];
 
       if (JSON.stringify(newArray) !== JSON.stringify(originalArray)) {
-        console.warn(`[DEBUG] Change detected in array field: ${field}. New: '${JSON.stringify(newArray)}', Orig: '${JSON.stringify(originalArray)}'`);
+        debugWarn(`[DEBUG] Change detected in array field: ${field}. New: '${JSON.stringify(newArray)}', Orig: '${JSON.stringify(originalArray)}'`);
         changes.formData.append(field, JSON.stringify(newArray));
         changes.hasChanges = true;
       }
@@ -158,7 +166,7 @@ export class ProductFormUtils {
     });
 
     if (JSON.stringify(newVariants) !== JSON.stringify(originalVariants)) {
-      console.warn(`[DEBUG] Change detected in variants. New: '${JSON.stringify(newVariants)}', Orig: '${JSON.stringify(originalVariants)}'`);
+      debugWarn(`[DEBUG] Change detected in variants. New: '${JSON.stringify(newVariants)}', Orig: '${JSON.stringify(originalVariants)}'`);
       changes.formData.append('variants', JSON.stringify(productData.variants || []));
       changes.hasChanges = true;
     }
@@ -168,7 +176,7 @@ export class ProductFormUtils {
     const newSpecs = productData.specifications || [];
 
     if (JSON.stringify(newSpecs) !== JSON.stringify(originalSpecs)) {
-      console.warn(`[DEBUG] Change detected in specs. New: '${JSON.stringify(newSpecs)}', Orig: '${JSON.stringify(originalSpecs)}'`);
+      debugWarn(`[DEBUG] Change detected in specs. New: '${JSON.stringify(newSpecs)}', Orig: '${JSON.stringify(originalSpecs)}'`);
       changes.formData.append('specifications', JSON.stringify(newSpecs));
       changes.hasChanges = true;
     }
@@ -181,7 +189,7 @@ export class ProductFormUtils {
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]) : '';
 
       if (prodVal !== origVal) {
-        console.warn(`[DEBUG] Change detected in tech field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
+        debugWarn(`[DEBUG] Change detected in tech field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field] || '');
         changes.hasChanges = true;
       }
@@ -194,7 +202,7 @@ export class ProductFormUtils {
       const origVal = originalProduct[field] !== undefined && originalProduct[field] !== null ? String(originalProduct[field]) : '';
 
       if (prodVal !== origVal) {
-        console.warn(`[DEBUG] Change detected in clothing field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
+        debugWarn(`[DEBUG] Change detected in clothing field: ${field}. ProdVal: '${prodVal}', OrigVal: '${origVal}'`);
         changes.formData.append(field, productData[field] || '');
         changes.hasChanges = true;
       }
@@ -206,7 +214,7 @@ export class ProductFormUtils {
     if (productData.images && Array.isArray(productData.images)) {
       const newFiles = productData.images.filter((img: any) => img.file instanceof File);
       if (newFiles.length > 0) {
-        console.warn(`[DEBUG] Change detected in images. ${newFiles.length} new files.`);
+        debugWarn(`[DEBUG] Change detected in images. ${newFiles.length} new files.`);
         changes.hasChanges = true;
         newFiles.forEach((img: any) => {
           changes.formData.append('images', img.file);
@@ -217,14 +225,14 @@ export class ProductFormUtils {
       const currentImageUrls = productData.images.map((img: any) => img.link);
 
       if (JSON.stringify(originalImageUrls) !== JSON.stringify(currentImageUrls)) {
-        console.warn(`[DEBUG] Change detected in image order/content.`);
+        debugWarn(`[DEBUG] Change detected in image order/content.`);
         changes.hasChanges = true;
         changes.formData.append('imagesOrder', JSON.stringify(currentImageUrls));
       }
     }
 
     if (deletedImages.length > 0) {
-      console.warn(`[DEBUG] Change detected in deletedImages.`);
+      debugWarn(`[DEBUG] Change detected in deletedImages.`);
       changes.hasChanges = true;
       changes.formData.append('deletedImages', JSON.stringify(deletedImages));
     }
@@ -254,7 +262,7 @@ export class ProductFormUtils {
     const seoTextsChanged = JSON.stringify(normalizedNewSeo) !== JSON.stringify(normalizedOrigSeo);
 
     if (seoTextsChanged || seoImageChanged) {
-      console.warn(`[DEBUG] Change detected in SEO. Texts: ${seoTextsChanged}, Image: ${seoImageChanged}`);
+      debugWarn(`[DEBUG] Change detected in SEO. Texts: ${seoTextsChanged}, Image: ${seoImageChanged}`);
 
       const seoData: any = {
         metaTitle: newSeo.metaTitle || '',
@@ -291,7 +299,7 @@ export class ProductFormUtils {
     }) : 'null';
 
     if (normalizedNew !== normalizedOrig) {
-      console.warn(`[DEBUG] Change detected in sizeGuide. New: '${normalizedNew}', Orig: '${normalizedOrig}'`);
+      debugWarn(`[DEBUG] Change detected in sizeGuide. New: '${normalizedNew}', Orig: '${normalizedOrig}'`);
       if (newSizeGuide) {
         changes.formData.append('sizeGuide', JSON.stringify(newSizeGuide));
       } else {

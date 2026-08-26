@@ -318,17 +318,7 @@ export class ProductStoreService {
   }
 
   async getProduct(id: string) {
-    // 1. Buscamos en el estado local de la lista
-    // const localProduct = this.products().data.find(p => p._id === id);
-
-    // if (localProduct) {
-    //   console.log('Cargado desde caché local 🚀');
-    //   return localProduct;
-    // }
-
-    // 2. Si no está (ej: refresh de página), vamos a buscarlo
     try {
-      console.log('Viajando a Dubai por el producto... ✈️');
       return await this.#productService.getProduct(id);
     } catch (error) {
       this.#notificationService.error('Error al obtener el producto');

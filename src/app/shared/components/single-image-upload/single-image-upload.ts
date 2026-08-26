@@ -57,7 +57,6 @@ export class SingleImageUpload {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length <= 0) return;
-    console.log(input.files);
     this.processFile(input.files[0]);
     input.value = ''; // Reseteamos el input del DOM
   }

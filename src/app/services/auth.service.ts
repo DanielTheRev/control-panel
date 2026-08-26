@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
@@ -11,12 +11,14 @@ import {
 } from '../interfaces/auth.interfaces';
 import { environment } from '../../environments/environment';
 import { IUser } from '../interfaces/User.interface';
+import { DebugService } from './debug.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private readonly API_URL = `${environment.apiUrl}/auth`;
+  #debug = inject(DebugService);
 
   // Signals para el estado de autenticación
   private _authState = signal<AuthState>({
@@ -41,28 +43,28 @@ export class AuthService {
   ) {}
 
   initializeAuthState() {
-    console.log('🔄 Inicializando estado de autenticación...');
+    this.#debug.log('🔄 Inicializando estado de autenticación...');
     this.setLoading(true);
     return this.checkAuthStatus().pipe(
       tap({
         next: (user) => {
           if (user) {
-            console.log('✅ Usuario autenticado encontrado:');
-            console.table(user);
+            this.#debug.log('✅ Usuario autenticado encontrado:');
+            this.#debug.table(user);
             this.setAuthenticatedState(user);
           } else {
-            console.log('❌ No hay usuario autenticado');
+            this.#debug.log('❌ No hay usuario autenticado');
             this.setUnauthenticatedState();
           }
         },
         error: (error) => {
-          console.error('❌ Error verificando estado de autenticación:', error);
+          this.#debug.error('❌ Error verificando estado de autenticación:', error);
 
           this.setUnauthenticatedState();
         },
         complete: () => {
           this.setLoading(false);
-          console.log('✅ Inicialización de auth completada');
+          this.#debug.log('✅ Inicialización de auth completada');
         },
       }),
     );
@@ -110,13 +112,13 @@ export class AuthService {
               localStorage.setItem('lastTenantSlug', credentials.tenantSlug.trim().toLowerCase());
             }
             this.setAuthenticatedState(response.user);
-            console.log('✅ Login exitoso:', response.user);
+            this.#debug.log('✅ Login exitoso:', response.user);
           }
         }),
         catchError((error: HttpErrorResponse) => {
           const errorMessage = error.error?.message || 'Error de conexión o credenciales inválidas';
           this.setUnauthenticatedState(errorMessage);
-          console.error('❌ Error en login:', error);
+          this.#debug.error('❌ Error en login:', error);
           return throwError(() => error);
         }),
       );
@@ -129,13 +131,13 @@ export class AuthService {
       tap(() => {
         this.setUnauthenticatedState();
         this.router.navigate(['/login']);
-        console.log('✅ Logout exitoso');
+        this.#debug.log('✅ Logout exitoso');
       }),
       catchError((error: HttpErrorResponse) => {
         // Incluso si hay error en el logout del server, limpiamos el estado local
         this.setUnauthenticatedState();
         this.router.navigate(['/login']);
-        console.error('⚠️ Error en logout (limpiando estado local):', error);
+        this.#debug.error('⚠️ Error en logout (limpiando estado local):', error);
         return of(null);
       }),
     );
@@ -145,7 +147,7 @@ export class AuthService {
     return this.http.get<IUser>(`${this.API_URL}/getUser`).pipe(
       map((response) => response),
       catchError(() => {
-        console.log('❌ Usuario no autenticado');
+        this.#debug.log('❌ Usuario no autenticado');
         return of(null);
       }),
     );
@@ -180,7 +182,7 @@ export class AuthService {
         if (canActivate && this.isAdmin()) {
           return true;
         } else {
-          console.warn(
+          this.#debug.warn(
             '⚠️ Acceso denegado: Se requieren permisos de administrador',
           );
           this.router.navigate(['/login']);
@@ -197,7 +199,7 @@ export class AuthService {
 
   // Método para refrescar manualmente el estado de autenticación
   refreshAuthState(): void {
-    console.log('🔄 Refrescando estado de autenticación manualmente...');
+    this.#debug.log('🔄 Refrescando estado de autenticación manualmente...');
     this.initializeAuthState();
   }
 }

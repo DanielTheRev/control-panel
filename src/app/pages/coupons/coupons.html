@@ -93,19 +93,51 @@
                 <tr class="hover:bg-base-200/30 transition-colors">
                   <td>
                     <div class="flex flex-col gap-1 items-start">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-2 flex-wrap">
                         <span class="font-mono font-bold text-sm bg-base-200 px-2.5 py-1 rounded-md tracking-wider">
                           {{ coupon.code }}
                         </span>
                         @if (coupon.isFirstPurchaseOnly) {
                           <span class="badge badge-accent badge-xs uppercase font-bold text-[9px]">1ª Compra</span>
                         }
+                        @if (coupon.paymentMethodRestriction === 'TRANSFER') {
+                          <span class="badge badge-success badge-xs text-white font-bold text-[9px] gap-0.5">
+                            <mat-icon class="text-[10px]! w-2.5! h-2.5!">payments</mat-icon> Solo Transfer
+                          </span>
+                        } @else if (coupon.paymentMethodRestriction === 'CARD') {
+                          <span class="badge badge-info badge-xs text-white font-bold text-[9px] gap-0.5">
+                            <mat-icon class="text-[10px]! w-2.5! h-2.5!">credit_card</mat-icon> Solo Tarjetas
+                          </span>
+                        }
                       </div>
-                      @if (coupon.assignedUserEmail) {
-                        <span class="badge badge-warning badge-xs font-mono text-[9px]">
-                          👤 {{ coupon.assignedUserEmail }}
-                        </span>
-                      }
+
+                      <!-- Badges de Ámbito -->
+                      <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                        @if (coupon.assignedUserEmail) {
+                          <span class="badge badge-warning badge-xs font-mono text-[9px]">
+                            👤 {{ coupon.assignedUserEmail }}
+                          </span>
+                        }
+                        @if (coupon.applicableProductTypes && coupon.applicableProductTypes.length > 0) {
+                          @for (pt of coupon.applicableProductTypes; track pt) {
+                            <span class="badge badge-ghost badge-xs text-[9px] font-semibold">
+                              {{ pt === 'TechProduct' ? '💻 Tech' : pt === 'ClothingProduct' ? '👔 Ropa' : pt === 'BeautyProduct' ? '🌸 Belleza' : '📦 General' }}
+                            </span>
+                          }
+                        }
+                        @if (coupon.applicableCategories && coupon.applicableCategories.length > 0) {
+                          @for (cat of coupon.applicableCategories; track cat) {
+                            <span class="badge badge-primary/10 text-primary border border-primary/20 badge-xs text-[9px] font-semibold">
+                              🏷️ {{ cat }}
+                            </span>
+                          }
+                        }
+                        @if (coupon.applicableProducts && coupon.applicableProducts.length > 0) {
+                          <span class="badge badge-secondary/10 text-secondary border border-secondary/20 badge-xs text-[9px] font-semibold">
+                            📦 {{ coupon.applicableProducts.length }} prod. específicos
+                          </span>
+                        }
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -171,11 +203,11 @@
         </div>
       </div>
 
-      <!-- Columna Derecha: Card Guía Instagram (En mobile arriba de los cupones, en desktop derecha 1/3) -->
-      <div class="lg:col-span-1 order-1 lg:order-2 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-amber-500/10 p-5 rounded-2xl border border-pink-500/20 shadow-sm space-y-3">
+      <!-- Columna Derecha: Guía de Cupones de Instagram (En mobile arriba, en desktop derecha 1/3) -->
+      <div class="order-1 lg:order-2 bg-gradient-to-br from-pink-500/10 via-base-100 to-purple-500/10 p-5 rounded-2xl border border-pink-500/20 shadow-sm space-y-4">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-600 flex items-center justify-center shrink-0">
-            <mat-icon class="text-lg">photo_camera</mat-icon>
+          <div class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-600 flex items-center justify-center shrink-0">
+            <mat-icon>photo_camera</mat-icon>
           </div>
           <div>
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-pink-700">Cupones de Instagram</h3>
@@ -214,8 +246,8 @@
   <!-- Modal Crear Cupón -->
   @if (showModal()) {
     <div class="modal modal-open">
-      <div class="modal-box max-w-lg bg-base-100 border border-base-200 shadow-xl">
-        <h3 class="font-bold text-lg text-base-content mb-4 flex items-center gap-2">
+      <div class="modal-box max-w-2xl bg-base-100 border border-base-200 shadow-xl max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-lg text-base-content mb-3 flex items-center gap-2">
           <mat-icon class="text-primary">local_offer</mat-icon>
           Crear Nuevo Cupón de Descuento
         </h3>
@@ -226,32 +258,27 @@
           </div>
         }
 
-        <!-- Tip Informativo Instagram -->
-        <div class="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-amber-500/10 p-3.5 rounded-xl border border-pink-500/20 mb-4 text-xs">
-          <div class="flex items-center gap-2 text-pink-700 font-bold mb-1">
-            <mat-icon class="text-sm">photo_camera</mat-icon>
-            <span>Tip para Cupones de Instagram (@vura.ar)</span>
-          </div>
-          <p class="text-[11px] text-base-content/80 leading-relaxed">
-            Si el cupón es para un seguidor de Instagram que te envió DM:
-          </p>
-          <ul class="list-disc list-inside mt-1 space-y-0.5 text-[10px] font-mono text-base-content/70">
-            <li>Usá prefijos como <strong>VURAIG</strong> o <strong>INSTAGRAM</strong> (ej: <span class="badge badge-xs font-mono font-bold">VURAIG-CARLA</span>, <span class="badge badge-xs font-mono font-bold">INSTAGRAM-10</span>).</li>
-            <li>Escribí el email del cliente abajo en <strong>"Asignar Exclusivo a Email"</strong>.</li>
-          </ul>
-          <p class="text-[10px] text-emerald-700 font-semibold mt-1">
-            ✨ Esto cambiará su card de Instagram a "DISPONIBLE" automáticamente.
-          </p>
-        </div>
-
         <form [formGroup]="form" (ngSubmit)="submitForm()" class="space-y-4">
           
-          <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-xs">Código del Cupón *</span></label>
-            <input type="text" formControlName="code" placeholder="Ej: VURA10, VURAIG-FERNANDO, PRIMERACOMPRA" class="input input-bordered w-full uppercase font-mono tracking-wider text-sm" />
+          <!-- Código y Medio de Pago -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Código del Cupón *</span></label>
+              <input type="text" formControlName="code" placeholder="Ej: VURA10, TRANSFER15, CYBERMONDAY" class="input input-bordered w-full uppercase font-mono tracking-wider text-sm" />
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Medio de Pago Aplicable *</span></label>
+              <select formControlName="paymentMethodRestriction" class="select select-bordered w-full text-xs font-bold">
+                <option value="ALL">🌐 Todos los Medios de Pago</option>
+                <option value="TRANSFER">💵 Solo Transferencia / Efectivo (Directo)</option>
+                <option value="CARD">💳 Solo Tarjetas / Cuotas (Mercado Pago)</option>
+              </select>
+            </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Tipo de Descuento y Valor -->
+          <div class="grid grid-cols-2 gap-3">
             <div class="form-control">
               <label class="label"><span class="label-text font-bold text-xs">Tipo de Descuento *</span></label>
               <select formControlName="discountType" class="select select-bordered w-full text-xs">
@@ -265,7 +292,8 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Compra Mínima y Límite de Usos -->
+          <div class="grid grid-cols-2 gap-3">
             <div class="form-control">
               <label class="label"><span class="label-text font-bold text-xs">Compra Mínima ($ ARS)</span></label>
               <input type="number" formControlName="minOrderAmount" placeholder="0" class="input input-bordered w-full text-xs" />
@@ -276,16 +304,118 @@
             </div>
           </div>
 
-          <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-xs">Asignar Exclusivo a Email de Cliente (Opcional)</span></label>
-            <input type="email" formControlName="assignedUserEmail" placeholder="Ej: cliente@gmail.com (dejar vacío para cupón público)" class="input input-bordered w-full text-xs font-mono" />
+          <!-- Exclusividad por Email y Fecha -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Email Exclusivo (Opcional)</span></label>
+              <input type="email" formControlName="assignedUserEmail" placeholder="Ej: cliente@gmail.com" class="input input-bordered w-full text-xs font-mono" />
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs">Fecha de Vencimiento</span></label>
+              <input type="date" formControlName="expiresAt" class="input input-bordered w-full text-xs" />
+            </div>
           </div>
 
-          <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-xs">Fecha de Vencimiento</span></label>
-            <input type="date" formControlName="expiresAt" class="input input-bordered w-full text-xs" />
+          <!-- ============================================================== -->
+          <!-- ÁMBITO DEL CUPÓN: PRODUCTOS, CATEGORÍAS Y VERTICALES          -->
+          <!-- ============================================================== -->
+          <div class="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-base-content/80 flex items-center gap-1.5">
+                <mat-icon class="text-[16px]! w-4! h-4! text-secondary">tune</mat-icon>
+                Ámbito de Aplicación (Opcional)
+              </span>
+              <span class="text-[10px] text-base-content/50">Por defecto aplica a todo el catálogo</span>
+            </div>
+
+            <!-- 1. Tipos de Producto (Verticales / Discriminators) -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-bold text-base-content/70 block">Tipos de Producto Permitidos:</label>
+              <div class="flex items-center gap-2 flex-wrap">
+                @for (pt of availableProductTypes; track pt.id) {
+                  <button
+                    type="button"
+                    class="btn btn-xs rounded-lg font-bold gap-1 transition-all"
+                    [ngClass]="selectedProductTypes().includes(pt.id) ? 'btn-primary' : 'btn-ghost bg-base-100 border border-base-200'"
+                    (click)="toggleProductType(pt.id)"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">{{ pt.icon }}</mat-icon>
+                    {{ pt.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- 2. Categorías Específicas -->
+            @if (availableCategories().length > 0) {
+              <div class="space-y-1.5 pt-2 border-t border-base-200/60">
+                <label class="text-[11px] font-bold text-base-content/70 block">Categorías Permitidas:</label>
+                <div class="flex items-center gap-1.5 flex-wrap max-h-28 overflow-y-auto p-1 bg-base-100 rounded-lg border border-base-200">
+                  @for (cat of availableCategories(); track cat) {
+                    <button
+                      type="button"
+                      class="btn btn-xs rounded-md text-[10px] font-bold transition-all"
+                      [ngClass]="selectedCategories().includes(cat) ? 'btn-secondary text-white' : 'btn-ghost bg-base-200/50'"
+                      (click)="toggleCategory(cat)"
+                    >
+                      🏷️ {{ cat }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- 3. Productos Específicos -->
+            <div class="space-y-2 pt-2 border-t border-base-200/60 relative">
+              <label class="text-[11px] font-bold text-base-content/70 block">Productos Específicos:</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar producto por nombre o SKU..."
+                  class="input input-xs input-bordered w-full text-xs"
+                  (input)="onProductSearchInput($event)"
+                />
+                @if (isSearchingProducts()) {
+                  <span class="loading loading-spinner loading-xs text-primary absolute right-2 top-2"></span>
+                }
+              </div>
+
+              <!-- Dropdown de sugerencias de productos -->
+              @if (productSuggestions().length > 0) {
+                <div class="absolute left-0 right-0 z-30 bg-base-100 border border-base-300 rounded-xl shadow-xl max-h-48 overflow-y-auto p-1 space-y-1">
+                  @for (prod of productSuggestions(); track prod._id || prod.id) {
+                    <button
+                      type="button"
+                      class="w-full text-left p-2 rounded-lg hover:bg-base-200/60 flex items-center justify-between text-xs transition-colors"
+                      (click)="addProduct(prod)"
+                    >
+                      <div class="flex items-center gap-2 truncate">
+                        <span class="font-bold truncate">{{ prod.name }}</span>
+                        @if (prod.category) {
+                          <span class="badge badge-ghost badge-2xs">{{ prod.category }}</span>
+                        }
+                      </div>
+                      <span class="text-primary font-bold text-xs shrink-0">+ Añadir</span>
+                    </button>
+                  }
+                </div>
+              }
+
+              <!-- Chips de productos seleccionados -->
+              @if (selectedProducts().length > 0) {
+                <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                  @for (p of selectedProducts(); track p._id || p.id) {
+                    <span class="badge badge-sm badge-secondary/10 text-secondary border border-secondary/20 gap-1 font-bold text-[10px]">
+                      {{ p.name }}
+                      <mat-icon class="text-[12px]! w-3! h-3! cursor-pointer hover:text-error" (click)="removeProduct(p._id || p.id)">close</mat-icon>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
           </div>
 
+          <!-- Checkbox Primera Compra -->
           <div class="form-control bg-base-200/50 p-3 rounded-lg border border-base-200">
             <label class="label cursor-pointer justify-start gap-3">
               <input type="checkbox" formControlName="isFirstPurchaseOnly" class="checkbox checkbox-primary checkbox-sm" />

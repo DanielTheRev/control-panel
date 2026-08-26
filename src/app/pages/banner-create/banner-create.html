@@ -1,208 +1,487 @@
 <app-page-layout>
-  @let title = isEditMode ? 'Editar Banner' : 'Crear Nuevo Banner';
-  @let subtitle = isEditMode ? 'Edita cualquier campo para actualizar el banner.'
-  : 'Rellena la información para tu nueva sección del Home.';
+  @let title = isEditMode() ? 'Editar Banner' : 'Crear Nuevo Banner';
+  @let subtitle = isEditMode() ? 'Actualizá la imagen, destino de enlace o productos vinculados.' : 'Configurá un banner publicitario clickeable estilo Mercado Libre.';
 
   <app-page-header header [title]="title" [subtitle]="subtitle">
-    <div actions class="flex gap-2">
-      <a routerLink="/home/banners" class="btn btn-ghost text-base-content/50" [class.btn-disabled]="loading()">
+    <div actions class="flex items-center gap-2">
+      <a routerLink="/home/banners" class="btn btn-sm btn-ghost rounded-xl font-bold text-xs" [class.btn-disabled]="isSaving()">
         Cancelar
       </a>
-      <button class="btn btn-primary px-8 flex items-center gap-2" (click)="onSubmit()" [disabled]="bannerForm.invalid || loading()">
-        @if (loading()) {
-          <span class="loading loading-spinner loading-sm"></span> Guardando...
+      <button
+        type="button"
+        class="btn btn-sm btn-primary rounded-xl font-bold text-xs gap-1.5 shadow-sm px-5"
+        (click)="onSubmit()"
+        [disabled]="bannerForm.invalid || isSaving()"
+      >
+        @if (isSaving()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
         } @else {
-          <mat-icon>save</mat-icon> {{ isEditMode ? 'Guardar Cambios' : 'Guardar Banner' }}
+          <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+          <span>{{ isEditMode() ? 'Guardar Cambios' : 'Guardar Banner' }}</span>
         }
       </button>
     </div>
   </app-page-header>
 
   <ng-container content>
-    <!-- LIVE PREVIEW SECTION -->
-    @if (currentImagePreview) {
-    <div class="mb-8 animate-fade-in-down">
-      <div class="flex items-center gap-2 mb-4 px-1">
-        <mat-icon class="text-primary animate-pulse">visibility</mat-icon>
-        <h3 class="text-lg font-bold">Vista Previa en Vivo</h3>
-        <span class="badge badge-primary badge-outline text-xs">Simulación Frontend</span>
-      </div>
+    <div class="p-3 sm:p-6 w-full space-y-6">
 
-      <!-- Simulated Frontend Banner -->
-      <div class="relative w-full h-125 rounded-3xl overflow-hidden shadow-2xl group border border-base-200">
-
-        <!-- Background Image -->
-        <img [src]="currentImagePreview"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          alt="Banner Preview" onerror="this.src='https://placehold.co/1200x600?text=Invalid+Image+URL'">
-
-        <!-- Overlay Gradient (matches frontend) -->
-        <div class="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent"></div>
-
-        <!-- Content Container -->
-        <div
-          class="absolute inset-0 flex flex-col justify-center px-12 sm:px-24 max-w-2xl scale-[0.85] sm:scale-100 origin-left">
-
-          <!-- Brand / Subtitle -->
-          <span class="text-xl font-medium tracking-wide mb-2 uppercase" [ngClass]="bannerForm.value.textClass">
-            {{ bannerForm.value.subtitle || 'Subtítulo' }}
-          </span>
-
-          <!-- Title -->
-          <h2 class="text-5xl sm:text-7xl font-bold mb-6 leading-tight tracking-tight"
-            [ngClass]="bannerForm.value.textClass">
-            {{ bannerForm.value.title || 'Título Principal' }}
-          </h2>
-
-          <!-- Description -->
-          <p class="text-lg sm:text-xl font-light opacity-90 mb-8 max-w-lg leading-relaxed"
-            [ngClass]="bannerForm.value.textClass">
-            {{ bannerForm.value.description || 'Descripción del banner...' }}
-          </p>
-
-          <!-- CTA Button -->
-          <div class="flex gap-4">
-            <button
-              class="px-8 py-3 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl"
-              [ngClass]="bannerForm.value.buttonClass">
-              <span>Ver Detalles</span>
-              <!-- Improved Icon Rendering -->
-              @if (!bannerForm.value.icon) {
-              <mat-icon class="text-[20px]! w-5! h-5!">arrow_forward</mat-icon>
-              }
-            </button>
+      <!-- ========================================================================= -->
+      <!-- 1. VISTA PREVIA EN VIVO DE ANCHO COMPLETO (MERCADO LIBRE STYLE)          -->
+      <!-- ========================================================================= -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">visibility</mat-icon>
+            <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Vista Previa en Vivo</span>
           </div>
-
+          
+          <!-- Badge del Destino del Link -->
+          @if (linkType !== 'none' && bannerForm.get('linkValue')?.value) {
+            <div class="badge badge-sm badge-primary gap-1 font-bold text-[10px] py-2 px-2.5 shadow-2xs">
+              <mat-icon class="text-[12px]! w-3! h-3!">link</mat-icon>
+              <span>Destino: {{ linkType | uppercase }} ({{ bannerForm.get('linkValue')?.value }})</span>
+            </div>
+          } @else {
+            <span class="badge badge-sm badge-neutral text-[10px] font-bold">Banner solo visual (Sin link)</span>
+          }
         </div>
 
-        <!-- Monitor Frame Decoration -->
-        <div class="absolute inset-4 border border-white/10 rounded-2xl pointer-events-none"></div>
+        <!-- Canvas del Banner -->
+        <div class="relative w-full rounded-2xl overflow-hidden border border-base-200 shadow-sm bg-base-200/40 group">
+          @if (previewDesktop()) {
+            <img
+              [src]="previewDesktop()"
+              alt="Banner Desktop Preview"
+              class="w-full h-auto max-h-72 lg:max-h-84 object-cover group-hover:scale-[1.008] transition-transform duration-500"
+            />
+            <div class="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <span class="badge badge-neutral bg-black/75 text-white font-bold text-xs gap-1.5 py-3 px-4 backdrop-blur-md">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">touch_app</mat-icon>
+                <span>Clic redirige a: {{ linkType !== 'none' ? bannerForm.get('linkValue')?.value || linkType : 'Sin acción' }}</span>
+              </span>
+            </div>
+          } @else {
+            <div class="py-14 flex flex-col items-center justify-center text-base-content/30 space-y-2">
+              <mat-icon class="text-4xl">add_photo_alternate</mat-icon>
+              <p class="text-xs font-bold">Subí una imagen para ver la vista previa del banner en tiempo real</p>
+            </div>
+          }
+        </div>
       </div>
-    </div>
-    }
 
-    <form [formGroup]="bannerForm" class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+      <!-- ========================================================================= -->
+      <!-- 2. GRID 2 COLUMNAS PARA APROVECHAR TODO EL ESPACIO                        -->
+      <!-- ========================================================================= -->
+      <form [formGroup]="bannerForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-      <!-- LEFT COLUMN (3/5): Main Content -->
-      <div class="lg:col-span-3 space-y-6">
+        <!-- COLUMNA IZQUIERDA (7/12): Imágenes y Vitrina de Productos -->
+        <div class="lg:col-span-7 space-y-6">
 
-        <!-- Basic Info Card -->
-        <div class="card bg-base-100 shadow-sm border border-base-300">
-          <div class="card-body p-6">
-            <h3 class="card-title text-lg mb-4">Contenido del Banner</h3>
+          <!-- CARD: SUBIDA DE IMÁGENES -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+              <div class="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold shrink-0">
+                <mat-icon class="text-[20px]! w-5! h-5!">image</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Imágenes del Banner</h3>
+                <p class="text-xs text-base-content/50">Subí la imagen completa con diseño, textos y botones ya integrados.</p>
+              </div>
+            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <fieldset class="fieldset w-full">
-                <legend class="fieldset-legend">Título Principal</legend>
-                <input type="text" class="input input-bordered w-full" placeholder="Ej. iPhone 16 Pro"
-                  formControlName="title" />
-              </fieldset>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <!-- Imagen Desktop -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-base-content">Desktop (Horizontal)</span>
+                  <span class="badge badge-xs badge-primary font-bold">REQUERIDO</span>
+                </div>
+                <p class="text-[10px] text-base-content/50">Panorámica 16:9 (1920x600 o 1200x500).</p>
+                <app-single-image-upload
+                  title="Banner Desktop"
+                  ratioBadge="16:9"
+                  [control]="imageControl"
+                />
+              </div>
 
-              <fieldset class="fieldset w-full">
-                <legend class="fieldset-legend">Marca / ID</legend>
-                <input type="text" class="input input-bordered w-full" placeholder="Ej. Apple"
-                  formControlName="brandName" [readonly]="isEditMode" [class.input-disabled]="isEditMode" />
-                @if(isEditMode) {
-                <span class="text-xs text-base-content/40 mt-1">No se puede modificar el ID.</span>
+              <!-- Imagen Mobile -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-base-content">Mobile (Vertical)</span>
+                  <span class="badge badge-xs badge-ghost font-bold">OPCIONAL</span>
+                </div>
+                <p class="text-[10px] text-base-content/50">Vertical o cuadrada (800x800 o 1080x1350).</p>
+                <app-single-image-upload
+                  title="Banner Mobile"
+                  ratioBadge="4:5"
+                  [control]="imageMobileControl"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD: VITRINA DE PRODUCTOS (BLOQUE DE CAMPAÑA) -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-success/10 text-success flex items-center justify-center font-bold shrink-0">
+                  <mat-icon class="text-[20px]! w-5! h-5!">grid_view</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Productos de Campaña</h3>
+                  <p class="text-xs text-base-content/50">¿Querés que debajo de este banner aparezca una tira de productos en la Home?</p>
+                </div>
+              </div>
+              <input type="checkbox" formControlName="showProducts" class="toggle toggle-success toggle-sm" />
+            </div>
+
+            @if (showProducts) {
+              <div class="space-y-4 pt-1 animate-fade-in-down">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Origen de los Productos -->
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content block">¿Qué productos querés mostrar?</label>
+                    <select formControlName="productSource" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                      <option value="recent">Últimos Productos Agregados</option>
+                      <option value="category">Por Categoría</option>
+                      <option value="collection">Por Colección / Tag</option>
+                      <option value="brand">Por Marca</option>
+                      <option value="manual">Elegir Productos a Mano</option>
+                    </select>
+                  </div>
+
+                  <!-- Cantidad de productos -->
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content block">Cantidad a Mostrar</label>
+                    <select formControlName="productsCount" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                      <option [value]="4">4 Productos (Recomendado)</option>
+                      <option [value]="6">6 Productos</option>
+                      <option [value]="8">8 Productos</option>
+                      <option [value]="12">12 Productos</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Valores dinámicos según el origen -->
+                @if (productSource === 'category') {
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content block">Categoría de los Productos</label>
+                    <select formControlName="productSourceValue" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                      <option value="">Seleccionar categoría...</option>
+                      @for (cat of storeConfig().config.categories; track cat) {
+                        <option [value]="cat">{{ cat }}</option>
+                      }
+                    </select>
+                  </div>
                 }
-              </fieldset>
-            </div>
 
-            <fieldset class="fieldset mt-4">
-              <legend class="fieldset-legend">Subtítulo (Top)</legend>
-              <input type="text" class="input input-bordered w-full" placeholder="Ej. Titanium Design"
-                formControlName="subtitle" />
-            </fieldset>
+                @if (productSource === 'collection') {
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content block">Tag / Colección de los Productos</label>
+                    <input
+                      type="text"
+                      formControlName="productSourceValue"
+                      class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                      placeholder="Ej. ofertas, verano..."
+                    />
+                  </div>
+                }
 
-            <fieldset class="fieldset mt-4">
-              <legend class="fieldset-legend">Descripción</legend>
-              <textarea class="textarea textarea-bordered w-full h-24" placeholder="Breve descripción de la sección..."
-                formControlName="description"></textarea>
-            </fieldset>
+                @if (productSource === 'brand') {
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content block">Marca de los Productos</label>
+                    <select formControlName="productSourceValue" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                      <option value="">Seleccionar marca...</option>
+                      @for (b of storeConfig().config.brands; track b) {
+                        <option [value]="b">{{ b }}</option>
+                      }
+                    </select>
+                  </div>
+                }
 
-            <!-- Image Upload Component -->
-            <div class="mt-4">
-              <app-single-image-upload
-                title="Imagen de Fondo"
-                ratioBadge="16:9"
-                [control]="imageControl"
-                (previewChange)="onImagePreviewChange($event)"
-              />
-              <p class="text-xs text-base-content/50 mt-1">La vista previa oficial aparecerá arriba automáticamente.</p>
-            </div>
+                @if (productSource === 'manual') {
+                  <div class="space-y-3">
+                    <label class="text-xs font-bold text-base-content block">Buscar y Seleccionar Productos</label>
+                    <div class="relative">
+                      <input
+                        type="text"
+                        class="input input-sm input-bordered w-full rounded-xl text-xs"
+                        placeholder="Escribí para buscar productos..."
+                        (input)="onSearchProduct($event)"
+                      />
+                      @if (isSearchingProducts()) {
+                        <span class="loading loading-spinner loading-xs absolute right-3 top-2.5 text-primary"></span>
+                      }
+                    </div>
+
+                    @if (productSuggestions().length > 0) {
+                      <div class="bg-base-100 rounded-xl border border-base-200 shadow-md p-1 max-h-48 overflow-y-auto space-y-1">
+                        @for (p of productSuggestions(); track p._id) {
+                          <button
+                            type="button"
+                            class="w-full text-left p-2 rounded-lg hover:bg-base-200 flex items-center justify-between text-xs"
+                            (click)="addManualProduct(p)"
+                          >
+                            <span class="font-bold">{{ p.brand }} {{ p.model }}</span>
+                            <span class="badge badge-xs badge-primary">+ Agregar</span>
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <!-- Chips de productos seleccionados -->
+                    <div class="flex flex-wrap gap-2 pt-2">
+                      @for (p of selectedManualProducts(); track p._id) {
+                        <div class="badge badge-lg bg-base-200 border-base-300 font-bold py-3 px-3 text-xs gap-1.5">
+                          <span>{{ p.brand }} {{ p.model }}</span>
+                          <button type="button" class="btn btn-ghost btn-2xs btn-circle text-error" (click)="removeManualProduct(p._id)">
+                            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+                          </button>
+                        </div>
+                      } @empty {
+                        <span class="text-xs text-base-content/40 italic">No agregaste productos manualmente todavía.</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+              </div>
+            }
           </div>
+
         </div>
 
-      </div>
+        <!-- COLUMNA DERECHA (5/12): Identificación, Redirección y Visibilidad -->
+        <div class="lg:col-span-5 space-y-6">
 
-      <!-- RIGHT COLUMN (2/5): Configurations & Styles -->
-      <div class="lg:col-span-2 space-y-6">
-
-        <!-- Styling Configuration -->
-        <div class="card bg-base-100 shadow-sm border border-base-200">
-          <div class="card-body p-6">
-            <h3 class="card-title text-lg mb-4">Personalización Visual</h3>
-
-            <fieldset class="fieldset w-full">
-              <legend class="fieldset-legend">Clase de Texto (Tailwind)</legend>
-              <div class="join w-full">
-                <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
-                  <mat-icon class="text-base text-base-content/50">format_paint</mat-icon>
-                </span>
-                <input type="text" class="input input-bordered join-item w-full" placeholder="ej. text-white"
-                  formControlName="textClass" />
+          <!-- CARD: IDENTIFICACIÓN & ESTADO -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                <mat-icon class="text-[20px]! w-5! h-5!">label</mat-icon>
               </div>
-            </fieldset>
-
-            <fieldset class="fieldset w-full mt-4">
-              <legend class="fieldset-legend">Clase de Botón (Tailwind)</legend>
-              <div class="join w-full">
-                <span class="join-item btn btn-static bg-base-200 border-base-300 px-3">
-                  <mat-icon class="text-base text-base-content/50">smart_button</mat-icon>
-                </span>
-                <input type="text" class="input input-bordered join-item w-full" placeholder="ej. bg-white text-black"
-                  formControlName="buttonClass" />
+              <div>
+                <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Configuración General</h3>
+                <p class="text-xs text-base-content/50">Nombre interno y visibilidad en la tienda.</p>
               </div>
-            </fieldset>
-
-            <div class="grid grid-cols-2 gap-4 mt-4">
-              <fieldset class="fieldset w-full">
-                <legend class="fieldset-legend">Icono</legend>
-                <input type="text" class="input input-bordered w-full" placeholder="Smartphone"
-                  formControlName="icon" />
-              </fieldset>
-
-              <fieldset class="fieldset w-full">
-                <legend class="fieldset-legend">Orden</legend>
-                <input type="number" class="input input-bordered w-full" placeholder="0" formControlName="order" />
-              </fieldset>
             </div>
 
+            <div class="space-y-3">
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content block">Nombre del Banner / Campaña</label>
+                <input
+                  type="text"
+                  formControlName="name"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                  placeholder="Ej. Ofertas Verano - Celulares y Ropa"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Prioridad / Orden</label>
+                  <input
+                    type="number"
+                    formControlName="order"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Visibilidad</label>
+                  <div class="flex items-center justify-between h-8 px-3 rounded-xl bg-base-200/50 border border-base-200">
+                    <span class="text-xs font-bold">{{ bannerForm.get('isActive')?.value ? 'Activo' : 'Pausado' }}</span>
+                    <input type="checkbox" formControlName="isActive" class="toggle toggle-primary toggle-xs" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- Status Card -->
-        <div class="card bg-base-100 shadow-sm border border-base-200">
-          <div class="card-body p-6">
-            <h3 class="card-title text-lg mb-4">Visibilidad</h3>
+          <!-- CARD: DESTINO DEL CLIC (REDIRECCIÓN) -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+              <div class="w-9 h-9 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold shrink-0">
+                <mat-icon class="text-[20px]! w-5! h-5!">touch_app</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Destino del Clic</h3>
+                <p class="text-xs text-base-content/50">¿A dónde viaja el cliente al tocar la imagen?</p>
+              </div>
+            </div>
 
-            <div class="form-control">
-              <label class="label cursor-pointer justify-start gap-4">
-                <mat-checkbox formControlName="isActive" color="primary">
-                  <span class="text-base font-medium">Banner Visible</span>
-                </mat-checkbox>
+            <!-- Selector de Tipo de Enlace -->
+            <div class="grid grid-cols-3 gap-2">
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'category' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="category" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">category</mat-icon>
+                <span class="text-[10px]">Categoría</span>
               </label>
-              <p class="text-xs text-base-content/50 pl-2 mt-1">
-                Controla si este banner se muestra o no en la página principal.
-              </p>
+
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'collection' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="collection" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">loyalty</mat-icon>
+                <span class="text-[10px]">Colección</span>
+              </label>
+
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'brand' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="brand" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">business</mat-icon>
+                <span class="text-[10px]">Marca</span>
+              </label>
+
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'product' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="product" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">shopping_bag</mat-icon>
+                <span class="text-[10px]">Producto</span>
+              </label>
+
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'custom' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="custom" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">link</mat-icon>
+                <span class="text-[10px]">Link Libre</span>
+              </label>
+
+              <label
+                class="flex flex-col items-center justify-center p-2.5 rounded-xl border text-center cursor-pointer transition-all shadow-2xs"
+                [ngClass]="linkType === 'none' ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-base-200 hover:bg-base-200/40 text-base-content/70'"
+              >
+                <input type="radio" formControlName="linkType" value="none" class="hidden" />
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! mb-1">block</mat-icon>
+                <span class="text-[10px]">Sin Enlace</span>
+              </label>
             </div>
 
+            <!-- Campos dinámicos según el tipo de enlace elegido -->
+            <div class="pt-1">
+              @if (linkType === 'category') {
+                <div class="space-y-1.5 animate-fade-in-down">
+                  <label class="text-xs font-bold text-base-content block">Seleccionar Categoría</label>
+                  <select formControlName="linkValue" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                    <option value="">Seleccionar categoría...</option>
+                    @for (cat of storeConfig().config.categories; track cat) {
+                      <option [value]="cat">{{ cat }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (linkType === 'collection') {
+                <div class="space-y-2 animate-fade-in-down">
+                  <label class="text-xs font-bold text-base-content block">Colección o Tag</label>
+                  <input
+                    type="text"
+                    formControlName="linkValue"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                    placeholder="Ej. ofertas-verano, lanzamientos"
+                  />
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] text-base-content/50">Sugerencias:</span>
+                    <button type="button" class="badge badge-sm badge-outline text-[10px] cursor-pointer hover:bg-base-200" (click)="bannerForm.patchValue({ linkValue: 'ofertas' })">ofertas</button>
+                    <button type="button" class="badge badge-sm badge-outline text-[10px] cursor-pointer hover:bg-base-200" (click)="bannerForm.patchValue({ linkValue: 'lanzamientos' })">lanzamientos</button>
+                    <button type="button" class="badge badge-sm badge-outline text-[10px] cursor-pointer hover:bg-base-200" (click)="bannerForm.patchValue({ linkValue: 'destacados' })">destacados</button>
+                  </div>
+                </div>
+              }
+
+              @if (linkType === 'brand') {
+                <div class="space-y-1.5 animate-fade-in-down">
+                  <label class="text-xs font-bold text-base-content block">Seleccionar Marca</label>
+                  <select formControlName="linkValue" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                    <option value="">Seleccionar marca...</option>
+                    @for (b of storeConfig().config.brands; track b) {
+                      <option [value]="b">{{ b }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (linkType === 'product') {
+                <div class="space-y-2.5 animate-fade-in-down">
+                  <label class="text-xs font-bold text-base-content block">Buscar Producto Específico</label>
+                  
+                  @if (selectedLinkProduct()) {
+                    <div class="flex items-center justify-between p-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+                      <div class="flex items-center gap-2">
+                        @if (selectedLinkProduct().images?.[0]?.url) {
+                          <img [src]="selectedLinkProduct().images[0].url" class="w-8 h-8 rounded-lg object-cover" />
+                        }
+                        <div>
+                          <span class="text-xs font-bold block">{{ selectedLinkProduct().brand }} {{ selectedLinkProduct().model }}</span>
+                          <span class="text-[10px] text-base-content/60">{{ selectedLinkProduct().category }}</span>
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-ghost btn-xs btn-circle text-error" (click)="clearLinkProduct()">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="relative">
+                      <input
+                        type="text"
+                        class="input input-sm input-bordered w-full rounded-xl text-xs"
+                        placeholder="Escribí producto..."
+                        (input)="onSearchProduct($event)"
+                      />
+                      @if (isSearchingProducts()) {
+                        <span class="loading loading-spinner loading-xs absolute right-3 top-2.5 text-primary"></span>
+                      }
+                    </div>
+
+                    @if (productSuggestions().length > 0) {
+                      <div class="bg-base-100 rounded-xl border border-base-200 shadow-md p-1 max-h-48 overflow-y-auto space-y-1">
+                        @for (p of productSuggestions(); track p._id) {
+                          <button
+                            type="button"
+                            class="w-full text-left p-2 rounded-lg hover:bg-base-200 flex items-center justify-between text-xs"
+                            (click)="selectLinkProduct(p)"
+                          >
+                            <span class="font-bold">{{ p.brand }} {{ p.model }}</span>
+                            <span class="text-[10px] text-base-content/50">{{ p.category }}</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+
+              @if (linkType === 'custom') {
+                <div class="space-y-1.5 animate-fade-in-down">
+                  <label class="text-xs font-bold text-base-content block">URL Destino</label>
+                  <input
+                    type="text"
+                    formControlName="linkValue"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="https://... o /catalogo?tag=ofertas"
+                  />
+                </div>
+              }
+            </div>
           </div>
+
         </div>
 
-      </div>
-
-    </form>
+      </form>
+    </div>
   </ng-container>
-
 </app-page-layout>

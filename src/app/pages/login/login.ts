@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -8,20 +8,22 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { DebugService } from '../../services/debug.service';
 import { LoginCredentials } from '../../interfaces/auth.interfaces';
 import { environment } from '../../../environments/environment';
-import { getTenantSlug } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
-  loginForm: FormGroup;
+export class Login implements OnInit {
+  loginForm!: FormGroup;
   formB = inject(FormBuilder);
   route = inject(ActivatedRoute);
+  #debug = inject(DebugService);
   brandName = environment.brandName;
 
   // Estado local del componente
@@ -32,7 +34,9 @@ export class Login {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router
-  ) {
+  ) {}
+
+  ngOnInit() {
     const storeParam = this.route.snapshot.queryParams['store'] || this.route.snapshot.queryParams['tenant'];
     const savedTenant = localStorage.getItem('lastTenantSlug');
     const initialTenant = (storeParam || savedTenant || '').trim().toLowerCase();
@@ -72,20 +76,20 @@ export class Login {
         password: this.loginForm.get('password')?.value,
       };
       
-      console.log('🔐 Intentando login con:', { tenantSlug: credentials.tenantSlug, email: credentials.email });
+      this.#debug.log('🔐 Intentando login con:', { tenantSlug: credentials.tenantSlug, email: credentials.email });
 
       this.authService.login(credentials).subscribe({
         next: (response) => {
-          console.log('✅ Login exitoso:', response);
+          this.#debug.log('✅ Login exitoso:', response);
           this.router.navigate(['/home']);
         },
         error: (error) => {
-          console.error('❌ Error en login:', error);
+          this.#debug.error('❌ Error en login:', error);
           // El error ya se maneja en el servicio
         },
       });
     } else {
-      console.log('❌ Formulario inválido');
+      this.#debug.log('❌ Formulario inválido');
       this.markFormGroupTouched();
     }
   }

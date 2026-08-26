@@ -5,6 +5,8 @@ import { IProvider } from './provider.interface';
 export enum ProductType {
   TECH = 'TechProduct',
   CLOTHING = 'ClothingProduct',
+  BEAUTY = 'BeautyProduct',
+  GENERAL = 'GeneralProduct',
 }
 
 export interface ISizeGuideRow {
@@ -38,6 +40,7 @@ export interface IBaseVariant {
   reservedStock: number;
   isActive: boolean;
   imageReference: { url: string; public_id: string };
+  imageIndex?: number;
   barcode?: string;
 }
 
@@ -51,8 +54,14 @@ export interface ITechVariant extends IBaseVariant {
   attributes: IVariantAttribute[];
 }
 
+// General / Beauty Product
+export interface IGeneralVariant extends IBaseVariant {
+  size?: string;
+  volume?: string;
+}
+
 // Union type para contextos donde no se discrimina el tipo
-export type IVariant = IClothingVariant | ITechVariant;
+export type IVariant = IClothingVariant | ITechVariant | IGeneralVariant;
 
 // ============ PRODUCT INTERFACES ============
 
@@ -94,15 +103,30 @@ export interface IProduct {
   os?: string;
   connectivity?: string[];
   // Clothing fields (opcionales, presentes si productType === CLOTHING)
-  gender?: ClothingGender;
+  gender?: ClothingGender | string;
   fit?: ClothingFit;
   material?: string;
   composition?: { material: string; percentage: number }[];
   sizeType?: ClothingSizeType;
+  sizeGuide?: ISizeGuide;
   careInstructions?: string[];
   season?: string;
-  sizeGuide?: ISizeGuide;
+  // Beauty fields (opcionales, presentes si productType === BEAUTY)
+  volume?: string;
+  concentration?: string;
+  fragranceFamily?: string;
+  scentNotes?: {
+    top?: string;
+    heart?: string;
+    base?: string;
+  };
+  applicationArea?: string;
+  // General fields (opcionales, presentes si productType === GENERAL)
+  unit?: string;
+  weight?: string;
   seo: IProductSeo;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ITechProduct extends IProduct {
@@ -186,6 +210,7 @@ export interface IProductPrices {
   card_ticket1PayPrice: number;
   cashTransferPrice: number;
   discountPercentageTransfer: number;
+  updatedAt?: string | Date;
   installments: {
     threePaymentsAmount: number;
     sixPaymentsAmount: number;

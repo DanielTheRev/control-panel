@@ -1,110 +1,123 @@
 @let state = bannerService.state();
 
 <app-page-layout>
-  <app-page-header header title="Gestiona tus banners" subtitle="Crea y edita las secciones de la página de inicio">
+  <app-page-header header title="Banners Publicitarios" subtitle="Gestioná los banners interactivos y campañas de la página de inicio.">
     <div actions>
-      <a routerLink="create" class="btn btn-primary">
-        <mat-icon>add</mat-icon>
-        Nueva sección
+      <a routerLink="create" class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4">
+        <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+        Nuevo Banner
       </a>
     </div>
   </app-page-header>
+
   <ng-container content>
-    <div class="bg-base-100 rounded-lg shadow overflow-hidden">
-      <div class="flex justify-center items-center w-full h-ful">
-        @if (state.error) {
-        <div class="alert alert-vertical alert-error">
-          <mat-icon>error</mat-icon>
-          <span>Error al traer los banners</span>
-          <button class="btn btn-sm btn-primary" (click)="refresh()">Reintentar</button>
+    <div class="p-3 sm:p-6 w-full max-w-6xl mx-auto space-y-6">
+
+      @if (state.error) {
+        <div class="alert alert-error rounded-2xl shadow-xs text-xs font-bold flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <mat-icon>error</mat-icon>
+            <span>Error al conectar con el servidor para obtener los banners.</span>
+          </div>
+          <button class="btn btn-xs btn-outline" (click)="refresh()">Reintentar</button>
         </div>
-        }
-        @if (state.isLoading) {
-        <div class="flex items-center justify-center w-full h-full">
-          <span class="loading loading-ring loading-xl"></span>
+      }
+
+      @if (state.isLoading) {
+        <div class="py-24 flex flex-col items-center justify-center gap-3">
+          <span class="loading loading-ring loading-lg text-primary"></span>
+          <span class="text-xs font-bold text-base-content/40">Cargando banners...</span>
         </div>
-        }
-        @if (!state.hasValue) {
-        <div class="flex items-center justify-center w-full h-full">
-          <span class="text-base-content/40">No hay banner para mostrar, puedes crear uno desde el botón "Nueva
-            sección"</span>
+      } @else if (!state.hasValue || state.banners.length === 0) {
+        <div class="py-24 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-3 bg-base-100 rounded-3xl border border-dashed border-base-300 p-8">
+          <div class="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <mat-icon class="text-3xl">image</mat-icon>
+          </div>
+          <h3 class="font-bold text-base text-base-content">No tenés banners creados todavía</h3>
+          <p class="text-xs text-base-content/60 leading-relaxed">
+            Creá tu primer banner promocional clickeable para destacar categorías, colecciones o productos en la portada.
+          </p>
+          <a routerLink="create" class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shadow-sm mt-2">
+            <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon> Crear Primer Banner
+          </a>
         </div>
-        }
-      </div>
+      } @else {
+        <!-- Grid de Tarjetas de Banners -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          @for (banner of state.banners; track banner._id) {
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden hover:border-primary/30 transition-all duration-300 flex flex-col justify-between group">
+              
+              <!-- Imagen Preview con Badge de Estado -->
+              <div class="relative w-full h-44 bg-base-200/50 overflow-hidden">
+                <img
+                  [src]="banner.image"
+                  alt="Banner preview"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                
+                <!-- Overlay de Badges -->
+                <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
+                  <span
+                    class="badge badge-xs font-bold py-2 px-2.5 shadow-2xs backdrop-blur-md"
+                    [ngClass]="banner.isActive ? 'badge-success text-white' : 'badge-neutral bg-black/60 text-white'"
+                  >
+                    {{ banner.isActive ? 'Activo' : 'Pausado' }}
+                  </span>
 
-      @let showTable = state.hasValue && state.banners.length > 0 && !state.isLoading && !state.error;
-      @if (showTable) {
-      <table mat-table [dataSource]="state.banners" class="w-full">
+                  <span class="badge badge-xs badge-neutral bg-black/60 text-white font-bold py-2 px-2.5 backdrop-blur-md">
+                    Orden: {{ banner.order || 0 }}
+                  </span>
+                </div>
 
-        <!-- Image Column -->
-        <ng-container matColumnDef="Portada">
-          <th mat-header-cell *matHeaderCellDef> Portada </th>
-          <td mat-cell *matCellDef="let banner">
-            <img [src]="banner.image" alt="Banner" class="w-16 h-10 object-cover rounded my-2">
-          </td>
-        </ng-container>
+                @if (banner.showProducts) {
+                  <div class="absolute bottom-3 left-3">
+                    <span class="badge badge-xs badge-primary font-bold py-2 px-2.5 shadow-xs backdrop-blur-md gap-1">
+                      <mat-icon class="text-[12px]! w-3! h-3!">grid_view</mat-icon>
+                      Vitrina activa ({{ banner.productSource || 'recientes' }})
+                    </span>
+                  </div>
+                }
+              </div>
 
-        <!-- Brand Name Column -->
-        <ng-container matColumnDef="Marca">
-          <th mat-header-cell *matHeaderCellDef> Marca / ID </th>
-          <td mat-cell *matCellDef="let banner" class="font-medium"> {{banner.brandName}} </td>
-        </ng-container>
+              <!-- Contenido de la Card -->
+              <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 class="font-bold text-sm text-base-content leading-tight">
+                    {{ banner.name || banner.title || banner.brandName || 'Banner sin nombre' }}
+                  </h4>
 
-        <!-- Title Column -->
-        <ng-container matColumnDef="Titulo">
-          <th mat-header-cell *matHeaderCellDef> Titulo </th>
-          <td mat-cell *matCellDef="let banner">
-            <div class="flex flex-col">
-              <span class="font-medium">{{banner.title}}</span>
-              <span class="text-xs text-base-content/50">{{banner.subtitle}}</span>
+                  <!-- Destino del Link -->
+                  <div class="flex items-center gap-1.5 text-xs text-base-content/60 mt-1.5">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">link</mat-icon>
+                    @if (banner.linkType && banner.linkType !== 'none') {
+                      <span>Redirige a: <strong>{{ banner.linkType | uppercase }}</strong> ({{ banner.linkValue || 'Global' }})</span>
+                    } @else if (banner.brandName) {
+                      <span>Redirige a Marca: <strong>{{ banner.brandName }}</strong></span>
+                    } @else {
+                      <span class="text-base-content/40 italic">Sin enlace de redirección</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="pt-3 border-t border-base-200 flex items-center justify-between">
+                  <span class="text-[10px] text-base-content/40 font-mono">ID: {{ banner._id?.slice(-6) }}</span>
+                  <div class="flex items-center gap-1">
+                    <a [routerLink]="['edit', banner._id]" class="btn btn-xs btn-ghost text-primary font-bold gap-1 rounded-lg">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon> Editar
+                    </a>
+                    <button type="button" class="btn btn-xs btn-ghost text-error rounded-lg" (click)="deleteBanner(banner._id!)">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </td>
-        </ng-container>
-
-        <!-- Order Column -->
-        <ng-container matColumnDef="Posicion">
-          <th mat-header-cell *matHeaderCellDef> Posicion </th>
-          <td mat-cell *matCellDef="let banner"> {{banner.order}} </td>
-        </ng-container>
-
-        <!-- Status Column -->
-        <ng-container matColumnDef="Estado">
-          <th mat-header-cell *matHeaderCellDef> Estado </th>
-          <td mat-cell *matCellDef="let banner">
-            <span class="px-2 py-1 rounded text-xs" [class.bg-success/10]="banner.isActive"
-              [class.text-success]="banner.isActive" [class.bg-error/10]="!banner.isActive"
-              [class.text-error]="!banner.isActive">
-              {{banner.isActive ? 'Active' : 'Inactive'}}
-            </span>
-          </td>
-        </ng-container>
-
-        <!-- Actions Column -->
-        <ng-container matColumnDef="Acciones">
-          <th mat-header-cell *matHeaderCellDef> Acciones </th>
-          <td mat-cell *matCellDef="let banner">
-            <button mat-icon-button [matMenuTriggerFor]="menu">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <a mat-menu-item [routerLink]="['edit', banner._id]">
-                <mat-icon>edit</mat-icon>
-                <span>Edit</span>
-              </a>
-              <button mat-menu-item (click)="deleteBanner(banner._id!)">
-                <mat-icon color="warn">delete</mat-icon>
-                <span>Delete</span>
-              </button>
-            </mat-menu>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
+          }
+        </div>
       }
 
     </div>
   </ng-container>
-
 </app-page-layout>

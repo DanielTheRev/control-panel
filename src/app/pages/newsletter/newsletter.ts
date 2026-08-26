@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { NewsletterService, INewsletterSubscriber } from '../../services/newsletter.service';
+import { DebugService } from '../../services/debug.service';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -11,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class NewsletterComponent implements OnInit {
   #newsletterService = inject(NewsletterService);
+  #debug = inject(DebugService);
 
   subscribers = signal<INewsletterSubscriber[]>([]);
   isLoading = signal<boolean>(true);
@@ -28,7 +30,7 @@ export class NewsletterComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Error cargando suscriptores', err);
+        this.#debug.error('Error cargando suscriptores', err);
         this.isLoading.set(false);
       }
     });
@@ -58,7 +60,7 @@ export class NewsletterComponent implements OnInit {
     if (confirm('¿Estás seguro de eliminar este correo de la lista?')) {
       this.#newsletterService.deleteSubscriber(id).subscribe({
         next: () => this.loadSubscribers(),
-        error: (err) => console.error('Error al eliminar suscriptor', err)
+        error: (err) => this.#debug.error('Error al eliminar suscriptor', err)
       });
     }
   }

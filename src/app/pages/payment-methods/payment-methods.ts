@@ -95,8 +95,6 @@ export class PaymentMethods {
       } else {
         excludedPaymentTypes.push(type);
       } 
-      console.log(config);
-      console.log(excludedPaymentTypes);
       await this.#paymentMethodsState.updateMPConfig({
         paymentGateways: {
           mercadopago: {
@@ -117,7 +115,6 @@ export class PaymentMethods {
         await this.#paymentMethodsState.deletePaymentMethod(id);
         this.#NotificationService.success('Método de pago eliminado');
       } catch (err) {
-        console.error('Error deleting', err);
         this.#NotificationService.error('Error al eliminar');
       }
     }

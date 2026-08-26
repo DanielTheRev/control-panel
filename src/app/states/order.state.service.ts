@@ -13,6 +13,7 @@ import {
 } from '../interfaces/order.interface';
 import { AuthService } from '../services/auth.service';
 import { OrdersService, sanitizeOrder } from '../services/orders.service';
+import { DebugService } from '../services/debug.service';
 
 @Injectable({
   providedIn: 'root',
@@ -20,6 +21,7 @@ import { OrdersService, sanitizeOrder } from '../services/orders.service';
 export class OrdersStateService {
   private orderService = inject(OrdersService);
   private auth = inject(AuthService);
+  private debug = inject(DebugService);
   // Signals para filtros
   private _status = signal<string>('all');
   private _userId = signal<string | undefined>(undefined);
@@ -68,8 +70,7 @@ export class OrdersStateService {
   // método para agregar nueva orden
   addNewOrder(order: IOrder) {
     this.state.update((oldState) => {
-      console.log('Agregando nueva compra al estado de ordenes');
-      console.log(oldState);
+      this.debug.log('Agregando nueva compra al estado de ordenes', order);
       if (!oldState) return oldState;
       return {
         data: [sanitizeOrder(order), ...oldState.data],
@@ -189,12 +190,11 @@ export class OrdersStateService {
     try {
       const { message, orderUpdated } =
         await this.orderService.updatePaymentState(data.orderID, target, data.status);
-      console.log(orderUpdated);
       this.updateOrderState(orderUpdated);
 
       return orderUpdated;
     } catch (error) {
-      console.error('Error al actualizar orden:', error);
+      this.debug.error('Error al actualizar orden:', error);
       throw error;
     }
   }
@@ -203,10 +203,9 @@ export class OrdersStateService {
   async getOrderById(orderId: string): Promise<IOrder> {
     try {
       const order = await firstValueFrom(this.orderService.getOrderById(orderId));
-      console.log('order from api');
       return order;
     } catch (err) {
-      console.error('Error fetching order', err);
+      this.debug.error('Error fetching order', err);
       throw err;
     }
   }

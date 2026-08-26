@@ -18,90 +18,182 @@
 
             <!-- Main Info -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-lg mb-4">Información General</h3>
+                <!-- Selector Visual de Tipo de Envío -->
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="card-body p-6 space-y-4">
+                        <div>
+                            <h3 class="card-title text-base font-bold">Modalidad de Entrega</h3>
+                            <p class="text-xs text-base-content/50">Seleccioná cómo se entregará el pedido al comprador.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Envío a Domicilio -->
+                            <div
+                                (click)="selectShippingType(shippingTypes[0])"
+                                class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 shadow-2xs hover:scale-[1.01]"
+                                [ngClass]="form.get('type')?.value === 'Envío a domicilio' 
+                                    ? 'bg-blue-500/10 border-blue-500 ring-2 ring-blue-500/20' 
+                                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                            >
+                                <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 flex items-center justify-center shrink-0">
+                                    <mat-icon class="text-[20px]!">local_shipping</mat-icon>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-base-content block">Envío a Domicilio</span>
+                                    <span class="text-[11px] text-base-content/50 block leading-tight mt-0.5">Directo a la puerta del cliente por correo o moto.</span>
+                                </div>
+                            </div>
+
+                            <!-- Retiro en Sucursal -->
+                            <div
+                                (click)="selectShippingType(shippingTypes[1])"
+                                class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 shadow-2xs hover:scale-[1.01]"
+                                [ngClass]="form.get('type')?.value === 'Retiro en sucursal' 
+                                    ? 'bg-purple-500/10 border-purple-500 ring-2 ring-purple-500/20' 
+                                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                            >
+                                <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center shrink-0">
+                                    <mat-icon class="text-[20px]!">storefront</mat-icon>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-base-content block">Retiro en Sucursal</span>
+                                    <span class="text-[11px] text-base-content/50 block leading-tight mt-0.5">Sucursales de Correo Argentino, Andreani, OCA, etc.</span>
+                                </div>
+                            </div>
+
+                            <!-- Retiro en Local / Showroom -->
+                            <div
+                                (click)="selectShippingType(shippingTypes[2])"
+                                class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 shadow-2xs hover:scale-[1.01]"
+                                [ngClass]="form.get('type')?.value === 'Retiro en local' 
+                                    ? 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/20' 
+                                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                            >
+                                <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <mat-icon class="text-[20px]!">store</mat-icon>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-base-content block">Retiro en Local</span>
+                                    <span class="text-[11px] text-base-content/50 block leading-tight mt-0.5">Retiro físico en tu propio showroom o tienda.</span>
+                                </div>
+                            </div>
+
+                            <!-- Punto de Encuentro -->
+                            <div
+                                (click)="selectShippingType(shippingTypes[3])"
+                                class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 shadow-2xs hover:scale-[1.01]"
+                                [ngClass]="form.get('type')?.value === 'Punto de encuentro' 
+                                    ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20' 
+                                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                            >
+                                <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                                    <mat-icon class="text-[20px]!">handshake</mat-icon>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-base-content block">Punto de Encuentro</span>
+                                    <span class="text-[11px] text-base-content/50 block leading-tight mt-0.5">Lugar y horario coordinado con el comprador.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles de Costo y Logística -->
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="card-body p-6 space-y-4">
+                        <h3 class="card-title text-base font-bold">Detalles del Servicio</h3>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Tipo de Envío</legend>
-                                <select class="select select-bordered w-full" formControlName="type">
-                                    @for (type of shippingTypes; track type) {
-                                    <option [value]="type">{{type}}</option>
-                                    }
-                                </select>
+                                <legend class="fieldset-legend font-bold">Nombre visible en Checkout</legend>
+                                <input type="text" class="input input-sm input-bordered w-full rounded-xl" formControlName="name"
+                                    placeholder="Ej. Envío Express a Domicilio" />
                             </fieldset>
 
                             <fieldset class="fieldset">
-                                <legend class="fieldset-legend">Costo (ARS)</legend>
-                                <input type="number" class="input input-bordered w-full" formControlName="cost"
+                                <legend class="fieldset-legend font-bold">Costo Base ($ ARS)</legend>
+                                <input type="number" class="input input-sm input-bordered w-full rounded-xl font-mono font-bold" formControlName="cost"
                                     placeholder="0" />
+                            </fieldset>
+
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Empresa de Logística (Opcional)</legend>
+                                <input type="text" class="input input-sm input-bordered w-full rounded-xl" formControlName="carrier"
+                                    placeholder="Ej. Correo Argentino, Andreani, Moto Propia" />
+                            </fieldset>
+
+                            <fieldset class="fieldset">
+                                <legend class="fieldset-legend">Plazo de Entrega Estimado (Opcional)</legend>
+                                <input type="text" class="input input-sm input-bordered w-full rounded-xl" formControlName="estimatedDelivery"
+                                    placeholder="Ej. 2 a 5 días hábiles, En el día" />
                             </fieldset>
                         </div>
 
-                        <fieldset class="fieldset mt-4">
-                            <legend class="fieldset-legend">Nombre para mostrar</legend>
-                            <input type="text" class="input input-bordered w-full" formControlName="name"
-                                placeholder="Ej. Envío Express a domicilio" />
+                        <fieldset class="fieldset">
+                            <legend class="fieldset-legend">Instrucciones o Aclaraciones para el Cliente (Opcional)</legend>
+                            <textarea class="textarea textarea-sm textarea-bordered w-full rounded-xl" formControlName="instructions"
+                                placeholder="Ej. El cartero visita 2 veces. Presentar DNI al retirar."></textarea>
                         </fieldset>
 
-                        <div class="flex flex-row gap-2">
-                            <div class="form-control mt-4">
-                                <label class="label cursor-pointer justify-start gap-4">
-                                    <input type="checkbox" class="toggle toggle-primary"
+                        <div class="pt-4 border-t border-base-200 flex flex-col sm:flex-row gap-4">
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-3">
+                                    <input type="checkbox" class="toggle toggle-primary toggle-sm"
                                         formControlName="isDefaultForCash" />
-                                    <span class="label-text">Seleccionar por defecto para pagos en efectivo</span>
+                                    <span class="label-text text-xs font-semibold">Seleccionar por defecto para pagos en efectivo</span>
                                 </label>
                             </div>
-                            <div class="form-control mt-4">
-                                <label class="label cursor-pointer justify-start gap-4">
-                                    <input type="checkbox" class="toggle toggle-warning" formControlName="isActive" />
-                                    <span class="label-text">Determinar si es elegible este metodo de envio</span>
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-3">
+                                    <input type="checkbox" class="toggle toggle-success toggle-sm" formControlName="isActive" />
+                                    <span class="label-text text-xs font-semibold">Opción activa y disponible</span>
                                 </label>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Pickup Points Section - Only if type is Pickup -->
-                @if (form.get('type')?.value === 'Punto de encuentro') {
+                <!-- Puntos de Retiro / Sucursales - Para Punto de encuentro, Local o Sucursales -->
+                @if (showPickupPoints) {
                 <div class="card bg-base-100 shadow-sm border border-base-200">
-                    <div class="card-body p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="card-title text-lg">Puntos de Retiro</h3>
-                            <button type="button" class="btn btn-sm btn-ghost text-primary" (click)="addPickupPoint()">
-                                <mat-icon class="text-sm">add</mat-icon> Agregar Punto
+                    <div class="card-body p-6 space-y-4">
+                        <div class="flex justify-between items-center pb-2 border-b border-base-200">
+                            <div>
+                                <h3 class="card-title text-base font-bold">Direcciones / Puntos de Retiro</h3>
+                                <p class="text-xs text-base-content/50">Ubicaciones físicas habilitadas para esta opción.</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary btn-outline rounded-xl font-bold gap-1" (click)="addPickupPoint()">
+                                <mat-icon class="text-sm">add</mat-icon> Agregar Ubicación
                             </button>
                         </div>
 
-                        <div formArrayName="pickupPoints" class="space-y-4">
+                        <div formArrayName="pickupPoints" class="space-y-3">
                             @for (point of pickupPointsControls.controls; track $index; let i = $index) {
                             <div [formGroupName]="i"
-                                class="flex gap-4 items-start p-4 bg-base-50 rounded-lg border border-base-200 relative group">
-                                <div class="flex-1 space-y-4">
+                                class="flex gap-4 items-start p-4 bg-base-200/40 rounded-2xl border border-base-200 relative group">
+                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <fieldset class="fieldset m-0">
-                                        <legend class="fieldset-legend">Nombre del Punto</legend>
-                                        <input type="text" class="input input-sm input-bordered w-full"
-                                            formControlName="name" placeholder="Ej. Local Centro" />
+                                        <legend class="fieldset-legend font-bold">Nombre del Punto / Sucursal</legend>
+                                        <input type="text" class="input input-sm input-bordered w-full rounded-xl"
+                                            formControlName="name" placeholder="Ej. Showroom Palermo o Suc. Correo Centro" />
                                     </fieldset>
                                     <fieldset class="fieldset m-0">
-                                        <legend class="fieldset-legend">Dirección / Detalles</legend>
-                                        <input type="text" class="input input-sm input-bordered w-full"
-                                            formControlName="address" placeholder="Av. Corrientes 1234" />
+                                        <legend class="fieldset-legend font-bold">Dirección / Detalles</legend>
+                                        <input type="text" class="input input-sm input-bordered w-full rounded-xl"
+                                            formControlName="address" placeholder="Ej. Av. Santa Fe 1234 (Lun a Vie 10-18h)" />
                                     </fieldset>
                                 </div>
                                 <button type="button" (click)="removePickupPoint(i)"
-                                    class="btn btn-sm btn-square btn-ghost text-error absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <mat-icon>close</mat-icon>
+                                    class="btn btn-xs btn-circle btn-ghost text-error shrink-0 mt-6" title="Eliminar punto">
+                                    <mat-icon class="text-sm">close</mat-icon>
                                 </button>
                             </div>
                             }
                             @if (pickupPointsControls.length === 0) {
-                            <div
-                                class="text-center py-8 text-base-content/40 bg-base-200 rounded-lg border border-dashed border-base-300">
-                                <p>No hay puntos de retiro configurados</p>
-                                <button type="button" class="btn btn-sm btn-link no-underline"
-                                    (click)="addPickupPoint()">Agregar uno ahora</button>
+                            <div class="text-center py-6 text-base-content/40 bg-base-200/30 rounded-2xl border border-dashed border-base-300">
+                                <p class="text-xs">No hay puntos de retiro cargados (opcional)</p>
+                                <button type="button" class="btn btn-xs btn-link font-bold no-underline"
+                                    (click)="addPickupPoint()">+ Agregar dirección</button>
                             </div>
                             }
                         </div>
@@ -110,17 +202,19 @@
                 }
             </div>
 
-            <!-- Help/Side Info -->
+            <!-- Side Help Card -->
             <div class="lg:col-span-1 space-y-6">
                 <div class="card bg-base-100 shadow-sm border border-base-200">
-                    <div class="card-body p-6">
-                        <h3 class="card-title text-sm uppercase text-base-content/50 mb-4">Ayuda</h3>
-                        <p class="text-sm text-base-content/60 mb-4">
-                            Configura las opciones de envío disponibles para tus clientes.
-                        </p>
-                        <ul class="list-disc list-inside text-sm text-base-content/60 space-y-2">
-                            <li><strong>Envío a domicilio:</strong> Requiere dirección del cliente.</li>
-                            <li><strong>Punto de encuentro:</strong> El cliente elige dónde retirar.</li>
+                    <div class="card-body p-6 space-y-4">
+                        <div class="flex items-center gap-2 text-primary font-bold text-sm">
+                            <mat-icon class="text-[18px]!">info</mat-icon>
+                            <span>Tipos de Entrega</span>
+                        </div>
+                        <ul class="text-xs text-base-content/70 space-y-3 leading-relaxed">
+                            <li><strong>🏠 Envío a Domicilio:</strong> El comprador completa calle, número, localidad, provincia y código postal.</li>
+                            <li><strong>🏢 Retiro en Sucursal:</strong> Para envíos a sucursal de correo donde el cliente retira con su DNI.</li>
+                            <li><strong>🏪 Retiro en Local:</strong> Ideal si tenés local físico a la calle o showroom propio.</li>
+                            <li><strong>🤝 Punto de Encuentro:</strong> Para entregas en estaciones, plazas o puntos acordados previamente.</li>
                         </ul>
                     </div>
                 </div>

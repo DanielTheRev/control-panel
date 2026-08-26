@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { IEcommerceConfig } from '../../interfaces/config.interface';
+import { IEcommerceConfig, IDolarRate } from '../../interfaces/config.interface';
 import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
@@ -21,7 +21,7 @@ import { SingleImageUpload } from '../../shared/components/single-image-upload/s
 export class StoreSettings {
   configState = inject(StoreConfigStateService);
   #sidebarService = inject(SidebarService);
-  #NotificationService = inject(NotificationsService)
+  #NotificationService = inject(NotificationsService);
   #router = inject(Router);
   #fb = inject(FormBuilder);
   mp_success = input<boolean>();
@@ -32,6 +32,8 @@ export class StoreSettings {
   isUploadingLogo = signal(false);
   showRecalculateModal = signal(false);
   isRecalculating = signal(false);
+  dolarQuotes = signal<IDolarRate[]>([]);
+  isLoadingDolares = signal(false);
 
   activeTab = signal<'general' | 'pricing' | 'gateways' | 'integrations' | 'contact' | 'clothing'>('general');
 
@@ -44,6 +46,8 @@ export class StoreSettings {
       profit1Pay: [null],
       profitInstallments: [null],
       costCurrency: ['USD'],
+      dollarQuoteType: ['oficial'],
+      customDollarRate: [0],
       taxes: this.#fb.group({
         iva: [21]
       }),
@@ -159,6 +163,8 @@ export class StoreSettings {
         this.cleanUrlParams();
       }
     });
+
+    this.loadDolarQuotes();
   }
 
   private cleanUrlParams() {
@@ -187,9 +193,21 @@ export class StoreSettings {
     }
   }
 
+  async loadDolarQuotes(refresh = false) {
+    this.isLoadingDolares.set(true);
+    const quotes = await this.configState.getDolares(refresh);
+    this.dolarQuotes.set(quotes);
+    this.isLoadingDolares.set(false);
+  }
+
+  selectDollarQuote(casa: string) {
+    this.configForm.get('dollarQuoteType')?.setValue(casa);
+    this.configForm.markAsDirty();
+  }
+
   async confirmRecalculate() {
     this.isRecalculating.set(true);
-    await this.configState.recalculateAllPrices();
+    await this.configState.recalculatePrices();
     this.isRecalculating.set(false);
     this.showRecalculateModal.set(false);
   }

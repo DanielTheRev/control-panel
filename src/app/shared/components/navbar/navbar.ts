@@ -18,7 +18,7 @@ export class Navbar {
 
   navbarTitle = computed(() => this.sidebarService.navbarTitle());
 
-  isDark = document.documentElement.getAttribute('data-theme') === 'luxury';
+  isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
   get wsConnected() {
     return this.wsService.connected();
@@ -30,7 +30,7 @@ export class Navbar {
 
   toggleTheme() {
     this.isDark = !this.isDark;
-    const theme = this.isDark ? 'luxury' : 'light';
+    const theme = this.isDark ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }

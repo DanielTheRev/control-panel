@@ -9,8 +9,7 @@
 
 /* 2. Load DaisyUI */
 @plugin "daisyui" {
-  themes: luxury --default, dark --prefersdark;
-  /* themes: nexocommerce-light --default, nexocommerce-dark; */
+  themes: light --default, dark --prefersdark;
 }
 
 /* 3. Custom Themes */
@@ -18,68 +17,20 @@
   name: "light";
   default: true;
   color-scheme: light;
-  --color-base-100: oklch(100% 0 0);           
-  --color-base-200: oklch(97% 0.005 260);       
-  --color-base-300: oklch(92% 0.01 260);        
-  --color-base-content: oklch(25% 0.02 260);    
-  /* --color-primary: oklch(55% 0.27 293);         
-  --color-primary-content: oklch(100% 0 0);     
-  --color-secondary: oklch(65% 0.15 260);       
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(70% 0.18 200);          
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(40% 0.02 260);         
-  --color-neutral-content: oklch(95% 0.01 260);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.2 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.18 80);
-  --color-warning-content: oklch(25% 0.05 80);
-  --color-error: oklch(60% 0.25 25);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 0.75rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0; */
+  --color-base-100: oklch(99.2% 0.006 85);       /* Superficies/Cards: Blanco marfil cálido */
+  --color-base-200: oklch(96.2% 0.016 80);       /* Fondo general: Beige cálido suave (#f4efe6) */
+  --color-base-300: oklch(89.5% 0.022 80);       /* Bordes y divisores cálidos (#dfd7c8) */
+  --color-base-content: oklch(24% 0.02 60);      /* Texto charcoal cálido y nítido */
 }
 
 @plugin "daisyui/theme" {
   name: "dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(21% 0.006 285);       
-  --color-base-200: oklch(17% 0.005 285);       
-  --color-base-300: oklch(30% 0.01 285);        
-  --color-base-content: oklch(93% 0.01 260);     
-  /* --color-primary: oklch(55% 0.27 293);         
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(65% 0.15 260);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(70% 0.18 200);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(35% 0.01 260);
-  --color-neutral-content: oklch(90% 0.01 260);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.2 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.18 80);
-  --color-warning-content: oklch(25% 0.05 80);
-  --color-error: oklch(60% 0.25 25);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 0.75rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0; */
+  --color-base-100: oklch(27% 0.012 60);         /* Fondo cards oscuro suave y cálido */
+  --color-base-200: oklch(22% 0.01 60);          /* Fondo general oscuro aclarado */
+  --color-base-300: oklch(34% 0.015 60);         /* Bordes en oscuro */
+  --color-base-content: oklch(94% 0.01 80);       /* Texto en oscuro */
 }
 
 /* 4. Fonts */

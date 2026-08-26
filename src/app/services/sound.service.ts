@@ -1,9 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { DebugService } from './debug.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SoundService {
+  #debug = inject(DebugService);
   private audioCtx: AudioContext | null = null;
   private alarmIntervalId: any = null;
   private isAlarmRunning = false;
@@ -21,7 +23,7 @@ export class SoundService {
             window.removeEventListener('touchstart', initOnGesture);
           }
         } catch (e) {
-          console.warn('Failed to pre-initialize audio context on gesture:', e);
+          this.#debug.warn('Failed to pre-initialize audio context on gesture:', e);
         }
       };
 
@@ -40,7 +42,7 @@ export class SoundService {
       }
     }
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume().catch(err => console.warn('Could not resume AudioContext:', err));
+      this.audioCtx.resume().catch(err => this.#debug.warn('Could not resume AudioContext:', err));
     }
   }
 
@@ -53,7 +55,7 @@ export class SoundService {
     if (typeof window === 'undefined') return;
     if (this.isAlarmRunning) return;
 
-    console.log('🔔 Iniciando alarma de nuevo pedido');
+    this.#debug.log('🔔 Iniciando alarma de nuevo pedido');
     this.isAlarmRunning = true;
 
     // Play once immediately
@@ -77,7 +79,7 @@ export class SoundService {
   stopAlarm() {
     if (!this.isAlarmRunning) return;
 
-    console.log('🔕 Deteniendo alarma de nuevo pedido');
+    this.#debug.log('🔕 Deteniendo alarma de nuevo pedido');
     this.isAlarmRunning = false;
 
     if (this.alarmIntervalId) {
@@ -109,7 +111,7 @@ export class SoundService {
         }
       }, 200);
     } catch (e) {
-      console.warn('Failed to play chime:', e);
+      this.#debug.warn('Failed to play chime:', e);
     }
   }
 
@@ -145,7 +147,7 @@ export class SoundService {
 
       gainNode.connect(this.audioCtx.destination);
     } catch (e) {
-      console.warn('Failed to play synthesized bell tone:', e);
+      this.#debug.warn('Failed to play synthesized bell tone:', e);
     }
   }
 }

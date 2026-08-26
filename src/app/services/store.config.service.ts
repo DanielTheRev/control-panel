@@ -57,6 +57,14 @@ export class StoreConfigService {
     return response.automaticGateways.mercadopago.availableMethods;
   }
 
+  async getDolares(refresh = false): Promise<import('../interfaces/config.interface').IDolarRate[]> {
+    return firstValueFrom(
+      this.#http.get<import('../interfaces/config.interface').IDolarRate[]>(`${this.#apiUrl}/dolares`, {
+        params: refresh ? { refresh: 'true' } : {}
+      })
+    );
+  }
+
   async getRecommendationsConfig(): Promise<{
     limit: number;
     rules: Record<string, string[]>;

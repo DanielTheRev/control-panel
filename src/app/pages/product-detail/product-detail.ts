@@ -11,6 +11,8 @@ import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
 import { getStoreUrl } from '../../utils/tenant.utils';
 
+import { MatTooltipModule } from '@angular/material/tooltip';
+
 @Component({
   selector: 'app-product-detail',
   imports: [
@@ -21,6 +23,7 @@ import { getStoreUrl } from '../../utils/tenant.utils';
     NgClass,
     RouterLink,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.scss',
@@ -54,7 +57,6 @@ export class ProductDetail implements OnInit {
   async ngOnInit() {
     try {
       const product = await this.#productState.getProduct(this.productID());
-      console.log(product);
       // Usa margen global si NO tiene el campo nuevo de margen
       const hasMargin = product.finance?.pricingStrategy?.targetProfit !== undefined && product.finance?.pricingStrategy?.targetProfit !== null;
       this.isUsingGlobalMargin.set(!hasMargin);
@@ -223,5 +225,44 @@ export class ProductDetail implements OnInit {
 
   goBack() {
     this.#router.navigate(['/home/products']);
+  }
+
+  formatPriceAge(date?: string | Date): { text: string; fullDate: string; isOld: boolean; isVeryOld: boolean } {
+    if (!date) return { text: 'Sin fecha', fullDate: '', isOld: false, isVeryOld: false };
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return { text: 'Sin fecha', fullDate: '', isOld: false, isVeryOld: false };
+
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const fullDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}hs`;
+
+    let text = '';
+    if (diffMinutes < 1) text = 'Recién';
+    else if (diffMinutes < 60) text = `Hace ${diffMinutes}m`;
+    else if (diffHours < 24 && d.getDate() === now.getDate()) text = `Hoy ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    else if (diffDays === 1 || (diffHours < 48 && d.getDate() === now.getDate() - 1)) text = 'Ayer';
+    else if (diffDays < 7) text = `Hace ${diffDays} días`;
+    else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      text = `Hace ${weeks} sem.`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      text = `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      text = `Hace +${years} año${years > 1 ? 's' : ''}`;
+    }
+
+    return {
+      text,
+      fullDate,
+      isOld: diffDays >= 15,
+      isVeryOld: diffDays >= 30
+    };
   }
 }

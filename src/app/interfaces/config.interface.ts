@@ -38,6 +38,15 @@ export interface IPricingStrategy {
   cashDiscountPercentage?: number;
 }
 
+export interface IDolarRate {
+  moneda: string;
+  casa: string;
+  nombre: string;
+  compra: number;
+  venta: number;
+  fechaActualizacion: string;
+}
+
 export interface IEcommerceConfig {
   name: string;
   logo?: string;
@@ -48,6 +57,8 @@ export interface IEcommerceConfig {
     iva: number;
   };
   costCurrency?: 'USD' | 'ARS';
+  dollarQuoteType?: 'oficial' | 'blue' | 'bolsa' | 'ccl' | 'tarjeta' | 'mayorista' | 'cripto' | 'custom';
+  customDollarRate?: number;
   pricingStrategy?: IPricingStrategy;
   integrations?: IEcommerceIntegrations;
   contact: {

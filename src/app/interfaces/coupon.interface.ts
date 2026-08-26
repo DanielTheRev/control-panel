@@ -1,3 +1,5 @@
+export type CouponPaymentMethodRestriction = 'ALL' | 'TRANSFER' | 'CARD';
+
 export interface ICouponUsedBy {
   email?: string;
   userId?: string;
@@ -15,6 +17,10 @@ export interface ICoupon {
   usedCount: number;
   usedBy?: ICouponUsedBy[];
   isFirstPurchaseOnly?: boolean;
+  paymentMethodRestriction?: CouponPaymentMethodRestriction;
+  applicableProductTypes?: string[];
+  applicableCategories?: string[];
+  applicableProducts?: any[];
   assignedUserEmail?: string;
   assignedUserId?: string;
   expiresAt?: string;
@@ -30,6 +36,10 @@ export interface CreateCouponDTO {
   minOrderAmount?: number;
   maxUses?: number;
   isFirstPurchaseOnly?: boolean;
+  paymentMethodRestriction?: CouponPaymentMethodRestriction;
+  applicableProductTypes?: string[];
+  applicableCategories?: string[];
+  applicableProducts?: string[];
   assignedUserEmail?: string;
   expiresAt?: string | null;
 }

@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { StoreConfigService } from '../services/store.config.service';
 import { IEcommerceConfig } from '../interfaces/config.interface';
 import { NotificationsService } from '../services/notifications.service';
+import { DebugService } from '../services/debug.service';
 import { httpResource } from '@angular/common/http';
 
 @Injectable({
@@ -10,13 +11,11 @@ import { httpResource } from '@angular/common/http';
 export class StoreConfigStateService {
   #configService = inject(StoreConfigService);
   #notificationService = inject(NotificationsService);
+  #debug = inject(DebugService);
   #RsState = httpResource<IEcommerceConfig>(() => ({
     url: this.#configService.getConfigString(),
   }), {
-    parse: value => {
-      console.log(value);
-      return value as any
-    }
+    parse: value => value as any
   })
 
   readonly StoreConfig = computed(() => ({
@@ -42,7 +41,7 @@ export class StoreConfigStateService {
       this.#notificationService.success('Configuración guardada correctamente');
       return { success: true, shouldRecalculate: response.shouldRecalculate };
     } catch (error) {
-      console.error('Error saving config', error);
+      this.#debug.error('Error saving config', error);
       this.#notificationService.error('Error al guardar la configuración');
       return { success: false, shouldRecalculate: false };
     } finally {
@@ -57,21 +56,30 @@ export class StoreConfigStateService {
       this.#RsState.reload();
       return true;
     } catch (error) {
-      console.error('Error uploading logo', error);
+      this.#debug.error('Error uploading logo', error);
       this.#notificationService.error('Error al subir el logotipo');
       return false;
     }
   }
 
-  async recalculateAllPrices(): Promise<boolean> {
+  async recalculatePrices(): Promise<boolean> {
     try {
-      await this.#configService.recalculatePrices();
-      this.#notificationService.success('Precios recalculados correctamente');
+      const response = await this.#configService.recalculatePrices();
+      this.#notificationService.success(response.message || 'Precios recalculados correctamente');
       return true;
     } catch (error) {
-      console.error('Error recalculating prices', error);
+      this.#debug.error('Error recalculating prices', error);
       this.#notificationService.error('Error al recalcular los precios');
       return false;
+    }
+  }
+
+  async getDolares(refresh = false) {
+    try {
+      return await this.#configService.getDolares(refresh);
+    } catch (error) {
+      this.#debug.error('Error fetching dolar quotes', error);
+      return [];
     }
   }
 }

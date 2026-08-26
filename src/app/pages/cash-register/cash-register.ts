@@ -25,12 +25,6 @@ export class CashRegisterComponent {
   actualCloseBalance = signal(0);
   closeNotes = signal('');
 
-  constructor() {
-    effect(() => {
-      console.log(this.cashStore.session());
-    })
-  }
-
   async openSession() {
     try {
       await this.cashStore.openSession(this.initialBalance());

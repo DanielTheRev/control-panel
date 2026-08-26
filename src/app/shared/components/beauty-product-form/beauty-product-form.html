@@ -1,0 +1,115 @@
+<div [formGroup]="form" class="space-y-5">
+  
+  <!-- 1. VOLUMEN / CONTENIDO NETO & CONCENTRACIÓN -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Volumen -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-base-content block">Volumen / Contenido Neto</label>
+      <input
+        type="text"
+        formControlName="volume"
+        class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+        placeholder="Ej: 100ml, 50ml, 200g..."
+      />
+      <!-- Quick Chips -->
+      <div class="flex items-center gap-1.5 flex-wrap pt-1">
+        <span class="text-[10px] text-base-content/50 font-medium">Rápidos:</span>
+        @for (vol of standardVolumes; track vol) {
+          <button
+            type="button"
+            class="badge badge-xs badge-outline text-[10px] py-2 px-2 cursor-pointer hover:bg-base-200"
+            [class.badge-primary]="form.get('volume')?.value === vol"
+            (click)="setVolume(vol)"
+          >
+            {{ vol }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Concentración / Tipo de Cosmético -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-base-content block">Concentración / Presentación</label>
+      <select formControlName="concentration" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+        @for (item of concentrations; track item) {
+          <option [value]="item">{{ item }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- 2. FAMILIA OLFATIVA & GÉNERO -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <!-- Familia Olfativa -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-base-content block">Familia Olfativa / Tipo</label>
+      <select formControlName="fragranceFamily" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+        @for (family of fragranceFamilies; track family) {
+          <option [value]="family">{{ family }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Género -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-base-content block">Dirigido a</label>
+      <select formControlName="gender" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+        @for (g of genders; track g) {
+          <option [value]="g">{{ g }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Zona de Aplicación -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-base-content block">Zona de Aplicación</label>
+      <input
+        type="text"
+        formControlName="applicationArea"
+        class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+        placeholder="Ej: Cuello y Muñecas, Rostro..."
+      />
+    </div>
+  </div>
+
+  <!-- 3. PIRÁMIDE OLFATIVA (OPCIONAL) -->
+  <div class="bg-base-200/40 rounded-xl p-3.5 border border-base-300/50 space-y-3">
+    <div class="flex items-center gap-2">
+      <mat-icon class="text-[16px]! w-4! h-4! text-rose-500">local_florist</mat-icon>
+      <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Pirámide Olfativa (Notas Aromáticas)</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="space-y-1">
+        <label class="text-[10px] font-bold text-base-content/60 uppercase">Notas de Salida (Primeros 15 min)</label>
+        <input
+          type="text"
+          formControlName="scentNotesTop"
+          class="input input-xs input-bordered w-full bg-base-100 rounded-lg text-xs"
+          placeholder="Ej: Bergamota, Mandarina..."
+        />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-[10px] font-bold text-base-content/60 uppercase">Notas de Corazón (Cuerpo)</label>
+        <input
+          type="text"
+          formControlName="scentNotesHeart"
+          class="input input-xs input-bordered w-full bg-base-100 rounded-lg text-xs"
+          placeholder="Ej: Lavanda, Jazmín, Pimienta..."
+        />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-[10px] font-bold text-base-content/60 uppercase">Notas de Fondo (Fijación/Duración)</label>
+        <input
+          type="text"
+          formControlName="scentNotesBase"
+          class="input input-xs input-bordered w-full bg-base-100 rounded-lg text-xs"
+          placeholder="Ej: Ámbar, Vainilla, Cedro..."
+        />
+      </div>
+    </div>
+  </div>
+
+</div>

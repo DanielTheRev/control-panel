@@ -216,6 +216,93 @@
         <!-- ========================================================================= -->
         @if (activeTab() === 'pricing') {
           <div class="space-y-6">
+            <!-- Cotizaciones Dólar (DolarAPI) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                    <mat-icon class="text-[20px]! w-5! h-5!">attach_money</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cotización del Dólar (DolarAPI)</h3>
+                    <p class="text-xs text-base-content/50">Elegí la cotización en vivo que rige el cálculo de costos en USD.</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="loadDolarQuotes(true)"
+                  class="btn btn-xs btn-ghost gap-1 font-bold text-primary hover:bg-primary/10"
+                  [disabled]="isLoadingDolares()"
+                  title="Actualizar cotizaciones en vivo"
+                >
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!" [class.animate-spin]="isLoadingDolares()">refresh</mat-icon>
+                  <span>Actualizar</span>
+                </button>
+              </div>
+
+              <!-- Grilla de Cotizaciones Disponibles -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                @for (dolar of dolarQuotes(); track dolar.casa) {
+                  <div
+                    (click)="selectDollarQuote(dolar.casa)"
+                    class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
+                    [ngClass]="configForm.get('dollarQuoteType')?.value === dolar.casa 
+                      ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
+                      : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-base-content truncate">{{ dolar.nombre }}</span>
+                      @if (configForm.get('dollarQuoteType')?.value === dolar.casa) {
+                        <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
+                      }
+                    </div>
+                    
+                    <div class="mt-2 space-y-0.5">
+                      <div class="flex items-baseline justify-between text-[11px]">
+                        <span class="text-base-content/50">Venta:</span>
+                        <span class="font-black text-base-content text-sm">${{ dolar.venta | number:'1.0-2' }}</span>
+                      </div>
+                      <div class="flex items-baseline justify-between text-[10px] text-base-content/40">
+                        <span>Compra:</span>
+                        <span>${{ dolar.compra | number:'1.0-2' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Opción Personalizada / Manual -->
+                <div
+                  (click)="selectDollarQuote('custom')"
+                  class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
+                  [ngClass]="configForm.get('dollarQuoteType')?.value === 'custom' 
+                    ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
+                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-base-content">Personalizado</span>
+                    @if (configForm.get('dollarQuoteType')?.value === 'custom') {
+                      <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
+                    }
+                  </div>
+                  
+                  <div class="mt-2 space-y-1">
+                    <span class="text-[10px] text-base-content/50 block">Valor Fijo Manual:</span>
+                    <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                      <span class="text-[10px] font-bold text-base-content/40">$</span>
+                      <input
+                        type="number"
+                        formControlName="customDollarRate"
+                        class="grow font-bold text-xs"
+                        placeholder="1450"
+                        (click)="$event.stopPropagation()"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Estrategia Global de Precios -->
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
               <div class="flex items-center gap-3 pb-3 border-b border-base-200">

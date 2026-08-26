@@ -67,7 +67,6 @@ export class PaymentMethodsCreate implements OnInit {
         titular: method.titular || ''
       });
     } catch (error) {
-      console.error('Error loading payment method', error);
       this.#NotificationService.error('Error al cargar el método de pago');
     }
   }
@@ -93,7 +92,6 @@ export class PaymentMethodsCreate implements OnInit {
         this.#NotificationService.info('Método de pago actualizado');
         this.#router.navigate(['/home/payment-methods']);
       } catch (error) {
-        console.error('Error updating', error);
         this.#NotificationService.error('Error al actualizar');
       }
     } else {
@@ -102,7 +100,6 @@ export class PaymentMethodsCreate implements OnInit {
         this.#NotificationService.success('Método de pago creado');
         this.#router.navigate(['/home/payment-methods']);
       } catch (error) {
-        console.error('Error creating', error);
         this.#NotificationService.error('Error al crear');
       }
     }

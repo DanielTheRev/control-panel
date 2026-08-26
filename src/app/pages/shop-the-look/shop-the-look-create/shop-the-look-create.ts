@@ -326,7 +326,7 @@ export class ShopTheLookCreateComponent implements OnInit {
 
       this.#router.navigate(['/home/shop-the-look']);
     } catch (error) {
-      console.error(error);
+      // Error handled
     } finally {
       this.loading.set(false);
     }

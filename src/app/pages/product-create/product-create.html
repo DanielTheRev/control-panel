@@ -361,7 +361,7 @@
             </div>
 
             <!-- Card: Costos y Margen -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Costo Proveedor -->
                 <fieldset class="fieldset">
@@ -410,149 +410,7 @@
                 </fieldset>
               </div>
 
-              <!-- ============================================================== -->
-              <!-- CASCADA DE PRECIOS CALCULADOS EN TIEMPO REAL                   -->
-              <!-- ============================================================== -->
-              @if (isCalculatingListPrice()) {
-                <div class="bg-base-200/30 rounded-2xl border border-base-200 p-6 flex flex-col items-center justify-center gap-2 animate-pulse">
-                  <span class="loading loading-ring loading-md text-primary"></span>
-                  <span class="text-xs font-bold text-base-content/40">Calculando precios y cuotas...</span>
-                </div>
-              } @else if (calculatedListPrice()) {
-                @let lp = calculatedListPrice()!;
-                <div class="bg-linear-to-br from-primary/5 via-base-100 to-emerald-500/5 rounded-2xl border border-primary/20 p-4 sm:p-5 space-y-4 shadow-xs">
-                  
-                  <!-- Grid de Precios Principales -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    
-                    <!-- 1. PRECIO DE LISTA (CUOTAS) -->
-                    <div class="bg-base-100 rounded-xl p-3.5 border border-primary/20 shadow-2xs flex flex-col justify-between">
-                      <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Precio de Lista</span>
-                        <span class="badge badge-xs badge-primary font-bold">Tarjetas / Cuotas</span>
-                      </div>
-                      <div class="text-2xl sm:text-3xl font-black text-primary tracking-tight mt-1">
-                        {{ lp.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                      </div>
-                      <div class="flex items-center gap-3 text-[11px] text-base-content/60 mt-2 pt-2 border-t border-base-200">
-                        <span><strong>3x:</strong> {{ lp.installments.threePaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                        <span><strong>6x:</strong> {{ lp.installments.sixPaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                      </div>
-                    </div>
-
-                    <!-- 2. DESCUENTO & PRECIO TRANSFERENCIA -->
-                    <div class="bg-base-100 rounded-xl p-3.5 border border-emerald-500/20 shadow-2xs flex flex-col justify-between">
-                      <div class="flex items-center justify-between gap-2">
-                        <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Descuento Transferencia</span>
-                        <div class="join w-24">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            class="join-item input input-bordered input-xs w-full text-center font-black text-emerald-600"
-                            formControlName="discountPercentageTransfer"
-                          />
-                          <span class="join-item btn btn-static btn-xs bg-base-200 font-bold">% OFF</span>
-                        </div>
-                      </div>
-                      <div class="flex items-baseline gap-2 mt-1 flex-wrap">
-                        <span class="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">
-                          {{ transferPrice() | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                        </span>
-                        <span class="badge badge-xs badge-success text-white font-bold">Pago directo</span>
-                      </div>
-                      
-                      <!-- Indicador de Descuento Máximo Seguro -->
-                      <div class="mt-2 pt-2 border-t border-base-200 space-y-1">
-                        <div class="flex items-center gap-1.5 text-[11px] font-bold" [ngClass]="(productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount ? 'text-warning' : 'text-emerald-700'">
-                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">info</mat-icon>
-                          <span>
-                            Máximo sugerido: <strong>{{ lp.maxSafeDiscount }}% OFF</strong>
-                          </span>
-                        </div>
-                        <p class="text-[10px] text-base-content/50 leading-tight">
-                          @if ((productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount) {
-                            <span class="text-warning font-semibold">⚠️ Con este descuento estás absorbiendo parte con tu margen de ganancia.</span>
-                          } @else {
-                            Hasta este % descontás solo comisión de tarjeta sin reducir tu ganancia neta.
-                          }
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  <!-- Métricas de Ganancia Neta Limpia en Mano -->
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                    <div class="p-3 rounded-xl bg-success/5 border border-success/15 flex flex-col">
-                      <span class="text-[9px] font-bold text-success/70 uppercase">Ganancia 1 Pago / Débito</span>
-                      <span class="text-base font-black text-success mt-0.5">
-                        {{ lp.profits.one_pay | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                      </span>
-                    </div>
-                    <div class="p-3 rounded-xl bg-info/5 border border-info/15 flex flex-col">
-                      <span class="text-[9px] font-bold text-info/70 uppercase">Ganancia 3 Cuotas</span>
-                      <span class="text-base font-black text-info mt-0.5">
-                        {{ lp.profits.three_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                      </span>
-                    </div>
-                    <div class="p-3 rounded-xl bg-primary/5 border border-primary/15 flex flex-col">
-                      <span class="text-[9px] font-bold text-primary/70 uppercase">Ganancia 6 Cuotas</span>
-                      <span class="text-base font-black text-primary mt-0.5">
-                        {{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Desglose Numérico Completo y Visual -->
-                  @if (lp.breakdown && lp.breakdown.length > 0) {
-                    <div class="pt-2 space-y-2.5">
-                      <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">
-                          Desglose Numérico del Precio de Lista
-                        </span>
-                        <span class="text-[10px] font-bold text-base-content/70">
-                          Total: {{ lp.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
-                        </span>
-                      </div>
-
-                      <!-- Stacked Bar de Composición -->
-                      <div class="w-full h-4 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40">
-                        @for (item of lp.breakdown; track item.label; let i = $index) {
-                          <div
-                            class="h-full transition-all duration-300 relative group"
-                            [style.width.%]="item.percentage"
-                            [class]="i === 0 ? 'bg-secondary/80' : i === 1 ? 'bg-amber-500/80' : i === 2 ? 'bg-emerald-500/80' : 'bg-primary/80'"
-                            [title]="item.label + ': $' + (item.value | number:'1.0-0') + ' (' + item.percentage + '%)'"
-                          ></div>
-                        }
-                      </div>
-
-                      <!-- Tarjetas con Montos Exactos en Pesos y Porcentaje -->
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                        @for (item of lp.breakdown; track item.label; let i = $index) {
-                          <div class="p-2.5 rounded-xl border border-base-200 bg-base-100 flex flex-col justify-between shadow-2xs">
-                            <div class="flex items-center gap-1.5">
-                              <span
-                                class="w-2.5 h-2.5 rounded-full shrink-0"
-                                [class]="i === 0 ? 'bg-secondary' : i === 1 ? 'bg-amber-500' : i === 2 ? 'bg-emerald-500' : 'bg-primary'"
-                              ></span>
-                              <span class="text-[10px] font-bold text-base-content/70 truncate" [title]="item.label">{{ item.label }}</span>
-                            </div>
-                            <div class="flex items-baseline justify-between mt-1.5 pt-1.5 border-t border-base-200/60">
-                              <span class="text-xs font-black text-base-content">{{ item.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
-                              <span class="text-[10px] font-black" [class]="i === 2 ? 'text-success' : 'text-base-content/50'">{{ item.percentage }}%</span>
-                            </div>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                </div>
-              }
-
-              <!-- Acordeón: Gastos Operativos Adicionales -->
+              <!-- Acordeón: Gastos Operativos Adicionales (Ubicado directamente antes de los precios calculados) -->
               <details class="collapse collapse-arrow bg-base-200/30 rounded-xl border border-base-200">
                 <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3 px-4 min-h-0">
                   <div class="flex items-center gap-2">
@@ -611,6 +469,396 @@
                 </div>
               </details>
             </div>
+
+            <!-- ============================================================== -->
+            <!-- CASCADA DE PRECIOS CALCULADOS EN TIEMPO REAL (Debajo de inputs) -->
+            <!-- ============================================================== -->
+            @if (isCalculatingListPrice() && !calculatedListPrice()) {
+              <div class="bg-base-200/30 rounded-2xl border border-base-200 p-6 flex flex-col items-center justify-center gap-2 animate-pulse">
+                <span class="loading loading-ring loading-md text-primary"></span>
+                <span class="text-xs font-bold text-base-content/40">Calculando precios y cuotas...</span>
+              </div>
+            } @else if (calculatedListPrice()) {
+              @let lp = calculatedListPrice()!;
+              <div
+                class="bg-linear-to-br from-primary/5 via-base-100 to-emerald-500/5 rounded-2xl border border-primary/20 p-4 sm:p-5 space-y-4 shadow-xs relative transition-opacity duration-200"
+                [class.opacity-75]="isCalculatingListPrice()"
+              >
+                <!-- Indicador sutil de actualización en tiempo real -->
+                @if (isCalculatingListPrice()) {
+                  <div class="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-base-100/95 border border-primary/30 px-2.5 py-1 rounded-full shadow-xs">
+                    <span class="loading loading-spinner loading-xs text-primary"></span>
+                    <span class="text-[10px] font-bold text-primary">Actualizando...</span>
+                  </div>
+                }
+                
+                <!-- Grid de Precios Principales -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  <!-- 1. PRECIO DE LISTA (CUOTAS) -->
+                  <div class="bg-base-100 rounded-xl p-3.5 border border-primary/20 shadow-2xs flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Precio de Lista</span>
+                      <span class="badge badge-xs badge-primary font-bold">Tarjetas / Cuotas</span>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-primary tracking-tight mt-1">
+                      {{ lp.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </div>
+                    <div class="flex items-center gap-3 text-[11px] text-base-content/60 mt-2 pt-2 border-t border-base-200">
+                      <span><strong>3x:</strong> {{ lp.installments.threePaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                      <span><strong>6x:</strong> {{ lp.installments.sixPaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- 2. DESCUENTO & PRECIO TRANSFERENCIA -->
+                  <div class="bg-base-100 rounded-xl p-3.5 border border-emerald-500/20 shadow-2xs flex flex-col justify-between">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Descuento Transferencia</span>
+                      <div class="join w-24">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          class="join-item input input-bordered input-xs w-full text-center font-black text-emerald-600"
+                          formControlName="discountPercentageTransfer"
+                        />
+                        <span class="join-item btn btn-static btn-xs bg-base-200 font-bold">% OFF</span>
+                      </div>
+                    </div>
+                    <div class="flex items-baseline gap-2 mt-1 flex-wrap">
+                      <span class="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">
+                        {{ transferPrice() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                      <span class="badge badge-xs badge-success text-white font-bold">Pago directo</span>
+                    </div>
+                    
+                    <!-- Indicador de Descuento Máximo Seguro -->
+                    <div class="mt-2 pt-2 border-t border-base-200 space-y-1">
+                      <div class="flex items-center gap-1.5 text-[11px] font-bold" [ngClass]="(productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount ? 'text-warning' : 'text-emerald-700'">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">info</mat-icon>
+                        <span>
+                          Máximo sugerido: <strong>{{ lp.maxSafeDiscount }}% OFF</strong>
+                        </span>
+                      </div>
+                      <p class="text-[10px] text-base-content/50 leading-tight">
+                        @if ((productForm.get('discountPercentageTransfer')?.value || 0) > lp.maxSafeDiscount) {
+                          <span class="text-warning font-semibold">⚠️ Con este descuento estás absorbiendo parte con tu margen de ganancia.</span>
+                        } @else {
+                          Hasta este % descontás solo comisión de tarjeta sin reducir tu ganancia neta.
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Métricas de Ganancia Neta Limpia en Mano por Medio de Pago -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+                  <!-- Ganancia Transferencia -->
+                  <div class="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col justify-between shadow-2xs">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[9px] font-bold text-emerald-700 uppercase">Ganancia Transferencia</span>
+                      <span class="badge badge-2xs badge-success text-white font-bold">Directo</span>
+                    </div>
+                    <span class="text-base font-black text-emerald-600 mt-1">
+                      {{ transferProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+
+                  <!-- Ganancia 1 Pago / Débito -->
+                  <div class="p-3 rounded-xl bg-success/5 border border-success/15 flex flex-col justify-between shadow-2xs">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[9px] font-bold text-success/70 uppercase">Ganancia 1 Pago / Débito</span>
+                      <span class="badge badge-2xs badge-ghost text-[9px] font-bold">Tarjeta</span>
+                    </div>
+                    <span class="text-base font-black text-success mt-1">
+                      {{ lp.profits.one_pay | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+
+                  <!-- Ganancia 3 Cuotas -->
+                  <div class="p-3 rounded-xl bg-info/5 border border-info/15 flex flex-col justify-between shadow-2xs">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[9px] font-bold text-info/70 uppercase">Ganancia 3 Cuotas</span>
+                      <span class="badge badge-2xs badge-info text-white font-bold">Sin Interés</span>
+                    </div>
+                    <span class="text-base font-black text-info mt-1">
+                      {{ lp.profits.three_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+
+                  <!-- Ganancia 6 Cuotas (Solo si maxInstallments >= 6 o como proyección) -->
+                  <div
+                    class="p-3 rounded-xl border flex flex-col justify-between shadow-2xs transition-all"
+                    [ngClass]="(lp.maxInstallments ?? 6) >= 6 ? 'bg-primary/5 border-primary/20' : 'bg-amber-500/5 border-amber-500/20'"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="text-[9px] font-bold uppercase" [class]="(lp.maxInstallments ?? 6) >= 6 ? 'text-primary/70' : 'text-amber-700 dark:text-amber-400'">
+                        {{ (lp.maxInstallments ?? 6) >= 6 ? 'Ganancia 6 Cuotas' : 'Simulación 6 Cuotas' }}
+                      </span>
+                      @if ((lp.maxInstallments ?? 6) < 6) {
+                        <span class="badge badge-2xs badge-warning text-white font-bold text-[8px]">Inactivo</span>
+                      } @else {
+                        <span class="badge badge-2xs badge-primary text-white font-bold">Sin Interés</span>
+                      }
+                    </div>
+                    <span class="text-base font-black mt-1" [class]="(lp.maxInstallments ?? 6) >= 6 ? 'text-primary' : 'text-amber-600 dark:text-amber-400'">
+                      {{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Mensaje Explicativo de Ganancia y 6 Cuotas -->
+                @if ((lp.maxInstallments ?? 6) < 6) {
+                  <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs">
+                    <mat-icon class="text-amber-600 dark:text-amber-400 text-[18px] shrink-0 mt-0.5">info</mat-icon>
+                    <div class="text-base-content/85 text-[11px] leading-relaxed">
+                      <strong class="text-amber-800 dark:text-amber-300">6 cuotas sin interés no está activo en tu tienda</strong> (actualmente ofrecés hasta {{ (lp.maxInstallments ?? 3) > 1 ? (lp.maxInstallments + ' cuotas') : '1 pago' }}), pero <strong>si las tuvieras habilitadas</strong>, quitando el precio del proveedor ({{ lp.breakdown[0]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}) y los gastos adicionales ({{ lp.breakdown[1]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}), te quedaría una ganancia limpia en mano de <strong class="text-amber-700 dark:text-amber-300 font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> por venta.
+                    </div>
+                  </div>
+                } @else {
+                  <div class="p-3 rounded-xl bg-primary/10 border border-primary/25 flex items-start gap-2.5 text-xs">
+                    <mat-icon class="text-primary text-[18px] shrink-0 mt-0.5">verified</mat-icon>
+                    <div class="text-base-content/85 text-[11px] leading-relaxed">
+                      <strong class="text-primary">6 cuotas sin interés activas:</strong> Si tu cliente compra en 6 cuotas con tarjeta, quitando el costo de proveedor ({{ lp.breakdown[0]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}), los adicionales ({{ lp.breakdown[1]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}) y las comisiones de pasarela, tu ganancia neta en mano es de <strong class="text-primary font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>.
+                    </div>
+                  </div>
+                }
+
+                <!-- Desglose Numérico Completo y Visual -->
+                @if (lp.breakdown && lp.breakdown.length > 0) {
+                  <div class="pt-2 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">
+                        Desglose Numérico del Precio de Lista
+                      </span>
+                      <span class="text-[10px] font-bold text-base-content/70">
+                        Total: {{ lp.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                    </div>
+
+                    <!-- Stacked Bar de Composición -->
+                    <div class="w-full h-4 rounded-xl overflow-hidden flex shadow-inner border border-base-300/40">
+                      @for (item of lp.breakdown; track item.label; let i = $index) {
+                        <div
+                          class="h-full transition-all duration-300 relative group"
+                          [style.width.%]="item.percentage"
+                          [class]="i === 0 ? 'bg-secondary/80' : i === 1 ? 'bg-amber-500/80' : i === 2 ? 'bg-emerald-500/80' : 'bg-primary/80'"
+                          [title]="item.label + ': $' + (item.value | number:'1.0-0') + ' (' + item.percentage + '%)'"
+                        ></div>
+                      }
+                    </div>
+
+                    <!-- Tarjetas con Montos Exactos en Pesos y Porcentaje -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                      @for (item of lp.breakdown; track item.label; let i = $index) {
+                        <div class="p-2.5 rounded-xl border border-base-200 bg-base-100 flex flex-col justify-between shadow-2xs">
+                          <div class="flex items-center gap-1.5">
+                            <span
+                              class="w-2.5 h-2.5 rounded-full shrink-0"
+                              [class]="i === 0 ? 'bg-secondary' : i === 1 ? 'bg-amber-500' : i === 2 ? 'bg-emerald-500' : 'bg-primary'"
+                            ></span>
+                            <span class="text-[10px] font-bold text-base-content/70 truncate" [title]="item.label">{{ item.label }}</span>
+                          </div>
+                          <div class="flex items-baseline justify-between mt-1.5 pt-1.5 border-t border-base-200/60">
+                            <span class="text-xs font-black text-base-content">{{ item.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                            <span class="text-[10px] font-black" [class]="i === 2 ? 'text-success' : 'text-base-content/50'">{{ item.percentage }}%</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- ============================================================== -->
+                <!-- BLINDAJE FINANCIERO PARA CUPONES & PROMOCIONES                 -->
+                <!-- ============================================================== -->
+                <div class="pt-3 border-t border-base-200/80 space-y-3">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                      <mat-icon class="text-[18px]! w-4.5! h-4.5! text-secondary">verified_user</mat-icon>
+                      <span class="text-xs font-bold text-base-content/80 uppercase tracking-wider">
+                        Blindaje Financiero para Cupones & Promociones
+                      </span>
+                    </div>
+                    <span class="text-[10px] font-semibold text-base-content/50">
+                      Capacidad de descuento antes de vender a pérdida
+                    </span>
+                  </div>
+
+                  <!-- Grid de Capacidad de Cupones -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- 1. Capacidad en Precio de Lista (Tarjetas/Cuotas) -->
+                    <div class="bg-base-100 p-3 rounded-xl border border-base-200 flex flex-col justify-between shadow-2xs space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-base-content/60 uppercase">Cupones en Tarjeta / Cuotas</span>
+                        <span
+                          class="badge badge-xs font-bold"
+                          [ngClass]="maxCouponPercentList() >= 15 ? 'badge-success text-white' : maxCouponPercentList() >= 8 ? 'badge-warning' : 'badge-error text-white'"
+                        >
+                          Soporta hasta {{ maxCouponPercentList() }}% OFF
+                        </span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-snug">
+                        @if (maxCouponPercentList() >= 15) {
+                          🟢 <strong>Margen seguro:</strong> Podés emitir cupones de hasta <strong>{{ maxCouponPercentList() }}% OFF</strong> en cuotas sin perder plata.
+                        } @else if (maxCouponPercentList() > 0) {
+                          🟡 <strong>Margen ajustado:</strong> Cupones superiores al <strong>{{ maxCouponPercentList() }}% OFF</strong> con tarjeta entrarán en pérdida.
+                        } @else {
+                          🔴 <strong>Alerta:</strong> No podés emitir cupones en cuotas sin subsidiar la venta de tu bolsillo.
+                        }
+                      </p>
+                    </div>
+
+                    <!-- 2. Capacidad en Transferencia -->
+                    <div class="bg-base-100 p-3 rounded-xl border border-base-200 flex flex-col justify-between shadow-2xs space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-base-content/60 uppercase">Cupones en Transferencia</span>
+                        <span
+                          class="badge badge-xs font-bold"
+                          [ngClass]="maxCouponPercentTransfer() >= 15 ? 'badge-success text-white' : maxCouponPercentTransfer() >= 8 ? 'badge-warning' : 'badge-error text-white'"
+                        >
+                          Soporta hasta {{ maxCouponPercentTransfer() }}% OFF
+                        </span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-snug">
+                        @if (maxCouponPercentTransfer() >= 15) {
+                          🟢 <strong>Transferencia a salvo:</strong> Tu precio de transferencia soporta hasta <strong>{{ maxCouponPercentTransfer() }}% OFF</strong> adicional en cupones.
+                        } @else if (maxCouponPercentTransfer() > 0) {
+                          🟡 <strong>Margen ajustado:</strong> Descuentos extra en transferencia mayores a <strong>{{ maxCouponPercentTransfer() }}%</strong> absorberán tu ganancia.
+                        } @else {
+                          🔴 <strong>Alerta:</strong> El precio de transferencia actual no admite descuentos adicionales.
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Simulador Rápido de Cupón -->
+                  <div class="bg-base-200/40 rounded-xl p-3.5 border border-base-200 space-y-3">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                      <div class="flex items-center gap-3">
+                        <span class="text-[11px] font-bold text-base-content/70 shrink-0">Simular Cupón:</span>
+                        <div class="flex items-center gap-1.5">
+                          @for (pct of [5, 10, 15, 20]; track pct) {
+                            <button
+                              type="button"
+                              class="btn btn-xs rounded-lg font-bold"
+                              [ngClass]="simulatedCouponPercent() === pct ? 'btn-primary' : 'btn-ghost bg-base-100 border border-base-200'"
+                              (click)="simulatedCouponPercent.set(pct)"
+                            >
+                              {{ pct }}%
+                            </button>
+                          }
+                          <div class="join w-18">
+                            <input
+                              type="number"
+                              min="1"
+                              max="90"
+                              class="join-item input input-bordered input-2xs w-full text-center font-bold"
+                              [value]="simulatedCouponPercent()"
+                              (input)="simulatedCouponPercent.set(+$any($event.target).value || 0)"
+                            />
+                            <span class="join-item btn btn-static btn-2xs bg-base-200 font-bold">%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Badges de estado rápido -->
+                      <div class="flex items-center gap-2 justify-end">
+                        <span
+                          class="badge badge-sm font-bold gap-1"
+                          [ngClass]="(simulatedProfitList() > 0 && simulatedProfitTransfer() > 0) ? 'badge-success text-white' : 'badge-error text-white'"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">
+                            {{ (simulatedProfitList() > 0 && simulatedProfitTransfer() > 0) ? 'verified' : 'warning' }}
+                          </mat-icon>
+                          {{ (simulatedProfitList() > 0 && simulatedProfitTransfer() > 0) ? 'Tus costos sobreviven al 100%' : 'Alerta: Genera pérdida directa' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Grid de Desglose de Impacto Financiero en Vivo -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-base-200/80">
+                      
+                      <!-- 1. Impacto en Tarjeta / Cuotas -->
+                      <div class="bg-base-100 p-3 rounded-xl border border-base-200/90 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-base-content/60">Venta con Tarjeta / Cuotas ({{ simulatedCouponPercent() }}% OFF)</span>
+                          <span class="text-xs font-black" [ngClass]="simulatedProfitList() > 0 ? 'text-success' : 'text-error'">
+                            Ganancia: {{ simulatedProfitList() > 0 ? '+' : '' }}{{ simulatedProfitList() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                          </span>
+                        </div>
+                        
+                        <!-- Barra de comparación de ganancia -->
+                        <div class="text-[11px] space-y-1 bg-base-200/30 p-2 rounded-lg border border-base-200">
+                          <div class="flex items-center justify-between text-base-content/70">
+                            <span>Precio cobrado al cliente:</span>
+                            <span class="font-bold">{{ lp.listPrice * (1 - simulatedCouponPercent() / 100) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                          </div>
+                          <div class="flex items-center justify-between text-base-content/70">
+                            <span>Costos cubiertos (Proveedor + Adicionales):</span>
+                            <span class="font-bold text-success">{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
+                          </div>
+                          <div class="flex items-center justify-between pt-1 border-t border-base-200">
+                            <span class="text-[10px] font-bold text-warning">Impacto en tu ganancia:</span>
+                            <span class="text-[10px] font-bold text-warning">
+                              De {{ ((lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments) | currency:'ARS':'symbol-narrow':'1.0-0' }} baja a {{ simulatedProfitList() | currency:'ARS':'symbol-narrow':'1.0-0' }} (Cedés -{{ profitCededList() | currency:'ARS':'symbol-narrow':'1.0-0' }})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 2. Impacto en Transferencia -->
+                      <div class="bg-base-100 p-3 rounded-xl border border-base-200/90 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-emerald-700">Venta por Transferencia ({{ simulatedCouponPercent() }}% OFF)</span>
+                          <span class="text-xs font-black" [ngClass]="simulatedProfitTransfer() > 0 ? 'text-emerald-600' : 'text-error'">
+                            Ganancia: {{ simulatedProfitTransfer() > 0 ? '+' : '' }}{{ simulatedProfitTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                          </span>
+                        </div>
+                        
+                        <!-- Barra de comparación de ganancia -->
+                        <div class="text-[11px] space-y-1 bg-base-200/30 p-2 rounded-lg border border-base-200">
+                          <div class="flex items-center justify-between text-base-content/70">
+                            <span>Precio cobrado al cliente:</span>
+                            <span class="font-bold">{{ transferPrice() * (1 - simulatedCouponPercent() / 100) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                          </div>
+                          <div class="flex items-center justify-between text-base-content/70">
+                            <span>Costos cubiertos (Proveedor + Adicionales):</span>
+                            <span class="font-bold text-success">{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
+                          </div>
+                          <div class="flex items-center justify-between pt-1 border-t border-base-200">
+                            <span class="text-[10px] font-bold text-warning">Impacto en tu ganancia:</span>
+                            <span class="text-[10px] font-bold text-warning">
+                              De {{ transferProfit() | currency:'ARS':'symbol-narrow':'1.0-0' }} baja a {{ simulatedProfitTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }} (Cedés -{{ profitCededTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <!-- Explicación pedagógica de dónde salen los límites máximos -->
+                    <details class="collapse collapse-arrow bg-base-100 rounded-xl border border-base-200 text-xs">
+                      <summary class="collapse-title text-[11px] font-bold text-base-content/70 py-2.5 px-3 min-h-0 flex items-center gap-1.5 cursor-pointer">
+                        <mat-icon class="text-[15px]! w-4! h-4! text-secondary">help_outline</mat-icon>
+                        <span>¿De dónde salen los límites de {{ maxCouponPercentList() }}% en tarjeta y {{ maxCouponPercentTransfer() }}% en transferencia?</span>
+                      </summary>
+                      <div class="collapse-content px-3 pb-3 pt-1 text-[11px] text-base-content/60 space-y-1.5 leading-relaxed">
+                        <p>
+                          • <strong>En Tarjetas/Cuotas (Límite {{ maxCouponPercentList() }}%):</strong> De lo que Mercado Pago te liquida neto (restando comisiones de pasarela), tus costos fijos se llevan <strong>{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> y tu ganancia pretendida original eran <strong>{{ ((lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments) | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>. El {{ maxCouponPercentList() }}% OFF es el punto de quiebre donde cobrás exactamente tus costos ($0 de ganancia). Si emitís un cupón mayor al {{ maxCouponPercentList() }}%, empezás a perder plata de tu bolsillo.
+                        </p>
+                        <p>
+                          • <strong>En Transferencia (Límite {{ maxCouponPercentTransfer() }}%):</strong> Como en transferencia cobrás directo sin comisión de pasarela, el {{ maxCouponPercentTransfer() }}% OFF es el descuento adicional exacto que reduce el cobro al costo estricto del producto ({{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }}).
+                        </p>
+                      </div>
+                    </details>
+
+                  </div>
+                </div>
+
+              </div>
+            }
           </section>
 
           <!-- ===================================================================== -->
@@ -628,16 +876,21 @@
               </h2>
             </div>
 
-            <!-- Variantes Form Component (Clothing o Tech) -->
+            <!-- Variantes Form Component (Clothing, Tech o Beauty) -->
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
               @if (selectedType() === ProductType.TECH) {
                 <app-tech-product-form
                   [value]="techInitialValue()"
                   (formChange)="onTypeSpecificFormChange($event)"
                 />
-              } @else {
+              } @else if (selectedType() === ProductType.CLOTHING) {
                 <app-clothing-product-form
                   [value]="clothingInitialValue()"
+                  (formChange)="onTypeSpecificFormChange($event)"
+                />
+              } @else if (selectedType() === ProductType.BEAUTY) {
+                <app-beauty-product-form
+                  [initialValues]="beautyInitialValue()"
                   (formChange)="onTypeSpecificFormChange($event)"
                 />
               }
@@ -762,7 +1015,7 @@
                               (click)="addVariantToGroup(gIndex)"
                             >
                               <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
-                              {{ selectedType() === ProductType.TECH ? 'Añadir Versión' : 'Añadir Talle' }}
+                              {{ selectedType() === ProductType.TECH ? 'Añadir Versión' : selectedType() === ProductType.CLOTHING ? 'Añadir Talle' : selectedType() === ProductType.BEAUTY ? 'Añadir Tamaño / Presentación' : 'Añadir Variante' }}
                             </button>
                             <button
                               type="button"
@@ -785,6 +1038,20 @@
                                   formControlName="attributesJson"
                                   class="input input-xs input-bordered flex-1 text-xs font-semibold"
                                   placeholder="Almacenamiento / Versión (Ej: 128GB / 256GB)"
+                                />
+                              } @else if (selectedType() === ProductType.BEAUTY) {
+                                <input
+                                  type="text"
+                                  formControlName="size"
+                                  class="input input-xs input-bordered w-28 text-xs font-bold"
+                                  placeholder="Volumen (Ej: 100ml)"
+                                />
+                              } @else if (selectedType() === ProductType.GENERAL) {
+                                <input
+                                  type="text"
+                                  formControlName="size"
+                                  class="input input-xs input-bordered w-28 text-xs font-bold"
+                                  placeholder="Variante (Ej: Pack x2)"
                                 />
                               } @else {
                                 <input
@@ -1062,102 +1329,104 @@
               </div>
             </div>
 
-            <!-- Guía de Talles (Opcional) -->
-            <details class="collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm">
-              <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3.5 px-4 min-h-0 pr-10">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="text-[16px]! w-4! h-4! text-pink-500">straighten</mat-icon>
-                  <span>Guía de Talles & Medidas (Opcional)</span>
-                </div>
-                <label class="flex items-center gap-2 cursor-pointer" (click)="$event.stopPropagation()">
-                  <input
-                    type="checkbox"
-                    class="toggle toggle-primary toggle-xs"
-                    [checked]="sizeGuideState().enabled"
-                    (change)="toggleSizeGuide($event)"
-                  />
-                  <span class="text-[10px] font-bold text-base-content/70">
-                    {{ sizeGuideState().enabled ? 'Habilitada' : 'Deshabilitada' }}
-                  </span>
-                </label>
-              </summary>
-              <div class="collapse-content px-4 pb-4 pt-1 space-y-3">
-                @if (sizeGuideState().enabled) {
-                  <div class="overflow-x-auto">
-                    <table class="table table-xs w-full">
-                      <thead>
-                        <tr>
-                          @for (h of sizeGuideState().headers; track $index; let i = $index) {
-                            <th>
-                              <input
-                                type="text"
-                                class="input input-2xs input-bordered font-bold w-24"
-                                [value]="h"
-                                (input)="updateSizeGuideHeader(i, $event)"
-                              />
-                            </th>
-                          }
-                          <th class="w-10">
-                            <button
-                              type="button"
-                              class="btn btn-ghost btn-2xs text-primary"
-                              (click)="addSizeGuideColumn()"
-                            >
-                              + Col
-                            </button>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (row of sizeGuideState().rows; track $index; let r = $index) {
+            <!-- Guía de Talles (Solo para Indumentaria) -->
+            @if (selectedType() === ProductType.CLOTHING) {
+              <details class="collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm">
+                <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3.5 px-4 min-h-0 pr-10">
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="text-[16px]! w-4! h-4! text-pink-500">straighten</mat-icon>
+                    <span>Guía de Talles & Medidas (Opcional)</span>
+                  </div>
+                  <label class="flex items-center gap-2 cursor-pointer" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      class="toggle toggle-primary toggle-xs"
+                      [checked]="sizeGuideState().enabled"
+                      (change)="toggleSizeGuide($event)"
+                    />
+                    <span class="text-[10px] font-bold text-base-content/70">
+                      {{ sizeGuideState().enabled ? 'Habilitada' : 'Deshabilitada' }}
+                    </span>
+                  </label>
+                </summary>
+                <div class="collapse-content px-4 pb-4 pt-1 space-y-3">
+                  @if (sizeGuideState().enabled) {
+                    <div class="overflow-x-auto">
+                      <table class="table table-xs w-full">
+                        <thead>
                           <tr>
-                            <td>
-                              <input
-                                type="text"
-                                class="input input-2xs input-bordered font-bold w-24"
-                                [value]="row.size"
-                                (input)="updateSizeGuideRowSize(r, $event)"
-                              />
-                            </td>
-                            @for (v of row.values; track $index; let c = $index) {
+                            @for (h of sizeGuideState().headers; track $index; let i = $index) {
+                              <th>
+                                <input
+                                  type="text"
+                                  class="input input-2xs input-bordered font-bold w-24"
+                                  [value]="h"
+                                  (input)="updateSizeGuideHeader(i, $event)"
+                                />
+                              </th>
+                            }
+                            <th class="w-10">
+                              <button
+                                type="button"
+                                class="btn btn-ghost btn-2xs text-primary"
+                                (click)="addSizeGuideColumn()"
+                              >
+                                + Col
+                              </button>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (row of sizeGuideState().rows; track $index; let r = $index) {
+                            <tr>
                               <td>
                                 <input
                                   type="text"
-                                  class="input input-2xs input-bordered w-24"
-                                  [value]="v"
-                                  (input)="updateSizeGuideRowValue(r, c, $event)"
+                                  class="input input-2xs input-bordered font-bold w-24"
+                                  [value]="row.size"
+                                  (input)="updateSizeGuideRowSize(r, $event)"
                                 />
                               </td>
-                            }
-                            <td>
-                              <button
-                                type="button"
-                                class="btn btn-ghost btn-2xs text-error"
-                                (click)="removeSizeGuideRow(r)"
-                              >
-                                <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
-                              </button>
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                              @for (v of row.values; track $index; let c = $index) {
+                                <td>
+                                  <input
+                                    type="text"
+                                    class="input input-2xs input-bordered w-24"
+                                    [value]="v"
+                                    (input)="updateSizeGuideRowValue(r, c, $event)"
+                                  />
+                                </td>
+                              }
+                              <td>
+                                <button
+                                  type="button"
+                                  class="btn btn-ghost btn-2xs text-error"
+                                  (click)="removeSizeGuideRow(r)"
+                                >
+                                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                                </button>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
 
-                  <button
-                    type="button"
-                    class="btn btn-outline btn-xs btn-primary gap-1 font-bold"
-                    (click)="addSizeGuideRow()"
-                  >
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Añadir Talle
-                  </button>
-                } @else {
-                  <p class="text-xs text-base-content/40 italic">
-                    Activa el switch para añadir una tabla de medidas que se mostrará a los clientes en la tienda.
-                  </p>
-                }
-              </div>
-            </details>
+                    <button
+                      type="button"
+                      class="btn btn-outline btn-xs btn-primary gap-1 font-bold"
+                      (click)="addSizeGuideRow()"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Añadir Talle
+                    </button>
+                  } @else {
+                    <p class="text-xs text-base-content/40 italic">
+                      Activa el switch para añadir una tabla de medidas que se mostrará a los clientes en la tienda.
+                    </p>
+                  }
+                </div>
+              </details>
+            }
 
           </section>
 

@@ -53,7 +53,6 @@ export class BannerList {
         await this.bannerService.deleteBanner(id);
         this.#snackBar.open('Banner eliminado', 'Close', { duration: 3000 });
       } catch (error) {
-        console.log(error);
         this.#snackBar.open('Error al eliminar el banner', 'Close', { duration: 3000 });
       }
     }

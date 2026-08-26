@@ -10,10 +10,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ShippingOptionsStateService } from '../../states/shipping-options.state.service';
 import { SidebarService } from '../../services/sidebar.service';
 
+import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-shipping-options-create',
   standalone: true,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatIconModule,
     RouterLink,
@@ -35,9 +38,12 @@ export class ShippingOptionsCreate implements OnInit {
   shippingTypes = Object.values(ShippingType);
 
   form: FormGroup = this.#fb.group({
-    type: ['', Validators.required],
+    type: [ShippingType.HOME_DELIVERY, Validators.required],
     name: ['', Validators.required],
     cost: [0, [Validators.required, Validators.min(0)]],
+    carrier: [''],
+    estimatedDelivery: [''],
+    instructions: [''],
     isActive: [true, [Validators.required]],
     isDefaultForCash: [false],
     pickupPoints: this.#fb.array([])
@@ -45,6 +51,11 @@ export class ShippingOptionsCreate implements OnInit {
 
   get pickupPointsControls() {
     return this.form.get('pickupPoints') as FormArray;
+  }
+
+  get showPickupPoints(): boolean {
+    const type = this.form.get('type')?.value;
+    return type === ShippingType.PICKUP || type === ShippingType.STORE_PICKUP || type === ShippingType.BRANCH_PICKUP;
   }
 
   constructor() {
@@ -60,12 +71,20 @@ export class ShippingOptionsCreate implements OnInit {
     }
   }
 
+  selectShippingType(type: ShippingType) {
+    this.form.patchValue({ type });
+    this.form.markAsDirty();
+  }
+
   async loadOption(id: string) {
     const option = await this.#shippingState.getShippingOptionByID(id);
     this.form.patchValue({
       type: option.type,
       name: option.name,
       cost: option.cost,
+      carrier: option.carrier || '',
+      estimatedDelivery: option.estimatedDelivery || '',
+      instructions: option.instructions || '',
       isActive: option.isActive,
       isDefaultForCash: option.isDefaultForCash
     });
@@ -96,8 +115,8 @@ export class ShippingOptionsCreate implements OnInit {
 
     const value = this.form.value;
 
-    // If not pickup, clear pickupPoints just in case
-    if (value.type !== ShippingType.PICKUP) {
+    // Clear pickupPoints if not a pickup-oriented method
+    if (!this.showPickupPoints) {
       value.pickupPoints = [];
     }
 
@@ -107,7 +126,6 @@ export class ShippingOptionsCreate implements OnInit {
         this.#snackBar.open('Opción de envío actualizada', 'Cerrar', { duration: 3000 });
         this.#router.navigate(['/home/shipping-options']);
       } catch (error) {
-        console.error('Error updating', error);
         this.#snackBar.open('Error al actualizar la opción de envío', 'Cerrar', { duration: 3000 });
       }
 
@@ -117,7 +135,6 @@ export class ShippingOptionsCreate implements OnInit {
         this.#snackBar.open('Opción de envío creada', 'Cerrar', { duration: 3000 });
         this.#router.navigate(['/home/shipping-options']);
       } catch (error) {
-        console.error('Error creating', error);
         this.#snackBar.open('Error al crear la opción de envío', 'Cerrar', { duration: 3000 });
       }
     }

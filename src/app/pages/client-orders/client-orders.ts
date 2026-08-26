@@ -12,6 +12,7 @@ import {
 } from '../../interfaces/order.interface';
 import { ShippingType } from '../../interfaces/shipping.interface';
 import { SidebarService } from '../../services/sidebar.service';
+import { DebugService } from '../../services/debug.service';
 import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../states/order.state.service';
@@ -38,6 +39,7 @@ export class ClientOrders {
   // Inyectar el servicio de estado
   private orderStateService = inject(OrdersStateService);
   #SidebarService = inject(SidebarService);
+  #debug = inject(DebugService);
 
   // Search & Filtering
   searchQuery = signal<string>('');
@@ -317,9 +319,9 @@ export class ClientOrders {
   async markPaymentReceived(orderID: string): Promise<void> {
     try {
       await this.orderStateService.updateOrder('updatePayment', { orderID, status: PaymentStatus.APPROVED });
-      console.log('✅ Pago marcado como recibido');
+      this.#debug.log('✅ Pago marcado como recibido');
     } catch (error) {
-      console.error('❌ Error al marcar pago como recibido:', error);
+      this.#debug.error('❌ Error al marcar pago como recibido:', error);
       alert('Error al actualizar el pago. Por favor, intenta nuevamente.');
     }
   }
@@ -330,9 +332,9 @@ export class ClientOrders {
   async markAsDeliveredPickup(orderID: string): Promise<void> {
     try {
       await this.orderStateService.updateOrder('updateShippingStatus', { orderID, status: OrderStatus.DELIVERED });
-      console.log('✅ Orden marcada como entregada en punto de encuentro');
+      this.#debug.log('✅ Orden marcada como entregada en punto de encuentro');
     } catch (error) {
-      console.error('❌ Error al marcar como entregada:', error);
+      this.#debug.error('❌ Error al marcar como entregada:', error);
       alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
     }
   }
@@ -346,9 +348,9 @@ export class ClientOrders {
         'updateShippingStatus',
         { orderID, status: OrderStatus.SHIPPED }
       );
-      console.log('✅ Orden marcada como enviada');
+      this.#debug.log('✅ Orden marcada como enviada');
     } catch (error) {
-      console.error('❌ Error al marcar como enviada:', error);
+      this.#debug.error('❌ Error al marcar como enviada:', error);
       alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
     }
   }
@@ -362,9 +364,9 @@ export class ClientOrders {
         'updateShippingStatus',
         { orderID, status: OrderStatus.DELIVERED }
       );
-      console.log('✅ Orden marcada como entregada a domicilio');
+      this.#debug.log('✅ Orden marcada como entregada a domicilio');
     } catch (error) {
-      console.error('❌ Error al marcar como entregada:', error);
+      this.#debug.error('❌ Error al marcar como entregada:', error);
       alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
     }
   }
@@ -378,9 +380,9 @@ export class ClientOrders {
         'updateShippingStatus',
         { orderID, status: OrderStatus.PROCESSING_SHIPPING }
       );
-      console.log('✅ Proceso de envío iniciado');
+      this.#debug.log('✅ Proceso de envío iniciado');
     } catch (error) {
-      console.error('❌ Error al iniciar envío:', error);
+      this.#debug.error('❌ Error al iniciar envío:', error);
       alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
     }
   }
@@ -397,9 +399,9 @@ export class ClientOrders {
         'updateShippingStatus',
         { orderID, status: OrderStatus.CANCELLED }
       );
-      console.log('✅ Orden cancelada');
+      this.#debug.log('✅ Orden cancelada');
     } catch (error) {
-      console.error('❌ Error al cancelar orden:', error);
+      this.#debug.error('❌ Error al cancelar orden:', error);
       alert('Error al cancelar la orden. Por favor, intenta nuevamente.');
     }
   }

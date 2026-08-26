@@ -50,7 +50,6 @@ export class OrderDetails implements OnInit {
     this.orderState.getOrderById(this.id())
       .then(order => {
         this.order.set(order);
-        console.log(order);
       }).catch(() => {
         this.error.set('Error al cargar la orden');
       })

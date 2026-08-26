@@ -461,10 +461,48 @@ export class ProductList {
       await navigator.clipboard.writeText(content);
       this.#snackBar.open(`✨ ¡Listado de ${products.length} productos copiado para la IA!`, 'Genial', { duration: 4000 });
     } catch (err) {
-      console.error('Error al copiar al portapapeles:', err);
       this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
     } finally {
       this.isCopyingForAi.set(false);
     }
+  }
+
+  formatPriceAge(date?: string | Date): { text: string; fullDate: string; isOld: boolean; isVeryOld: boolean } {
+    if (!date) return { text: 'Sin fecha', fullDate: '', isOld: false, isVeryOld: false };
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return { text: 'Sin fecha', fullDate: '', isOld: false, isVeryOld: false };
+
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const fullDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}hs`;
+
+    let text = '';
+    if (diffMinutes < 1) text = 'Recién';
+    else if (diffMinutes < 60) text = `Hace ${diffMinutes}m`;
+    else if (diffHours < 24 && d.getDate() === now.getDate()) text = `Hoy ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    else if (diffDays === 1 || (diffHours < 48 && d.getDate() === now.getDate() - 1)) text = 'Ayer';
+    else if (diffDays < 7) text = `Hace ${diffDays}d`;
+    else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      text = `Hace ${weeks} sem.`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      text = `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      text = `Hace +${years}a`;
+    }
+
+    return {
+      text,
+      fullDate,
+      isOld: diffDays >= 15,
+      isVeryOld: diffDays >= 30
+    };
   }
 }

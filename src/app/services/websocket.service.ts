@@ -9,6 +9,7 @@ import { WebSocketState } from '../interfaces/websocket.interface';
 import { OrdersStateService } from '../states/order.state.service';
 import { AuthService } from './auth.service';
 import { SoundService } from './sound.service';
+import { DebugService } from './debug.service';
 import { environment } from '../../environments/environment';
 import { getTenantSlug } from '../utils/tenant.utils';
 
@@ -19,6 +20,7 @@ export class WebSocketService {
   private socket: Socket | null = null;
   private orderState = inject(OrdersStateService);
   private soundService = inject(SoundService);
+  #debug = inject(DebugService);
 
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
@@ -37,13 +39,13 @@ export class WebSocketService {
   );
 
   constructor(private authService: AuthService) {
-    console.log('🔌 Inicializando WebSocketService');
+    this.#debug.log('🔌 Inicializando WebSocketService');
     effect(() => {
       if (this.authService.isAuthenticated()) {
-        console.log('✅ Usuario admin autenticado, conectando WebSocket...');
+        this.#debug.log('✅ Usuario admin autenticado, conectando WebSocket...');
         this.connect();
       } else {
-        console.log(
+        this.#debug.log(
           '❌ Usuario no admin o no autenticado, desconectando WebSocket...',
         );
         this.disconnect();
@@ -53,11 +55,11 @@ export class WebSocketService {
 
   connect(): void {
     if (this.socket?.connected) {
-      console.log('ℹ️ WebSocket ya está conectado');
+      this.#debug.log('ℹ️ WebSocket ya está conectado');
       return;
     }
 
-    console.log('🔌 Creando conexión WebSocket:');
+    this.#debug.log('🔌 Creando conexión WebSocket:');
 
     const tenantId = getTenantSlug();
 
@@ -90,7 +92,7 @@ export class WebSocketService {
 
     // Unificada: Notificación de Admin
     this.socket.on('admin-notification', (notification: IAdminNotification) => {
-      console.log('📨 Notificación de Admin:', notification);
+      this.#debug.log('📨 Notificación de Admin:', notification);
 
       this.handleSideEffects(notification);
       this.addNotification(notification);

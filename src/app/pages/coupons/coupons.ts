@@ -1,9 +1,13 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
 import { CouponService } from '../../services/coupon.service';
-import { CreateCouponDTO, ICoupon } from '../../interfaces/coupon.interface';
+import { ProductService } from '../../services/product.service';
+import { StoreConfigStateService } from '../../states/store.config.state.service';
+import { DebugService } from '../../services/debug.service';
+import { CreateCouponDTO, ICoupon, CouponPaymentMethodRestriction } from '../../interfaces/coupon.interface';
 
 @Component({
   selector: 'app-coupons',
@@ -13,6 +17,9 @@ import { CreateCouponDTO, ICoupon } from '../../interfaces/coupon.interface';
 })
 export class CouponsComponent implements OnInit {
   #couponService = inject(CouponService);
+  #productService = inject(ProductService);
+  #configState = inject(StoreConfigStateService);
+  #debug = inject(DebugService);
   #fb = inject(FormBuilder);
 
   coupons = signal<ICoupon[]>([]);
@@ -25,6 +32,27 @@ export class CouponsComponent implements OnInit {
   firstPurchasePercentage = signal<number>(10);
   isUpdatingFirstPurchase = signal<boolean>(false);
 
+  // Available categories from store configuration
+  availableCategories = computed(() => this.#configState.StoreConfig().config?.categories || []);
+
+  // Available product types (discriminators)
+  availableProductTypes = [
+    { id: 'TechProduct', label: 'Tecnología', icon: 'devices' },
+    { id: 'ClothingProduct', label: 'Indumentaria & Calzado', icon: 'checkroom' },
+    { id: 'BeautyProduct', label: 'Perfumería & Belleza', icon: 'spa' },
+    { id: 'GeneralProduct', label: 'General / Kiosco & Bazar', icon: 'storefront' }
+  ];
+
+  // Selected scope items for the modal form
+  selectedProductTypes = signal<string[]>([]);
+  selectedCategories = signal<string[]>([]);
+  selectedProducts = signal<any[]>([]);
+
+  // Product autocomplete search
+  productSearchQuery = new Subject<string>();
+  productSuggestions = signal<any[]>([]);
+  isSearchingProducts = signal<boolean>(false);
+
   form: FormGroup = this.#fb.group({
     code: ['', [Validators.required, Validators.minLength(3)]],
     discountType: ['percentage', [Validators.required]],
@@ -32,6 +60,7 @@ export class CouponsComponent implements OnInit {
     minOrderAmount: [0, [Validators.min(0)]],
     maxUses: [null],
     isFirstPurchaseOnly: [false],
+    paymentMethodRestriction: ['ALL', [Validators.required]],
     assignedUserEmail: [''],
     expiresAt: [null]
   });
@@ -39,6 +68,60 @@ export class CouponsComponent implements OnInit {
   ngOnInit(): void {
     this.loadCoupons();
     this.loadFirstPurchaseConfig();
+    this.#setupProductSearch();
+  }
+
+  #setupProductSearch(): void {
+    this.productSearchQuery.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((query) => {
+        if (!query || query.trim().length < 2) {
+          this.isSearchingProducts.set(false);
+          this.productSuggestions.set([]);
+          return [];
+        }
+        this.isSearchingProducts.set(true);
+        return this.#productService.getSuggestions(query);
+      })
+    ).subscribe({
+      next: (results) => {
+        this.productSuggestions.set(results || []);
+        this.isSearchingProducts.set(false);
+      },
+      error: () => {
+        this.isSearchingProducts.set(false);
+        this.productSuggestions.set([]);
+      }
+    });
+  }
+
+  onProductSearchInput(event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    this.productSearchQuery.next(query);
+  }
+
+  toggleProductType(typeId: string): void {
+    this.selectedProductTypes.update((types) =>
+      types.includes(typeId) ? types.filter((t) => t !== typeId) : [...types, typeId]
+    );
+  }
+
+  toggleCategory(catName: string): void {
+    this.selectedCategories.update((cats) =>
+      cats.includes(catName) ? cats.filter((c) => c !== catName) : [...cats, catName]
+    );
+  }
+
+  addProduct(product: any): void {
+    if (!this.selectedProducts().some((p) => (p._id || p.id) === (product._id || product.id))) {
+      this.selectedProducts.update((list) => [...list, product]);
+    }
+    this.productSuggestions.set([]);
+  }
+
+  removeProduct(productId: string): void {
+    this.selectedProducts.update((list) => list.filter((p) => (p._id || p.id) !== productId));
   }
 
   loadCoupons(): void {
@@ -49,7 +132,7 @@ export class CouponsComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Error cargando cupones', err);
+        this.#debug.error('Error cargando cupones', err);
         this.isLoading.set(false);
       }
     });
@@ -61,7 +144,7 @@ export class CouponsComponent implements OnInit {
         this.firstPurchaseEnabled.set(config.enabled);
         this.firstPurchasePercentage.set(config.percentage || 10);
       },
-      error: (err) => console.error('Error cargando config de primera compra', err)
+      error: (err) => this.#debug.error('Error cargando config de primera compra', err)
     });
   }
 
@@ -76,7 +159,7 @@ export class CouponsComponent implements OnInit {
         this.isUpdatingFirstPurchase.set(false);
       },
       error: (err) => {
-        console.error('Error actualizando config de primera compra', err);
+        this.#debug.error('Error actualizando config de primera compra', err);
         this.isUpdatingFirstPurchase.set(false);
       }
     });
@@ -94,7 +177,7 @@ export class CouponsComponent implements OnInit {
         this.isUpdatingFirstPurchase.set(false);
       },
       error: (err) => {
-        console.error('Error actualizando porcentaje de primera compra', err);
+        this.#debug.error('Error actualizando porcentaje de primera compra', err);
         this.isUpdatingFirstPurchase.set(false);
       }
     });
@@ -108,9 +191,14 @@ export class CouponsComponent implements OnInit {
       minOrderAmount: 0,
       maxUses: null,
       isFirstPurchaseOnly: false,
+      paymentMethodRestriction: 'ALL',
       assignedUserEmail: '',
       expiresAt: null
     });
+    this.selectedProductTypes.set([]);
+    this.selectedCategories.set([]);
+    this.selectedProducts.set([]);
+    this.productSuggestions.set([]);
     this.errorMessage.set(null);
     this.showModal.set(true);
   }
@@ -136,6 +224,10 @@ export class CouponsComponent implements OnInit {
       minOrderAmount: val.minOrderAmount ? Number(val.minOrderAmount) : 0,
       maxUses: val.maxUses ? Number(val.maxUses) : undefined,
       isFirstPurchaseOnly: !!val.isFirstPurchaseOnly,
+      paymentMethodRestriction: val.paymentMethodRestriction as CouponPaymentMethodRestriction,
+      applicableProductTypes: this.selectedProductTypes().length > 0 ? this.selectedProductTypes() : undefined,
+      applicableCategories: this.selectedCategories().length > 0 ? this.selectedCategories() : undefined,
+      applicableProducts: this.selectedProducts().length > 0 ? this.selectedProducts().map(p => p._id || p.id) : undefined,
       assignedUserEmail: val.assignedUserEmail ? val.assignedUserEmail.trim().toLowerCase() : undefined,
       expiresAt: val.expiresAt ? new Date(val.expiresAt).toISOString() : null
     };
@@ -158,7 +250,7 @@ export class CouponsComponent implements OnInit {
       next: (updated) => {
         this.coupons.update(list => list.map(c => c._id === updated._id ? updated : c));
       },
-      error: (err) => console.error('Error al cambiar estado del cupón', err)
+      error: (err) => this.#debug.error('Error al cambiar estado del cupón', err)
     });
   }
 
@@ -169,7 +261,7 @@ export class CouponsComponent implements OnInit {
       next: () => {
         this.coupons.update(list => list.filter(c => c._id !== coupon._id));
       },
-      error: (err) => console.error('Error al eliminar el cupón', err)
+      error: (err) => this.#debug.error('Error al eliminar el cupón', err)
     });
   }
 }

@@ -16,6 +16,7 @@ export interface IFinanceCost {
     six_installments: number;
   };
   maxSafeDiscount: number;
+  maxInstallments?: number;
   breakdown: {
     label: string;
     value: number;

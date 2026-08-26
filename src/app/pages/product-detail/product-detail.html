@@ -175,6 +175,28 @@
 
             <!-- 2. Hero Pricing Cards + Cuotas (order-2 en Mobile) -->
             <div class="order-2 flex flex-col gap-3">
+              <!-- Header de Precios & Última Actualización -->
+              @let priceAge = formatPriceAge(p.price.updatedAt || p.updatedAt);
+              <div class="flex items-center justify-between px-1">
+                <span class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Estructura de Precios</span>
+                <span
+                  class="text-[11px] font-bold inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-base-100 border border-base-200 shadow-2xs"
+                  [matTooltip]="'Precio fijado el ' + priceAge.fullDate"
+                >
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">history</mat-icon>
+                  <span class="text-base-content/50">Precio fijado:</span>
+                  <span
+                    [ngClass]="{
+                      'text-error font-black': priceAge.isVeryOld,
+                      'text-warning font-black': priceAge.isOld && !priceAge.isVeryOld,
+                      'text-primary font-black': !priceAge.isOld
+                    }"
+                  >
+                    {{ priceAge.text }}
+                  </span>
+                </span>
+              </div>
+
               <!-- 4 Cards Grid -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 <!-- Precio Lista -->

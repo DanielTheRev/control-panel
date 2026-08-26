@@ -53,9 +53,7 @@ export class SalesComponent implements AfterViewInit {
       if (stats && this.revenueChartRef) {
         this.renderChart(stats.dailyBreakdown ?? [], stats.currency);
       }
-    }).catch(() => {
-      console.warn('chart.js no instalado. Ejecutá: pnpm add chart.js en el directorio control-panel');
-    });
+    }).catch(() => {});
 
     // Efecto reactivo: cuando cambian stats, re-renderizar
     effect(() => {

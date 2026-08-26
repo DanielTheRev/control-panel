@@ -97,8 +97,7 @@ export class BentoEditorComponent implements OnInit {
         this.addDefaultItems();
       }
     } catch (e) {
-      console.error('Error fetching config', e);
-      this.#notificationsService.error('Hubo un error al cargar la configuración del Bento.');
+      this.#notificationsService.error('Error al cargar la configuración de Bento');
       this.addDefaultItems();
     } finally {
       this.loading.set(false);
@@ -260,7 +259,6 @@ export class BentoEditorComponent implements OnInit {
       this.originalConfig = response;
       this.#notificationsService.success('¡Bento Grid guardado correctamente!');
     } catch (error) {
-      console.error('Error saving bento', error);
       this.#notificationsService.error('Error al guardar el Bento Grid');
     } finally {
       this.loading.set(false);

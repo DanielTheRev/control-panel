@@ -154,33 +154,10 @@ export class ProductService {
     customProfitMargin?: number;
     customPricingMethod?: 'markup' | 'margin';
   }): Observable<{ price: IProductPrices; finance: IProductFinance }> {
-    return this.#http
-      .post<{
-        price: IProductPrices;
-        finance: IProductFinance;
-      }>(`${this.#apiUrl}/calculate-prices`, data)
-      .pipe(
-        this.#toast.observe({
-          loading: {
-            content: 'Calculando precios...',
-            icon: '⏳',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-          success: {
-            content: 'Precios calculados correctamente',
-            icon: '✅',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-          error: {
-            content: 'Error al calcular los precios',
-            icon: '❌',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-        }),
-      );
+    return this.#http.post<{
+      price: IProductPrices;
+      finance: IProductFinance;
+    }>(`${this.#apiUrl}/calculate-prices`, data);
   }
 
   /**
@@ -194,33 +171,10 @@ export class ProductService {
     pricingMethodChoice: 'markup' | 'margin';
     calculate: boolean;
   }) {
-    return this.#http
-      .post<IFinanceCost>(`${this.#apiUrl}/finance/calculate`, {
-        ...data,
-        calculate: 'list_price',
-      })
-      .pipe(
-        this.#toast.observe({
-          loading: {
-            content: 'Calculando precios...',
-            icon: '⏳',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-          success: {
-            content: 'Precios calculados correctamente',
-            icon: '✅',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-          error: {
-            content: 'Error al calcular los precios',
-            icon: '❌',
-            position: 'top-right',
-            theme: 'snackbar',
-          },
-        }),
-      );
+    return this.#http.post<IFinanceCost>(`${this.#apiUrl}/finance/calculate`, {
+      ...data,
+      calculate: 'list_price',
+    });
   }
 
   deleteProduct(id: string) {

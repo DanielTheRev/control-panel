@@ -2,12 +2,14 @@ import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { IBanner } from '../interfaces/banner.interface';
 import { BannerService } from '../services/banner.service';
+import { DebugService } from '../services/debug.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BannerStateService {
   #bannerService = inject(BannerService);
+  #debug = inject(DebugService);
 
   #state = httpResource<IBanner[]>(() => {
     return {
@@ -23,6 +25,10 @@ export class BannerStateService {
     hasValue: this.#state.hasValue(),
   }))
 
+  get banners() {
+    return this.state().banners;
+  }
+
   refresh() {
     this.#state.reload();
   }
@@ -36,7 +42,7 @@ export class BannerStateService {
       const createdBanner = await this.#bannerService.createBanner(banner);
       this.#addBanner(createdBanner);
     } catch (error) {
-      console.log(error);
+      this.#debug.error('Error adding banner', error);
       throw error;
     }
   }
@@ -46,7 +52,7 @@ export class BannerStateService {
       const updatedBanner = await this.#bannerService.updateBanner(id, banner);
       this.#updateBanner(id, updatedBanner);
     } catch (error) {
-      console.log(error);
+      this.#debug.error('Error updating banner', error);
       throw error;
     }
   }
@@ -56,7 +62,7 @@ export class BannerStateService {
       await this.#bannerService.deleteBanner(id);
       this.#deleteBanner(id);
     } catch (error) {
-      console.log(error);
+      this.#debug.error('Error deleting banner', error);
     }
   }
 

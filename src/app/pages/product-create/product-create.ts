@@ -45,10 +45,15 @@ import {
   ProductType,
 } from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
+import { DebugService } from '../../services/debug.service';
 import {
   ClothingFormValue,
   ClothingProductForm,
 } from '../../shared/components/clothing-product-form/clothing-product-form';
+import {
+  BeautyFormValue,
+  BeautyProductForm,
+} from '../../shared/components/beauty-product-form/beauty-product-form';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
 import { PageHeader } from '../../shared/components/page-header/page-header';
@@ -94,6 +99,7 @@ interface SizeGuideState {
     RouterLink,
     TechProductForm,
     ClothingProductForm,
+    BeautyProductForm,
     SingleImageUpload,
   ],
   templateUrl: './product-create.html',
@@ -107,6 +113,7 @@ export class ProductCreate {
   #CommerceConfigState = inject(StoreConfigStateService);
   #dialog = inject(MatDialog);
   #ProviderState = inject(ProviderStateService);
+  #debug = inject(DebugService);
 
   #storeConfig = this.#CommerceConfigState.StoreConfig;
   isFormReady = signal<boolean>(false);
@@ -218,14 +225,19 @@ export class ProductCreate {
 
     // Si no tocaron el form hijo, usamos los valores iniciales
     if (!typeSpecific) {
-      typeSpecific =
-        this.selectedType() === ProductType.TECH
-          ? this.techInitialValue()
-          : this.clothingInitialValue();
+      if (this.selectedType() === ProductType.TECH) {
+        typeSpecific = this.techInitialValue();
+      } else if (this.selectedType() === ProductType.CLOTHING) {
+        typeSpecific = this.clothingInitialValue();
+      } else if (this.selectedType() === ProductType.BEAUTY) {
+        typeSpecific = this.beautyInitialValue();
+      } else {
+        typeSpecific = {};
+      }
     }
 
     const sizeGuide = this.sizeGuideState();
-    const sizeGuideData = sizeGuide.enabled
+    const sizeGuideData = sizeGuide.enabled && this.selectedType() === ProductType.CLOTHING
       ? {
           headers: sizeGuide.headers,
           rows: sizeGuide.rows,
@@ -237,7 +249,7 @@ export class ProductCreate {
       ...currentFormValue,
       variants: this.#parseVariants(),
       sizeGuide: sizeGuideData,
-      ...(typeSpecific || {}), // Esparcimos la ram, gender, etc.
+      ...(typeSpecific || {}), // Esparcimos los campos específicos
     };
   }
 
@@ -253,10 +265,15 @@ export class ProductCreate {
     const deleted = this.#deletedImages();
     let typeSpecific = this.#typeSpecificValues();
     if (!typeSpecific) {
-      typeSpecific =
-        this.selectedType() === ProductType.TECH
-          ? this.techInitialValue()
-          : this.clothingInitialValue();
+      if (this.selectedType() === ProductType.TECH) {
+        typeSpecific = this.techInitialValue();
+      } else if (this.selectedType() === ProductType.CLOTHING) {
+        typeSpecific = this.clothingInitialValue();
+      } else if (this.selectedType() === ProductType.BEAUTY) {
+        typeSpecific = this.beautyInitialValue();
+      } else {
+        typeSpecific = {};
+      }
     }
 
     if (this.isEditMode() && this.originalProduct()) {
@@ -343,6 +360,80 @@ export class ProductCreate {
     return Math.max(0, lp.maxSafeDiscount - discount);
   });
 
+  /** Net profit in hand when paid via transfer */
+  transferProfit = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
+    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
+    return Math.max(0, this.transferPrice() - totalCost);
+  });
+
+  /** Interactive simulated coupon percentage (default 10%) */
+  simulatedCouponPercent = signal<number>(10);
+
+  /** Maximum coupon % discount that List Price (installments) can support before losing money */
+  maxCouponPercentList = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || lp.breakdown.length < 4) return 0;
+    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
+    const pasarelaRate = (lp.breakdown[3]?.percentage || 0) / 100;
+    const netPerSale = lp.listPrice * (1 - pasarelaRate);
+    if (netPerSale <= 0) return 0;
+    const profitInstallments = Math.max(0, netPerSale - totalCost);
+    return Math.floor((profitInstallments / netPerSale) * 100);
+  });
+
+  /** Maximum coupon % discount that Transfer Price can support before losing money */
+  maxCouponPercentTransfer = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
+    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
+    const tPrice = this.transferPrice();
+    if (tPrice <= 0) return 0;
+    const profitTransfer = Math.max(0, tPrice - totalCost);
+    return Math.floor((profitTransfer / tPrice) * 100);
+  });
+
+  /** Simulated net profit in hand when a customer buys with the simulated coupon using cards/installments */
+  simulatedProfitList = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || lp.breakdown.length < 4) return 0;
+    const coupon = this.simulatedCouponPercent();
+    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
+    const pasarelaRate = (lp.breakdown[3]?.percentage || 0) / 100;
+    const discountedPrice = lp.listPrice * (1 - coupon / 100);
+    const netReceived = discountedPrice * (1 - pasarelaRate);
+    return Math.round(netReceived - totalCost);
+  });
+
+  /** Simulated net profit in hand when a customer buys with the simulated coupon using transfer */
+  simulatedProfitTransfer = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
+    const coupon = this.simulatedCouponPercent();
+    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
+    const tPrice = this.transferPrice();
+    const discountedTransfer = tPrice * (1 - coupon / 100);
+    return Math.round(discountedTransfer - totalCost);
+  });
+
+  /** How much profit is sacrificed in installments due to the simulated coupon */
+  profitCededList = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const baseProfit = (lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments;
+    return Math.max(0, baseProfit - this.simulatedProfitList());
+  });
+
+  /** How much profit is sacrificed in transfer due to the simulated coupon */
+  profitCededTransfer = computed(() => {
+    const baseProfit = this.transferProfit();
+    return Math.max(0, baseProfit - this.simulatedProfitTransfer());
+  });
+
+  /** Toggle for detailed educational coupon breakdown */
+  showCouponBreakdown = signal<boolean>(true);
+
   originalProduct = signal<IProduct | null>(null);
   originalImages = computed(() => this.originalProduct()?.images || []);
   isLoading = signal<boolean>(false);
@@ -351,15 +442,19 @@ export class ProductCreate {
   );
 
   modelPlaceholder = computed(() => {
-    return this.selectedType() === ProductType.TECH
-      ? 'Ej. iPhone 15 Pro / Galaxy S24 / Smart TV 55"'
-      : 'Ej. Remera Lino Roma / Pantalón Sastrero Florencia';
+    const type = this.selectedType();
+    if (type === ProductType.TECH) return 'Ej. iPhone 15 Pro / Galaxy S24 / Smart TV 55"';
+    if (type === ProductType.CLOTHING) return 'Ej. Remera Lino Roma / Pantalón Sastrero Florencia';
+    if (type === ProductType.BEAUTY) return 'Ej. Dior Sauvage EDP / Acqua di Gio Parfum / Serum Vitamina C';
+    return 'Ej. Termo Stanley 1.3L / Auriculares In-Ear / Mate Imperial';
   });
 
   subtitlePlaceholder = computed(() => {
-    return this.selectedType() === ProductType.TECH
-      ? 'Ej. 256GB Titanium / 4K UHD 120Hz / 16GB RAM'
-      : 'Ej. 100% Lino Importado / Fit Oversize / Algodón Peinado';
+    const type = this.selectedType();
+    if (type === ProductType.TECH) return 'Ej. 256GB Titanium / 4K UHD 120Hz / 16GB RAM';
+    if (type === ProductType.CLOTHING) return 'Ej. 100% Lino Importado / Fit Oversize / Algodón Peinado';
+    if (type === ProductType.BEAUTY) return 'Ej. 100ml Eau de Parfum / Notas Amaderadas y Cítricas';
+    return 'Ej. Acero Inoxidable Doble Capa / Edición Limitada';
   });
 
   isUsingGlobalMargin = signal<boolean>(false);
@@ -369,16 +464,30 @@ export class ProductCreate {
   activeSection = signal<string>('info');
 
   sections = computed(() => {
-    const isTech = this.selectedType() === ProductType.TECH;
+    const type = this.selectedType();
+    let variantTitle = '3. Variantes & Stock';
+    let variantDesc = 'Modelos, colores y stock';
+    let variantShort = '3. Variantes';
+
+    if (type === ProductType.CLOTHING) {
+      variantTitle = '3. Talles & Stock';
+      variantDesc = 'Talles e inventario';
+      variantShort = '3. Talles';
+    } else if (type === ProductType.BEAUTY) {
+      variantTitle = '3. Presentaciones & Stock';
+      variantDesc = 'Tamaños, tonos y stock';
+      variantShort = '3. Presentaciones';
+    }
+
     return [
       { id: 'info', title: '1. Info & Fotos', shortTitle: '1. Info', icon: 'photo_library', desc: 'Datos básicos y multimedia' },
       { id: 'pricing', title: '2. Precios & Finanzas', shortTitle: '2. Precios', icon: 'payments', desc: 'Costo, margen y cuotas' },
       {
         id: 'variants',
-        title: isTech ? '3. Variantes & Stock' : '3. Talles & Stock',
-        shortTitle: isTech ? '3. Variantes' : '3. Talles',
+        title: variantTitle,
+        shortTitle: variantShort,
         icon: 'inventory_2',
-        desc: isTech ? 'Modelos y stock' : 'Talles e inventario',
+        desc: variantDesc,
       },
       { id: 'details', title: '4. Ficha & SEO', shortTitle: '4. Ficha', icon: 'tune', desc: 'Specs, copy y Google' },
     ];
@@ -721,12 +830,13 @@ XXL: 58, 76, 52
     );
   }
 
-  /** Values from the active child form (tech or clothing) */
-  #typeSpecificValues = signal<TechFormValue | ClothingFormValue | null>(null);
+  /** Values from the active child form (tech, clothing or beauty) */
+  #typeSpecificValues = signal<TechFormValue | ClothingFormValue | BeautyFormValue | null>(null);
 
   /** Pre-load value passed down to child form in edit mode */
   techInitialValue = signal<TechFormValue | null>(null);
   clothingInitialValue = signal<ClothingFormValue | null>(null);
+  beautyInitialValue = signal<BeautyFormValue | null>(null);
 
   ProductType = ProductType;
 
@@ -857,7 +967,7 @@ XXL: 58, 76, 52
             map((result) => ({ result, error: false as const })),
             catchError((err) => {
               this.isCalculatingListPrice.set(false);
-              console.error('Error calculating list price', err);
+              this.#debug.error('Error calculating list price', err);
               return EMPTY; // Keep the stream alive for future emissions
             }),
           );
@@ -867,7 +977,7 @@ XXL: 58, 76, 52
         next: ({ result }) => {
           this.calculatedListPrice.set(result);
           this.isCalculatingListPrice.set(false);
-          console.log('✅ Precio de lista calculado:', result);
+          this.#debug.log('✅ Precio de lista calculado:', result);
         },
       });
 
@@ -940,7 +1050,7 @@ XXL: 58, 76, 52
   async #loadProduct(id: string, defaultProfit: number) {
     try {
       const product = await this.#productState.getProduct(id);
-      console.log(product);
+      this.#debug.log(product);
       const hasCustomMargin =
         product.finance?.pricingStrategy?.targetProfit !== undefined &&
         product.finance?.pricingStrategy?.targetProfit !== null;
@@ -967,6 +1077,15 @@ XXL: 58, 76, 52
           material: product.material || '',
           sizeType: product.sizeType || '',
           season: product.season || '',
+        });
+      } else if (type === ProductType.BEAUTY) {
+        this.beautyInitialValue.set({
+          volume: product.volume || '',
+          concentration: product.concentration || '',
+          fragranceFamily: product.fragranceFamily || '',
+          gender: typeof product.gender === 'string' ? product.gender : 'Unisex',
+          applicationArea: product.applicationArea || '',
+          scentNotes: product.scentNotes,
         });
       }
 
@@ -1163,7 +1282,7 @@ XXL: 58, 76, 52
 
       this.isFormReady.set(true);
     } catch (error) {
-      console.log(error);
+      this.#debug.error('Error cargando producto', error);
     }
   }
 
@@ -1175,7 +1294,7 @@ XXL: 58, 76, 52
   }
 
   /** Called by child forms when their values change */
-  onTypeSpecificFormChange(value: TechFormValue | ClothingFormValue) {
+  onTypeSpecificFormChange(value: TechFormValue | ClothingFormValue | BeautyFormValue) {
     this.#typeSpecificValues.set(value);
   }
 
@@ -1340,8 +1459,9 @@ XXL: 58, 76, 52
   addVariantToGroup(groupIndex: number) {
     const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
     const variantsArray = group.get('variants') as FormArray;
+    const type = this.selectedType();
 
-    if (this.selectedType() === ProductType.TECH) {
+    if (type === ProductType.TECH) {
       variantsArray.push(
         this.#fb.group({
           attributesJson: ['Versión: Estándar', [Validators.required]],
@@ -1349,7 +1469,24 @@ XXL: 58, 76, 52
           isActive: [true],
         }),
       );
+    } else if (type === ProductType.BEAUTY) {
+      variantsArray.push(
+        this.#fb.group({
+          size: ['100ml', Validators.required],
+          stock: [8, [Validators.required, Validators.min(1)]],
+          isActive: [true],
+        }),
+      );
+    } else if (type === ProductType.GENERAL) {
+      variantsArray.push(
+        this.#fb.group({
+          size: ['Estándar', Validators.required],
+          stock: [8, [Validators.required, Validators.min(1)]],
+          isActive: [true],
+        }),
+      );
     } else {
+      // CLOTHING
       variantsArray.push(
         this.#fb.group({
           size: ['', Validators.required],
@@ -1421,6 +1558,12 @@ XXL: 58, 76, 52
           variant.attributes = parsedAttrs;
         } else if (currentType === ProductType.CLOTHING) {
           variant.size = String(v.size || 'Único').trim();
+        } else if (currentType === ProductType.BEAUTY) {
+          variant.volume = String(v.volume || v.size || '100ml').trim();
+          variant.size = String(v.size || v.volume || '100ml').trim();
+        } else {
+          // GENERAL
+          variant.size = String(v.size || 'Estándar').trim();
         }
 
         if (group.colorName) {
@@ -1501,16 +1644,16 @@ XXL: 58, 76, 52
 
       this.isLoading.set(true);
       try {
-        console.log('=== DATOS QUE SE VAN AL BACKEND (PATCH) ===');
-        changes.formData.forEach((value, key) => console.log(`${key}:`, value));
-        console.log(this.calculatedListPrice());
+        this.#debug.log('=== DATOS QUE SE VAN AL BACKEND (PATCH) ===');
+        changes.formData.forEach((value, key) => this.#debug.log(`${key}:`, value));
+        this.#debug.log(this.calculatedListPrice());
         await this.#productState.updateProduct(
           this.productID(),
           changes.formData,
         );
         this.#router.navigate(['/home/products', this.productID()]);
       } catch (error) {
-        console.error('Error updating product', error);
+        this.#debug.error('Error updating product', error);
       } finally {
         this.isLoading.set(false);
       }
@@ -1518,18 +1661,18 @@ XXL: 58, 76, 52
       // Create Mode
       this.isLoading.set(true);
       try {
-        console.log(this.productForm.value);
+        this.#debug.log(this.productForm.value);
         // Le pasamos el fullProductData a tu armador de POST
         this.#buildCreateFormData(formData, fullProductData);
 
-        console.log('=== DATOS QUE SE VAN AL BACKEND (POST) ===');
-        formData.forEach((value, key) => console.log(`${key}:`, value));
+        this.#debug.log('=== DATOS QUE SE VAN AL BACKEND (POST) ===');
+        formData.forEach((value, key) => this.#debug.log(`${key}:`, value));
 
         const id = await this.#productState.createProduct(formData);
         this.#revokeBlobUrls();
         this.#router.navigate(['/home/products', id]);
       } catch (error) {
-        console.error('Error creating product', error);
+        this.#debug.error('Error creating product', error);
       } finally {
         this.isLoading.set(false);
       }
