@@ -8,14 +8,15 @@
     <div actions class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
       
       <!-- Input de Búsqueda Integrado (Expandible en mobile) -->
-      <div class="relative flex-1 min-w-0 sm:w-48 md:w-64">
+      <div class="relative flex-1 min-w-0 sm:w-60 md:w-80">
         <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 text-[16px]! w-4! h-4!">search</mat-icon>
         <input
           type="search"
           name="search"
           id="products-search"
           class="input input-bordered input-sm w-full pl-8 pr-7 text-xs focus:outline-none focus:border-primary"
-          placeholder="Buscar..."
+          placeholder="Buscar (ej: Aura, Viena, SKU)..."
+          matTooltip="Podés buscar múltiples prendas o SKUs separando con comas (ej: Aura, Viena, Fiore)"
           [value]="ProductState.currentSearchQuery()"
           (input)="$event.preventDefault(); onSearch($event)"
         />
