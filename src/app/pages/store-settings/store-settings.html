@@ -105,7 +105,7 @@
         </div>
       }
 
-      <form [formGroup]="configForm" class="space-y-6">
+      <form [formGroup]="configForm" autocomplete="off" data-lpignore="true" class="space-y-6">
 
         <!-- ========================================================================= -->
         <!-- 1. GENERAL & LOGO                                                         -->
@@ -532,6 +532,27 @@
                   </label>
                 </div>
               </div>
+
+              <!-- Modo de Precio para 1 Pago con Tarjeta / Débito -->
+              <div class="pt-4 border-t border-base-200">
+                <label class="flex items-center justify-between p-4 bg-base-200/40 rounded-2xl border border-base-200 cursor-pointer hover:bg-base-200/60 transition-all">
+                  <div class="space-y-1 max-w-xl">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-base-content block">💳 Aplicar Precio de Oferta / Contado a Débito y 1 Pago con Tarjeta</span>
+                      @if (configForm.get('pricingStrategy.card1PayDiscount')?.value) {
+                        <span class="badge badge-xs badge-info font-bold text-white">Modo 1 Pago Rebajado</span>
+                      } @else {
+                        <span class="badge badge-xs badge-success font-bold text-white">Modo Tradicional (Recomendado)</span>
+                      }
+                    </div>
+                    <p class="text-[11px] text-base-content/60 leading-relaxed">
+                      <strong>Desactivado (Recomendado):</strong> Toda tarjeta paga Precio de Lista para que en 1 pago ganes la máxima rentabilidad (+45% margen) y el descuento sea exclusivo para Transferencia / Efectivo.<br/>
+                      <strong>Activado:</strong> Quien pague con débito o tarjeta en 1 cuota paga el precio con descuento (la tienda absorbe el 6.6% de Mercado Pago).
+                    </p>
+                  </div>
+                  <input type="checkbox" class="toggle toggle-primary toggle-md shrink-0 ml-4" formControlName="card1PayDiscount" />
+                </label>
+              </div>
             </div>
           </div>
         }
@@ -541,6 +562,14 @@
         <!-- ========================================================================= -->
         @if (activeTab() === 'gateways') {
           <div formGroupName="paymentGateways" class="space-y-6">
+
+            <!-- Banner Informativo de Pasarela Activa -->
+            <div class="p-3.5 bg-info/10 border border-info/20 rounded-2xl flex items-center gap-3">
+              <mat-icon class="text-info text-[20px]! w-5! h-5! shrink-0">info</mat-icon>
+              <p class="text-xs text-base-content/70 leading-relaxed">
+                <strong>Regla de Pasarelas:</strong> Podés tener una sola pasarela fintech (Mercado Pago o Ualá Bis) activa como procesador principal de tarjetas a la vez. <strong>Transferencia Bancaria</strong> puede coexistir simultáneamente.
+              </p>
+            </div>
 
             <!-- Mercado Pago -->
             <div formGroupName="mercadopago" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
@@ -578,7 +607,7 @@
                 <!-- Access Token (Opcional manual) -->
                 <div class="space-y-1.5 sm:col-span-2">
                   <label class="text-xs font-bold text-base-content/80">Access Token (Manual / Sandbox)</label>
-                  <input type="password" formControlName="accessToken" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-... o TEST-..." />
+                  <input type="password" formControlName="accessToken" autocomplete="new-password" data-lpignore="true" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-... o TEST-..." />
                 </div>
 
                 <!-- Comisión Base -->
@@ -626,6 +655,99 @@
                 <button type="button" class="btn btn-sm btn-outline btn-info rounded-xl font-bold gap-1.5 shadow-2xs" (click)="syncMercadoPago()">
                   <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon> Sincronizar con Cuenta de Mercado Pago
                 </button>
+              </div>
+            </div>
+
+            <!-- Ualá Bis -->
+            <div formGroupName="uala" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#e5233d]/10 text-[#e5233d] flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">payments</mat-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Ualá Bis</h3>
+                      @if (configForm.get('paymentGateways.uala.active')?.value) {
+                        @if (configForm.get('paymentGateways.uala.credentials.clientId')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Vinculado</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Pendiente de Credenciales</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
+                    <p class="text-xs text-base-content/50">Cobros con tarjeta de crédito, débito y transferencias vía Ualá Bis.</p>
+                  </div>
+                </div>
+                <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="active" />
+              </div>
+
+              <!-- Credenciales API Ualá Bis -->
+              <div formGroupName="credentials" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Usuario / Merchant Name</label>
+                  <input
+                    type="text"
+                    formControlName="userName"
+                    autocomplete="off"
+                    data-lpignore="true"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="fertherev"
+                  />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Client ID (API Key)</label>
+                  <input
+                    type="text"
+                    formControlName="clientId"
+                    autocomplete="off"
+                    data-lpignore="true"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="lUkMcJWsb3RznEIR..."
+                  />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Client Secret</label>
+                  <input
+                    type="password"
+                    formControlName="clientSecret"
+                    autocomplete="new-password"
+                    data-lpignore="true"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="••••••••••••••••"
+                  />
+                </div>
+              </div>
+
+              <!-- Comisiones y Cuotas Ualá Bis -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-base-200">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Comisión Base (1 Pago / Débito)</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="4.9" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
+                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                    <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="18.9" />
+                    <span class="font-bold text-xs text-base-content/40">%</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -714,6 +836,8 @@
                 <input
                   type="text"
                   formControlName="clientId"
+                  autocomplete="off"
+                  data-lpignore="true"
                   class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
                   placeholder="ej. 454689294878-lkugek83r3g7ot0vurcpumoc1rr8fd66.apps.googleusercontent.com"
                 />
@@ -752,7 +876,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5 sm:col-span-3">
                   <label class="text-xs font-bold text-base-content/80">API Key de Resend</label>
-                  <input type="password" formControlName="apiKey" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="re_123456789_..." />
+                  <input type="password" formControlName="apiKey" autocomplete="new-password" data-lpignore="true" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="re_123456789_..." />
                 </div>
                 <div class="space-y-1.5 sm:col-span-2">
                   <label class="text-xs font-bold text-base-content/80">Email Remitente (From Email)</label>

@@ -412,6 +412,8 @@ export class ProductList {
           content += `  - CFT Cuotas sin interés: ${config.pricingStrategy.absorbInstallments ? 'Absorbido por el comercio (hasta ' + (config.pricingStrategy.maxInstallmentsToAbsorb || 3) + ' cuotas)' : 'No ofrece cuotas sin interés'}\n`;
           content += `  - Descuento por Transferencia Bancaria: ${config.pricingStrategy.transferDiscountPercentage || 0}%\n`;
           content += `  - Descuento por Pago en Efectivo: ${config.pricingStrategy.cashDiscountPercentage || 0}%\n`;
+          content += `  - Modalidad 1 Pago con Tarjeta / Débito: ${config.pricingStrategy.card1PayDiscount ? 'MODO 1 PAGO REBAJADO (Débito y 1 pago con tarjeta pagan precio de oferta/transferencia)' : 'MODO TRADICIONAL (Toda tarjeta paga Precio de Lista)'}\n`;
+          content += `  - Explicación de Ganancias para IA: ${config.pricingStrategy.card1PayDiscount ? 'En 1 Pago con tarjeta el cliente abona el precio de oferta/transferencia, por lo que la ganancia nominal en pesos en 1 pago es menor que en 3 cuotas porque se cobró un ticket menor en caja.' : 'A toda tarjeta se le cobra Precio de Lista. Por ende, 1 pago deja mayor ganancia neta en pesos que 3 cuotas debido a la menor comisión de pasarela (6.6% vs 18.7%).'}\n`;
         }
 
         content += `• Impuestos (IVA): ${config.taxes?.iva || 21}%\n`;
@@ -428,7 +430,8 @@ export class ProductList {
           content += `  - Transferencia Bancaria: ${tr.active ? 'ACTIVO' : 'INACTIVO'}` + (tr.alias ? ` (Alias: ${tr.alias} | Banco: ${tr.bankName || 'N/A'} | Titular: ${tr.titular || 'N/A'})` : '') + `\n`;
         }
         if (config.paymentGateways?.uala) {
-          content += `  - Ualá Bis: ${config.paymentGateways.uala.active ? 'ACTIVO' : 'INACTIVO'}\n`;
+          const ua = config.paymentGateways.uala;
+          content += `  - Ualá Bis: ${ua.active ? 'ACTIVO' : 'INACTIVO'} | Comisión base: ${ua.baseCommission || 4.9}% | CFT3: ${ua.cft3cuotas || 12}% | CFT6: ${ua.cft6Cuotas || 18.9}%\n`;
         }
 
         // Contacto
@@ -561,6 +564,9 @@ export class ProductList {
         content += `\n--- 💰 DESGLOSE FINANCIERO, COSTOS & RENTABILIDAD ---\n`;
         content += `- Precio Venta Efectivo / Transferencia: $${p.price?.cashTransferPrice?.toLocaleString('es-AR') || 0} ARS\n`;
         content += `- Precio Venta Lista (Tarjetas / Cuotas): $${p.price?.listPrice?.toLocaleString('es-AR') || 0} ARS\n`;
+        const isCard1PayDiscount = config?.pricingStrategy?.card1PayDiscount;
+        const actual1PayPrice = isCard1PayDiscount ? (p.price?.cashTransferPrice || p.price?.card_ticket1PayPrice) : p.price?.listPrice;
+        content += `- Precio Cobrado en 1 Pago / Débito: $${actual1PayPrice?.toLocaleString('es-AR') || 0} ARS (${isCard1PayDiscount ? 'Precio Oferta' : 'Precio Lista'})\n`;
         if (p.discount && p.discount > 0) content += `- Descuento Promocional Activo: ${p.discount}% OFF\n`;
 
         if (p.finance?.providerCost?.inARS) {

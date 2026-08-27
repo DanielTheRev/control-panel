@@ -48,7 +48,12 @@ export class ClothingProductForm implements OnInit, OnChanges {
   // Opciones dinámicas que vienen de la configuración de negocio
   get fitOptions(): string[] {
     const config = this.configState.StoreConfig().config;
-    return config?.clothingFits || [];
+    const rawList = (config?.clothingFits || []).map((f) => f?.trim()).filter(Boolean);
+    const currentVal = this.clothingForm?.get('fit')?.value?.trim();
+    if (currentVal && !rawList.includes(currentVal)) {
+      rawList.push(currentVal);
+    }
+    return Array.from(new Set(rawList));
   }
   readonly sizeTypeOptions: { label: string; value: string }[] = [
     { value: 'Ropa', label: 'Ropa (S, M, L, XL)' },
@@ -85,11 +90,11 @@ export class ClothingProductForm implements OnInit, OnChanges {
     const v = this.value();
     if (!v) return;
     this.clothingForm.patchValue({
-      gender: v.gender || '',
-      fit: v.fit || '',
-      material: v.material || '',
-      sizeType: v.sizeType || '',
-      season: v.season || '',
+      gender: v.gender ? String(v.gender).trim() : '',
+      fit: v.fit ? String(v.fit).trim() : '',
+      material: v.material ? String(v.material).trim() : '',
+      sizeType: v.sizeType ? String(v.sizeType).trim() : '',
+      season: v.season ? String(v.season).trim() : '',
     });
   }
 
@@ -105,9 +110,15 @@ export class ClothingProductForm implements OnInit, OnChanges {
 
     dialogRef.afterClosed().subscribe((result: string) => {
       if (result) {
-        this.configState.saveConfig({ clothingFits: [...this.fitOptions, result] });
-        // Automatically select the newly created fit
-        this.clothingForm.patchValue({ fit: result });
+        const trimmed = result.trim();
+        if (trimmed) {
+          const currentList = this.fitOptions;
+          if (!currentList.includes(trimmed)) {
+            this.configState.saveConfig({ clothingFits: [...currentList, trimmed] });
+          }
+          // Automatically select the newly created fit
+          this.clothingForm.patchValue({ fit: trimmed });
+        }
       }
     });
   }

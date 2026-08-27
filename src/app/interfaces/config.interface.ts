@@ -68,6 +68,7 @@ export interface IPricingStrategy {
   maxInstallmentsToAbsorb?: number;
   transferDiscountPercentage?: number;
   cashDiscountPercentage?: number;
+  card1PayDiscount?: boolean;
 }
 
 export interface IDolarRate {

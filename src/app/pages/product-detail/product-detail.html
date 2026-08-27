@@ -264,11 +264,20 @@
                     <span class="font-black text-base-content text-xs sm:text-sm">{{ p.price.installments.sixPaymentsAmount | currency:'ARS':'symbol-narrow':'1.0-0' }} / mes</span>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2" [matTooltip]="storeConfig().config.pricingStrategy?.card1PayDiscount ? 'La tienda está configurada para cobrar precio de oferta en 1 pago' : 'La tienda cobra Precio de Lista para tarjetas'">
                   <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">1x</div>
                   <div>
-                    <span class="text-[9px] sm:text-[10px] text-base-content/50 font-bold block">Débito / 1 Pago</span>
-                    <span class="font-black text-base-content text-xs sm:text-sm">{{ p.price.card_ticket1PayPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] sm:text-[10px] text-base-content/50 font-bold block">Débito / 1 Pago</span>
+                      @if (storeConfig().config.pricingStrategy?.card1PayDiscount) {
+                        <span class="badge badge-2xs badge-info font-bold text-[8px] text-white">Oferta</span>
+                      } @else {
+                        <span class="badge badge-2xs badge-neutral font-bold text-[8px] text-white">Lista</span>
+                      }
+                    </div>
+                    <span class="font-black text-base-content text-xs sm:text-sm">
+                      {{ (storeConfig().config.pricingStrategy?.card1PayDiscount ? (p.price.cashTransferPrice || p.price.card_ticket1PayPrice) : p.price.listPrice) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                    </span>
                   </div>
                 </div>
               </div>

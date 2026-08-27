@@ -177,7 +177,8 @@ export class StoreSettings {
         absorbInstallments: [true],
         maxInstallmentsToAbsorb: [3],
         transferDiscountPercentage: [0],
-        cashDiscountPercentage: [0]
+        cashDiscountPercentage: [0],
+        card1PayDiscount: [false]
       }),
       integrations: this.#fb.group({
         metaPixel: this.#fb.group({
@@ -308,6 +309,21 @@ export class StoreSettings {
       const requestedTab = this.tab();
       if (requestedTab && ['general', 'pricing', 'gateways', 'integrations', 'emails', 'contact', 'clothing'].includes(requestedTab)) {
         this.activeTab.set(requestedTab as any);
+      }
+    });
+
+    // Mutua exclusividad entre pasarelas de tarjeta (Mercado Pago vs Ualá Bis)
+    this.configForm.get('paymentGateways.mercadopago.active')?.valueChanges.subscribe((isActive) => {
+      if (isActive && this.configForm.get('paymentGateways.uala.active')?.value) {
+        this.configForm.get('paymentGateways.uala.active')?.setValue(false, { emitEvent: false });
+        this.#NotificationService.info('Mercado Pago activada como pasarela principal de tarjetas. Ualá Bis desactivada.');
+      }
+    });
+
+    this.configForm.get('paymentGateways.uala.active')?.valueChanges.subscribe((isActive) => {
+      if (isActive && this.configForm.get('paymentGateways.mercadopago.active')?.value) {
+        this.configForm.get('paymentGateways.mercadopago.active')?.setValue(false, { emitEvent: false });
+        this.#NotificationService.info('Ualá Bis activada como pasarela principal de tarjetas. Mercado Pago desactivada.');
       }
     });
 

@@ -353,11 +353,17 @@
             class="flex-col gap-4 scroll-mt-24 pt-2 sm:pt-0"
             [ngClass]="currentStep() === 1 ? 'flex' : 'hidden lg:flex'"
           >
-            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
-              <mat-icon class="text-secondary text-[20px]! w-5! h-5!">payments</mat-icon>
-              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
-                2. Precios, Cuotas & Rentabilidad
-              </h2>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1 border-b border-base-200">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-secondary text-[20px]! w-5! h-5!">payments</mat-icon>
+                <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                  2. Precios, Cuotas & Rentabilidad
+                </h2>
+              </div>
+              <div class="flex items-center gap-1.5 text-[10px] text-base-content/50">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">tune</mat-icon>
+                <span>Modo Tienda: <strong>{{ storeConfig().config.pricingStrategy?.card1PayDiscount ? '1 Pago Rebajado' : 'Tarjetas a Precio de Lista' }}</strong></span>
+              </div>
             </div>
 
             <!-- Card: Costos y Margen -->
@@ -569,7 +575,11 @@
                   <div class="p-3 rounded-xl bg-success/5 border border-success/15 flex flex-col justify-between shadow-2xs">
                     <div class="flex items-center justify-between">
                       <span class="text-[9px] font-bold text-success/70 uppercase">Ganancia 1 Pago / Débito</span>
-                      <span class="badge badge-2xs badge-ghost text-[9px] font-bold">Tarjeta</span>
+                      @if (storeConfig().config.pricingStrategy?.card1PayDiscount) {
+                        <span class="badge badge-2xs badge-info text-white text-[8px] font-bold">Oferta</span>
+                      } @else {
+                        <span class="badge badge-2xs badge-ghost text-[9px] font-bold">P. Lista</span>
+                      }
                     </div>
                     <span class="text-base font-black text-success mt-1">
                       {{ lp.profits.one_pay | currency:'ARS':'symbol-narrow':'1.0-0' }}
@@ -1062,13 +1072,25 @@
                                 />
                               }
 
+                              <!-- SKU de la variante -->
+                              <div class="join items-center">
+                                <span class="join-item btn btn-static btn-xs bg-base-200 text-[10px] font-mono text-base-content/60 font-bold">SKU:</span>
+                                <input
+                                  type="text"
+                                  formControlName="sku"
+                                  class="join-item input input-bordered input-xs w-32 sm:w-44 font-mono text-[11px] font-bold uppercase"
+                                  placeholder="Auto-generado"
+                                  title="SKU único de la variante (dejar vacío para auto-generar)"
+                                />
+                              </div>
+
                               <div class="join items-center">
                                 <span class="join-item btn btn-static btn-xs bg-base-200 text-[10px] font-bold">Stock:</span>
                                 <input
                                   type="number"
                                   min="0"
                                   formControlName="stock"
-                                  class="join-item input input-bordered input-xs w-20 text-center font-bold text-xs"
+                                  class="join-item input input-bordered input-xs w-16 sm:w-20 text-center font-bold text-xs"
                                   placeholder="0"
                                 />
                               </div>

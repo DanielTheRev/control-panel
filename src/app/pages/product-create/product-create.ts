@@ -115,7 +115,7 @@ export class ProductCreate {
   #ProviderState = inject(ProviderStateService);
   #debug = inject(DebugService);
 
-  #storeConfig = this.#CommerceConfigState.StoreConfig;
+  readonly storeConfig = this.#CommerceConfigState.StoreConfig;
   isFormReady = signal<boolean>(false);
   #deletedImages = signal<string[]>([]);
   seoImagePreview = signal<string | null>(null);
@@ -929,7 +929,7 @@ XXL: 58, 76, 52
           // Resolve the effective profit margin: use global when not customized
           const effectiveMargin: number = raw.useCustomProfit
             ? raw.customProfitMargin
-            : (this.#storeConfig()?.config?.profit ?? 0);
+            : (this.storeConfig()?.config?.profit ?? 0);
           return {
             providerCost: raw.price,
             additionalCosts: raw.additionalCosts ?? [],
@@ -1003,7 +1003,7 @@ XXL: 58, 76, 52
 
     combineLatest([
       toObservable(this.productID),
-      toObservable(this.#storeConfig),
+      toObservable(this.storeConfig),
     ])
       .pipe(
         takeUntilDestroyed(), // Se limpia solo al destruir el componente
@@ -1464,24 +1464,30 @@ XXL: 58, 76, 52
     if (type === ProductType.TECH) {
       variantsArray.push(
         this.#fb.group({
+          _id: [''],
+          sku: [''],
           attributesJson: ['Versión: Estándar', [Validators.required]],
-          stock: [8, [Validators.required, Validators.min(1)]],
+          stock: [8, [Validators.required, Validators.min(0)]],
           isActive: [true],
         }),
       );
     } else if (type === ProductType.BEAUTY) {
       variantsArray.push(
         this.#fb.group({
+          _id: [''],
+          sku: [''],
           size: ['100ml', Validators.required],
-          stock: [8, [Validators.required, Validators.min(1)]],
+          stock: [8, [Validators.required, Validators.min(0)]],
           isActive: [true],
         }),
       );
     } else if (type === ProductType.GENERAL) {
       variantsArray.push(
         this.#fb.group({
+          _id: [''],
+          sku: [''],
           size: ['Estándar', Validators.required],
-          stock: [8, [Validators.required, Validators.min(1)]],
+          stock: [8, [Validators.required, Validators.min(0)]],
           isActive: [true],
         }),
       );
@@ -1489,8 +1495,10 @@ XXL: 58, 76, 52
       // CLOTHING
       variantsArray.push(
         this.#fb.group({
+          _id: [''],
+          sku: [''],
           size: ['', Validators.required],
-          stock: [8, [Validators.required, Validators.min(1)]],
+          stock: [8, [Validators.required, Validators.min(0)]],
           isActive: [true],
         }),
       );

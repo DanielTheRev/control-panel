@@ -9,6 +9,7 @@ import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
+import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { getStoreUrl } from '../../utils/tenant.utils';
 
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -32,10 +33,13 @@ export class ProductDetail implements OnInit {
   productID = input.required<string>();
 
   #productState = inject(ProductStoreService);
+  #storeConfigState = inject(StoreConfigStateService);
   #router = inject(Router);
   #snackBar = inject(MatSnackBar);
   #sanitizer = inject(DomSanitizer);
-  #SidebarService = inject(SidebarService)
+  #SidebarService = inject(SidebarService);
+
+  readonly storeConfig = this.#storeConfigState.StoreConfig;
 
   product = signal<IProduct | null>(null);
   isLoading = signal(true);
