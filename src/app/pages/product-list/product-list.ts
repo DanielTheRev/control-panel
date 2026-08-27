@@ -360,6 +360,7 @@ export class ProductList {
     this.isCopyingForAi.set(true);
 
     try {
+      const config = this.#StoreConfigState.StoreConfig().config;
       const activeFilters: string[] = [];
       if (this.ProductState.currentSearchQuery()) activeFilters.push(`Búsqueda: "${this.ProductState.currentSearchQuery()}"`);
       if (this.ProductState.currentCategoryFilter()) activeFilters.push(`Categoría: "${this.ProductState.currentCategoryFilter()}"`);
@@ -369,85 +370,286 @@ export class ProductList {
       if (this.ProductState.currentHasSizeGuideFilter() !== undefined) activeFilters.push(`Guía Talles: ${this.ProductState.currentHasSizeGuideFilter() ? 'Con Guía' : 'Sin Guía'}`);
       if (this.ProductState.currentHasLinkProviderFilter() !== undefined) activeFilters.push(`Link Proveedor: ${this.ProductState.currentHasLinkProviderFilter() ? 'Con Link' : 'Sin Link'}`);
 
-      let content = `# REPORTE DE PRODUCTOS PARA ANÁLISIS DE IA (LLM CONTEXT)\n`;
+      // Métricas acumuladas del lote
+      let totalUnits = 0;
+      let totalRetailValue = 0;
+      let totalCostValue = 0;
+      let totalTransferProfit = 0;
+      let activeCount = 0;
+
+      products.forEach((p) => {
+        const stock = this.getTotalStock(p);
+        totalUnits += stock;
+        if (p.isActive) activeCount++;
+        const retailPrice = p.price?.listPrice || p.price?.cashTransferPrice || 0;
+        const costPrice = p.finance?.providerCost?.inARS || 0;
+        totalRetailValue += retailPrice * stock;
+        totalCostValue += costPrice * stock;
+        const profit = p.finance?.calculatedProfits?.transfer || 0;
+        totalTransferProfit += profit * stock;
+      });
+
+      let content = `# 🏢 REPORTE INTEGRAL DE E-COMMERCE Y CATÁLOGO DE PRODUCTOS (LLM CONTEXT)\n`;
       content += `• Fecha y Hora: ${new Date().toLocaleString('es-AR')}\n`;
+      content += `• Plataforma: NexoCommerce SaaS (Multi-Tenant E-Commerce Suite)\n\n`;
+
+      // ==========================================
+      // 1. CONTEXTO GLOBAL DEL NEGOCIO
+      // ==========================================
+      content += `======================================================================\n`;
+      content += `## ⚙️ 1. CONTEXTO GLOBAL DEL NEGOCIO Y ESTRATEGIA FINANCIERA\n`;
+      content += `======================================================================\n`;
+      if (config) {
+        content += `• Nombre del Comercio / Tienda: ${config.name || 'N/A'}\n`;
+        content += `• Moneda de Costo Base: ${config.costCurrency || 'ARS'}\n`;
+        content += `• Cotización Dólar de Referencia: Tipo "${config.dollarQuoteType || 'oficial'}"` + (config.customDollarRate ? ` ($${config.customDollarRate} ARS/USD)` : '') + `\n`;
+        
+        if (config.pricingStrategy) {
+          const methodLabel = config.pricingStrategy.method === 'margin' ? 'Margen sobre Precio de Venta (Margin)' : 'Markup sobre Costo (Markup)';
+          content += `• Estrategia de Margen Global: ${methodLabel}\n`;
+          content += `  - Margen Contado / Transferencia / 1 Pago: ${config.profit1Pay || config.profit || 0}%\n`;
+          content += `  - Margen Cuotas: ${config.profitInstallments || config.profit || 0}%\n`;
+          content += `  - CFT Cuotas sin interés: ${config.pricingStrategy.absorbInstallments ? 'Absorbido por el comercio (hasta ' + (config.pricingStrategy.maxInstallmentsToAbsorb || 3) + ' cuotas)' : 'No ofrece cuotas sin interés'}\n`;
+          content += `  - Descuento por Transferencia Bancaria: ${config.pricingStrategy.transferDiscountPercentage || 0}%\n`;
+          content += `  - Descuento por Pago en Efectivo: ${config.pricingStrategy.cashDiscountPercentage || 0}%\n`;
+        }
+
+        content += `• Impuestos (IVA): ${config.taxes?.iva || 21}%\n`;
+        content += `• Envío Gratis: ${config.shippingConfig?.freeShippingThreshold ? 'A partir de $' + config.shippingConfig.freeShippingThreshold.toLocaleString('es-AR') : 'Sin umbral configurado'}\n`;
+
+        // Pasarelas
+        content += `• Pasarelas de Pago Habilitadas:\n`;
+        if (config.paymentGateways?.mercadopago) {
+          const mp = config.paymentGateways.mercadopago;
+          content += `  - Mercado Pago: ${mp.active ? 'ACTIVO' : 'INACTIVO'} | Máx cuotas: ${mp.maxInstallments || 12} | Comisión base: ${mp.baseCommission}% | CFT3: ${mp.cft3cuotas}% | CFT6: ${mp.cft6Cuotas}%\n`;
+        }
+        if (config.paymentGateways?.transfer) {
+          const tr = config.paymentGateways.transfer;
+          content += `  - Transferencia Bancaria: ${tr.active ? 'ACTIVO' : 'INACTIVO'}` + (tr.alias ? ` (Alias: ${tr.alias} | Banco: ${tr.bankName || 'N/A'} | Titular: ${tr.titular || 'N/A'})` : '') + `\n`;
+        }
+        if (config.paymentGateways?.uala) {
+          content += `  - Ualá Bis: ${config.paymentGateways.uala.active ? 'ACTIVO' : 'INACTIVO'}\n`;
+        }
+
+        // Contacto
+        if (config.contact) {
+          content += `• Canales de Contacto: WhatsApp/Tel: ${config.contact.whatsapp || config.contact.phone || 'N/A'} | Email: ${config.contact.email || 'N/A'}\n`;
+        }
+        if (config.social) {
+          content += `• Redes Sociales: IG: ${config.social.instagram || 'N/A'} | TikTok: ${config.social.tiktok || 'N/A'} | FB: ${config.social.facebook || 'N/A'}\n`;
+        }
+      } else {
+        content += `• Configuración global: En proceso de carga / Predeterminada\n`;
+      }
+      content += `\n`;
+
+      // ==========================================
+      // 2. RESUMEN DEL LOTE Y MÉTRICAS
+      // ==========================================
+      content += `======================================================================\n`;
+      content += `## 📊 2. RESUMEN DEL LOTE Y MÉTRICAS DE INVENTARIO\n`;
+      content += `======================================================================\n`;
       content += `• Cantidad de productos en esta vista: ${products.length} (Total en catálogo: ${this.ProductState.products().itemsCount})\n`;
-      content += `• Filtros aplicados: ${activeFilters.length > 0 ? activeFilters.join(' | ') : 'Ninguno (Catálogo completo)'}\n\n`;
+      content += `• Productos Activos: ${activeCount} | Inactivos/Pausados: ${products.length - activeCount}\n`;
+      content += `• Stock total acumulado en unidades: ${totalUnits.toLocaleString('es-AR')} unidades\n`;
+      content += `• Valoración total del inventario a Precio de Venta: $${totalRetailValue.toLocaleString('es-AR')} ARS\n`;
+      content += `• Valoración total del inventario a Costo de Reposición: $${totalCostValue.toLocaleString('es-AR')} ARS\n`;
+      content += `• Ganancia neta potencial acumulada (Transferencia): $${totalTransferProfit.toLocaleString('es-AR')} ARS\n`;
+      content += `• Filtros aplicados en la vista: ${activeFilters.length > 0 ? activeFilters.join(' | ') : 'Ninguno (Catálogo completo)'}\n\n`;
+
+      // ==========================================
+      // 3. DETALLE EXHAUSTIVO POR PRODUCTO
+      // ==========================================
+      content += `======================================================================\n`;
+      content += `## 📦 3. DETALLE EXHAUSTIVO DE PRODUCTOS (${products.length})\n`;
       content += `======================================================================\n\n`;
 
       products.forEach((p, idx) => {
         const stock = this.getTotalStock(p);
-        content += `### [${idx + 1}] ${p.model}\n`;
-        content += `- ID: ${p._id}\n`;
-        content += `- Marca: ${p.brand || 'N/A'}\n`;
-        content += `- Categoría: ${p.category}\n`;
-        if (p.subtitle) content += `- Subtítulo / Descripción corta: ${p.subtitle}\n`;
-        content += `- Estado: ${p.isActive ? 'ACTIVO (Visible en tienda)' : 'INACTIVO (Pausado)'}\n`;
-        content += `- Destacado: ${p.isFeatured ? 'SÍ' : 'NO'}\n`;
-        content += `- Proveedor: ${p.provider ? p.provider.name : 'N/A'}\n`;
-        if (p.linkProductProvider) content += `- Enlace Directo Proveedor: ${p.linkProductProvider}\n`;
-        
-        content += `- Precios y Desglose Financiero:\n`;
-        content += `  * Precio Venta Efectivo / Transferencia: $${p.price?.cashTransferPrice?.toLocaleString('es-AR') || 0}\n`;
-        content += `  * Precio Venta Lista (Tarjetas / Cuotas): $${p.price?.listPrice?.toLocaleString('es-AR') || 0}\n`;
-        
+        const priceAge = this.formatPriceAge(p.price?.updatedAt || p.updatedAt);
+
+        content += `### [${idx + 1}] ${p.model} (Marca: ${p.brand || 'N/A'})\n`;
+        content += `- ID / Slug: ${p._id} / ${p.slug || 'N/A'}\n`;
+        content += `- Tipo de Producto: ${p.productType || 'General'}\n`;
+        content += `- Categoría: ${p.category || 'Sin categoría'}\n`;
+        if (p.subtitle) content += `- Subtítulo / Bajada: ${p.subtitle}\n`;
+        content += `- Estado: ${p.isActive ? '🟢 ACTIVO (Visible en tienda)' : '🔴 INACTIVO (Pausado)'}\n`;
+        content += `- Producto Destacado (Home / Ofertas): ${p.isFeatured ? '⭐ SÍ' : 'NO'}\n`;
+        content += `- Antigüedad del Precio: ${priceAge.text} (${priceAge.fullDate || 'Sin fecha'})\n`;
+
+        // 👗 DATOS POLIMÓRFICOS: INDUMENTARIA & CALZADO
+        const isClothing = p.productType === ProductType.CLOTHING || (p as any).gender || (p as any).fit || (p as any).material;
+        if (isClothing) {
+          const cp = p as any;
+          content += `\n--- 👗 ESPECIFICACIONES DE INDUMENTARIA & CALZADO ---\n`;
+          if (cp.gender) content += `- Género: ${cp.gender}\n`;
+          if (cp.clothingType) content += `- Tipo de Prenda: ${cp.clothingType}\n`;
+          if (cp.fit) content += `- Calce (Fit): ${cp.fit}\n`;
+          if (cp.material) content += `- Material: ${cp.material}\n`;
+          if (cp.composition && cp.composition.length > 0) {
+            const compStr = cp.composition.map((c: any) => `${c.percentage}% ${c.material}`).join(', ');
+            content += `- Composición Textil: ${compStr}\n`;
+          }
+          if (cp.sizeType) content += `- Tipo de Talles: ${cp.sizeType}\n`;
+          if (cp.season) content += `- Temporada: ${cp.season}\n`;
+          if (cp.careInstructions && cp.careInstructions.length > 0) {
+            content += `- Cuidados de la Prenda: ${cp.careInstructions.join(', ')}\n`;
+          }
+
+          // Guía de talles completa
+          if (cp.sizeGuide && cp.sizeGuide.headers && cp.sizeGuide.headers.length > 0 && cp.sizeGuide.rows && cp.sizeGuide.rows.length > 0) {
+            content += `- Guía de Talles & Medidas Exactas:\n`;
+            content += `  | ${cp.sizeGuide.headers.join(' | ')} |\n`;
+            content += `  | ${cp.sizeGuide.headers.map(() => '---').join(' | ')} |\n`;
+            cp.sizeGuide.rows.forEach((row: any) => {
+              content += `  | ${row.size} | ${(row.values || []).join(' | ')} |\n`;
+            });
+            if (cp.sizeGuide.tolerance) {
+              content += `  * Tolerancia: ${cp.sizeGuide.tolerance}\n`;
+            }
+          }
+        }
+
+        // 📱 DATOS POLIMÓRFICOS: TECNOLOGÍA & GADGETS
+        const isTech = p.productType === ProductType.TECH || (p as any).storage || (p as any).ram || (p as any).processor;
+        if (isTech) {
+          const tp = p as any;
+          content += `\n--- 📱 ESPECIFICACIONES DE TECNOLOGÍA ---\n`;
+          if (tp.storage && tp.storage.length > 0) content += `- Almacenamiento: ${tp.storage.join(', ')}\n`;
+          if (tp.ram) content += `- Memoria RAM: ${tp.ram}\n`;
+          if (tp.processor) content += `- Procesador: ${tp.processor}\n`;
+          if (tp.screenSize) content += `- Pantalla: ${tp.screenSize}\n`;
+          if (tp.os) content += `- Sistema Operativo: ${tp.os}\n`;
+          if (tp.batteryHealth) content += `- Condición de Batería: ${tp.batteryHealth}\n`;
+          if (tp.condition) content += `- Condición del Equipo: ${tp.condition}\n`;
+          if (tp.connectivity && tp.connectivity.length > 0) content += `- Conectividad: ${tp.connectivity.join(', ')}\n`;
+        }
+
+        // 💄 DATOS POLIMÓRFICOS: BELLEZA & COSMÉTICA
+        const isBeauty = p.productType === ProductType.BEAUTY || (p as any).volume || (p as any).fragranceFamily;
+        if (isBeauty) {
+          const bp = p as any;
+          content += `\n--- 💄 ESPECIFICACIONES DE BELLEZA & CUIDADO ---\n`;
+          if (bp.volume) content += `- Contenido / Volumen: ${bp.volume}\n`;
+          if (bp.concentration) content += `- Concentración: ${bp.concentration}\n`;
+          if (bp.fragranceFamily) content += `- Familia Olfativa: ${bp.fragranceFamily}\n`;
+          if (bp.scentNotes) {
+            content += `- Notas Olfativas: Salida: ${bp.scentNotes.top || 'N/A'} | Corazón: ${bp.scentNotes.heart || 'N/A'} | Fondo: ${bp.scentNotes.base || 'N/A'}\n`;
+          }
+          if (bp.skinType) content += `- Tipo de Piel recomendada: ${bp.skinType}\n`;
+          if (bp.applicationArea) content += `- Zona de Aplicación: ${bp.applicationArea}\n`;
+        }
+
+        // 📝 CONTENIDO, DESCRIPCIÓN Y ESPECIFICACIONES
+        content += `\n--- 📝 CONTENIDO, DESCRIPCIÓN & CARACTERÍSTICAS ---\n`;
+        if (p.shortDescription) content += `- Descripción Corta: ${p.shortDescription}\n`;
+        if (p.largeDescription) content += `- Descripción Detallada: ${p.largeDescription}\n`;
+        if (p.features && p.features.length > 0) {
+          content += `- Características Clave (Features):\n`;
+          p.features.forEach((feat) => {
+            content += `  • ${feat}\n`;
+          });
+        }
+        if (p.specifications && p.specifications.length > 0) {
+          content += `- Especificaciones Técnicas:\n`;
+          p.specifications.forEach((spec) => {
+            content += `  • ${spec.key}: ${spec.value}\n`;
+          });
+        }
+
+        // 💰 DESGLOSE FINANCIERO Y DE PRECIOS
+        content += `\n--- 💰 DESGLOSE FINANCIERO, COSTOS & RENTABILIDAD ---\n`;
+        content += `- Precio Venta Efectivo / Transferencia: $${p.price?.cashTransferPrice?.toLocaleString('es-AR') || 0} ARS\n`;
+        content += `- Precio Venta Lista (Tarjetas / Cuotas): $${p.price?.listPrice?.toLocaleString('es-AR') || 0} ARS\n`;
+        if (p.discount && p.discount > 0) content += `- Descuento Promocional Activo: ${p.discount}% OFF\n`;
+
         if (p.finance?.providerCost?.inARS) {
-          content += `  * Costo Proveedor: $${p.finance.providerCost.inARS.toLocaleString('es-AR')} ARS`;
+          content += `- Costo Proveedor: $${p.finance.providerCost.inARS.toLocaleString('es-AR')} ARS`;
           if (p.finance.providerCost.inUSD) {
             content += ` (USD ${p.finance.providerCost.inUSD} @ $${p.finance.exchangeRateSnapshot || 0}/USD)`;
           }
           content += `\n`;
         }
 
-        // Costos adicionales (packaging, flete, etc.)
         if (p.finance?.additionalCosts && p.finance.additionalCosts.length > 0) {
-          content += `  * Costos Adicionales / Operativos:\n`;
+          content += `- Costos Operativos Adicionales (Packaging/Fletes/Etc):\n`;
           p.finance.additionalCosts.forEach((c) => {
-            const valStr = c.type === 'percent_over_provider' ? `${c.value}% s/proveedor` : `$${c.value.toLocaleString('es-AR')}`;
-            content += `    - ${c.concept}: ${valStr}\n`;
+            const valStr = c.type === 'percent_over_provider' ? `${c.value}% s/costo proveedor` : `$${c.value.toLocaleString('es-AR')} fijos`;
+            content += `  • ${c.concept}: ${valStr}\n`;
           });
         }
 
-        // Comisiones pasarela (Mercado Pago)
         if (p.finance?.mpCommissionSnapshot) {
-          content += `  * Comisiones Pasarela de Pago (Mercado Pago):\n`;
-          content += `    - Comisión Base: ${p.finance.mpCommissionSnapshot.base}%\n`;
-          if (p.finance.mpCommissionSnapshot.cft3Cuotas) content += `    - CFT 3 Cuotas: ${p.finance.mpCommissionSnapshot.cft3Cuotas}%\n`;
-          if (p.finance.mpCommissionSnapshot.cft6Cuotas) content += `    - CFT 6 Cuotas: ${p.finance.mpCommissionSnapshot.cft6Cuotas}%\n`;
+          content += `- Comisiones Pasarela de Pago (Mercado Pago Snapshot):\n`;
+          content += `  • Comisión Base (1 Pago): ${p.finance.mpCommissionSnapshot.base}%\n`;
+          if (p.finance.mpCommissionSnapshot.cft3Cuotas) content += `  • CFT 3 Cuotas: ${p.finance.mpCommissionSnapshot.cft3Cuotas}%\n`;
+          if (p.finance.mpCommissionSnapshot.cft6Cuotas) content += `  • CFT 6 Cuotas: ${p.finance.mpCommissionSnapshot.cft6Cuotas}%\n`;
         }
 
-        // Ganancias Netas en mano del vendedor
         if (p.finance?.calculatedProfits) {
-          content += `  * Ganancia Neta Estimada (Bolsillo del Vendedor):\n`;
-          content += `    - Por Transferencia / Efectivo: +$${p.finance.calculatedProfits.transfer?.toLocaleString('es-AR') || 0} netos\n`;
-          content += `    - Con Tarjeta 1 Pago: +$${p.finance.calculatedProfits.card_ticket1Pay?.toLocaleString('es-AR') || 0} netos\n`;
+          content += `- Ganancia Neta Estimada en Mano (Bolsillo del Vendedor):\n`;
+          content += `  • Por Transferencia / Efectivo: +$${p.finance.calculatedProfits.transfer?.toLocaleString('es-AR') || 0} netos\n`;
+          content += `  • Con Tarjeta 1 Pago / Débito: +$${p.finance.calculatedProfits.card_ticket1Pay?.toLocaleString('es-AR') || 0} netos\n`;
           if (p.finance.calculatedProfits.card3Installments) {
-            content += `    - En 3 Cuotas: +$${p.finance.calculatedProfits.card3Installments?.toLocaleString('es-AR') || 0} netos\n`;
+            content += `  • En 3 Cuotas sin interés: +$${p.finance.calculatedProfits.card3Installments?.toLocaleString('es-AR') || 0} netos\n`;
           }
           if (p.finance.calculatedProfits.card6Installments) {
-            content += `    - En 6 Cuotas: +$${p.finance.calculatedProfits.card6Installments?.toLocaleString('es-AR') || 0} netos\n`;
+            content += `  • En 6 Cuotas sin interés: +$${p.finance.calculatedProfits.card6Installments?.toLocaleString('es-AR') || 0} netos\n`;
           }
         }
 
-        if (p.finance?.pricingStrategy) {
-          content += `  * Estrategia de Precio: ${p.finance.pricingStrategy.method === 'margin' ? 'Margen sobre venta' : 'Markup sobre costo'} (${p.finance.pricingStrategy.targetProfit}% objetivo)\n`;
+        const customProfitVal = (p as any).customProfitMargin || (p as any).customProfitMargin1Pay;
+        if (customProfitVal) {
+          content += `- Margen Personalizado: SÍ (${customProfitVal}% de margen específico para este producto)\n`;
+        } else if (p.finance?.pricingStrategy) {
+          content += `- Margen: Aplica regla global (${p.finance.pricingStrategy.targetProfit}% objetivo s/${p.finance.pricingStrategy.method === 'margin' ? 'venta' : 'costo'})\n`;
         }
-        
-        content += `- Stock Total: ${stock} unidades\n`;
-        
-        // Stock por talle/color si existe
+
+        // 📦 STOCK Y VARIANTES
+        content += `\n--- 📦 STOCK Y VARIANTES POLIMÓRFICAS (${p.variants ? p.variants.length : 0}) ---\n`;
+        content += `- Stock Total Disponible: ${stock} unidades\n`;
+        if (p.lowStockThreshold) content += `- Alerta de Stock Bajo: Menor a ${p.lowStockThreshold} unidades\n`;
+
         if (p.variants && p.variants.length > 0) {
-          const varSummary = p.variants.map((v: any) => `${v.size || v.sku || 'Variante'}${v.color ? ' (' + v.color.name + ')' : ''}: ${v.stock} uds`).join(' | ');
-          content += `  * Variantes: ${varSummary}\n`;
+          p.variants.forEach((v: any, vIdx: number) => {
+            const sizePart = v.size ? `Talle: ${v.size}` : '';
+            const colorPart = v.color ? `Color: ${v.color.name || 'S/N'} (${v.color.hex || ''})` : '';
+            const skuPart = v.sku ? `SKU: ${v.sku}` : '';
+            const barcodePart = v.barcode ? `EAN: ${v.barcode}` : '';
+            const attrPart = v.attributes && v.attributes.length > 0 ? `Atributos: ${v.attributes.map((a: any) => a.key + '=' + a.value).join(', ')}` : '';
+            const parts = [sizePart, colorPart, skuPart, barcodePart, attrPart].filter(Boolean).join(' | ');
+
+            content += `  [Variante ${vIdx + 1}] ${parts || 'Variante Estándar'}: ${v.stock} unidades (Activo: ${v.isActive !== false ? 'SÍ' : 'NO'})\n`;
+          });
+        } else {
+          content += `  (Sin variantes configuradas — producto simple con stock directo)\n`;
         }
 
-        // SEO
-        content += `- SEO:\n`;
-        content += `  * Meta Título: ${p.seo?.metaTitle || 'Sin configurar'}\n`;
-        content += `  * Meta Descripción: ${p.seo?.metaDescription || 'Sin configurar'}\n`;
-        content += `  * Imagen SEO: ${p.seo?.metaImage ? p.seo.metaImage : 'Sin imagen dedicada'}\n`;
+        // 🏭 PROVEEDOR
+        content += `\n--- 🏭 PROVEEDOR & LOGÍSTICA ---\n`;
+        if (p.provider) {
+          content += `- Proveedor Asignado: ${p.provider.name || 'N/A'}\n`;
+          if (p.provider.cuit) content += `- CUIT Proveedor: ${p.provider.cuit}\n`;
+          if (p.provider.phone) content += `- Teléfono Proveedor: ${p.provider.phone}\n`;
+          if (p.provider.contactEmail) content += `- Email Proveedor: ${p.provider.contactEmail}\n`;
+          if (p.provider.address) {
+            const addr = p.provider.address;
+            const fullAddr = [addr.street, addr.number, addr.city, addr.province].filter(Boolean).join(' ');
+            if (fullAddr) content += `- Dirección Proveedor: ${fullAddr}\n`;
+          }
+        } else {
+          content += `- Proveedor: No asignado\n`;
+        }
+        if (p.linkProductProvider) {
+          content += `- Enlace Directo al Producto en Proveedor: ${p.linkProductProvider}\n`;
+        }
 
-        // Imágenes
+        // 🔍 SEO Y MULTIMEDIA
+        content += `\n--- 🔍 SEO Y MULTIMEDIA ---\n`;
+        content += `- Meta Título SEO: ${p.seo?.metaTitle || 'Sin configurar'}\n`;
+        content += `- Meta Descripción SEO: ${p.seo?.metaDescription || 'Sin configurar'}\n`;
+        const metaImgUrl = typeof p.seo?.metaImage === 'string' ? p.seo?.metaImage : p.seo?.metaImage?.url;
+        content += `- Imagen SEO Dedicada (OG Image): ${metaImgUrl || 'Sin imagen dedicada'}\n`;
         if (p.images && p.images.length > 0) {
           content += `- Galería de Imágenes (${p.images.length}):\n`;
           p.images.forEach((img, imgIdx) => {
@@ -455,17 +657,18 @@ export class ProductList {
           });
         }
 
-        // Recomendaciones
+        // 🎯 RECOMENDACIONES
         if (p.recommendationsMode) {
-          content += `- Modo de Recomendación: ${p.recommendationsMode}\n`;
+          content += `- Modo de Recomendación Cruzada: ${p.recommendationsMode === 'manual' ? 'Manual (Productos curados)' : 'Automático por Categoría/Marca'}\n`;
         }
 
         content += `\n----------------------------------------------------------------------\n\n`;
       });
 
       await navigator.clipboard.writeText(content);
-      this.#snackBar.open(`✨ ¡Listado de ${products.length} productos copiado para la IA!`, 'Genial', { duration: 4000 });
+      this.#snackBar.open(`✨ ¡Reporte completo de ${products.length} productos copiado para la IA!`, 'Genial', { duration: 4000 });
     } catch (err) {
+      console.error('Error al copiar contexto para IA:', err);
       this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
     } finally {
       this.isCopyingForAi.set(false);
