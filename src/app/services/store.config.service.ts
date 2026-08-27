@@ -95,4 +95,13 @@ export class StoreConfigService {
       }>(`${this.#apiUrl}/recommendations`, payload)
     );
   }
+
+  async sendTestEmail(templateKey: string, recipientEmail: string): Promise<{ success: boolean; message: string }> {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; message: string }>(`${this.#apiUrl}/test-email`, {
+        templateKey,
+        recipientEmail
+      })
+    );
+  }
 }

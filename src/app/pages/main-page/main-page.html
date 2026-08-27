@@ -179,6 +179,12 @@
             <mat-icon>settings</mat-icon>
             @if (isExpanded) { <span class="menu-text font-semibold">Tienda & Finanzas</span> }
           </a>
+          <a routerLink="/home/settings" [queryParams]="{ tab: 'emails' }" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Emails & Plantillas' : ''" matTooltipPosition="right">
+            <mat-icon>mail</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Emails & Plantillas</span> }
+          </a>
           <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
             [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
@@ -337,6 +343,10 @@
             <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item text-primary">
               <mat-icon>settings</mat-icon>
               <span class="menu-text font-semibold">Tienda & Finanzas</span>
+            </a>
+            <a routerLink="/home/settings" [queryParams]="{ tab: 'emails' }" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>mail</mat-icon>
+              <span class="menu-text">Emails & Plantillas</span>
             </a>
             <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
               <mat-icon>payments</mat-icon>

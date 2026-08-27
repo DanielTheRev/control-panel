@@ -8,15 +8,15 @@
     <div actions class="flex items-center gap-2">
       <button
         class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4"
-        [disabled]="state.isLoading"
+        [disabled]="state.isLoading || isSaving()"
         (click)="saveConfig()"
       >
-        @if (state.isLoading) {
+        @if (state.isLoading || isSaving()) {
           <span class="loading loading-spinner loading-xs"></span>
           <span>Guardando...</span>
         } @else {
           <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
-          <span>Guardar Cambios</span>
+          <span>{{ currentTabSaveLabel }}</span>
         }
       </button>
     </div>
@@ -61,6 +61,16 @@
       >
         <mat-icon class="text-[13px]! w-3.5! h-3.5!">extension</mat-icon>
         <span>Integraciones</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('emails')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'emails' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
+        <span>Emails & Plantillas</span>
       </button>
 
       <button
@@ -540,7 +550,18 @@
                     <mat-icon class="text-[20px]! w-5! h-5!">credit_card</mat-icon>
                   </div>
                   <div>
-                    <h3 class="text-sm font-bold text-base-content">Mercado Pago</h3>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Mercado Pago</h3>
+                      @if (configForm.get('paymentGateways.mercadopago.active')?.value) {
+                        @if (configForm.get('paymentGateways.mercadopago.publicKey')?.value && configForm.get('paymentGateways.mercadopago.publicKey')?.value !== 'no asignado') {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Vinculado</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Pendiente de Vinculación</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
                     <p class="text-xs text-base-content/50">Cobros con tarjeta de crédito, débito y dinero en cuenta.</p>
                   </div>
                 </div>
@@ -616,7 +637,18 @@
                     <mat-icon class="text-[20px]! w-5! h-5!">account_balance</mat-icon>
                   </div>
                   <div>
-                    <h3 class="text-sm font-bold text-base-content">Transferencia Bancaria</h3>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Transferencia Bancaria</h3>
+                      @if (configForm.get('paymentGateways.transfer.active')?.value) {
+                        @if (configForm.get('paymentGateways.transfer.alias')?.value || configForm.get('paymentGateways.transfer.cbuCvu')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Datos Cargados</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Faltan Datos</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
                     <p class="text-xs text-base-content/50">Datos bancarios que se le muestran al cliente para transferir.</p>
                   </div>
                 </div>
@@ -642,7 +674,6 @@
                 </div>
               </div>
             </div>
-
           </div>
         }
 
@@ -662,7 +693,15 @@
                   <div>
                     <div class="flex items-center gap-2">
                       <h3 class="text-sm font-bold text-base-content">Google Sign-In (Login con Google)</h3>
-                      <span class="badge badge-xs badge-neutral text-[9px] font-bold">POR TIENDA</span>
+                      @if (configForm.get('integrations.googleAuth.active')?.value) {
+                        @if (configForm.get('integrations.googleAuth.clientId')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta Client ID)</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
                     </div>
                     <p class="text-xs text-base-content/50">Permite que tus clientes inicien sesión y compren usando su cuenta de Google.</p>
                   </div>
@@ -694,7 +733,15 @@
                   <div>
                     <div class="flex items-center gap-2">
                       <h3 class="text-sm font-bold text-base-content">Resend (Correos Transaccionales)</h3>
-                      <span class="badge badge-xs badge-neutral text-[9px] font-bold">PROPIO</span>
+                      @if (configForm.get('integrations.resend.active')?.value) {
+                        @if (configForm.get('integrations.resend.apiKey')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado y Listo</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta API Key)</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
                     </div>
                     <p class="text-xs text-base-content/50">Envío automático de emails de confirmación de compra y despacho con tu dominio.</p>
                   </div>
@@ -726,7 +773,18 @@
                     <mat-icon class="text-[20px]! w-5! h-5!">analytics</mat-icon>
                   </div>
                   <div>
-                    <h3 class="text-sm font-bold text-base-content">Google Analytics 4 (GA4)</h3>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Google Analytics 4 (GA4)</h3>
+                      @if (configForm.get('integrations.googleAnalytics.active')?.value) {
+                        @if (configForm.get('integrations.googleAnalytics.measurementId')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta Measurement ID)</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
                     <p class="text-xs text-base-content/50">Seguimiento de visitas, carritos abandonados y fuentes de tráfico.</p>
                   </div>
                 </div>
@@ -753,7 +811,18 @@
                     <mat-icon class="text-[20px]! w-5! h-5!">track_changes</mat-icon>
                   </div>
                   <div>
-                    <h3 class="text-sm font-bold text-base-content">Meta Pixel (Facebook / Instagram Ads)</h3>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Meta Pixel (Facebook / Instagram Ads)</h3>
+                      @if (configForm.get('integrations.metaPixel.active')?.value) {
+                        @if (configForm.get('integrations.metaPixel.pixelId')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta Pixel ID)</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
                     <p class="text-xs text-base-content/50">Mide conversiones y optimiza tus campañas publicitarias.</p>
                   </div>
                 </div>
@@ -771,12 +840,524 @@
                 </div>
               </div>
             </div>
-
           </div>
         }
 
         <!-- ========================================================================= -->
-        <!-- 5. CONTACTO & REDES SOCIALES                                              -->
+        <!-- 5. EMAILS & NOTIFICACIONES (RESEND & PLANTILLAS)                          -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'emails') {
+          <div formGroupName="emailTemplates" class="space-y-6">
+
+            <!-- 🎨 Branding Global de Correos -->
+            <div formGroupName="branding" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-black">
+                  <mat-icon class="text-[20px]! w-5! h-5!">palette</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Identidad Visual & Branding de Correos</h3>
+                  <p class="text-xs text-base-content/50">Personalizá los colores, logo y pie de página de todos los emails transaccionales.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <!-- Color Primario de la Marca -->
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-base-content/80 block">Color de Acento / Botones</label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="color"
+                      formControlName="primaryColor"
+                      class="w-10 h-10 rounded-xl cursor-pointer border border-base-300 p-0.5 bg-base-100"
+                    />
+                    <input
+                      type="text"
+                      formControlName="primaryColor"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs font-bold uppercase"
+                      placeholder="#111827"
+                    />
+                  </div>
+                  <div class="flex items-center gap-1.5 pt-1">
+                    <span class="text-[10px] text-base-content/50">Presets:</span>
+                    <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#111827')" class="w-4 h-4 rounded-full bg-[#111827] border border-white/20"></button>
+                    <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#4f46e5')" class="w-4 h-4 rounded-full bg-[#4f46e5] border border-white/20"></button>
+                    <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#059669')" class="w-4 h-4 rounded-full bg-[#059669] border border-white/20"></button>
+                    <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#dc2626')" class="w-4 h-4 rounded-full bg-[#dc2626] border border-white/20"></button>
+                    <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#d97706')" class="w-4 h-4 rounded-full bg-[#d97706] border border-white/20"></button>
+                  </div>
+                </div>
+
+                <!-- Opciones de Cabecera y Redes -->
+                <div class="space-y-3 bg-base-200/40 p-3.5 rounded-xl border border-base-200">
+                  <label class="flex items-center justify-between cursor-pointer">
+                    <span class="text-xs font-bold text-base-content">Mostrar Logotipo en Cabecera</span>
+                    <input type="checkbox" formControlName="showStoreLogo" class="toggle toggle-primary toggle-sm" />
+                  </label>
+                  <label class="flex items-center justify-between cursor-pointer">
+                    <span class="text-xs font-bold text-base-content">Mostrar Enlaces a Redes</span>
+                    <input type="checkbox" formControlName="showSocialLinks" class="toggle toggle-primary toggle-sm" />
+                  </label>
+                </div>
+
+                <!-- Pie de Página (Footer Text) -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80 block">Mensaje de Pie de Página (Footer)</label>
+                  <textarea
+                    formControlName="footerText"
+                    rows="3"
+                    class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                    placeholder="¡Gracias por comprar en nuestra tienda! Si tenés dudas respondé a este correo."
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 📧 Grid Principal: Selector + Editor + Live Preview -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+              <!-- COLUMNA IZQUIERDA: Selector de Plantillas y Formulario de Edición (7 cols) -->
+              <div class="lg:col-span-6 xl:col-span-6 space-y-4">
+
+                <!-- Selector de Plantilla -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-wider text-base-content/60">Seleccionar Evento de Email</span>
+                    <span class="badge badge-sm badge-neutral font-bold">{{ emailTemplatesCatalog.length }} Plantillas</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    @for (tpl of emailTemplatesCatalog; track tpl.key) {
+                      <button
+                        type="button"
+                        (click)="selectEmailTemplate(tpl.key)"
+                        class="p-2.5 rounded-xl border text-left transition-all flex items-start gap-2.5 shadow-2xs"
+                        [ngClass]="selectedEmailTemplate() === tpl.key
+                          ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20'
+                          : 'border-base-200 bg-base-100 hover:bg-base-200/50'"
+                      >
+                        <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center shrink-0 mt-0.5" [ngClass]="tpl.color">
+                          <mat-icon class="text-[18px]! w-4.5! h-4.5!">{{ tpl.icon }}</mat-icon>
+                        </div>
+                        <div class="grow min-w-0">
+                          <div class="flex items-center justify-between gap-1">
+                            <h4 class="text-xs font-bold text-base-content truncate">{{ tpl.title }}</h4>
+                            <span class="badge badge-xs text-[8px] font-bold" [ngClass]="selectedEmailTemplate() === tpl.key ? 'badge-primary' : 'badge-ghost'">{{ tpl.badge }}</span>
+                          </div>
+                          <p class="text-[10px] text-base-content/50 line-clamp-1 mt-0.5">{{ tpl.desc }}</p>
+                        </div>
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Formulario de Edición de la Plantilla Seleccionada -->
+                @for (currentKey of [selectedEmailTemplate()]; track currentKey) {
+                  <div [formGroup]="currentTemplateControl" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                      <div>
+                        <h3 class="text-sm font-bold text-base-content">
+                          @for (tpl of emailTemplatesCatalog; track tpl.key) {
+                            @if (tpl.key === selectedEmailTemplate()) {
+                              {{ tpl.title }}
+                            }
+                          }
+                        </h3>
+                        <p class="text-[11px] text-base-content/50">Personalizá los textos exactos que recibirá el comprador.</p>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-base-content/70">Activo</span>
+                        <input type="checkbox" formControlName="enabled" class="toggle toggle-success toggle-sm" />
+                      </div>
+                    </div>
+
+                    <!-- Asunto (Subject) -->
+                    <div class="space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-base-content block">Asunto del Correo (Subject)</label>
+                        <span class="text-[10px] text-base-content/40">Visible en la bandeja de entrada</span>
+                      </div>
+                      <input
+                        type="text"
+                        formControlName="subject"
+                        (focus)="setFocusedField('subject')"
+                        class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                        [placeholder]="currentDefaultTemplate.subject || 'Asunto del correo'"
+                      />
+                    </div>
+
+                    <!-- Título Principal (Heading) -->
+                    <div class="space-y-1.5">
+                      <label class="text-xs font-bold text-base-content block">Título Principal (Encabezado dentro del mail)</label>
+                      <input
+                        type="text"
+                        formControlName="heading"
+                        (focus)="setFocusedField('heading')"
+                        class="input input-sm input-bordered w-full rounded-xl text-xs"
+                        [placeholder]="currentDefaultTemplate.heading || 'Título principal'"
+                      />
+                    </div>
+
+                    <!-- Mensaje / Cuerpo (Message Body) -->
+                    <div class="space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-base-content block">Mensaje Principal</label>
+                        <span class="text-[10px] text-base-content/40">Texto introductorio</span>
+                      </div>
+                      <textarea
+                        formControlName="message"
+                        (focus)="setFocusedField('message')"
+                        rows="3"
+                        class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                        [placeholder]="currentDefaultTemplate.message || 'Mensaje principal'"
+                      ></textarea>
+                    </div>
+
+                    <!-- Instrucciones adicionales (Extra Instructions) -->
+                    <div class="space-y-1.5">
+                      <label class="text-xs font-bold text-base-content block">Instrucciones Adicionales o Destacadas (Opcional)</label>
+                      <textarea
+                        formControlName="extraInstructions"
+                        (focus)="setFocusedField('extraInstructions')"
+                        rows="2"
+                        class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                        [placeholder]="currentDefaultTemplate.extraInstructions || 'Instrucciones adicionales o datos destacados (opcional)'"
+                      ></textarea>
+                    </div>
+
+                    <!-- Botón de Llamado a la Acción (CTA Button Text) -->
+                    <div class="space-y-1.5">
+                      <label class="text-xs font-bold text-base-content block">Texto del Botón Principal (CTA)</label>
+                      <input
+                        type="text"
+                        formControlName="buttonText"
+                        class="input input-sm input-bordered w-full rounded-xl text-xs"
+                        [placeholder]="currentDefaultTemplate.buttonText || 'Ver Estado del Pedido'"
+                      />
+                    </div>
+
+                    <!-- Remitente Específico para esta plantilla (Opcional) -->
+                    <div class="pt-3 border-t border-base-200 space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 block">Remitente de este Evento (Opcional)</span>
+                        <span class="text-[10px] text-base-content/40">Hereda el general si está vacío</span>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                          <label class="text-[11px] font-bold text-base-content/80">Nombre de Remitente</label>
+                          <input
+                            type="text"
+                            formControlName="fromName"
+                            class="input input-xs input-bordered w-full rounded-lg text-xs"
+                            placeholder="Ej. Ventas / Soporte"
+                          />
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-[11px] font-bold text-base-content/80">Email de Envío (From Email)</label>
+                          <input
+                            type="email"
+                            formControlName="fromEmail"
+                            class="input input-xs input-bordered w-full rounded-lg text-xs"
+                            placeholder="Ej. compras@mitienda.com"
+                          />
+                        </div>
+                        <div class="space-y-1 sm:col-span-2">
+                          <label class="text-[11px] font-bold text-base-content/80">Email de Respuesta (Reply-To)</label>
+                          <input
+                            type="email"
+                            formControlName="replyTo"
+                            class="input input-xs input-bordered w-full rounded-lg text-xs"
+                            placeholder="Ej. soporte@mitienda.com"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tags de Variables Dinámicas Clicables -->
+                    <div class="pt-3 border-t border-base-200 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 block">Insertar Variables Dinámicas</span>
+                        <span class="text-[10px] text-primary font-semibold">
+                          Insertando en:
+                          <span class="font-bold underline">
+                            @switch (lastFocusedField()) {
+                              @case ('subject') { Asunto }
+                              @case ('heading') { Título }
+                              @case ('message') { Mensaje }
+                              @case ('extraInstructions') { Instrucciones Extra }
+                            }
+                          </span>
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (v of availableVariables; track v.tag) {
+                          <button
+                            type="button"
+                            (click)="insertVariable(v.tag)"
+                            class="btn btn-xs btn-outline btn-neutral rounded-lg font-mono text-[10px] gap-1 shadow-2xs hover:btn-primary active:scale-95"
+                            [matTooltip]="v.label"
+                          >
+                            <span>+</span>
+                            <span>{{ v.tag }}</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Acciones de la Plantilla -->
+                    <div class="pt-3 border-t border-base-200 flex items-center justify-between">
+                      <button
+                        type="button"
+                        (click)="resetTemplateToDefault(selectedEmailTemplate())"
+                        class="btn btn-xs btn-ghost text-base-content/60 hover:text-error gap-1 rounded-xl"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">restart_alt</mat-icon>
+                        <span>Restaurar por defecto</span>
+                      </button>
+                    </div>
+
+                  </div>
+                }
+
+              </div>
+
+              <!-- COLUMNA DERECHA: Live Preview Interactivo & Envío de Prueba (5 cols) -->
+              <div class="lg:col-span-6 xl:col-span-6 space-y-4">
+
+                <!-- Barra de Herramientas de Vista Previa -->
+                <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <!-- Selector de Dispositivo -->
+                  <div class="flex items-center gap-1 bg-base-200 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      (click)="previewDevice.set('desktop')"
+                      class="btn btn-xs rounded-lg gap-1 font-bold"
+                      [ngClass]="previewDevice() === 'desktop' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/60'"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">desktop_windows</mat-icon>
+                      <span>Desktop</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="previewDevice.set('mobile')"
+                      class="btn btn-xs rounded-lg gap-1 font-bold"
+                      [ngClass]="previewDevice() === 'mobile' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/60'"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">smartphone</mat-icon>
+                      <span>Mobile</span>
+                    </button>
+                  </div>
+
+                  <!-- Envío de Correo de Prueba -->
+                  <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input
+                      type="email"
+                      [ngModel]="testEmailRecipient()"
+                      (ngModelChange)="testEmailRecipient.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="input input-xs input-bordered rounded-xl grow sm:w-48 text-[11px]"
+                      placeholder="tu@email.com"
+                    />
+                    <button
+                      type="button"
+                      (click)="sendTestEmail()"
+                      [disabled]="isSendingTestEmail()"
+                      class="btn btn-xs btn-primary rounded-xl font-bold gap-1 shrink-0 shadow-2xs"
+                    >
+                      @if (isSendingTestEmail()) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <mat-icon class="text-[13px]! w-3.5! h-3.5!">send</mat-icon>
+                      }
+                      <span>Enviar Prueba</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Mockup Visual del Correo (Simulador de Inbox) -->
+                <div class="bg-base-200/50 rounded-2xl border border-base-300/80 p-3 sm:p-4 overflow-hidden flex justify-center shadow-inner">
+
+                  <div
+                    class="bg-white text-slate-900 rounded-xl shadow-md border border-slate-200 transition-all duration-300 overflow-hidden"
+                    [ngClass]="previewDevice() === 'mobile' ? 'w-[320px]' : 'w-full max-w-[540px]'"
+                    style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;"
+                  >
+                    <!-- Header Bar simulando Cliente de Correo -->
+                    <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 text-[11px] space-y-1">
+                      <div class="flex items-center gap-2 text-slate-500 truncate">
+                        <span class="font-bold text-slate-700">De:</span>
+                        <span>{{ previewSender }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-slate-900 font-bold truncate">
+                        <span class="text-slate-500 font-normal">Asunto:</span>
+                        <span class="text-slate-800">{{ previewSubject }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Contenido del Correo -->
+                    <div class="p-5 sm:p-6 space-y-5 text-[13px] text-slate-800">
+
+                      <!-- Logo & Cabecera -->
+                      <div class="text-center pb-4 border-b border-slate-100">
+                        @if (showPreviewLogo) {
+                          @if (previewLogoUrl) {
+                            <img [src]="previewLogoUrl" alt="Logo" class="h-10 mx-auto object-contain mb-3" />
+                          } @else {
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl text-amber-800 text-[11px] font-bold border border-amber-200/80 mb-3">
+                              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-amber-600">image_not_supported</mat-icon>
+                              <span>Sin logo subido (se mostrará "{{ configForm.get('name')?.value || 'Nombre de tu Tienda' }}" en texto)</span>
+                            </div>
+                          }
+                        }
+                        <h2 class="text-lg font-bold text-slate-900 leading-snug">{{ previewHeading }}</h2>
+                        @if (selectedEmailTemplate() !== 'abandonedCart' && selectedEmailTemplate() !== 'backInStock') {
+                          <p class="text-xs text-slate-500 mt-1">Pedido #REV-9823</p>
+                        }
+                      </div>
+
+                      <!-- Mensaje -->
+                      <p class="leading-relaxed text-slate-700 whitespace-pre-line">
+                        {{ previewMessage }}
+                      </p>
+
+                      <!-- Instrucciones extra si existen -->
+                      @if (previewExtraInstructions) {
+                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs leading-relaxed whitespace-pre-line">
+                          {{ previewExtraInstructions }}
+                        </div>
+                      }
+
+                      <!-- Bloques Contextuales según Tipo de Evento -->
+                      @if (selectedEmailTemplate() === 'bankTransfer') {
+                        <!-- Caja de Datos Bancarios -->
+                        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs space-y-2 text-emerald-950">
+                          <p class="font-bold uppercase tracking-wider text-emerald-800 text-[10px]">Datos para Transferir:</p>
+                          <div class="space-y-1.5 font-mono text-[11px]">
+                            <div class="flex justify-between"><span class="font-sans font-medium text-emerald-800">Total:</span><span class="font-bold text-emerald-900">$ 48.500</span></div>
+                            <div class="flex justify-between"><span class="font-sans text-emerald-700">Alias:</span><span class="font-bold">{{ configForm.get('paymentGateways.transfer.alias')?.value || 'MI.TIENDA.PAGOS' }}</span></div>
+                            <div class="flex justify-between"><span class="font-sans text-emerald-700">CBU/CVU:</span><span>{{ configForm.get('paymentGateways.transfer.cbuCvu')?.value || '0000003100010002938472' }}</span></div>
+                            <div class="flex justify-between"><span class="font-sans text-emerald-700">Banco:</span><span>{{ configForm.get('paymentGateways.transfer.bankName')?.value || 'Banco Galicia' }}</span></div>
+                            <div class="flex justify-between"><span class="font-sans text-emerald-700">Titular:</span><span>{{ configForm.get('paymentGateways.transfer.titular')?.value || 'Comercio S.A.' }}</span></div>
+                          </div>
+                        </div>
+                      }
+
+                      @if (selectedEmailTemplate() === 'orderShipped') {
+                        <!-- Caja de Seguimiento de Envío -->
+                        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs space-y-1 text-emerald-950">
+                          <p class="font-bold uppercase tracking-wider text-emerald-800 text-[10px]">Código de Seguimiento:</p>
+                          <p class="font-mono font-black text-sm text-emerald-700">AR-99887722</p>
+                          <p class="text-[11px] text-emerald-800">Transporte: <strong>Andreani</strong></p>
+                        </div>
+                      }
+
+                      @if (selectedEmailTemplate() === 'cashPayment') {
+                        <!-- Caja de Retiro en Local -->
+                        <div class="p-3.5 bg-indigo-50 rounded-xl border border-indigo-200 text-xs space-y-1.5 text-indigo-950">
+                          <p class="font-bold uppercase tracking-wider text-indigo-800 text-[10px]">Punto de Retiro:</p>
+                          <p class="font-bold text-xs">Local Principal</p>
+                          <p class="text-[11px] text-indigo-700">Av. Santa Fe 3200, Palermo, CABA</p>
+                          <div class="pt-1.5 border-t border-indigo-200 flex justify-between font-bold text-indigo-900">
+                            <span>Total a Abonar:</span>
+                            <span>$ 48.500</span>
+                          </div>
+                        </div>
+                      }
+
+                      @if (selectedEmailTemplate() === 'abandonedCart') {
+                        <!-- Cupón de Carrito Abandonado -->
+                        <div class="p-3 bg-red-50 rounded-xl border border-dashed border-red-300 text-center text-xs space-y-1 text-red-950">
+                          <p class="font-bold text-red-800 text-[11px]">¡Regalo especial para completar tu compra!</p>
+                          <p class="text-[11px] text-red-700">Usá el cupón <strong class="font-mono font-bold bg-white px-2 py-0.5 rounded border border-red-200 text-red-800">PROMO10</strong> al finalizar tu compra.</p>
+                        </div>
+                      }
+
+                      @if (selectedEmailTemplate() === 'backInStock') {
+                        <!-- Card de Producto con Stock -->
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs space-y-2">
+                          <div class="w-16 h-16 mx-auto rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
+                            <mat-icon class="text-[28px]! w-7! h-7!">inventory_2</mat-icon>
+                          </div>
+                          <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wide">Remera Premium Oversized</h4>
+                          <p class="font-bold text-slate-900 text-sm">$ 22.500</p>
+                        </div>
+                      } @else {
+                        <!-- Mock Tabla de Productos Normal -->
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Detalle de Compra</span>
+                          <div class="flex items-center gap-3 py-2 border-b border-slate-100">
+                            <div class="w-12 h-12 rounded-lg bg-slate-100 shrink-0 flex items-center justify-center text-slate-400">
+                              <mat-icon class="text-[20px]! w-5! h-5!">inventory_2</mat-icon>
+                            </div>
+                            <div class="grow min-w-0">
+                              <h5 class="font-bold text-xs text-slate-900 truncate">Remera Premium Oversized</h5>
+                              <p class="text-[11px] text-slate-500">Talle: L | Color: Negro</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                              <span class="font-bold text-xs text-slate-900">$ 45.000</span>
+                              <span class="block text-[10px] text-slate-400">1 un.</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Resumen de Entrega y Totales -->
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-2 text-xs">
+                          <div class="flex justify-between text-slate-500">
+                            <span>Envío a Domicilio:</span>
+                            <span class="font-medium text-slate-700">$ 3.500</span>
+                          </div>
+                          <div class="flex justify-between font-bold text-sm text-slate-900 pt-1.5 border-t border-slate-200">
+                            <span>Total Abonado:</span>
+                            <span>$ 48.500</span>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Botón de Acción Principal (CTA) -->
+                      <div class="text-center pt-2">
+                        <button
+                          type="button"
+                          class="px-5 py-2.5 rounded-xl text-white font-bold text-xs shadow-sm transition-transform active:scale-95"
+                          [style.backgroundColor]="previewPrimaryColor"
+                        >
+                          {{ previewButtonText }}
+                        </button>
+                      </div>
+
+                      <!-- Footer del Correo -->
+                      <div class="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400 space-y-2">
+                        <p class="text-slate-500">{{ previewFooterText }}</p>
+                        @if (showPreviewSocial) {
+                          @if (activeSocialNetworks.length > 0) {
+                            <div class="flex items-center justify-center gap-2.5 text-slate-500 text-[10px]">
+                              @for (s of activeSocialNetworks; track s.name; let last = $last) {
+                                <span>{{ s.name }}</span>
+                                @if (!last) {
+                                  <span class="text-slate-300">•</span>
+                                }
+                              }
+                            </div>
+                          } @else {
+                            <div class="p-1.5 bg-amber-50/80 rounded-lg text-amber-700 text-[10px] inline-flex items-center gap-1 border border-amber-200/60">
+                              <mat-icon class="text-[12px]! w-3! h-3!">info</mat-icon>
+                              <span>Sin redes cargadas (agregalas en la pestaña "Contacto & Redes")</span>
+                            </div>
+                          }
+                        }
+                        <p class="text-[9px] text-slate-400 mt-2">© 2026 {{ configForm.get('name')?.value || 'NexoCommerce' }}. Todos los derechos reservados.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 6. CONTACTO & REDES SOCIALES                                              -->
         <!-- ========================================================================= -->
         @if (activeTab() === 'contact') {
           <div class="space-y-6">
@@ -850,41 +1431,43 @@
         <!-- 6. INDUMENTARIA (FITS & CORTES)                                           -->
         <!-- ========================================================================= -->
         @if (activeTab() === 'clothing') {
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-            <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-              <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
-                <mat-icon class="text-[20px]! w-5! h-5!">checkroom</mat-icon>
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cortes y Fits de Indumentaria</h3>
-                <p class="text-xs text-base-content/50">Opciones que aparecen en el selector al cargar ropa.</p>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 max-w-sm">
-              <input
-                type="text"
-                #newFitInput
-                (keyup.enter)="addFit(newFitInput); $event.preventDefault()"
-                class="input input-sm input-bordered rounded-xl text-xs flex-1"
-                placeholder="Ej. Oversize, Boxy, Slim..."
-              />
-              <button type="button" class="btn btn-sm btn-primary rounded-xl font-bold gap-1" (click)="addFit(newFitInput)">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Agregar
-              </button>
-            </div>
-
-            <div class="flex flex-wrap gap-2 pt-2">
-              @for (fit of clothingFits; track fit) {
-                <div class="badge badge-sm bg-base-200 border-base-300 font-bold py-3 px-3 text-xs gap-1.5">
-                  {{ fit }}
-                  <button type="button" class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-error" (click)="removeFit(fit)">
-                    <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-                  </button>
+          <div class="space-y-6">
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">checkroom</mat-icon>
                 </div>
-              } @empty {
-                <span class="text-xs text-base-content/40 italic">No hay cortes configurados todavía.</span>
-              }
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cortes y Fits de Indumentaria</h3>
+                  <p class="text-xs text-base-content/50">Opciones que aparecen en el selector al cargar ropa.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 max-w-sm">
+                <input
+                  type="text"
+                  #newFitInput
+                  (keyup.enter)="addFit(newFitInput); $event.preventDefault()"
+                  class="input input-sm input-bordered rounded-xl text-xs flex-1"
+                  placeholder="Ej. Oversize, Boxy, Slim..."
+                />
+                <button type="button" class="btn btn-sm btn-primary rounded-xl font-bold gap-1" (click)="addFit(newFitInput)">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Agregar
+                </button>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2">
+                @for (fit of clothingFits; track fit) {
+                  <div class="badge badge-sm bg-base-200 border-base-300 font-bold py-3 px-3 text-xs gap-1.5">
+                    {{ fit }}
+                    <button type="button" class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-error" (click)="removeFit(fit)">
+                      <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+                    </button>
+                  </div>
+                } @empty {
+                  <span class="text-xs text-base-content/40 italic">No hay cortes configurados todavía.</span>
+                }
+              </div>
             </div>
           </div>
         }

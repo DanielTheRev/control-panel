@@ -22,6 +22,38 @@ export interface IResendConfig {
   fromName?: string;
 }
 
+export interface IEmailTemplateItem {
+  enabled: boolean;
+  subject: string;
+  heading?: string;
+  message: string;
+  extraInstructions?: string;
+  buttonText?: string;
+  fromName?: string;
+  fromEmail?: string;
+  replyTo?: string;
+}
+
+export interface IEmailBrandingConfig {
+  primaryColor?: string;
+  footerText?: string;
+  showSocialLinks?: boolean;
+  showStoreLogo?: boolean;
+}
+
+export interface IEmailTemplatesConfig {
+  branding?: IEmailBrandingConfig;
+  orderConfirmation?: IEmailTemplateItem;
+  bankTransfer?: IEmailTemplateItem;
+  cashPayment?: IEmailTemplateItem;
+  paymentReceived?: IEmailTemplateItem;
+  paymentPending?: IEmailTemplateItem;
+  orderShipped?: IEmailTemplateItem;
+  orderDelivered?: IEmailTemplateItem;
+  abandonedCart?: IEmailTemplateItem;
+  backInStock?: IEmailTemplateItem;
+}
+
 export interface IEcommerceIntegrations {
   metaPixel?: IMetaPixelConfig;
   googleAnalytics?: IGoogleAnalyticsConfig;
@@ -79,6 +111,7 @@ export interface IEcommerceConfig {
   shippingConfig?: {
     freeShippingThreshold: number;
   };
+  emailTemplates?: IEmailTemplatesConfig;
   workingHours?: {
     weekdayStart?: string;
     weekdayEnd?: string;
