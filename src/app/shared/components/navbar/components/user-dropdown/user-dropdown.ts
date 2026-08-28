@@ -5,6 +5,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../../../../services/auth.service';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-user-dropdown',
@@ -20,6 +21,7 @@ import { AuthService } from '../../../../../services/auth.service';
 })
 export class UserDropdown {
   private authService = inject(AuthService);
+  appVersion = environment.appVersion || 'v1.4.2';
 
   get user() {
     return this.authService.user();

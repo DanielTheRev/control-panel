@@ -28,6 +28,8 @@ import { Navbar } from '../../shared/components/navbar/navbar';
 export class MainPage {
   sidebarService = inject(SidebarService);
   authService = inject(AuthService);
+  appVersion = environment.appVersion || 'v1.4.2';
+  buildDate = environment.buildDate || '28/08/2026';
 
   get brandName(): string {
     const tenant = localStorage.getItem('lastTenantSlug');

@@ -389,8 +389,19 @@ export class ProductList {
         totalTransferProfit += profit * stock;
       });
 
+      const reportTimestamp = new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(new Date()).replace(',', '');
+
       let content = `# 🏢 REPORTE INTEGRAL DE E-COMMERCE Y CATÁLOGO DE PRODUCTOS (LLM CONTEXT)\n`;
-      content += `• Fecha y Hora: ${new Date().toLocaleString('es-AR')}\n`;
+      content += `• Fecha y Hora: ${reportTimestamp}\n`;
       content += `• Plataforma: NexoCommerce SaaS (Multi-Tenant E-Commerce Suite)\n\n`;
 
       // ==========================================
@@ -464,8 +475,8 @@ export class ProductList {
       content += `• Cantidad de productos en esta vista: ${products.length} (Total en catálogo: ${this.ProductState.products().itemsCount})\n`;
       content += `• Productos Activos: ${activeCount} | Inactivos/Pausados: ${products.length - activeCount}\n`;
       content += `• Stock total acumulado en unidades: ${totalUnits.toLocaleString('es-AR')} unidades\n`;
-      content += `• Valoración total del inventario a Precio de Venta: $${totalRetailValue.toLocaleString('es-AR')} ARS\n`;
-      content += `• Valoración total del inventario a Costo de Reposición: $${totalCostValue.toLocaleString('es-AR')} ARS\n`;
+      content += `• Valor potencial del stock disponible a Precio de Venta: $${totalRetailValue.toLocaleString('es-AR')} ARS\n`;
+      content += `• Costo potencial de reposición del stock disponible: $${totalCostValue.toLocaleString('es-AR')} ARS\n`;
       content += `• Ganancia neta potencial acumulada (Transferencia): $${totalTransferProfit.toLocaleString('es-AR')} ARS\n`;
       content += `• Filtros aplicados en la vista: ${activeFilters.length > 0 ? activeFilters.join(' | ') : 'Ninguno (Catálogo completo)'}\n\n`;
 
@@ -724,14 +735,23 @@ export class ProductList {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const fullDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}hs`;
+    const dateFormatted = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(d).replace(',', '');
+    const fullDate = `${dateFormatted}hs`;
+    const timeOnly = dateFormatted.split(' ')[1] || '';
 
     let text = '';
     if (diffMinutes < 1) text = 'Recién';
     else if (diffMinutes < 60) text = `Hace ${diffMinutes}m`;
-    else if (diffHours < 24 && d.getDate() === now.getDate()) text = `Hoy ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    else if (diffDays === 1 || (diffHours < 48 && d.getDate() === now.getDate() - 1)) text = 'Ayer';
+    else if (diffHours < 24) text = `Hoy ${timeOnly}`;
+    else if (diffDays === 1) text = 'Ayer';
     else if (diffDays < 7) text = `Hace ${diffDays}d`;
     else if (diffDays < 30) {
       const weeks = Math.floor(diffDays / 7);

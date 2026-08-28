@@ -8,5 +8,7 @@ export const environment = {
   tenantSlug: 'vura',
   brandName: 'NexoCommerce',
 
-  MP_MASTER_CLIENT_ID:8846222731123020
+  MP_MASTER_CLIENT_ID: 8846222731123020,
+  appVersion: 'v1.4.2 (dev)',
+  buildDate: '28/08/2026'
 };

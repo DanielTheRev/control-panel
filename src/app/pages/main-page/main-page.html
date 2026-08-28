@@ -207,8 +207,8 @@
       }
     </nav>
 
-    <!-- Bottom Collapse Bar -->
-    <div class="p-2 border-t border-base-200 shrink-0">
+    <!-- Bottom Collapse Bar & Version -->
+    <div class="p-2 border-t border-base-200 shrink-0 flex flex-col gap-1">
       <button class="menu-item w-full" [class.justify-center]="isCollapsed"
         (click)="sidebarService.toggleExpanded()">
         <mat-icon class="transition-transform duration-300"
@@ -219,6 +219,17 @@
           <span class="menu-text text-xs text-base-content/60">Colapsar menú</span>
         }
       </button>
+
+      @if (isExpanded) {
+        <div class="px-2.5 py-1 flex items-center justify-between text-[10px] font-mono text-base-content/40 select-none">
+          <span>NexoCommerce</span>
+          <span class="badge badge-xs badge-neutral font-mono opacity-80" [title]="'Build: ' + buildDate">{{ appVersion }}</span>
+        </div>
+      } @else {
+        <div class="text-center text-[9px] font-mono text-base-content/30 py-0.5 select-none" [matTooltip]="'NexoCommerce ' + appVersion + ' (' + buildDate + ')'" matTooltipPosition="right">
+          {{ appVersion }}
+        </div>
+      }
     </div>
   </aside>
 
@@ -363,6 +374,11 @@
           </div>
         }
       </nav>
+      <!-- Mobile Drawer Footer with Version -->
+      <div class="p-3 border-t border-base-300 shrink-0 flex items-center justify-between text-xs text-base-content/50 font-mono">
+        <span>NexoCommerce</span>
+        <span class="badge badge-sm badge-neutral font-mono">{{ appVersion }}</span>
+      </div>
     </aside>
   }
 
