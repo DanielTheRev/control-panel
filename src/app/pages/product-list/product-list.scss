@@ -77,11 +77,12 @@
 
 /* Product Card Grid Styles */
 .product-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s ease;
   
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 32px -12px oklch(from oklch(var(--color-base-content)) l c h / 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -6px oklch(from oklch(var(--color-base-content)) l c h / 0.1);
+    border-color: oklch(from oklch(var(--color-primary)) l c h / 0.35);
   }
 
   .checkbox {

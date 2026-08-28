@@ -406,10 +406,14 @@ export class ProductList {
         
         if (config.pricingStrategy) {
           const methodLabel = config.pricingStrategy.method === 'margin' ? 'Margen sobre Precio de Venta (Margin)' : 'Markup sobre Costo (Markup)';
-          content += `• Estrategia de Margen Global: ${methodLabel}\n`;
-          content += `  - Margen Contado / Transferencia / 1 Pago: ${config.profit1Pay || config.profit || 0}%\n`;
-          content += `  - Margen Cuotas: ${config.profitInstallments || config.profit || 0}%\n`;
-          content += `  - CFT Cuotas sin interés: ${config.pricingStrategy.absorbInstallments ? 'Absorbido por el comercio (hasta ' + (config.pricingStrategy.maxInstallmentsToAbsorb || 3) + ' cuotas)' : 'No ofrece cuotas sin interés'}\n`;
+          content += `• Estrategia de Margen Global de Tienda (Fallback): ${methodLabel} (${config.profit || 30}%)\n`;
+          content += `  ⚠️ NOTA CRÍTICA DE PRICING PARA LA IA: El catálogo NO utiliza un margen plano general. Cada uno de los productos cuenta con su propio Margen de Rentabilidad Personalizado (Custom Profit Override) adaptado por prenda y categoría (entre 15% y 40%), el cual prevalece sobre la regla global.\n`;
+          content += `  - Margen Base Tienda: ${config.profit1Pay || config.profit || 0}%\n`;
+          
+          const maxAbsorbed = config.pricingStrategy.maxInstallmentsToAbsorb || 3;
+          const offersInstallments = config.pricingStrategy.absorbInstallments;
+          content += `  - Oferta Actual de Cuotas en Tienda: ${offersInstallments ? `Actualmente ofrece hasta ${maxAbsorbed} Cuotas sin Interés al cliente final (CFT absorbido por el comercio).` : 'No ofrece cuotas sin interés'}\n`;
+          content += `  - ⚠️ NOTA DE CUOTAS PARA LA IA: En la tienda online solo están activas hasta ${maxAbsorbed} cuotas sin interés al público. La simulación y cálculo de 6 cuotas incluida en cada producto de este reporte funciona como PROYECCIÓN FINANCIERA / ANÁLISIS DE RENTABILIDAD para evaluar su futura activación comercial.\n`;
           content += `  - Descuento por Transferencia Bancaria: ${config.pricingStrategy.transferDiscountPercentage || 0}%\n`;
           content += `  - Descuento por Pago en Efectivo: ${config.pricingStrategy.cashDiscountPercentage || 0}%\n`;
           content += `  - Modalidad 1 Pago con Tarjeta / Débito: ${config.pricingStrategy.card1PayDiscount ? 'MODO 1 PAGO REBAJADO (Débito y 1 pago con tarjeta pagan precio de oferta/transferencia)' : 'MODO TRADICIONAL (Toda tarjeta paga Precio de Lista)'}\n`;
@@ -567,6 +571,14 @@ export class ProductList {
         const isCard1PayDiscount = config?.pricingStrategy?.card1PayDiscount;
         const actual1PayPrice = isCard1PayDiscount ? (p.price?.cashTransferPrice || p.price?.card_ticket1PayPrice) : p.price?.listPrice;
         content += `- Precio Cobrado en 1 Pago / Débito: $${actual1PayPrice?.toLocaleString('es-AR') || 0} ARS (${isCard1PayDiscount ? 'Precio Oferta' : 'Precio Lista'})\n`;
+        
+        const listPrice = p.price?.listPrice || 0;
+        const cuota3 = Math.round(listPrice / 3);
+        const cuota6 = Math.round(listPrice / 6);
+        content += `- Simulación de Cuotas sin Interés:\n`;
+        content += `  • 3 Cuotas sin interés de: $${cuota3.toLocaleString('es-AR')} ARS c/u (Total: $${listPrice.toLocaleString('es-AR')} ARS)\n`;
+        content += `  • 6 Cuotas sin interés de: $${cuota6.toLocaleString('es-AR')} ARS c/u (Total: $${listPrice.toLocaleString('es-AR')} ARS)\n`;
+
         if (p.discount && p.discount > 0) content += `- Descuento Promocional Activo: ${p.discount}% OFF\n`;
 
         if (p.finance?.providerCost?.inARS) {
@@ -592,23 +604,31 @@ export class ProductList {
           if (p.finance.mpCommissionSnapshot.cft6Cuotas) content += `  • CFT 6 Cuotas: ${p.finance.mpCommissionSnapshot.cft6Cuotas}%\n`;
         }
 
-        if (p.finance?.calculatedProfits) {
-          content += `- Ganancia Neta Estimada en Mano (Bolsillo del Vendedor):\n`;
-          content += `  • Por Transferencia / Efectivo: +$${p.finance.calculatedProfits.transfer?.toLocaleString('es-AR') || 0} netos\n`;
-          content += `  • Con Tarjeta 1 Pago / Débito: +$${p.finance.calculatedProfits.card_ticket1Pay?.toLocaleString('es-AR') || 0} netos\n`;
-          if (p.finance.calculatedProfits.card3Installments) {
-            content += `  • En 3 Cuotas sin interés: +$${p.finance.calculatedProfits.card3Installments?.toLocaleString('es-AR') || 0} netos\n`;
-          }
-          if (p.finance.calculatedProfits.card6Installments) {
-            content += `  • En 6 Cuotas sin interés: +$${p.finance.calculatedProfits.card6Installments?.toLocaleString('es-AR') || 0} netos\n`;
-          }
+        // Margen y Estrategia de Rentabilidad
+        const productProfitMargin = p.finance?.pricingStrategy?.targetProfit || (p as any).customProfitMargin || (p as any).customProfitMargin1Pay || config?.profit || 30;
+        const isCustomProfit = (p as any).useCustomProfit === true || 
+          (p as any).customProfitMargin !== undefined || 
+          (p as any).customProfitMargin1Pay !== undefined ||
+          (p.finance?.pricingStrategy?.targetProfit !== undefined && p.finance?.pricingStrategy?.targetProfit !== (config?.profit || 30));
+
+        if (isCustomProfit) {
+          content += `- Estrategia de Margen: 🎯 MARGEN PERSONALIZADO (Custom Profit Override: ${productProfitMargin}%)\n`;
+          content += `  * Este producto NO aplica la regla global de la tienda; tiene fijado un margen propio del ${productProfitMargin}%.\n`;
+        } else {
+          content += `- Estrategia de Margen: 🌐 MARGEN GLOBAL DE TIENDA (${productProfitMargin}%)\n`;
+          content += `  * Este producto hereda la regla global de rentabilidad de la tienda.\n`;
         }
 
-        const customProfitVal = (p as any).customProfitMargin || (p as any).customProfitMargin1Pay;
-        if (customProfitVal) {
-          content += `- Margen Personalizado: SÍ (${customProfitVal}% de margen específico para este producto)\n`;
-        } else if (p.finance?.pricingStrategy) {
-          content += `- Margen: Aplica regla global (${p.finance.pricingStrategy.targetProfit}% objetivo s/${p.finance.pricingStrategy.method === 'margin' ? 'venta' : 'costo'})\n`;
+        if (p.finance?.calculatedProfits) {
+          content += `- Ganancia Neta en Mano (Bolsillo del Vendedor) por Modalidad de Cobro:\n`;
+          content += `  • 💵 Por Transferencia / Efectivo: +$${p.finance.calculatedProfits.transfer?.toLocaleString('es-AR') || 0} ARS netos (0% comisión)\n`;
+          content += `  • 💳 Con Tarjeta 1 Pago / Débito: +$${p.finance.calculatedProfits.card_ticket1Pay?.toLocaleString('es-AR') || 0} ARS netos\n`;
+          if (p.finance.calculatedProfits.card3Installments) {
+            content += `  • 💳 En 3 Cuotas sin interés: +$${p.finance.calculatedProfits.card3Installments?.toLocaleString('es-AR') || 0} ARS netos (absorbiendo CFT)\n`;
+          }
+          if (p.finance.calculatedProfits.card6Installments) {
+            content += `  • 💳 En 6 Cuotas sin interés: +$${p.finance.calculatedProfits.card6Installments?.toLocaleString('es-AR') || 0} ARS netos (absorbiendo CFT)\n`;
+          }
         }
 
         // 📦 STOCK Y VARIANTES

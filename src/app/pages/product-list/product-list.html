@@ -9,12 +9,12 @@
       
       <!-- Input de Búsqueda Integrado (Expandible en mobile) -->
       <div class="relative flex-1 min-w-0 sm:w-60 md:w-80">
-        <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 text-[16px]! w-4! h-4!">search</mat-icon>
+        <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 text-[18px]! w-4.5! h-4.5! pointer-events-none">search</mat-icon>
         <input
-          type="search"
+          type="text"
           name="search"
           id="products-search"
-          class="input input-bordered input-sm w-full pl-8 pr-7 text-xs focus:outline-none focus:border-primary"
+          class="input input-bordered input-sm w-full pl-9 pr-8 text-xs rounded-xl focus:outline-none focus:border-primary shadow-2xs"
           placeholder="Buscar (ej: Aura, Viena, SKU)..."
           matTooltip="Podés buscar múltiples prendas o SKUs separando con comas (ej: Aura, Viena, Fiore)"
           [value]="ProductState.currentSearchQuery()"
@@ -22,8 +22,10 @@
         />
         @if (ProductState.currentSearchQuery()) {
           <button
+            type="button"
             (click)="clearSearch()"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content transition-colors cursor-pointer"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content transition-colors cursor-pointer flex items-center justify-center p-0.5 rounded-full hover:bg-base-200"
+            title="Limpiar búsqueda"
           >
             <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
           </button>
@@ -154,7 +156,7 @@
     </div>
   </app-page-header>
 
-  <!-- Badges de Filtros Activos (1 sola línea delgada si hay filtros aplicados) -->
+  <!-- Badges de Filtros Activos (Barra redondeada moderna) -->
   @if (
     ProductState.currentSearchQuery() ||
     ProductState.currentCategoryFilter() ||
@@ -165,49 +167,52 @@
     ProductState.currentHasSizeGuideFilter() !== undefined ||
     ProductState.currentHasLinkProviderFilter() !== undefined
   ) {
-    <div class="flex flex-wrap items-center gap-1.5 px-3 sm:px-6 py-1.5 text-xs shrink-0 bg-base-100 border-b border-base-200">
-      <span class="text-base-content/50 font-medium">Filtros:</span>
+    <div class="mx-3 sm:mx-6 my-2 px-3.5 py-2 rounded-2xl bg-base-100/90 border border-base-200/80 shadow-2xs backdrop-blur-xs flex flex-wrap items-center gap-2 text-xs shrink-0">
+      <div class="flex items-center gap-1.5 text-base-content/60 font-semibold text-[11px] mr-0.5">
+        <mat-icon class="text-[15px]! w-4! h-4! text-primary">filter_alt</mat-icon>
+        <span>Filtros:</span>
+      </div>
 
       @if (ProductState.currentHasSeoImageFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 px-2 py-0.5 text-[11px] font-medium">
+        <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
           SEO: {{ ProductState.currentHasSeoImageFilter() ? 'Con Foto' : 'Sin Foto' }}
-          <button (click)="ProductState.setHasSeoImageFilter(undefined)" class="hover:text-purple-900 cursor-pointer">
+          <button (click)="ProductState.setHasSeoImageFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
         </span>
       }
 
       @if (ProductState.currentHasSizeGuideFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800 px-2 py-0.5 text-[11px] font-medium">
+        <span class="inline-flex items-center gap-1 rounded-full bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
           Guía: {{ ProductState.currentHasSizeGuideFilter() ? 'Con Guía' : 'Sin Guía' }}
-          <button (click)="ProductState.setHasSizeGuideFilter(undefined)" class="hover:text-pink-900 cursor-pointer">
+          <button (click)="ProductState.setHasSizeGuideFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
         </span>
       }
 
       @if (ProductState.currentHasLinkProviderFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 text-[11px] font-medium">
+        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
           Link: {{ ProductState.currentHasLinkProviderFilter() ? 'Con Link' : 'Sin Link' }}
-          <button (click)="ProductState.setHasLinkProviderFilter(undefined)" class="hover:text-indigo-900 cursor-pointer">
+          <button (click)="ProductState.setHasLinkProviderFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
         </span>
       }
 
       @if (ProductState.currentProviderFilter()) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 text-[11px] font-medium">
+        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
           Prov: {{ getProviderName(ProductState.currentProviderFilter()) }}
-          <button (click)="clearProvider()" class="hover:text-amber-900 cursor-pointer">
+          <button (click)="clearProvider()" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
         </span>
       }
 
       @if (ProductState.currentStatusFilter()) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[11px] font-medium">
+        <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
           {{ ProductState.currentStatusFilter() === "true" ? "Activos" : "Inactivos" }}
-          <button (click)="clearStatus()" class="hover:text-blue-900 cursor-pointer">
+          <button (click)="clearStatus()" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
         </span>
@@ -215,7 +220,7 @@
 
       <button
         (click)="clearAllFilters()"
-        class="text-[11px] font-semibold text-primary hover:underline ml-1 cursor-pointer"
+        class="text-[11px] font-bold text-primary hover:underline ml-auto sm:ml-2 cursor-pointer"
       >
         Limpiar todos
       </button>
@@ -509,10 +514,10 @@
             <!-- ====== MODO VISTA CUADRÍCULA (GRID VIEW) ====== -->
             @if (viewMode() === "grid") {
               <div
-                class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full"
+                class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full px-3 sm:px-6 pt-2.5 pb-8"
               >
                 <div
-                  class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4"
+                  class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4.5"
                 >
                   @for (p of Products.data; track p._id) {
                     @let imageURL =
