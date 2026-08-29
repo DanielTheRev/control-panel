@@ -240,7 +240,7 @@
 
   <!-- MODAL / DRAWER LATERAL DE FILTROS (Slide-over de Derecha a Izquierda) -->
   @if (showFiltersDrawer()) {
-    <div class="fixed inset-0 z-50 overflow-hidden">
+    <div class="fixed inset-0 z-[999] overflow-hidden">
       <!-- Backdrop -->
       <div
         class="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
@@ -248,7 +248,7 @@
       ></div>
 
       <!-- Panel Lateral -->
-      <div class="fixed inset-y-0 right-0 max-w-sm sm:max-w-md w-full bg-base-100 shadow-2xl border-l border-base-300 flex flex-col z-50 animate-slide-in-right">
+      <div class="fixed inset-y-0 right-0 max-w-sm sm:max-w-md w-full bg-base-100 shadow-2xl border-l border-base-300 flex flex-col z-[1000] animate-slide-in-right">
         
         <!-- Header del Drawer -->
         <div class="p-4 sm:p-5 border-b border-base-300 flex items-center justify-between bg-base-200/40">
@@ -462,25 +462,27 @@
               <div
                 class="mb-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 z-10 animate-fade-in"
               >
-              <div
-                class="flex items-center gap-2 text-xs sm:text-sm font-medium"
-                [ngClass]="
-                  selectedProducts().length > 0
-                    ? 'text-primary'
-                    : 'text-base-content/50'
-                "
-              >
-                <span
-                  class="rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[10px] sm:text-xs font-bold transition-colors"
-                  [ngClass]="
-                    selectedProducts().length > 0
-                      ? 'bg-primary text-primary-content'
-                      : 'bg-base-300 text-base-content/70'
-                  "
+              <div class="flex items-center gap-2">
+                <label
+                  class="cursor-pointer flex items-center gap-2 select-none hover:opacity-90 transition-opacity"
+                  (click)="$event.stopPropagation()"
+                  title="Marcar / Desmarcar todos los productos de esta página"
                 >
-                  {{ selectedProducts().length }}
-                </span>
-                <span class="truncate">seleccionado(s)</span>
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-xs sm:checkbox-sm checkbox-primary rounded-md"
+                    [checked]="isAllSelected() && Products.data.length > 0"
+                    (change)="toggleAll($event)"
+                  />
+                  <span
+                    class="rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[10px] sm:text-xs font-black transition-colors bg-primary text-primary-content shrink-0"
+                  >
+                    {{ selectedProducts().length }}
+                  </span>
+                  <span class="text-xs sm:text-sm font-bold text-primary truncate">
+                    {{ isAllSelected() ? 'Todos seleccionados (' + selectedProducts().length + ')' : selectedProducts().length + ' seleccionado(s)' }}
+                  </span>
+                </label>
               </div>
               <div class="flex items-center gap-1 sm:gap-2">
                 <button
@@ -534,8 +536,29 @@
             <!-- ====== MODO VISTA CUADRÍCULA (GRID VIEW) ====== -->
             @if (viewMode() === "grid") {
               <div
-                class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full px-3 sm:px-6 pt-2.5 pb-8"
+                class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full px-3 sm:px-6 pt-1 pb-8"
               >
+                <!-- Sub-Barra de Selección en Modo Cuadrícula -->
+                <div class="flex items-center justify-between pb-2.5 pt-1 px-1 text-xs">
+                  <label class="cursor-pointer flex items-center gap-2 text-base-content/70 hover:text-primary transition-colors select-none">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-xs checkbox-primary rounded"
+                      [checked]="isAllSelected() && Products.data.length > 0"
+                      (change)="toggleAll($event)"
+                    />
+                    <span class="font-bold text-[12px]">
+                      {{ isAllSelected() && Products.data.length > 0 ? 'Deseleccionar todos (' + Products.data.length + ')' : 'Seleccionar todos (' + Products.data.length + ')' }}
+                    </span>
+                  </label>
+
+                  @if (selectedProducts().length > 0) {
+                    <span class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                      {{ selectedProducts().length }} de {{ Products.data.length }} marcados
+                    </span>
+                  }
+                </div>
+
                 <div
                   class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5"
                 >
@@ -1680,7 +1703,7 @@
 <!-- 🤖 MODAL DE ASISTENTE IA PARA CATÁLOGO (CREACIÓN Y ACTUALIZACIÓN) -->
 <!-- ============================================================== -->
 @if (showAiBulkModal()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn">
+  <div class="fixed inset-0 z-[1002] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn">
     <div class="bg-base-100 border border-base-300 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scaleIn">
       
       <!-- Header del Modal -->
@@ -1779,6 +1802,7 @@
               <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex")</span>
               <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
               <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
+              <span class="badge badge-xs badge-neutral font-mono">linkProductProvider (string URL)</span>
               @if (aiBulkMode() === 'update') {
                 <span class="badge badge-xs badge-secondary font-mono">_id (string ObjectId obligatorio)</span>
               }

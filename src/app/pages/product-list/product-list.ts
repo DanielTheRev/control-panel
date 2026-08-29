@@ -834,6 +834,10 @@ DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
     }
 - images (string[] opcional): Array de URLs públicas de fotos.
 - tags (string[] opcional): Array de etiquetas (ej: ["verano", "algodon", "novedad"]).
+- linkProductProvider (string URL, opcional): Link a la página web del producto en el proveedor/fabricante (ej: "https://krencia.com.ar/producto/remera-vesper").
+
+🌐 NAVEGACIÓN WEB CON IA:
+Si se te proporciona una URL de linkProductProvider o link del proveedor, podés navegar a la página web para extraer la ficha técnica completa, composición de la tela, fotos oficiales, colores y la tabla exacta de medidas para armar el JSON.
 
 EJEMPLO COMPLETO QUE DEBES DEVOLVER:
 [
@@ -848,6 +852,7 @@ EJEMPLO COMPLETO QUE DEBES DEVOLVER:
     "gender": "Unisex",
     "material": "100% Algodón Peinado 24/1",
     "fit": "Oversized",
+    "linkProductProvider": "https://krencia.com.ar/producto/remera-vesper",
     "variants": [
       { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
       { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
@@ -908,6 +913,7 @@ REGLAS CRÍTICAS:
         brand: p.brand,
         category: p.category,
         costPriceARS: cost,
+        linkProductProvider: p.linkProductProvider || '',
         currentVariants: variantsSummary,
         shortDescription: p.shortDescription || ''
       };
@@ -926,6 +932,7 @@ DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS PARA ACTUALIZAR:
 - brand (string, opcional): Nueva marca.
 - category (string, opcional): Nueva categoría.
 - costPriceARS (number, opcional): Nuevo costo en pesos sin IVA (ej: 14000).
+- linkProductProvider (string URL, opcional): Link a la página del producto en el proveedor/fabricante.
 - shortDescription (string, opcional): Nueva descripción corta.
 - largeDescription (string HTML, opcional): Nueva descripción en HTML (<p>, <ul>, <li>).
 - material (string, opcional): Nueva tela/composición.
@@ -945,6 +952,9 @@ DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS PARA ACTUALIZAR:
       "rows": [{ "size": "S", "values": ["50", "68"] }],
       "tolerance": "* Medidas tomadas en plano."
     }
+
+🌐 NAVEGACIÓN WEB CON IA:
+Si los productos tienen 'linkProductProvider' con una URL válida, podés acceder y navegar por dicha página para extraer la información oficial de la prenda, su composición, tabla de medidas y fotos de alta resolución para volcarlas en las propiedades correspondientes.
 
 INSTRUCCIÓN:
 Genera un array JSON [ { "_id": "...", ...propiedadesActualizadas } ] donde para cada producto mantengas su _id e incluyas las propiedades que deben modificarse o añadirse (por ejemplo, los nuevos talles y variantes con stock, nuevos precios o descripciones).
@@ -996,6 +1006,7 @@ Responde ÚNICAMENTE con el bloque JSON.`;
             costPriceARS: Number(item.costPriceARS || item.price || 0),
             shortDescription: item.shortDescription || '',
             largeDescription: item.largeDescription || '',
+            linkProductProvider: item.linkProductProvider || '',
             gender: item.gender || 'Unisex',
             material: item.material || '',
             fit: item.fit || '',
