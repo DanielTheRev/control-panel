@@ -677,6 +677,25 @@ export class ProductList {
           content += `  (Sin variantes configuradas — producto simple con stock directo)\n`;
         }
 
+        // 📐 GUÍA DE TALLES Y MEDIDAS (SIZE GUIDE)
+        content += `\n--- 📐 GUÍA DE TALLES Y TABLA DE MEDIDAS ---\n`;
+        const sizeGuide = (p as any).sizeGuide;
+        if (sizeGuide && Array.isArray(sizeGuide.rows) && sizeGuide.rows.length > 0) {
+          content += `- Estado de Guía: ✅ Configurada (${sizeGuide.rows.length} talles)\n`;
+          if (Array.isArray(sizeGuide.headers) && sizeGuide.headers.length > 0) {
+            content += `  • Columnas / Medidas: ${sizeGuide.headers.join(' | ')}\n`;
+          }
+          sizeGuide.rows.forEach((r: any) => {
+            const vals = Array.isArray(r.values) ? r.values.join(' cm | ') : '';
+            content += `  • Talle [${r.size}]: ${vals} cm\n`;
+          });
+          if (sizeGuide.tolerance) {
+            content += `  • Tolerancia / Aclaración: ${sizeGuide.tolerance}\n`;
+          }
+        } else {
+          content += `- Estado de Guía: ⚠️ Sin Guía de Talles configurada (Pendiente)\n`;
+        }
+
         // 🏭 PROVEEDOR
         content += `\n--- 🏭 PROVEEDOR & LOGÍSTICA ---\n`;
         if (p.provider) {
@@ -785,16 +804,298 @@ export class ProductList {
   aiPromptCopied = signal<boolean>(false);
   aiProcessing = signal<boolean>(false);
 
+  // Propiedades seleccionables para alcance de actualización
+  availableScopeProperties = [
+    {
+      key: 'variants_matrix',
+      payloadKey: 'variants',
+      label: '🧩 Matriz Completa (Talles + Colores + Stock)',
+      type: 'Array<{ colorName, colorHex, size, stock }>',
+      explanation: 'Reconstruir todas las combinaciones con colores reales (#HEX), talles y stock (ideal para relevar desde la web del proveedor).',
+      example: [
+        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 15 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 12 },
+        { colorName: 'Blanco', colorHex: '#FFFFFF', size: 'S', stock: 8 }
+      ]
+    },
+    {
+      key: 'variants_stock',
+      payloadKey: 'variants',
+      label: '📦 Solo Stock (Mantener Talles y Colores)',
+      type: 'Array<{ colorName, colorHex, size, stock }>',
+      explanation: 'Mantener las combinaciones actuales de color y talle de cada prenda, modificando ÚNICAMENTE las cantidades de stock.',
+      example: [
+        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 12 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 20 }
+      ]
+    },
+    {
+      key: 'variants_colors',
+      payloadKey: 'variants',
+      label: '🎨 Solo Colores y Códigos HEX',
+      type: 'Array<{ colorName, colorHex, size, stock }>',
+      explanation: 'Reemplazar "Único" o colores genéricos por los nombres y códigos HEX reales de la prenda (ej: Verde Militar #4B5320, Beige #F5F5DC).',
+      example: [
+        { colorName: 'Verde Militar', colorHex: '#4B5320', size: 'S', stock: 10 },
+        { colorName: 'Crudo', colorHex: '#F5F5DC', size: 'M', stock: 15 }
+      ]
+    },
+    {
+      key: 'variants_sizes',
+      payloadKey: 'variants',
+      label: '📏 Curva de Talles',
+      type: 'Array<{ colorName, colorHex, size, stock }>',
+      explanation: 'Normalizar o definir la curva de talles disponibles (ej: S, M, L, XL, XXL o 38, 40, 42, 44).',
+      example: [
+        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 10 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 10 },
+        { colorName: 'Negro', colorHex: '#000000', size: 'XL', stock: 10 }
+      ]
+    },
+    {
+      key: 'costPriceARS',
+      payloadKey: 'costPriceARS',
+      label: '💵 Costo Proveedor ($ ARS)',
+      type: 'number',
+      explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta y cuotas automáticamente.',
+      example: 14500
+    },
+    {
+      key: 'sizeGuide',
+      payloadKey: 'sizeGuide',
+      label: '📐 Guía de Medidas (Tabla)',
+      type: 'Object { headers, rows, tolerance }',
+      explanation: 'Tabla de medidas en cm por talle.',
+      example: {
+        headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo (cm)'],
+        rows: [{ size: 'S', values: ['52', '68'] }, { size: 'M', values: ['54', '70'] }],
+        tolerance: '* Medidas tomadas en plano (+/- 1 cm).'
+      }
+    },
+    {
+      key: 'shortDescription',
+      payloadKey: 'shortDescription',
+      label: '📝 Descripción Corta',
+      type: 'string',
+      explanation: 'Resumen vendedor de 1-2 líneas para la tarjeta de producto.',
+      example: 'Remera oversize 100% algodón peinado 24/1.'
+    },
+    {
+      key: 'largeDescription',
+      payloadKey: 'largeDescription',
+      label: '📄 Descripción Detallada (HTML)',
+      type: 'string HTML',
+      explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>).',
+      example: '<p>Remera con calce holgado y costuras reforzadas.</p>'
+    },
+    {
+      key: 'material',
+      payloadKey: 'material',
+      label: '🧵 Composición / Tela',
+      type: 'string',
+      explanation: 'Composición de la tela o material principal.',
+      example: '100% Algodón Peinado 24/1'
+    },
+    {
+      key: 'fit',
+      payloadKey: 'fit',
+      label: '👔 Calce / Fit',
+      type: 'string',
+      explanation: 'Calce: "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".',
+      example: 'Oversized'
+    },
+    {
+      key: 'gender',
+      payloadKey: 'gender',
+      label: '👥 Género',
+      type: 'string',
+      explanation: '"Hombre" | "Mujer" | "Unisex" | "Niños".',
+      example: 'Unisex'
+    },
+    {
+      key: 'tags',
+      payloadKey: 'tags',
+      label: '🏷️ Etiquetas / Tags',
+      type: 'string[]',
+      explanation: 'Array de palabras clave para búsqueda interna.',
+      example: ['verano', 'algodon', 'novedad']
+    },
+    {
+      key: 'model',
+      payloadKey: 'model',
+      label: '🏷️ Nombre del Producto',
+      type: 'string',
+      explanation: 'Nombre o modelo comercial.',
+      example: 'Remera Oversize Vesper'
+    }
+  ];
+
+  aiTargetProductType = signal<ProductType>(ProductType.CLOTHING);
+
+  productTypeOptions = [
+    { type: ProductType.CLOTHING, label: 'Indumentaria & Calzado', icon: 'checkroom', badge: 'Talles y Medidas' },
+    { type: ProductType.TECH, label: 'Tecnología & Gadgets', icon: 'devices', badge: 'Capacidad y Specs' },
+    { type: ProductType.BEAUTY, label: 'Belleza & Cosmética', icon: 'spa', badge: 'Tonos y Volúmenes' },
+    { type: ProductType.GENERAL, label: 'Bazar, Hogar & General', icon: 'inventory_2', badge: 'Variantes Libres' }
+  ];
+
+  selectedScopeProperties = signal<string[]>(['variants_matrix', 'costPriceARS']);
+  aiCustomInstruction = signal<string>('');
+
+  selectedProductsTypesSummary = computed(() => {
+    const selectedIds = this.selectedProducts();
+    const allProducts = this.ProductState.products().data || [];
+    const selectedList = allProducts.filter((p) => selectedIds.includes(p._id));
+    if (selectedList.length === 0) return { isMixed: false, dominantType: ProductType.CLOTHING, breakdown: '', types: [], count: 0 };
+
+    const typeCounts: Record<string, number> = {};
+    selectedList.forEach((p) => {
+      const t = p.productType || ProductType.CLOTHING;
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+
+    const uniqueTypes = Object.keys(typeCounts);
+    const breakdown = uniqueTypes
+      .map((t) => {
+        const count = typeCounts[t];
+        const label = this.productTypeOptions.find((o) => o.type === t)?.label || t;
+        return `${count} ${label}`;
+      })
+      .join(', ');
+
+    return {
+      isMixed: uniqueTypes.length > 1,
+      dominantType: (uniqueTypes[0] as ProductType) || ProductType.CLOTHING,
+      breakdown,
+      types: uniqueTypes,
+      count: selectedList.length
+    };
+  });
+
+  quickInstructionPresets = computed(() => {
+    const isUpdate = this.aiBulkMode() === 'update';
+    if (isUpdate) {
+      const summary = this.selectedProductsTypesSummary();
+      if (summary.isMixed) {
+        return [
+          'Ajustar los costos de compra un 15% por inflación en todo el lote',
+          'Extraer colores, talles o capacidades según el rubro de cada producto',
+          'Poner 10 unidades de stock a todas las variantes disponibles',
+          'Generar descripciones atractivas y vendedoras para e-commerce'
+        ];
+      }
+      const pType = summary.dominantType;
+      switch (pType) {
+        case ProductType.TECH:
+          return [
+            'Extraer especificaciones técnicas y modelos desde la web',
+            'Configurar variantes por capacidad (ej: 64GB, 128GB, 256GB)',
+            'Ajustar costos de compra un 15% por inflación',
+            'Generar ficha técnica en HTML con viñetas'
+          ];
+        case ProductType.BEAUTY:
+          return [
+            'Extraer ingredientes, modo de uso y volumen (ml) desde la web',
+            'Configurar variantes por tamaño o tono (ej: 30ml, 50ml)',
+            'Ajustar costos de compra un 15% por inflación',
+            'Generar descripción enfocada en beneficios y cuidado'
+          ];
+        case ProductType.GENERAL:
+          return [
+            'Extraer medidas, materiales y variantes desde el proveedor',
+            'Poner 10 unidades de stock a cada variante',
+            'Ajustar costos un 15% por inflación',
+            'Generar descripciones claras y directas para venta online'
+          ];
+        case ProductType.CLOTHING:
+        default:
+          return [
+            'Extraer colores y talles reales desde la web del proveedor',
+            'Poner 10 unidades de stock a todos los talles',
+            'Ajustar los costos de compra un 15% por inflación',
+            'Generar descripciones atractivas y vendedoras para e-commerce'
+          ];
+      }
+    }
+
+    const pType = this.aiTargetProductType();
+    switch (pType) {
+      case ProductType.TECH:
+        return [
+          'Extraer especificaciones técnicas y modelos desde la web',
+          'Configurar variantes por capacidad (ej: 64GB, 128GB, 256GB)',
+          'Ajustar costos de compra un 15% por inflación',
+          'Generar ficha técnica en HTML con viñetas'
+        ];
+      case ProductType.BEAUTY:
+        return [
+          'Extraer ingredientes, modo de uso y volumen (ml) desde la web',
+          'Configurar variantes por tamaño o tono (ej: 30ml, 50ml)',
+          'Ajustar costos de compra un 15% por inflación',
+          'Generar descripción enfocada en beneficios y cuidado'
+        ];
+      case ProductType.GENERAL:
+        return [
+          'Extraer medidas, materiales y variantes desde el proveedor',
+          'Poner 10 unidades de stock a cada variante',
+          'Ajustar costos un 15% por inflación',
+          'Generar descripciones claras y directas para venta online'
+        ];
+      case ProductType.CLOTHING:
+      default:
+        return [
+          'Extraer colores y talles reales desde la web del proveedor',
+          'Poner 10 unidades de stock a todos los talles',
+          'Ajustar los costos de compra un 15% por inflación',
+          'Generar descripciones atractivas y vendedoras para e-commerce'
+        ];
+    }
+  });
+
+  setQuickInstruction(text: string) {
+    this.aiCustomInstruction.set(text);
+  }
+
+  setProductType(type: ProductType) {
+    this.aiTargetProductType.set(type);
+  }
+
+  toggleScopeProperty(key: string) {
+    const current = this.selectedScopeProperties();
+    if (current.includes(key)) {
+      this.selectedScopeProperties.set(current.filter((k) => k !== key));
+    } else {
+      this.selectedScopeProperties.set([...current, key]);
+    }
+  }
+
+  toggleAllScopeProperties() {
+    if (this.isAllScopePropertiesSelected()) {
+      this.selectedScopeProperties.set([]);
+    } else {
+      this.selectedScopeProperties.set(this.availableScopeProperties.map((p) => p.key));
+    }
+  }
+
+  isAllScopePropertiesSelected(): boolean {
+    return this.selectedScopeProperties().length === this.availableScopeProperties.length;
+  }
+
   aiParsedCreateItems = signal<any[]>([]);
   aiParsedUpdateItems = signal<any[]>([]);
+  aiParsedUpdateDiffs = signal<any[]>([]);
 
   openAiBulkModal(mode: 'create' | 'update') {
     this.aiBulkMode.set(mode);
     this.aiRawInput.set('');
+    this.aiCustomInstruction.set('');
     this.aiParseError.set(null);
     this.aiPromptCopied.set(false);
     this.aiParsedCreateItems.set([]);
     this.aiParsedUpdateItems.set([]);
+    this.aiParsedUpdateDiffs.set([]);
     this.showAiBulkModal.set(true);
   }
 
@@ -803,19 +1104,128 @@ export class ProductList {
   }
 
   async copyAiCreatePrompt() {
-    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Genera un array JSON válido con los productos solicitados siguiendo estrictamente este formato y tipos de datos:
+    const pType = this.aiTargetProductType();
+    const customInstruction = this.aiCustomInstruction().trim();
 
-DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
-- model (string, OBLIGATORIO): Nombre/modelo del producto (ej: "Remera Oversize Vesper").
+    let dictionary = '';
+    let exampleData: any[] = [];
+
+    switch (pType) {
+      case ProductType.TECH:
+        dictionary = `- model (string, OBLIGATORIO): Modelo comercial (ej: "Auriculares Inalámbricos Pro ANC").
+- brand (string, OBLIGATORIO): Marca (ej: "Sony", "Apple", "Samsung").
+- category (string, OBLIGATORIO): Categoría (ej: "Audio", "Smartphones", "Accesorios").
+- productType (string, OBLIGATORIO): "TechProduct".
+- costPriceARS (number, OBLIGATORIO): Costo unitario en pesos sin IVA (ej: 45000). El sistema calcula precios de venta y cuotas automáticamente.
+- shortDescription (string, opcional): Resumen de características clave (1-2 líneas).
+- largeDescription (string HTML, opcional): Ficha técnica detallada en HTML (<p>, <ul>, <li>).
+- linkProductProvider (string URL, opcional): Enlace a la web oficial del producto/fabricante.
+- variants (Array de objetos, opcional): Variantes por capacidad, memoria o color:
+    [
+      { "colorName": "Negro", "colorHex": "#000000", "size": "128GB", "stock": 10 },
+      { "colorName": "Plata", "colorHex": "#CCCCCC", "size": "256GB", "stock": 5 }
+    ]
+- tags (string[] opcional): Array de etiquetas de búsqueda (ej: ["bluetooth", "anc", "audio-hd"]).`;
+        exampleData = [
+          {
+            model: 'Auriculares Inalámbricos Pro ANC',
+            brand: 'Sony',
+            category: 'Audio',
+            productType: 'TechProduct',
+            costPriceARS: 45000,
+            shortDescription: 'Auriculares con cancelación activa de ruido y 30hs de batería.',
+            largeDescription: '<p>Experimenta un sonido envolvente de alta fidelidad con cancelación de ruido inteligente.</p><ul><li>Cancelación Activa de Ruido (ANC)</li><li>Autonomía de 30 horas</li><li>Conexión multipunto Bluetooth 5.3</li></ul>',
+            linkProductProvider: 'https://sony.com.ar/producto/wh-1000xm5',
+            variants: [
+              { colorName: 'Negro', colorHex: '#000000', size: 'Estándar', stock: 15 },
+              { colorName: 'Plata', colorHex: '#CCCCCC', size: 'Estándar', stock: 8 }
+            ],
+            tags: ['audio', 'bluetooth', 'auriculares', 'cancelacion-ruido']
+          }
+        ];
+        break;
+
+      case ProductType.BEAUTY:
+        dictionary = `- model (string, OBLIGATORIO): Nombre del cosmético/tratamiento (ej: "Serum Facial Ácido Hialurónico").
+- brand (string, OBLIGATORIO): Marca (ej: "Vichy", "La Roche-Posay").
+- category (string, OBLIGATORIO): Categoría (ej: "Cuidado Facial", "Capilar", "Maquillaje").
+- productType (string, OBLIGATORIO): "BeautyProduct".
+- costPriceARS (number, OBLIGATORIO): Costo unitario en pesos sin IVA (ej: 18000).
+- shortDescription (string, opcional): Beneficio principal del producto.
+- largeDescription (string HTML, opcional): Modo de uso, ingredientes y beneficios en HTML (<p>, <ul>, <li>).
+- linkProductProvider (string URL, opcional): Enlace a la web del fabricante.
+- variants (Array de objetos, opcional): Variantes por volumen (ml), tamaño o tono:
+    [
+      { "colorName": "Original", "colorHex": "#FFFFFF", "size": "30ml", "stock": 20 },
+      { "colorName": "Original", "colorHex": "#FFFFFF", "size": "50ml", "stock": 15 }
+    ]
+- tags (string[] opcional): Array de etiquetas (ej: ["antiage", "hidratacion", "vegano"]).`;
+        exampleData = [
+          {
+            model: 'Serum Facial Ácido Hialurónico Mineral 89',
+            brand: 'Vichy',
+            category: 'Cuidado Facial',
+            productType: 'BeautyProduct',
+            costPriceARS: 18000,
+            shortDescription: 'Concentrado fortificante e hidratante con ácido hialurónico puro.',
+            largeDescription: '<p>Fortalece la barrera cutánea frente a las agresiones externas y aporta hidratación por 24hs.</p><ul><li>Apto para todo tipo de pieles</li><li>Fórmula hipoalergénica sin perfume</li><li>Aplicar 2 gotas por la mañana y noche</li></ul>',
+            linkProductProvider: 'https://vichy.com.ar/producto/mineral-89',
+            variants: [
+              { colorName: 'Incoloro', colorHex: '#FFFFFF', size: '30ml', stock: 25 },
+              { colorName: 'Incoloro', colorHex: '#FFFFFF', size: '50ml', stock: 12 }
+            ],
+            tags: ['serum', 'facial', 'hidratante', 'antiage']
+          }
+        ];
+        break;
+
+      case ProductType.GENERAL:
+        dictionary = `- model (string, OBLIGATORIO): Nombre comercial (ej: "Botella Térmica de Acero 1L").
+- brand (string, OBLIGATORIO): Marca (ej: "Stanley", "Contigo", "Generic").
+- category (string, OBLIGATORIO): Categoría (ej: "Hogar", "Bazar", "Accesorios").
+- productType (string, OBLIGATORIO): "GeneralProduct".
+- costPriceARS (number, OBLIGATORIO): Costo unitario en pesos sin IVA (ej: 16500).
+- shortDescription (string, opcional): Resumen de 1-2 líneas.
+- largeDescription (string HTML, opcional): Descripción y especificaciones en HTML (<p>, <ul>, <li>).
+- linkProductProvider (string URL, opcional): Link a la página web del proveedor.
+- variants (Array de objetos, opcional): Variantes por color, capacidad o pack:
+    [
+      { "colorName": "Negro Mate", "colorHex": "#1A1A1A", "size": "1 Litro", "stock": 15 },
+      { "colorName": "Verde Oliva", "colorHex": "#556B2F", "size": "1 Litro", "stock": 10 }
+    ]
+- tags (string[] opcional): Array de etiquetas (ej: ["acero-inoxidable", "termica", "bazar"]).`;
+        exampleData = [
+          {
+            model: 'Botella Térmica de Acero Inoxidable 1L',
+            brand: 'Stanley',
+            category: 'Bazar & Hogar',
+            productType: 'GeneralProduct',
+            costPriceARS: 16500,
+            shortDescription: 'Botella de doble pared aislada al vacío, mantiene frío por 24hs y calor por 12hs.',
+            largeDescription: '<p>Construida en acero inoxidable 18/8 de alta durabilidad, libre de BPA con tapa hermética a rosca.</p>',
+            linkProductProvider: 'https://stanley.com.ar/producto/botella-1l',
+            variants: [
+              { colorName: 'Negro Mate', colorHex: '#1A1A1A', size: '1 Litro', stock: 20 },
+              { colorName: 'Verde Oliva', colorHex: '#556B2F', size: '1 Litro', stock: 15 }
+            ],
+            tags: ['termica', 'acero', 'botella', 'camping']
+          }
+        ];
+        break;
+
+      case ProductType.CLOTHING:
+      default:
+        dictionary = `- model (string, OBLIGATORIO): Nombre/modelo del producto (ej: "Remera Oversize Vesper").
 - brand (string, OBLIGATORIO): Marca (ej: "Vura").
 - category (string, OBLIGATORIO): Categoría (ej: "Remeras", "Jeans", "Buzos").
-- productType (string, OBLIGATORIO): "ClothingProduct" | "TechProduct" | "BeautyProduct" | "GeneralProduct".
+- productType (string, OBLIGATORIO): "ClothingProduct".
 - costPriceARS (number, OBLIGATORIO): Costo de compra al proveedor en pesos sin IVA (ej: 12500). El sistema calcula precios de venta, cuotas y márgenes automáticamente.
 - shortDescription (string, opcional): Resumen de 1-2 líneas para la tarjeta.
 - largeDescription (string HTML, opcional): Descripción completa en HTML limpio (<p>, <ul>, <li>).
 - gender (string, opcional): "Hombre" | "Mujer" | "Unisex" | "Niños".
 - material (string, opcional): Composición de la tela (ej: "100% Algodón Peinado 24/1").
 - fit (string, opcional): "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".
+- linkProductProvider (string URL, opcional): Link a la página web del producto en el proveedor/fabricante.
 - variants (Array de objetos, opcional):
     [
       { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
@@ -832,47 +1242,60 @@ DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
       ],
       "tolerance": "* Medidas aproximadas (+/- 1.5 cm)."
     }
-- images (string[] opcional): Array de URLs públicas de fotos.
-- tags (string[] opcional): Array de etiquetas (ej: ["verano", "algodon", "novedad"]).
-- linkProductProvider (string URL, opcional): Link a la página web del producto en el proveedor/fabricante (ej: "https://krencia.com.ar/producto/remera-vesper").
+- tags (string[] opcional): Array de etiquetas (ej: ["verano", "algodon", "novedad"]).`;
+        exampleData = [
+          {
+            model: 'Remera Oversize Vesper',
+            brand: 'Vura',
+            category: 'Remeras',
+            productType: 'ClothingProduct',
+            costPriceARS: 12500,
+            shortDescription: 'Remera oversize 100% algodón peinado 24/1.',
+            largeDescription: '<p>Remera urbana con calce holgado y costuras reforzadas.</p>',
+            gender: 'Unisex',
+            material: '100% Algodón Peinado 24/1',
+            fit: 'Oversized',
+            linkProductProvider: 'https://krencia.com.ar/producto/remera-vesper',
+            variants: [
+              { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
+              { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 15 },
+              { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 12 },
+              { colorName: 'Negro', colorHex: '#000000', size: 'XL', stock: 8 },
+              { colorName: 'Negro', colorHex: '#000000', size: 'XXL', stock: 5 }
+            ],
+            sizeGuide: {
+              headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo Total (cm)', 'Hombro (cm)'],
+              rows: [
+                { size: 'S', values: ['52', '68', '44'] },
+                { size: 'M', values: ['54', '70', '46'] },
+                { size: 'L', values: ['56', '72', '48'] },
+                { size: 'XL', values: ['58', '74', '50'] },
+                { size: 'XXL', values: ['60', '76', '52'] }
+              ],
+              tolerance: '* Medidas tomadas en plano (+/- 1.5 cm).'
+            },
+            tags: ['remera', 'oversize', 'algodon', 'urbano']
+          }
+        ];
+        break;
+    }
 
-🌐 NAVEGACIÓN WEB CON IA:
-Si se te proporciona una URL de linkProductProvider o link del proveedor, podés navegar a la página web para extraer la ficha técnica completa, composición de la tela, fotos oficiales, colores y la tabla exacta de medidas para armar el JSON.
+    const typeLabel = this.productTypeOptions.find((o) => o.type === pType)?.label || pType;
+
+    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Genera un array JSON válido con nuevos productos del rubro '${typeLabel}' siguiendo estrictamente este formato y tipos de datos:
+
+DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
+${dictionary}
+
+${customInstruction ? `🎯 DIRECTIVA ESPECÍFICA DEL USUARIO:
+"${customInstruction}"
+Asegúrate de respetar prioritariamente esta indicación al generar las propiedades del JSON.\n\n` : ''}🌐 NAVEGACIÓN WEB CON IA:
+Si se te proporciona una URL de linkProductProvider o link del proveedor, podés navegar a la página web para extraer la ficha técnica completa, composición/especificaciones, fotos oficiales, colores y la tabla exacta de medidas/capacidades para armar el JSON.
 
 EJEMPLO COMPLETO QUE DEBES DEVOLVER:
-[
-  {
-    "model": "Remera Oversize Vesper",
-    "brand": "Vura",
-    "category": "Remeras",
-    "productType": "ClothingProduct",
-    "costPriceARS": 12500,
-    "shortDescription": "Remera oversize 100% algodón peinado 24/1.",
-    "largeDescription": "<p>Remera urbana con calce holgado y costuras reforzadas.</p>",
-    "gender": "Unisex",
-    "material": "100% Algodón Peinado 24/1",
-    "fit": "Oversized",
-    "linkProductProvider": "https://krencia.com.ar/producto/remera-vesper",
-    "variants": [
-      { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "L", "stock": 12 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "XL", "stock": 8 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "XXL", "stock": 5 }
-    ],
-    "sizeGuide": {
-      "headers": ["Talle", "Ancho de Pecho (cm)", "Largo Total (cm)", "Hombro (cm)"],
-      "rows": [
-        { "size": "S", "values": ["52", "68", "44"] },
-        { "size": "M", "values": ["54", "70", "46"] },
-        { "size": "L", "values": ["56", "72", "48"] },
-        { "size": "XL", "values": ["58", "74", "50"] },
-        { "size": "XXL", "values": ["60", "76", "52"] }
-      ],
-      "tolerance": "* Medidas tomadas en plano (+/- 1.5 cm)."
-    }
-  }
-]
+\`\`\`json
+${JSON.stringify(exampleData, null, 2)}
+\`\`\`
 
 REGLAS CRÍTICAS:
 1. Responde ÚNICAMENTE con el bloque JSON (un array de objetos [ { ... } ]). No agregues texto introductorio ni explicaciones fuera del JSON.
@@ -882,7 +1305,7 @@ REGLAS CRÍTICAS:
       await navigator.clipboard.writeText(prompt);
       this.aiPromptCopied.set(true);
       setTimeout(() => this.aiPromptCopied.set(false), 4000);
-      this.#snackBar.open('📋 ¡Prompt maestro de creación copiado al portapapeles!', 'Genial', { duration: 3000 });
+      this.#snackBar.open(`📋 ¡Prompt de creación para '${typeLabel}' copiado!`, 'Genial', { duration: 3000 });
     } catch {
       this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
     }
@@ -898,73 +1321,108 @@ REGLAS CRÍTICAS:
       return;
     }
 
-    const compactProducts = productsToExport.map((p) => {
-      const cost = (p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0);
-      const variantsSummary = (p.variants || []).map((v: any) => ({
-        colorName: v.colorName || 'Único',
-        colorHex: v.colorHex || '#000000',
-        size: v.size || 'Único',
-        stock: v.stock || 0
-      }));
+    const scopeKeys = this.selectedScopeProperties();
+    if (scopeKeys.length === 0) {
+      this.#snackBar.open('Selecciona al menos una propiedad para modificar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
 
-      return {
+    const hasVariantScope = scopeKeys.some((k) => k.startsWith('variants'));
+
+    // Build only relevant product data
+    const compactProducts = productsToExport.map((p) => {
+      const item: any = {
         _id: p._id,
         model: p.model,
-        brand: p.brand,
         category: p.category,
-        costPriceARS: cost,
-        linkProductProvider: p.linkProductProvider || '',
-        currentVariants: variantsSummary,
-        shortDescription: p.shortDescription || ''
+        brand: p.brand,
+        productType: p.productType || 'ClothingProduct'
       };
+
+      if (p.linkProductProvider) {
+        item.linkProductProvider = p.linkProductProvider;
+      }
+
+      if (scopeKeys.includes('costPriceARS')) {
+        item.currentCostPriceARS = (p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0);
+      }
+
+      if (hasVariantScope) {
+        item.currentVariants = (p.variants || []).map((v: any) => ({
+          colorName: v.colorName || 'Único',
+          colorHex: v.colorHex || '#000000',
+          size: v.size || 'Único',
+          stock: v.stock || 0
+        }));
+      }
+
+      if (scopeKeys.includes('shortDescription') && p.shortDescription) {
+        item.currentShortDescription = p.shortDescription;
+      }
+
+      if (scopeKeys.includes('material') && (p as any).material) {
+        item.currentMaterial = (p as any).material;
+      }
+
+      if (scopeKeys.includes('fit') && (p as any).fit) {
+        item.currentFit = (p as any).fit;
+      }
+
+      if (scopeKeys.includes('gender') && (p as any).gender) {
+        item.currentGender = (p as any).gender;
+      }
+
+      return item;
     });
 
-    const prompt = `Actúa como especialista de catálogo para NexoCommerce. Necesito actualizar los siguientes ${compactProducts.length} productos existentes en mi tienda.
+    const activeProps = this.availableScopeProperties.filter((p) => scopeKeys.includes(p.key));
+    const dictionaryLines = activeProps.map((p) => `- ${p.payloadKey} (${p.type}, OBLIGATORIO): [Objetivo: ${p.label}] ${p.explanation}`).join('\n');
+    const exampleObj: any = { _id: productsToExport[0]?._id || '66ce301f92a1...' };
+    activeProps.forEach((p) => {
+      exampleObj[p.payloadKey] = p.example;
+    });
 
-A continuación tienes la lista actual de productos con sus IDs y estado actual:
+    const hasAnyLink = compactProducts.some((p) => p.linkProductProvider);
+    const customInstruction = this.aiCustomInstruction().trim();
+    const typeSummary = this.selectedProductsTypesSummary();
+
+    const prompt = `Actúa como especialista de catálogo para NexoCommerce. Necesito actualizar EXCLUSIVAMENTE las siguientes propiedades de estos ${compactProducts.length} productos (${typeSummary.breakdown}): [${activeProps.map((p) => p.label).join(', ')}].
+
+LISTA ACTUAL DE PRODUCTOS CON SUS IDs Y TIPOS:
 \`\`\`json
 ${JSON.stringify(compactProducts, null, 2)}
 \`\`\`
 
-DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS PARA ACTUALIZAR:
-- _id (string, OBLIGATORIO): El ID original del producto que debes mantener para identificarlo.
-- model (string, opcional): Nuevo nombre del modelo.
-- brand (string, opcional): Nueva marca.
-- category (string, opcional): Nueva categoría.
-- costPriceARS (number, opcional): Nuevo costo en pesos sin IVA (ej: 14000).
-- linkProductProvider (string URL, opcional): Link a la página del producto en el proveedor/fabricante.
-- shortDescription (string, opcional): Nueva descripción corta.
-- largeDescription (string HTML, opcional): Nueva descripción en HTML (<p>, <ul>, <li>).
-- material (string, opcional): Nueva tela/composición.
-- gender (string, opcional): "Hombre" | "Mujer" | "Unisex" | "Niños".
-- fit (string, opcional): "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".
-- variants (Array de objetos, opcional): Si vas a actualizar o agregar talles/colores/stock:
-    [
-      { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "L", "stock": 12 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "XL", "stock": 8 },
-      { "colorName": "Negro", "colorHex": "#000000", "size": "XXL", "stock": 5 }
-    ]
-- sizeGuide (Objeto, opcional): Nueva tabla de medidas:
-    {
-      "headers": ["Talle", "Ancho (cm)", "Largo (cm)"],
-      "rows": [{ "size": "S", "values": ["50", "68"] }],
-      "tolerance": "* Medidas tomadas en plano."
-    }
+DICCIONARIO DE PROPIEDADES QUE DEBES DEVOLVER:
+- _id (string, OBLIGATORIO): Mantén el _id original del producto para identificarlo en la base de datos.
+${dictionaryLines}
 
-🌐 NAVEGACIÓN WEB CON IA:
-Si los productos tienen 'linkProductProvider' con una URL válida, podés acceder y navegar por dicha página para extraer la información oficial de la prenda, su composición, tabla de medidas y fotos de alta resolución para volcarlas en las propiedades correspondientes.
+🎯 ADAPTACIÓN SEGÚN EL 'productType' DE CADA PRODUCTO:
+- Para ClothingProduct (Indumentaria): Usa talles (S, M, L o 38, 40), colores con código #HEX y guías de medidas en cm.
+- Para TechProduct (Tecnología): Usa capacidades/especificaciones en 'size' (ej: "128GB", "256GB") y colores.
+- Para BeautyProduct (Belleza): Usa volúmenes en 'size' (ej: "30ml", "50ml", "100ml") o tonos cosméticos.
+- Para GeneralProduct (General): Usa medidas, capacidades o packs estándar.
 
-INSTRUCCIÓN:
-Genera un array JSON [ { "_id": "...", ...propiedadesActualizadas } ] donde para cada producto mantengas su _id e incluyas las propiedades que deben modificarse o añadirse (por ejemplo, los nuevos talles y variantes con stock, nuevos precios o descripciones).
-Responde ÚNICAMENTE con el bloque JSON.`;
+EJEMPLO DEL FORMATO EXACTO QUE DEBES GENERAR:
+\`\`\`json
+[
+${JSON.stringify(exampleObj, null, 2)}
+]
+\`\`\`
+
+${customInstruction ? `🎯 DIRECTIVA ESPECÍFICA DEL USUARIO:
+"${customInstruction}"
+Asegúrate de respetar prioritariamente esta indicación al generar las variantes y valores del JSON.\n\n` : ''}${hasAnyLink ? `🌐 NAVEGACIÓN WEB CON IA:
+Si los productos tienen 'linkProductProvider' con una URL válida, podés acceder y navegar por dicha página web para extraer la información oficial de la prenda/producto, su composición, tabla de medidas y fotos de alta resolución para volcarlas en las propiedades correspondientes.\n\n` : ''}REGLAS CRÍTICAS DE SEGURIDAD:
+1. Tu respuesta debe ser ÚNICAMENTE el bloque JSON (un array de objetos [ { ... } ]). Sin texto de saludo ni explicaciones.
+2. Modifica e incluye EXCLUSIVAMENTE el '_id' y las propiedades solicitadas. NO inventes ni agregues otras propiedades que no fueron solicitadas.
+3. Asegúrate de que todos los valores numéricos sean números reales (sin símbolos $ ni comas).`;
 
     try {
       await navigator.clipboard.writeText(prompt);
       this.aiPromptCopied.set(true);
       setTimeout(() => this.aiPromptCopied.set(false), 4000);
-      this.#snackBar.open(`📋 ¡Prompt de actualización para ${compactProducts.length} productos copiado!`, 'Genial', { duration: 3000 });
+      this.#snackBar.open(`📋 ¡Prompt quirúrgico (${activeProps.length} objetivos) copiado!`, 'Genial', { duration: 3500 });
     } catch {
       this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
     }
@@ -1018,14 +1476,109 @@ Responde ÚNICAMENTE con el bloque JSON.`;
         });
         this.aiParsedCreateItems.set(validated);
         this.aiParsedUpdateItems.set([]);
+        this.aiParsedUpdateDiffs.set([]);
       } else {
-        // Update mode
+        // Update mode with granular diffing
+        const allProducts = this.ProductState.products().data || [];
+        const diffs: any[] = [];
+
         const validated = parsed.map((item: any, idx: number) => {
           if (!item._id) {
             throw new Error(`Ítem #${idx + 1} (${item.model || 'sin nombre'}) no tiene la propiedad _id.`);
           }
+
+          const orig = allProducts.find((p) => p._id === item._id);
+          const changes: Array<{ label: string; text: string; icon: string }> = [];
+
+          if (item.costPriceARS !== undefined) {
+            const oldCost = orig?.finance?.providerCost?.inARS || (orig?.price as any)?.costPrice?.inARS || 0;
+            changes.push({
+              label: 'Costo',
+              text: `$${Number(item.costPriceARS).toLocaleString('es-AR')} (Antes: $${Number(oldCost).toLocaleString('es-AR')})`,
+              icon: 'payments'
+            });
+          }
+
+          if (Array.isArray(item.variants) && item.variants.length > 0) {
+            const sizesList = item.variants.map((v: any) => `${v.size || 'Único'} (x${v.stock ?? 0})`).join(', ');
+            changes.push({
+              label: 'Talles',
+              text: `${item.variants.length} variantes [${sizesList}]`,
+              icon: 'straighten'
+            });
+          }
+
+          if (item.sizeGuide) {
+            const rowCount = item.sizeGuide.rows?.length || 0;
+            changes.push({
+              label: 'Guía de Medidas',
+              text: `Tabla con ${rowCount} talles configurados`,
+              icon: 'table_chart'
+            });
+          }
+
+          if (item.shortDescription) {
+            changes.push({
+              label: 'Desc. Corta',
+              text: item.shortDescription.length > 40 ? item.shortDescription.slice(0, 40) + '...' : item.shortDescription,
+              icon: 'description'
+            });
+          }
+
+          if (item.material) {
+            changes.push({
+              label: 'Material',
+              text: item.material,
+              icon: 'checkroom'
+            });
+          }
+
+          if (item.fit) {
+            changes.push({
+              label: 'Calce',
+              text: item.fit,
+              icon: 'style'
+            });
+          }
+
+          if (item.gender) {
+            changes.push({
+              label: 'Género',
+              text: item.gender,
+              icon: 'wc'
+            });
+          }
+
+          if (item.tags && Array.isArray(item.tags)) {
+            changes.push({
+              label: 'Tags',
+              text: item.tags.join(', '),
+              icon: 'label'
+            });
+          }
+
+          if (item.model && orig && item.model !== orig.model) {
+            changes.push({
+              label: 'Nombre',
+              text: `${item.model} (Antes: ${orig.model})`,
+              icon: 'edit'
+            });
+          }
+
+          diffs.push({
+            _id: item._id,
+            model: orig?.model || item.model || item._id,
+            category: orig?.category || item.category || '',
+            brand: orig?.brand || item.brand || '',
+            imageUrl: orig?.images?.[0]?.url || '/no-image.jpg',
+            changes: changes.length > 0 ? changes : [{ label: 'Modificación', text: 'Propiedades actualizadas', icon: 'check' }],
+            raw: item
+          });
+
           return item;
         });
+
+        this.aiParsedUpdateDiffs.set(diffs);
         this.aiParsedUpdateItems.set(validated);
         this.aiParsedCreateItems.set([]);
       }

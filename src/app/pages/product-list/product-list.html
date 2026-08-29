@@ -1759,13 +1759,13 @@
       <!-- Contenido Scrollable -->
       <div class="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
         
-        <!-- PASO 1: Generador de Prompt -->
+        <!-- PASO 1: Generador de Prompt y Selección de Alcance -->
         <div class="bg-base-200/50 p-4 rounded-xl border border-base-300 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="w-6 h-6 rounded-full bg-primary text-primary-content text-xs font-black flex items-center justify-center">1</span>
               <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
-                {{ aiBulkMode() === 'create' ? 'Copiá el Prompt Maestro para la IA' : 'Copiá el Prompt con tus ' + selectedProducts().length + ' Productos' }}
+                {{ aiBulkMode() === 'create' ? 'Copiá el Prompt Maestro para la IA' : 'Configurá y Copiá el Prompt (' + selectedProducts().length + ' Productos)' }}
               </h4>
             </div>
 
@@ -1775,7 +1775,7 @@
               class="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl shadow-sm cursor-pointer flex items-center gap-1.5"
             >
               <mat-icon class="text-[16px]! w-4! h-4!">content_copy</mat-icon>
-              <span>{{ aiPromptCopied() ? '¡Prompt Copiado!' : 'Copiar Prompt para ChatGPT / IA' }}</span>
+              <span>{{ aiPromptCopied() ? '¡Prompt Copiado!' : (aiBulkMode() === 'update' ? 'Copiar Prompt (' + selectedScopeProperties().length + ' propiedades)' : 'Copiar Prompt para ChatGPT / IA') }}</span>
             </button>
           </div>
 
@@ -1786,28 +1786,137 @@
             </div>
           }
 
-          <!-- Guía Visual de Tipos Aceptados -->
-          <div class="text-[11px] bg-base-100 p-3 rounded-lg border border-base-300/80 text-base-content/70 space-y-1.5">
-            <p class="font-bold text-base-content/90 flex items-center gap-1">
-              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">info</mat-icon>
-              <span>Propiedades que el sistema entiende automáticamente:</span>
-            </p>
-            <div class="flex flex-wrap gap-1.5 pt-1">
-              <span class="badge badge-xs badge-neutral font-mono">model (string)</span>
-              <span class="badge badge-xs badge-neutral font-mono">costPriceARS (number)</span>
-              <span class="badge badge-xs badge-neutral font-mono">category (string)</span>
-              <span class="badge badge-xs badge-neutral font-mono">variants: [ {{ '{' }} colorName, colorHex, size, stock {{ '}' }} ]</span>
-              <span class="badge badge-xs badge-neutral font-mono">sizeGuide: {{ '{' }} headers, rows, tolerance {{ '}' }}</span>
-              <span class="badge badge-xs badge-neutral font-mono">shortDescription (string)</span>
-              <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex")</span>
-              <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
-              <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
-              <span class="badge badge-xs badge-neutral font-mono">linkProductProvider (string URL)</span>
-              @if (aiBulkMode() === 'update') {
-                <span class="badge badge-xs badge-secondary font-mono">_id (string ObjectId obligatorio)</span>
+          <!-- Selector de Rubro / Tipo de Producto para Creación -->
+          @if (aiBulkMode() === 'create') {
+            <div class="space-y-2 bg-base-100 p-3 rounded-xl border border-base-300/80">
+              <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                <mat-icon class="text-[15px]! w-4! h-4! text-primary">category</mat-icon>
+                <span>¿Qué tipo de productos vas a crear?</span>
+              </span>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
+                @for (opt of productTypeOptions; track opt.type) {
+                  <button
+                    type="button"
+                    (click)="setProductType(opt.type)"
+                    class="p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between"
+                    [ngClass]="aiTargetProductType() === opt.type ? 'border-primary bg-primary/10 text-primary shadow-2xs font-bold' : 'border-base-300 bg-base-200/40 text-base-content/70 hover:bg-base-200'"
+                  >
+                    <div class="flex items-center gap-1.5">
+                      <mat-icon class="text-[16px]! w-4! h-4!">{{ opt.icon }}</mat-icon>
+                      <span class="text-xs truncate">{{ opt.label }}</span>
+                    </div>
+                    <span class="text-[10px] opacity-70 mt-1">{{ opt.badge }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Selector de Propiedades Específicas para Actualizar (Scope Selector) -->
+          @if (aiBulkMode() === 'update') {
+            <div class="space-y-2 bg-base-100 p-3 rounded-xl border border-base-300/80">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                    <mat-icon class="text-[15px]! w-4! h-4! text-primary">checklist</mat-icon>
+                    <span>Propiedades a modificar:</span>
+                  </span>
+                  <span
+                    class="badge badge-xs font-semibold"
+                    [ngClass]="selectedProductsTypesSummary().isMixed ? 'badge-warning text-warning-content' : 'badge-neutral'"
+                  >
+                    {{ selectedProductsTypesSummary().isMixed ? '🌈 ' + selectedProductsTypesSummary().breakdown : '📦 ' + selectedProductsTypesSummary().breakdown }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  (click)="toggleAllScopeProperties()"
+                  class="btn btn-xs btn-ghost text-primary font-bold hover:bg-primary/10"
+                >
+                  {{ isAllScopePropertiesSelected() ? 'Deseleccionar Todos' : 'Seleccionar Todos (' + availableScopeProperties.length + ')' }}
+                </button>
+              </div>
+
+              <!-- Chips de propiedades seleccionables -->
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                @for (prop of availableScopeProperties; track prop.key) {
+                  <button
+                    type="button"
+                    (click)="toggleScopeProperty(prop.key)"
+                    class="btn btn-xs rounded-lg transition-all gap-1 font-semibold cursor-pointer"
+                    [ngClass]="selectedScopeProperties().includes(prop.key) ? 'btn-primary shadow-2xs font-bold' : 'btn-ghost border border-base-300 text-base-content/70 hover:bg-base-200'"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">{{ selectedScopeProperties().includes(prop.key) ? 'check' : 'add' }}</mat-icon>
+                    <span>{{ prop.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Directiva / Instrucción Personalizada para la IA (Opcional) -->
+          <div class="space-y-2 bg-base-100 p-3 rounded-xl border border-base-300/80">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                <mat-icon class="text-[15px]! w-4! h-4! text-purple-600">edit_note</mat-icon>
+                <span>Instrucción o Directiva para la IA (Opcional):</span>
+              </span>
+              @if (aiCustomInstruction()) {
+                <button
+                  type="button"
+                  (click)="aiCustomInstruction.set('')"
+                  class="text-[10px] text-error hover:underline font-bold cursor-pointer"
+                >
+                  Limpiar
+                </button>
+              }
+            </div>
+
+            <input
+              type="text"
+              [ngModel]="aiCustomInstruction()"
+              (ngModelChange)="aiCustomInstruction.set($event)"
+              placeholder="Ej: El proveedor solo tiene stock en color Negro en talles M y L, o Poné 5 unidades a cada talle..."
+              class="input input-sm input-bordered w-full text-xs rounded-lg bg-base-200/40"
+            />
+
+            <!-- Presets Rápidos -->
+            <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+              <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Atajos:</span>
+              @for (preset of quickInstructionPresets(); track preset) {
+                <button
+                  type="button"
+                  (click)="setQuickInstruction(preset)"
+                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-normal hover:border-primary hover:text-primary transition-all cursor-pointer"
+                >
+                  {{ preset }}
+                </button>
               }
             </div>
           </div>
+
+          <!-- Guía Visual de Tipos Aceptados en Modo Crear -->
+          @if (aiBulkMode() === 'create') {
+            <div class="text-[11px] bg-base-100 p-3 rounded-lg border border-base-300/80 text-base-content/70 space-y-1.5">
+              <p class="font-bold text-base-content/90 flex items-center gap-1">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">info</mat-icon>
+                <span>Propiedades que el sistema entiende automáticamente:</span>
+              </p>
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="badge badge-xs badge-neutral font-mono">model (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">costPriceARS (number)</span>
+                <span class="badge badge-xs badge-neutral font-mono">category (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">variants: [ {{ '{' }} colorName, colorHex, size, stock {{ '}' }} ]</span>
+                <span class="badge badge-xs badge-neutral font-mono">sizeGuide: {{ '{' }} headers, rows, tolerance {{ '}' }}</span>
+                <span class="badge badge-xs badge-neutral font-mono">shortDescription (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex")</span>
+                <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">linkProductProvider (string URL)</span>
+              </div>
+            </div>
+          }
         </div>
 
         <!-- PASO 2: Pegar Respuesta de la IA -->
@@ -1846,13 +1955,13 @@
         </div>
 
         <!-- PASO 3: Previsualización de Cambios / Nuevos Productos -->
-        @if (aiParsedCreateItems().length > 0 || aiParsedUpdateItems().length > 0) {
+        @if (aiParsedCreateItems().length > 0 || aiParsedUpdateDiffs().length > 0) {
           <div class="space-y-3 pt-2 border-t border-base-300">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-success text-success-content text-xs font-black flex items-center justify-center">3</span>
                 <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
-                  Previsualización ({{ aiBulkMode() === 'create' ? aiParsedCreateItems().length + ' Productos a Crear' : aiParsedUpdateItems().length + ' Productos a Actualizar' }})
+                  Previsualización ({{ aiBulkMode() === 'create' ? aiParsedCreateItems().length + ' Productos a Crear' : aiParsedUpdateDiffs().length + ' Productos con Cambios Detectados' }})
                 </h4>
               </div>
               <span class="text-xs font-bold text-success flex items-center gap-1">
@@ -1862,7 +1971,7 @@
             </div>
 
             <!-- Grilla de Tarjetas Previsualizadas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-68 overflow-y-auto p-1 custom-scrollbar">
               @if (aiBulkMode() === 'create') {
                 @for (item of aiParsedCreateItems(); track $index) {
                   <div class="p-3 bg-base-200/60 border border-base-300 rounded-xl space-y-1.5 text-xs">
@@ -1883,24 +1992,33 @@
                   </div>
                 }
               } @else {
-                @for (item of aiParsedUpdateItems(); track $index) {
-                  <div class="p-3 bg-base-200/60 border border-base-300 rounded-xl space-y-1.5 text-xs">
-                    <div class="flex items-start justify-between gap-1">
-                      <h5 class="font-black text-base-content truncate">{{ item.model || 'ID: ' + item._id }}</h5>
-                      <span class="badge badge-xs badge-secondary font-mono">Modificación</span>
-                    </div>
-                    @if (item.costPriceARS) {
-                      <p class="text-[11px] text-base-content/70">Nuevo Costo: ${{ item.costPriceARS | currency:'ARS':'symbol':'1.0-0' }}</p>
-                    }
-                    @if (item.variants && item.variants.length > 0) {
-                      <div class="flex flex-wrap gap-1 pt-1">
-                        @for (v of item.variants; track $index) {
-                          <span class="badge badge-xs badge-outline text-[9px]">
-                            {{ v.colorName || 'Único' }}: {{ v.size }} (x{{ v.stock }})
-                          </span>
-                        }
+                @for (diff of aiParsedUpdateDiffs(); track $index) {
+                  <div class="p-3 bg-base-200/70 border border-base-300 rounded-xl space-y-2 text-xs shadow-2xs">
+                    <div class="flex items-start gap-2.5">
+                      <img
+                        [src]="diff.imageUrl"
+                        [alt]="diff.model"
+                        class="w-10 h-10 rounded-lg object-cover bg-base-300 border border-base-300 shrink-0"
+                      />
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1">
+                          <h5 class="font-black text-base-content truncate">{{ diff.model }}</h5>
+                          <span class="badge badge-xs badge-neutral font-bold shrink-0">{{ diff.category }}</span>
+                        </div>
+                        <p class="text-[10px] text-base-content/50 truncate">{{ diff.brand }} • ID: {{ diff._id }}</p>
                       </div>
-                    }
+                    </div>
+
+                    <!-- Lista de Cambios Granulares Detectados -->
+                    <div class="space-y-1 pt-1 border-t border-base-300/60">
+                      @for (ch of diff.changes; track ch.label) {
+                        <div class="flex items-center gap-1.5 text-[11px] bg-base-100/90 px-2 py-1 rounded-md border border-base-200">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5! text-emerald-600 shrink-0">{{ ch.icon }}</mat-icon>
+                          <span class="font-bold text-base-content/80 shrink-0">{{ ch.label }}:</span>
+                          <span class="text-emerald-700 dark:text-emerald-400 font-semibold truncate">{{ ch.text }}</span>
+                        </div>
+                      }
+                    </div>
                   </div>
                 }
               }
