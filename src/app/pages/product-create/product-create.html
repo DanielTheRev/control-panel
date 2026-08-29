@@ -1038,6 +1038,42 @@
                           </div>
                         </div>
 
+                        <!-- Barra de Carga Rápida de Talles (Presets & Chips) -->
+                        @if (selectedType() === ProductType.CLOTHING) {
+                          <div class="bg-base-100/90 p-2.5 rounded-xl border border-base-200 shadow-2xs flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                              <span class="text-[10px] font-black uppercase text-base-content/50 flex items-center gap-1">
+                                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center text-primary">bolt</mat-icon> Presets Rápidos:
+                              </span>
+                              <button type="button" (click)="loadPresetSizesToGroup(gIndex, 'remeras')" class="btn btn-2xs btn-primary btn-outline font-bold rounded-lg cursor-pointer">
+                                + Remera (S - XXL)
+                              </button>
+                              <button type="button" (click)="loadPresetSizesToGroup(gIndex, 'pantalones')" class="btn btn-2xs btn-outline font-bold rounded-lg cursor-pointer">
+                                + Pantalón (38 - 46)
+                              </button>
+                              <button type="button" (click)="loadPresetSizesToGroup(gIndex, 'calzado')" class="btn btn-2xs btn-outline font-bold rounded-lg cursor-pointer">
+                                + Calzado (39 - 44)
+                              </button>
+                              <button type="button" (click)="loadPresetSizesToGroup(gIndex, 'unico')" class="btn btn-2xs btn-outline font-bold rounded-lg cursor-pointer">
+                                + Único
+                              </button>
+                            </div>
+
+                            <div class="flex items-center gap-1 flex-wrap">
+                              <span class="text-[9px] font-bold text-base-content/40 uppercase">Sumar 1:</span>
+                              @for (sz of ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Único']; track sz) {
+                                <button
+                                  type="button"
+                                  (click)="addSizeToGroup(gIndex, sz)"
+                                  class="badge badge-sm bg-base-200 hover:bg-primary hover:text-primary-content font-black text-[10px] cursor-pointer transition-all active:scale-95 border-base-300 shadow-2xs"
+                                  title="Sumar talle {{ sz }}">
+                                  + {{ sz }}
+                                </button>
+                              }
+                            </div>
+                          </div>
+                        }
+
                         <!-- Lista de Talles / Variantes del Color -->
                         <div class="space-y-2" formArrayName="variants">
                           @for (v of getGroupVariants(gIndex).controls; track v; let vIndex = $index) {
@@ -1353,10 +1389,10 @@
 
             <!-- Guía de Talles (Solo para Indumentaria) -->
             @if (selectedType() === ProductType.CLOTHING) {
-              <details class="collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm">
-                <summary class="collapse-title text-xs font-bold text-base-content/60 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3.5 px-4 min-h-0 pr-10">
+              <details class="collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm" [open]="sizeGuideState().enabled">
+                <summary class="collapse-title text-xs font-black text-base-content/70 uppercase tracking-wider flex items-center justify-between cursor-pointer select-none py-3.5 px-4 min-h-0 pr-10">
                   <div class="flex items-center gap-2">
-                    <mat-icon class="text-[16px]! w-4! h-4! text-pink-500">straighten</mat-icon>
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center text-primary">straighten</mat-icon>
                     <span>Guía de Talles & Medidas (Opcional)</span>
                   </div>
                   <label class="flex items-center gap-2 cursor-pointer" (click)="$event.stopPropagation()">
@@ -1371,61 +1407,163 @@
                     </span>
                   </label>
                 </summary>
-                <div class="collapse-content px-4 pb-4 pt-1 space-y-3">
+
+                <div class="collapse-content px-4 pb-4 pt-1 space-y-4">
                   @if (sizeGuideState().enabled) {
-                    <div class="overflow-x-auto">
-                      <table class="table table-xs w-full">
+                    
+                    <!-- ── Barra Superior de Presets Rápidos en 1 Clic ── -->
+                    <div class="bg-base-200/50 p-3.5 rounded-xl border border-base-300/60 space-y-2.5">
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-[10px] font-black uppercase text-base-content/60 flex items-center gap-1.5">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center text-primary">flash_on</mat-icon>
+                          Presets Automáticos (1 Clic):
+                        </span>
+
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            (click)="loadSizeGuidePreset('remera')"
+                            class="btn btn-xs bg-base-100 hover:bg-primary hover:text-white border border-base-300 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                            👕 Remera / Top
+                          </button>
+                          <button
+                            type="button"
+                            (click)="loadSizeGuidePreset('pantalon')"
+                            class="btn btn-xs bg-base-100 hover:bg-primary hover:text-white border border-base-300 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                            👖 Pantalón / Jean
+                          </button>
+                          <button
+                            type="button"
+                            (click)="loadSizeGuidePreset('calzado')"
+                            class="btn btn-xs bg-base-100 hover:bg-primary hover:text-white border border-base-300 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                            👟 Calzado / Zapatillas
+                          </button>
+                          <button
+                            type="button"
+                            (click)="copyAiPrompt()"
+                            class="btn btn-xs bg-indigo-500/10 hover:bg-indigo-600 hover:text-white text-indigo-600 border border-indigo-500/30 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                            <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">psychology</mat-icon>
+                            <span>🤖 Copiar Prompt para IA</span>
+                          </button>
+                          <button
+                            type="button"
+                            (click)="toggleQuickPaste()"
+                            class="btn btn-xs btn-outline rounded-lg text-xs font-bold transition-all cursor-pointer">
+                            📋 Pegar Texto / Excel
+                          </button>
+                        </div>
+                      </div>
+
+                      @if (aiPromptCopied()) {
+                        <div class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                          <mat-icon class="text-[16px]! w-4! h-4! text-emerald-600">check_circle</mat-icon>
+                          <span>¡Prompt copiado al portapapeles! Pegáselo a ChatGPT / Gemini y luego pegá la respuesta en el cuadro de abajo.</span>
+                        </div>
+                      }
+
+                      <!-- Área de Pegado Inteligente (Smart Parser) -->
+                      @if (showQuickPaste()) {
+                        <div class="pt-2 border-t border-base-300/60 space-y-2">
+                          <div class="flex items-center justify-between text-[10px] font-bold text-base-content/50 uppercase">
+                            <span>Entrada de Texto / Markdown / CSV / Excel</span>
+                            <span>Soporta tablas de ChatGPT, CSV o celdas de Excel</span>
+                          </div>
+                          <textarea
+                            [ngModel]="sizeGuideRawText()"
+                            (ngModelChange)="sizeGuideRawText.set($event)"
+                            class="textarea textarea-bordered w-full text-xs font-mono rounded-xl h-24 bg-base-100"
+                            placeholder="Copiá y pegá acá lo que te responda la IA o tu Excel:&#10;Talle, Ancho (cm), Largo (cm)&#10;S: 50, 68&#10;M: 52, 70&#10;* Medidas aproximadas..."
+                          ></textarea>
+                          
+                          @if (sizeGuideParserError()) {
+                            <div class="text-xs text-error font-bold flex items-center gap-1">
+                              <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">error</mat-icon>
+                              <span>{{ sizeGuideParserError() }}</span>
+                            </div>
+                          }
+
+                          <div class="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              (click)="parseAndApplySizeGuide()"
+                              class="btn btn-xs btn-primary font-black rounded-lg gap-1.5 shadow-2xs cursor-pointer">
+                              <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">auto_awesome</mat-icon>
+                              <span>Procesar Tabla e Importar</span>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- ── Tabla Visual de Medidas ── -->
+                    <div class="overflow-x-auto rounded-xl border border-base-300 shadow-2xs bg-base-100">
+                      <table class="table table-xs w-full text-left">
                         <thead>
-                          <tr>
+                          <tr class="bg-base-200/80 border-b border-base-300">
                             @for (h of sizeGuideState().headers; track $index; let i = $index) {
-                              <th>
-                                <input
-                                  type="text"
-                                  class="input input-2xs input-bordered font-bold w-24"
-                                  [value]="h"
-                                  (input)="updateSizeGuideHeader(i, $event)"
-                                />
+                              <th class="p-2 min-w-[130px]">
+                                <div class="flex items-center gap-1">
+                                  <input
+                                    type="text"
+                                    class="input input-xs input-bordered font-black text-xs w-full bg-base-100 rounded-lg text-base-content"
+                                    [value]="h"
+                                    (input)="updateSizeGuideHeader(i, $event)"
+                                    [placeholder]="i === 0 ? 'Talle' : 'Medida (cm)'"
+                                  />
+                                  @if (i > 1) {
+                                    <button
+                                      type="button"
+                                      class="btn btn-ghost btn-2xs btn-circle text-base-content/40 hover:text-error shrink-0 cursor-pointer"
+                                      (click)="removeSizeGuideColumn(i)"
+                                      title="Eliminar esta columna">
+                                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
+                                    </button>
+                                  }
+                                </div>
                               </th>
                             }
-                            <th class="w-10">
+                            <th class="w-12 text-center p-2">
                               <button
                                 type="button"
-                                class="btn btn-ghost btn-2xs text-primary"
+                                class="btn btn-ghost btn-xs text-primary font-bold gap-1 rounded-lg cursor-pointer"
                                 (click)="addSizeGuideColumn()"
-                              >
-                                + Col
+                                title="Añadir nueva medida / columna">
+                                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
+                                <span>Col</span>
                               </button>
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           @for (row of sizeGuideState().rows; track $index; let r = $index) {
-                            <tr>
-                              <td>
+                            <tr class="border-b border-base-200 hover:bg-base-200/30 transition-colors">
+                              <td class="p-2">
                                 <input
                                   type="text"
-                                  class="input input-2xs input-bordered font-bold w-24"
+                                  class="input input-xs input-bordered font-black text-xs w-full bg-base-100 rounded-lg text-primary uppercase"
                                   [value]="row.size"
                                   (input)="updateSizeGuideRowSize(r, $event)"
+                                  placeholder="Ej: M"
                                 />
                               </td>
                               @for (v of row.values; track $index; let c = $index) {
-                                <td>
+                                <td class="p-2">
                                   <input
                                     type="text"
-                                    class="input input-2xs input-bordered w-24"
+                                    class="input input-xs input-bordered font-medium text-xs w-full bg-base-100 rounded-lg text-base-content"
                                     [value]="v"
                                     (input)="updateSizeGuideRowValue(r, c, $event)"
+                                    placeholder="0"
                                   />
                                 </td>
                               }
-                              <td>
+                              <td class="text-center p-2">
                                 <button
                                   type="button"
-                                  class="btn btn-ghost btn-2xs text-error"
+                                  class="w-6 h-6 rounded-lg bg-error/10 hover:bg-error hover:text-white text-error flex items-center justify-center transition-all cursor-pointer mx-auto"
                                   (click)="removeSizeGuideRow(r)"
-                                >
-                                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                                  title="Eliminar este talle">
+                                  <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">delete</mat-icon>
                                 </button>
                               </td>
                             </tr>
@@ -1434,16 +1572,42 @@
                       </table>
                     </div>
 
-                    <button
-                      type="button"
-                      class="btn btn-outline btn-xs btn-primary gap-1 font-bold"
-                      (click)="addSizeGuideRow()"
-                    >
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Añadir Talle
-                    </button>
+                    <!-- Botones de Acción de Tabla -->
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-xs btn-primary gap-1 font-bold rounded-lg shadow-2xs cursor-pointer"
+                        (click)="addSizeGuideRow()">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
+                        <span>Añadir Fila de Talle</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs text-primary font-bold gap-1 rounded-lg cursor-pointer"
+                        (click)="addSizeGuideColumn()">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">view_column</mat-icon>
+                        <span>Añadir Columna</span>
+                      </button>
+                    </div>
+
+                    <!-- Nota de Tolerancia / Confección -->
+                    <div class="space-y-1 pt-1">
+                      <label class="text-[10px] font-black uppercase tracking-wider text-base-content/50 block">
+                        Nota de Tolerancia / Confección (Visible para el comprador)
+                      </label>
+                      <input
+                        type="text"
+                        class="input input-xs input-bordered w-full rounded-lg text-xs"
+                        placeholder="Ej: * Las medidas pueden variar +/- 1.5 cm debido al proceso de confección."
+                        [value]="sizeGuideState().tolerance || ''"
+                        (input)="updateSizeGuideTolerance($event)"
+                      />
+                    </div>
+
                   } @else {
                     <p class="text-xs text-base-content/40 italic">
-                      Activa el switch para añadir una tabla de medidas que se mostrará a los clientes en la tienda.
+                      Activa el switch para añadir una tabla de medidas interactiva que se mostrará a los clientes en la tienda.
                     </p>
                   }
                 </div>

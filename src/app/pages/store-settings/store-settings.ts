@@ -39,7 +39,7 @@ export class StoreSettings {
   dolarQuotes = signal<IDolarRate[]>([]);
   isLoadingDolares = signal(false);
 
-  activeTab = signal<'general' | 'pricing' | 'gateways' | 'integrations' | 'emails' | 'contact' | 'clothing'>('general');
+  activeTab = signal<'general' | 'pricing' | 'gateways' | 'integrations' | 'emails' | 'contact' | 'clothing' | 'pos'>('general');
 
   // Emails & Templates signals
   selectedEmailTemplate = signal<string>('orderConfirmation');
@@ -201,6 +201,11 @@ export class StoreSettings {
           fromEmail: [''],
           fromName: ['']
         })
+      }),
+      posConfig: this.#fb.group({
+        transferValidationMode: ['fast_receipt'],
+        allowManualDiscount: [false],
+        autoPrintReceipt: [true]
       }),
       shippingConfig: this.#fb.group({
         freeShippingThreshold: [50000]

@@ -2,438 +2,779 @@
 @let isLoadingSession = cashStore.isLoading();
 
 <app-page-layout>
-  <app-page-header header title="Punto de Venta" subtitle="Registro de ventas en mostrador" [withMB]="false">
-    <div actions class="flex items-center gap-3">
+  <!-- ========================================================================= -->
+  <!-- HEADER POS & TOP ACTIONS                                                  -->
+  <!-- ========================================================================= -->
+  <app-page-header header title="Punto de Venta (POS)" subtitle="Terminal de mostrador y cobro multicanal">
+    <div actions class="flex items-center flex-wrap gap-2.5">
+
+      <!-- Selector Tarifa Rápida (Segmented Switch Moderno en Tailwind puro) -->
+      <div class="inline-flex p-1 bg-base-200 rounded-xl border border-base-300/80 shadow-2xs gap-1.5">
+        <button
+          type="button"
+          (click)="setPaymentType('cash')"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+          [class.bg-base-100]="selectedPaymentType() === 'cash'"
+          [class.text-primary]="selectedPaymentType() === 'cash'"
+          [class.shadow-2xs]="selectedPaymentType() === 'cash'"
+          [class.text-base-content]="selectedPaymentType() !== 'cash'"
+          [class.opacity-60]="selectedPaymentType() !== 'cash'"
+          [class.hover:opacity-100]="selectedPaymentType() !== 'cash'">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">payments</mat-icon>
+          <span>Precio Efectivo</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="setPaymentType('card')"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+          [class.bg-base-100]="selectedPaymentType() === 'card'"
+          [class.text-primary]="selectedPaymentType() === 'card'"
+          [class.shadow-2xs]="selectedPaymentType() === 'card'"
+          [class.text-base-content]="selectedPaymentType() !== 'card'"
+          [class.opacity-60]="selectedPaymentType() !== 'card'"
+          [class.hover:opacity-100]="selectedPaymentType() !== 'card'">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">credit_card</mat-icon>
+          <span>Precio Lista</span>
+        </button>
+      </div>
+
+      <!-- Estado de la Caja -->
       @if (session) {
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-success/10 text-success rounded-full border border-success/20">
-        <mat-icon class="text-sm">check_circle</mat-icon>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Caja Abierta</span>
-      </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/20 text-xs font-bold shadow-2xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Caja Abierta</span>
+        </div>
       } @else if (!isLoadingSession) {
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-error/10 text-error rounded-full border border-error/20">
-        <mat-icon class="text-sm">warning</mat-icon>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Caja Cerrada</span>
-      </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 text-warning rounded-xl border border-warning/20 text-xs font-bold shadow-2xs">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">lock</mat-icon>
+          <span>Caja Cerrada</span>
+        </div>
       }
-    </div>
-    <!-- Search Bar -->
-    <div class="relative shrink-0 p-1" sub-menu>
-      <label class="input input-primary w-full rounded-sm! border-2!">
-        <mat-icon class="text-base-content/30">search</mat-icon>
-        <input type="text" class="grow" placeholder="Buscar por nombre, modelo o código..." [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event); onSearchInput()" />
-      </label>
+
+      <button
+        type="button"
+        (click)="clearCart()"
+        [disabled]="cart().length === 0"
+        class="btn btn-sm btn-ghost rounded-xl text-xs font-bold gap-1.5 text-base-content/70 hover:text-error cursor-pointer">
+        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">restart_alt</mat-icon>
+        <span class="hidden sm:inline">Limpiar</span>
+      </button>
+
     </div>
   </app-page-header>
 
-  <ng-container content>
-    <div class="flex flex-row h-full w-full overflow-hidden gap-2">
-      <!-- Left Panel: Product Search -->
-      <div class="flex flex-col h-full w-full min-w-0 gap-2 overflow-hidden border-2 rounded-sm border-green-600">
+  <div content class="flex flex-col h-full w-full min-h-0 pb-20 lg:pb-0">
 
-        <!-- Product Results -->
-        <div class="flex-1 overflow-y-auto">
+    <!-- ── Main Workspace Bento (RestroBit Grid) ────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
 
-          @if (loadingProducts()) {
-          <div class="flex items-center justify-center py-16">
-            <span class="loading loading-ring loading-md text-primary"></span>
-          </div>
-          } @else if (products().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 opacity-25 text-center">
-            <mat-icon class="text-5xl! mb-3">inventory_2</mat-icon>
-            <p class="text-sm font-bold">Sin resultados</p>
-            <p class="text-xs max-w-xs mt-1">Escribe al menos 2 caracteres para buscar productos.</p>
-          </div>
-          } @else {
-          <div class="flex flex-col gap-0.5">
-            @for (product of products(); track product._id) {
-            @if (product.variants?.length) {
-            <!-- Product WITH variants: click opens variant picker -->
-            <div
-              class="flex items-center gap-3 px-3 py-2 rounded-sm cursor-pointer border border-transparent hover:border-primary/20 hover:bg-base-200/60 transition-colors group"
-              (click)="selectedProduct.set(product); showVariantModal.set(true)">
+      <!-- ===================================================================== -->
+      <!-- COLUMNA IZQUIERDA: CATÁLOGO, BUSCADOR & CATEGORÍAS                     -->
+      <!-- ===================================================================== -->
+      <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 min-h-0"
+        [class.max-lg:hidden]="activeTab() !== 'catalog'">
 
-              <div
-                class="w-10 h-10 rounded-sm bg-white border border-base-300 overflow-hidden shrink-0 flex items-center justify-center">
-                @if (product.images?.length) {
-                <img [src]="product.images[0].url" [alt]="product.model" class="w-full h-full object-contain" />
-                } @else {
-                <mat-icon class="opacity-15">image</mat-icon>
-                }
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-bold uppercase tracking-widest text-primary/50">{{ product.brand || 'Sin
-                    marca' }}</span>
-                  <span class="text-[9px] font-bold uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm">{{
-                    product.variants.length }} variantes</span>
-                </div>
-                <p class="text-sm font-semibold truncate group-hover:text-primary transition-colors">{{ product.model }}
-                </p>
-              </div>
-
-              <div class="flex items-center gap-2 shrink-0">
-                <span class="text-sm font-black tabular-nums">${{ getProductPrice(product) | number:'1.0-0' }}</span>
-                <div class="text-base-content/30 group-hover:text-primary transition-colors">
-                  <mat-icon>chevron_right</mat-icon>
-                </div>
-              </div>
-            </div>
-            } @else {
-            <!-- Product WITHOUT variants: click adds directly -->
-            <div
-              class="flex items-center gap-3 px-3 py-2 rounded-sm cursor-pointer border border-transparent hover:border-primary/20 hover:bg-base-200/60 transition-colors group"
-              (click)="addVariantToCart(product, null)">
-
-              <div
-                class="w-10 h-10 rounded-sm bg-white border border-base-300 overflow-hidden shrink-0 flex items-center justify-center">
-                @if (product.images?.length) {
-                <img [src]="product.images[0].url" [alt]="product.model" class="w-full h-full object-contain" />
-                } @else {
-                <mat-icon class="opacity-15">image</mat-icon>
-                }
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-bold uppercase tracking-widest text-primary/50">{{ product.brand || 'Sin
-                    marca' }}</span>
-                </div>
-                <p class="text-sm font-semibold truncate group-hover:text-primary transition-colors">{{ product.model }}
-                </p>
-              </div>
-
-              <div class="flex items-center gap-3 shrink-0">
-                <span class="text-sm font-black tabular-nums">${{ getProductPrice(product) | number:'1.0-0' }}</span>
-                <div
-                  class="w-7 h-7 rounded-sm bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
-                  <mat-icon>add</mat-icon>
-                </div>
-              </div>
-            </div>
-            }
+        <!-- 1. Barra de Búsqueda y Selectores (Estilo RestroBit) -->
+        <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 shadow-2xs flex flex-col sm:flex-row items-center gap-2">
+          <div class="relative w-full flex-1">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">search</mat-icon>
+            <input
+              type="text"
+              class="input input-sm input-bordered w-full pl-9 pr-8 rounded-lg text-xs font-medium focus:border-primary"
+              placeholder="Buscar prenda por modelo, categoría, código o SKU..."
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event); onSearchInput()"
+            />
+            @if (searchQuery()) {
+              <button (click)="searchQuery.set(''); onSearchInput()" class="btn btn-ghost btn-2xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 flex items-center justify-center cursor-pointer">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
+              </button>
             }
           </div>
+
+          @if (brands().length > 0) {
+            <select
+              [ngModel]="selectedBrand()"
+              (ngModelChange)="selectedBrand.set($event)"
+              class="select select-sm select-bordered rounded-lg text-xs font-bold text-base-content/70 w-full sm:w-auto shrink-0">
+              <option value="all">Todas las marcas</option>
+              @for (b of brands(); track b) {
+                <option [value]="b">{{ b }}</option>
+              }
+            </select>
           }
         </div>
+
+        <!-- 2. Barra de Categorías (Botón Todos Fijo + Scroll Sin Barra) -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          
+          <!-- Botón Todos Fijo a la Izquierda -->
+          <button
+            type="button"
+            (click)="selectedCategory.set('all')"
+            class="btn btn-sm rounded-lg font-bold text-xs gap-1 transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0"
+            [class.btn-primary]="selectedCategory() === 'all'"
+            [class.btn-ghost]="selectedCategory() !== 'all'"
+            [class.bg-base-100]="selectedCategory() !== 'all'"
+            [class.border]="selectedCategory() !== 'all'"
+            [class.border-base-200]="selectedCategory() !== 'all'">
+            <span>Todos</span>
+            <span class="badge badge-xs font-mono ml-0.5" [class.badge-primary-content]="selectedCategory() === 'all'">{{ products().length }}</span>
+          </button>
+
+          <!-- Categorías Scrolleables Horizontalmente Sin Barra -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+            @for (cat of categories(); track cat) {
+              <button
+                type="button"
+                (click)="selectedCategory.set(cat)"
+                class="btn btn-sm rounded-lg font-bold text-xs gap-1 transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0"
+                [class.btn-primary]="selectedCategory() === cat"
+                [class.btn-ghost]="selectedCategory() !== cat"
+                [class.bg-base-100]="selectedCategory() !== cat"
+                [class.border]="selectedCategory() !== cat"
+                [class.border-base-200]="selectedCategory() !== cat">
+                <span>{{ cat }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- 3. Grilla de Productos (Estilo RestroBit) -->
+        <div class="flex-1 overflow-y-auto pr-1">
+          @if (loadingProducts()) {
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              @for (i of [1,2,3,4,5,6,7,8]; track i) {
+                <div class="bg-base-100 rounded-xl p-3 border border-base-200 space-y-2">
+                  <div class="skeleton w-full aspect-square rounded-lg"></div>
+                  <div class="skeleton h-3 w-3/4 rounded"></div>
+                  <div class="skeleton h-4 w-1/2 rounded"></div>
+                </div>
+              }
+            </div>
+          } @else if (filteredProducts().length === 0) {
+            <div class="bg-base-100 rounded-xl border border-base-200 p-8 text-center space-y-2 flex flex-col items-center justify-center">
+              <div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-base-content/30">
+                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center">search_off</mat-icon>
+              </div>
+              <h4 class="text-xs font-bold text-base-content">No se encontraron productos</h4>
+              <p class="text-[11px] text-base-content/50 max-w-xs">Probá cambiando el término de búsqueda o seleccionando otra categoría.</p>
+              <button (click)="searchQuery.set(''); selectedCategory.set('all'); selectedBrand.set('all'); onSearchInput()" class="btn btn-xs btn-ghost text-primary font-bold mt-1">
+                Restablecer filtros
+              </button>
+            </div>
+          } @else {
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              @for (p of filteredProducts(); track p._id) {
+                @let stock = getProductStock(p);
+                @let price = getProductPrice(p);
+                @let imgUrl = getProductMainImage(p);
+
+                <div
+                  (click)="onProductCardClick(p)"
+                  class="bg-base-100 rounded-xl border border-base-200 hover:border-primary/50 hover:shadow-md transition-all duration-200 p-2.5 flex flex-col justify-between group cursor-pointer relative select-none">
+                  
+                  <!-- Imagen & Badges Superiores -->
+                  <div class="relative aspect-square rounded-lg overflow-hidden bg-base-200/30 mb-2 flex items-center justify-center">
+                    @if (imgUrl) {
+                      <img [src]="imgUrl" [alt]="p.model" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                    } @else {
+                      <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-base-content/20">checkroom</mat-icon>
+                    }
+
+                    <!-- Stock Badge -->
+                    <span
+                      class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs"
+                      [class.bg-emerald-500]="stock > 3"
+                      [class.text-white]="stock > 0"
+                      [class.bg-amber-500]="stock > 0 && stock <= 3"
+                      [class.bg-red-500]="stock === 0"
+                      [class.text-white]="stock === 0">
+                      {{ stock > 0 ? stock + ' disp.' : 'Agotado' }}
+                    </span>
+
+                    <!-- Category / Brand / Variants Pill -->
+                    <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-1">
+                      @if (p.brand || p.category) {
+                        <span class="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded">
+                          {{ p.brand || p.category }}
+                        </span>
+                      }
+                      @if (p.variants && p.variants.length > 1) {
+                        <span class="bg-primary text-primary-content text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                          {{ p.variants.length }} talles
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Datos del Producto -->
+                  <div class="space-y-1 min-w-0">
+                    <h4 class="text-xs font-bold text-base-content truncate group-hover:text-primary transition-colors leading-tight" [title]="p.model">
+                      {{ p.model }}
+                    </h4>
+                    
+                    <div class="flex items-center justify-between pt-1">
+                      <div>
+                        <span class="text-xs sm:text-sm font-black text-primary tabular-nums">
+                          ${{ price | number:'1.0-0' }}
+                        </span>
+                        @if (selectedPaymentType() === 'cash' && p.price?.listPrice && p.price.listPrice > price) {
+                          <span class="text-[9px] text-base-content/40 line-through block -mt-0.5">
+                            ${{ p.price.listPrice | number:'1.0-0' }}
+                          </span>
+                        }
+                      </div>
+
+                      <!-- Botón de Acción '+' Estilo POS Tactil Cuadrado Limpio -->
+                      <button
+                        type="button"
+                        (click)="onPlusButtonClick(p, $event)"
+                        class="w-8 h-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-content flex items-center justify-center transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+                        title="Agregar a la orden">
+                        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">add</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+        </div>
+
       </div>
 
-      <!-- Right Panel: Cart -->
-      <div class="h-full w-full lg:w-3xl bg-base-100 rounded-sm border-2 border-yellow-600 flex flex-col overflow-hidden">
+      <!-- ===================================================================== -->
+      <!-- COLUMNA DERECHA: BILL DETAILS & TICKET DE VENTA (ESTILO RESTROBIT)    -->
+      <!-- ===================================================================== -->
+      <div class="lg:col-span-5 xl:col-span-4 flex flex-col h-full min-h-0"
+        [class.max-lg:hidden]="activeTab() !== 'cart'">
 
-        <!-- Cart Header -->
-        <div class="px-4 py-3 border-b border-yellow-600 flex items-center justify-between bg-base-200/30">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-sm bg-primary text-primary-content flex items-center justify-center">
-              <mat-icon>shopping_bag</mat-icon>
-            </div>
-            <div>
-              <h2 class="text-sm font-bold">Carrito</h2>
-              <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">{{ cart().length }} items</p>
-            </div>
-          </div>
-          <button [disabled]="cart().length === 0" (click)="cart.set([])"
-            class="btn btn-ghost btn-sm btn-square text-error/60 hover:bg-error/10 hover:text-error">
-            <mat-icon>delete_sweep</mat-icon>
-          </button>
-        </div>
-
-        <!-- Payment Type Selector -->
-        <div class="px-4 py-2 border-b border-base-200 shrink-0 bg-base-200/10">
-          <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5 block">Medio de pago</label>
-          <div class="flex gap-1.5">
-            <button (click)="setPaymentType('cash')" class="btn btn-sm flex-1 rounded-sm text-[10px] font-bold gap-1"
-              [class.btn-primary]="selectedPaymentType() === 'cash'"
-              [class.btn-outline]="selectedPaymentType() !== 'cash'">
-              <mat-icon class="text-sm">payments</mat-icon>
-              Efectivo / Transferencia
-            </button>
-            <button (click)="setPaymentType('card')" class="btn btn-sm flex-1 rounded-sm text-[10px] font-bold gap-1"
-              [class.btn-primary]="selectedPaymentType() === 'card'"
-              [class.btn-outline]="selectedPaymentType() !== 'card'">
-              <mat-icon class="text-sm">credit_card</mat-icon>
-              Tarjeta
-            </button>
-          </div>
-        </div>
-
-        <!-- Cart Items -->
-        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
-          @if (cart().length === 0) {
-          <div
-            class="h-full flex flex-col items-center justify-center rounded-sm border-2 border-dashed border-base-300 p-6 text-center">
-            <mat-icon class="text-3xl! text-base-content/15 mb-2">shopping_cart</mat-icon>
-            <p class="text-xs font-bold opacity-40">Carrito vacío</p>
-            <p class="text-[10px] opacity-30 mt-1 max-w-50">Busca y selecciona productos a la izquierda.</p>
-          </div>
-          }
-
-          @for (item of cart(); track item.cartItemId; let i = $index) {
-          <div class="flex items-center gap-2.5 px-2 py-2 rounded-sm hover:bg-base-200/50 transition-colors group">
-
-            <!-- Mini Thumb -->
-            <div
-              class="w-9 h-9 bg-white rounded-sm border border-base-300 overflow-hidden shrink-0 flex items-center justify-center">
-              @if (item.product.images?.length) {
-              <img [src]="item.product.images[0].url" class="w-full h-full object-contain" />
-              } @else {
-              <mat-icon class="opacity-15">image</mat-icon>
-              }
-            </div>
-
-            <!-- Details -->
-            <div class="flex-1 min-w-0">
-              <h3 class="text-xs font-bold truncate group-hover:text-primary transition-colors">{{ item.product.model }}
+        <div class="bg-base-100 rounded-xl border border-base-200 shadow-2xs p-3.5 sm:p-4 flex flex-col h-full min-h-0 space-y-3">
+          
+          <!-- Header de la Orden (RestroBit Order #XX) -->
+          <div class="flex items-center justify-between border-b border-base-200 pb-2.5">
+            <div class="flex items-center gap-2">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center text-primary">receipt_long</mat-icon>
+              <h3 class="text-xs font-black uppercase tracking-wider text-base-content">
+                Orden #{{ currentTicketNumber() }}
               </h3>
-              @if (item.variant) {
-              <span class="text-[9px] font-bold tracking-wider text-primary/60">
-                @for (attr of item.variant.attributes; track attr.key) {
-                {{ attr.value }}{{ $last ? '' : ' · ' }}
-                }
-                @if (item.variant.color) {
-                · {{ item.variant.color.name }}
-                }
-              </span>
-              }
-              <p class="text-[10px] font-medium opacity-35">${{ item.price | number:'1.0-0' }} c/u</p>
             </div>
 
-            <!-- Qty Controls -->
-            <div class="flex items-center gap-0.5 bg-base-200/80 rounded-sm p-0.5 border border-base-300">
+            @if (cart().length > 0) {
               <button
-                class="w-6 h-6 rounded-sm hover:bg-primary hover:text-primary-content transition-colors flex items-center justify-center"
-                (click)="updateQuantity(i, -1)">
-                <mat-icon class="text-sm">remove</mat-icon>
+                type="button"
+                (click)="clearCart()"
+                class="btn btn-ghost btn-xs text-error hover:bg-error/10 font-bold rounded-lg flex items-center gap-1 cursor-pointer"
+                title="Vaciar ticket completo">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">delete_sweep</mat-icon>
+                <span>Vaciar</span>
               </button>
-              <span class="w-7 text-center text-xs font-black tabular-nums">{{ item.quantity }}</span>
-              <button
-                class="w-6 h-6 rounded-sm hover:bg-primary hover:text-primary-content transition-colors flex items-center justify-center"
-                (click)="updateQuantity(i, 1)">
-                <mat-icon class="text-sm">add</mat-icon>
-              </button>
-            </div>
-
-            <!-- Line Total -->
-            <span class="text-xs font-black tabular-nums shrink-0 w-16 text-right">${{ (item.price * item.quantity) |
-              number:'1.0-0' }}</span>
+            }
           </div>
-          }
-        </div>
 
-        <!-- Summary & Checkout -->
-        <div class="px-4 py-3 bg-base-100 border-t border-base-200 space-y-3 shrink-0">
-
-          @if (!session && !isLoadingSession) {
-          <div class="flex items-center gap-2 p-2.5 rounded-sm bg-error/10 border border-error/20 text-error">
-            <mat-icon>warning</mat-icon>
-            <span class="text-[10px] font-bold uppercase tracking-wider">Requiere apertura de caja</span>
-          </div>
-          }
-
+          <!-- Selector de Cliente (Search in Existing / Cliente) -->
           <div class="space-y-1">
-            <div class="flex justify-between items-center pt-2">
-              <span class="text-sm font-black uppercase tracking-wider">Total</span>
+            <div class="relative">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">person</mat-icon>
+              <input
+                type="text"
+                [(ngModel)]="customerName"
+                placeholder="Nombre o DNI del cliente..."
+                class="input input-xs input-bordered w-full pl-7 rounded-lg text-xs font-bold text-base-content focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <!-- Lista de Items en Carrito (Scrollable) -->
+          <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[140px]">
+            @if (cart().length === 0) {
+              <div class="h-full flex flex-col items-center justify-center text-center p-6 space-y-2 opacity-40">
+                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-3xl!">shopping_bag</mat-icon>
+                <p class="text-xs font-bold">El ticket está vacío</p>
+                <p class="text-[10px] text-base-content/60">Toca prendas del catálogo para sumarlas.</p>
+              </div>
+            } @else {
+              @for (item of cart(); track item.cartItemId; let idx = $index) {
+                @let itemImg = getProductMainImage(item.product);
+
+                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-base-200/40 border border-base-200 hover:border-primary/30 transition-all">
+                  
+                  <!-- Miniatura & Título -->
+                  <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div class="w-9 h-9 rounded-lg bg-base-200 overflow-hidden shrink-0 flex items-center justify-center border border-base-300/60">
+                      @if (itemImg) {
+                        <img [src]="itemImg" [alt]="item.product.model" class="w-full h-full object-cover" />
+                      } @else {
+                        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center text-base-content/30">checkroom</mat-icon>
+                      }
+                    </div>
+
+                    <div class="min-w-0">
+                      <h5 class="text-xs font-bold text-base-content truncate leading-tight">{{ item.product.model }}</h5>
+                      @if (item.variant) {
+                        <p class="text-[10px] text-base-content/60 font-semibold truncate mt-0.5">
+                          Talle {{ item.variant.size || 'Único' }} {{ item.variant.color?.name ? '· ' + item.variant.color.name : '' }}
+                        </p>
+                      }
+                      <p class="text-[11px] font-black text-primary tabular-nums mt-0.5">
+                        ${{ item.price | number:'1.0-0' }} × {{ item.quantity }} = ${{ (item.price * item.quantity) | number:'1.0-0' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Stepper RestroBit [-] Qty [+] -->
+                  <div class="flex items-center bg-base-100 rounded-lg border border-base-300 p-0.5 shrink-0 shadow-2xs">
+                    <button
+                      type="button"
+                      (click)="updateQuantity(idx, -1)"
+                      class="w-6 h-6 rounded-md bg-base-200 hover:bg-base-300 text-base-content flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                      title="Restar una unidad">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">remove</mat-icon>
+                    </button>
+                    <span class="w-6 text-center text-xs font-black text-base-content tabular-nums">{{ item.quantity }}</span>
+                    <button
+                      type="button"
+                      (click)="updateQuantity(idx, 1)"
+                      class="w-6 h-6 rounded-md bg-primary hover:bg-primary/90 text-primary-content flex items-center justify-center transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                      title="Sumar una unidad">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
+                    </button>
+                  </div>
+
+                  <!-- Botón Eliminar Item -->
+                  <button
+                    type="button"
+                    (click)="updateQuantity(idx, -item.quantity)"
+                    class="w-7 h-7 rounded-lg bg-error/10 hover:bg-error hover:text-white text-error flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    title="Quitar prenda del ticket">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">delete_outline</mat-icon>
+                  </button>
+
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Desglose Financiero (Bill Summary estilo RestroBit) -->
+          <div class="bg-base-200/40 p-3 rounded-lg border border-base-200 space-y-1.5 shrink-0">
+            <div class="flex justify-between items-center text-xs text-base-content/70">
+              <span>Sub total :</span>
+              <span class="font-bold text-base-content tabular-nums">${{ subtotal() | number:'1.0-0' }}</span>
+            </div>
+
+            @if (discountCoupon() > 0) {
+              <div class="flex justify-between items-center text-xs text-emerald-600 font-bold">
+                <span>Descuento :</span>
+                <span class="tabular-nums">-${{ discountCoupon() | number:'1.0-0' }}</span>
+              </div>
+            }
+
+            <div class="flex justify-between items-center pt-1.5 border-t border-base-300">
+              <span class="text-xs font-black uppercase tracking-wider text-base-content">Total :</span>
               <span class="text-xl font-black text-primary tabular-nums">${{ total() | number:'1.0-0' }}</span>
             </div>
           </div>
 
-          <button [disabled]="cart().length === 0 || !session || isProcessing()"
-            class="btn btn-primary w-full h-11 rounded-sm font-bold text-sm group" (click)="openCheckout()">
-            @if (isProcessing()) {
-            <span class="loading loading-spinner loading-sm"></span>
-            Procesando...
-            } @else {
-            Finalizar Venta
-            <mat-icon class="group-hover:translate-x-0.5 transition-transform">arrow_forward</mat-icon>
-            }
-          </button>
+          <!-- Botones de Cobro Duales (Estilo RestroBit: Cobrar / Cobrar e Imprimir) -->
+          <div class="grid grid-cols-2 gap-2.5 shrink-0">
+            <button
+              type="button"
+              [disabled]="cart().length === 0 || isProcessing()"
+              (click)="openCheckout(false)"
+              class="btn btn-primary h-11 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-40">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">payments</mat-icon>
+              <span>Cobrar</span>
+            </button>
+
+            <button
+              type="button"
+              [disabled]="cart().length === 0 || isProcessing()"
+              (click)="openCheckout(true)"
+              class="btn btn-success text-white h-11 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-40">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">print</mat-icon>
+              <span>Cobrar & Imprimir</span>
+            </button>
+          </div>
+
         </div>
+
       </div>
+
     </div>
 
-  </ng-container>
+    <!-- ── Mobile Bottom Navigation Bar (Floating Island Dock < lg) ──────────── -->
+    <div class="lg:hidden fixed bottom-3.5 left-3.5 right-3.5 z-30 bg-base-100/95 backdrop-blur-md border border-base-200 shadow-2xl rounded-2xl p-1.5 flex items-center gap-1.5 mb-[env(safe-area-inset-bottom,0px)]">
+      <button
+        type="button"
+        (click)="activeTab.set('catalog')"
+        class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-95"
+        [class.bg-primary]="activeTab() === 'catalog'"
+        [class.text-primary-content]="activeTab() === 'catalog'"
+        [class.text-base-content]="activeTab() !== 'catalog'"
+        [class.hover:bg-base-200]="activeTab() !== 'catalog'">
+        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">storefront</mat-icon>
+        <span>Catálogo ({{ filteredProducts().length }})</span>
+      </button>
 
-</app-page-layout>
-
-<!-- Variant Selection Modal -->
-@if (showVariantModal() && selectedProduct()) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-  (click)="showVariantModal.set(false)">
-  <div class="bg-base-100 rounded-sm border border-base-300 shadow-xl w-full max-w-lg mx-4 overflow-hidden"
-    (click)="$event.stopPropagation()">
-    <div class="px-5 py-3 bg-primary text-primary-content flex justify-between items-center">
-      <div>
-        <h3 class="text-sm font-bold">Seleccionar variante</h3>
-        <p class="text-xs opacity-60">{{ selectedProduct()?.model }}</p>
-      </div>
-      <button class="btn btn-circle btn-sm btn-ghost text-white hover:bg-white/20"
-        (click)="showVariantModal.set(false)">
-        <mat-icon>close</mat-icon>
+      <button
+        type="button"
+        (click)="activeTab.set('cart')"
+        class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer relative shadow-2xs active:scale-95"
+        [class.bg-primary]="activeTab() === 'cart'"
+        [class.text-primary-content]="activeTab() === 'cart'"
+        [class.text-base-content]="activeTab() !== 'cart'"
+        [class.hover:bg-base-200]="activeTab() !== 'cart'">
+        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">receipt_long</mat-icon>
+        <span>Ticket ({{ totalItems() }}) · ${{ total() | number:'1.0-0' }}</span>
+        @if (totalItems() > 0 && activeTab() !== 'cart') {
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-base-100 absolute top-2 right-3 animate-ping"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-base-100 absolute top-2 right-3"></span>
+        }
       </button>
     </div>
-    <div class="p-3 space-y-1.5 max-h-[50vh] overflow-y-auto">
-      @for (variant of selectedProduct()?.variants; track variant._id) {
-      <div
-        class="flex items-center gap-3 p-3 rounded-sm border border-base-200 hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors group"
-        (click)="addVariantToCart(selectedProduct(), variant)">
-        @if (variant.color) {
-        <div class="w-7 h-7 rounded-full border-2 border-white shadow shrink-0" [style.background]="variant.color.hex">
-        </div>
-        }
-        <div class="flex-1 min-w-0">
-          @for (attr of variant.attributes; track attr.key) {
-          <p class="text-sm font-bold group-hover:text-primary transition-colors">{{ attr.key }}: {{ attr.value }}</p>
-          }
-          <p class="text-[10px] font-bold opacity-35">{{ variant.color?.name || 'Estándar' }}</p>
-        </div>
-        <div class="text-right shrink-0">
-          <p class="text-sm font-black text-primary tabular-nums">${{ getProductPrice(selectedProduct()) |
-            number:'1.0-0' }}</p>
-          <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm"
-            [class]="variant.stock > 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'">
-            Stock: {{ variant.stock }}
-          </span>
-        </div>
-      </div>
-      }
-    </div>
-  </div>
-</div>
-}
 
-<!-- Payment / Split Modal -->
-@if (showPaymentModal()) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-  (click)="showPaymentModal.set(false)">
-  <div
-    class="bg-base-100 rounded-sm border border-base-300 shadow-xl w-full max-w-3xl mx-4 flex flex-col overflow-hidden"
-    style="max-height: 80vh;" (click)="$event.stopPropagation()">
-
-    <!-- Modal Header -->
-    <div class="px-5 py-3 bg-neutral text-neutral-content flex justify-between items-center shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-sm bg-white/10 flex items-center justify-center">
-          <mat-icon>account_balance_wallet</mat-icon>
-        </div>
-        <div>
-          <h3 class="text-sm font-bold">Cobro de Venta</h3>
-          <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">Comprobante Interno</p>
-        </div>
-      </div>
-      <div class="text-right">
-        <p class="text-[9px] uppercase font-bold opacity-35">Total</p>
-        <p class="text-2xl font-black text-primary tabular-nums">${{ total() | number:'1.0-0' }}</p>
-      </div>
-    </div>
-
-    <!-- Modal Body -->
-    <div class="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
-
-      <!-- Left: Payment List -->
-      <div class="w-full md:w-1/2 p-4 overflow-y-auto space-y-3 border-r border-base-200 bg-base-200/20">
-        <div class="flex items-center justify-between">
-          <h4 class="text-[10px] font-bold uppercase tracking-widest opacity-35">Desglose de Pago</h4>
-          <span class="badge badge-neutral badge-sm font-bold text-[9px]">{{ splitPayments().length }} PARTES</span>
-        </div>
-
-        @if (splitPayments().length === 0) {
-        <div class="py-10 text-center opacity-20">
-          <mat-icon class="text-4xl!">payments</mat-icon>
-          <p class="text-xs font-bold mt-2">Agrega pagos a la derecha</p>
-        </div>
-        }
-
-        <div class="space-y-1.5">
-          @for (p of splitPayments(); track $index; let i = $index) {
-          <div class="group flex items-center justify-between bg-base-100 p-3 rounded-sm border border-base-300">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center">
-                <mat-icon>credit_card</mat-icon>
+    <!-- ========================================================================= -->
+    <!-- MODAL: SELECCIÓN DE VARIANTE (TALLES Y COLORES - DENTRO DE CONTENT)       -->
+    <!-- ========================================================================= -->
+    @if (showVariantModal() && selectedProduct(); as prod) {
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="showVariantModal.set(false)">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
+          
+          <!-- Header Modal Variante -->
+          <div class="flex items-center justify-between border-b border-base-200 pb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              @let prodImg = getProductMainImage(prod);
+              <div class="w-11 h-11 rounded-xl bg-base-200 overflow-hidden shrink-0 flex items-center justify-center border border-base-300/60">
+                @if (prodImg) {
+                  <img [src]="prodImg" [alt]="prod.model" class="w-full h-full object-cover" />
+                } @else {
+                  <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center text-primary">checkroom</mat-icon>
+                }
               </div>
-              <div>
-                <p class="text-[9px] uppercase font-bold opacity-35">{{ p.method }}</p>
-                <p class="font-black text-base tabular-nums">${{ p.amount | number:'1.0-0' }}</p>
+              <div class="min-w-0">
+                <h3 class="text-sm font-black text-base-content truncate">{{ prod.model }}</h3>
+                <p class="text-[10px] text-base-content/60 font-bold uppercase tracking-wider">{{ prod.brand || prod.category || 'Seleccionar Talle' }}</p>
               </div>
             </div>
+            <button (click)="showVariantModal.set(false)" class="btn btn-ghost btn-sm btn-circle text-base-content/50 hover:text-base-content flex items-center justify-center cursor-pointer">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Lista de Variantes -->
+          <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            <p class="text-[10px] font-black uppercase tracking-wider text-base-content/40">Talles y Colores Disponibles:</p>
+
+            <div class="grid grid-cols-1 gap-2">
+              @for (v of prod.variants; track v._id || v.sku) {
+                <button
+                  type="button"
+                  [disabled]="v.stock <= 0"
+                  (click)="addVariantToCart(prod, v)"
+                  class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:border-primary hover:bg-primary/5 transition-all text-left group cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs">
+                  
+                  <div class="flex items-center gap-2.5">
+                    @if (v.color?.hex) {
+                      <span class="w-5 h-5 rounded-full border border-black/20 shrink-0 shadow-2xs" [style.background-color]="v.color.hex"></span>
+                    }
+                    <div>
+                      <span class="text-xs font-black text-base-content group-hover:text-primary block">
+                        Talle {{ v.size || 'Único' }} {{ v.color?.name ? '· ' + v.color.name : '' }}
+                      </span>
+                      <span class="text-[9px] font-mono text-base-content/40">SKU: {{ v.sku || 'N/A' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="text-right flex items-center gap-3">
+                    <div>
+                      <span class="badge badge-xs font-bold text-[9px]" [class.badge-success]="v.stock > 2" [class.badge-warning]="v.stock <= 2 && v.stock > 0" [class.badge-error]="v.stock === 0">
+                        {{ v.stock > 0 ? v.stock + ' disp.' : 'Agotado' }}
+                      </span>
+                      <span class="text-xs font-black text-primary block mt-0.5 tabular-nums">
+                        ${{ getProductPrice(prod) | number:'1.0-0' }}
+                      </span>
+                    </div>
+                    <div class="w-7 h-7 rounded-lg bg-primary group-hover:bg-primary/90 text-primary-content flex items-center justify-center transition-all shadow-2xs">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
+                    </div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: COBRO TÁCTIL (COLLECT PAYMENT ESTILO RESTROBIT)                    -->
+    <!-- ========================================================================= -->
+    @if (showPaymentModal()) {
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="showPaymentModal.set(false)">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
+          
+          <!-- Header Modal Cobro -->
+          <div class="flex items-center justify-between border-b border-base-200 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">point_of_sale</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-xs font-black text-base-content">Cobrar Venta #{{ currentTicketNumber() }}</h3>
+                <p class="text-[10px] text-base-content/50 font-bold">Cliente: {{ customerName() }}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[9px] font-bold uppercase text-base-content/40 block">Total a Pagar</span>
+              <span class="text-base font-black text-primary tabular-nums">${{ total() | number:'1.0-0' }}</span>
+            </div>
+          </div>
+
+          <!-- 4 Métodos de Cobro (RestroBit Tabs) -->
+          <div class="grid grid-cols-4 gap-1 p-1 bg-base-200 rounded-xl">
             <button
-              class="btn btn-circle btn-xs btn-ghost text-error opacity-0 group-hover:opacity-100 transition-opacity"
-              (click)="removePayment(i)">
-              <mat-icon>close</mat-icon>
+              type="button"
+              (click)="selectMethod('EFECTIVO')"
+              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [class.bg-base-100]="selectedMethod() === 'EFECTIVO'"
+              [class.shadow-2xs]="selectedMethod() === 'EFECTIVO'"
+              [class.text-primary]="selectedMethod() === 'EFECTIVO'"
+              [class.text-base-content]="selectedMethod() !== 'EFECTIVO'"
+              [class.opacity-60]="selectedMethod() !== 'EFECTIVO'">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">payments</mat-icon>
+              <span class="text-[10px]">Efectivo</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="selectMethod('QR')"
+              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [class.bg-base-100]="selectedMethod() === 'QR'"
+              [class.shadow-2xs]="selectedMethod() === 'QR'"
+              [class.text-primary]="selectedMethod() === 'QR'"
+              [class.text-base-content]="selectedMethod() !== 'QR'"
+              [class.opacity-60]="selectedMethod() !== 'QR'">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
+              <span class="text-[10px]">QR MP</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="selectMethod('TRANSFERENCIA')"
+              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [class.bg-base-100]="selectedMethod() === 'TRANSFERENCIA'"
+              [class.shadow-2xs]="selectedMethod() === 'TRANSFERENCIA'"
+              [class.text-primary]="selectedMethod() === 'TRANSFERENCIA'"
+              [class.text-base-content]="selectedMethod() !== 'TRANSFERENCIA'"
+              [class.opacity-60]="selectedMethod() !== 'TRANSFERENCIA'">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">account_balance</mat-icon>
+              <span class="text-[10px]">Transf.</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="selectMethod('TARJETA')"
+              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [class.bg-base-100]="selectedMethod() === 'TARJETA'"
+              [class.shadow-2xs]="selectedMethod() === 'TARJETA'"
+              [class.text-primary]="selectedMethod() === 'TARJETA'"
+              [class.text-base-content]="selectedMethod() !== 'TARJETA'"
+              [class.opacity-60]="selectedMethod() !== 'TARJETA'">
+              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">credit_card</mat-icon>
+              <span class="text-[10px]">Tarjeta</span>
             </button>
           </div>
+
+          <!-- ── TAB 1: EFECTIVO (TECLADO NUMÉRICO & BILLETES ESTILO RESTROBIT) ── -->
+          @if (selectedMethod() === 'EFECTIVO') {
+            <div class="space-y-2.5 bg-base-200/30 p-3.5 rounded-xl border border-base-200">
+              
+              <!-- Input Monto Recibido & Vuelto -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-base-100 p-2.5 rounded-lg border border-base-200">
+                  <span class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block">Efectivo Recibido</span>
+                  <span class="text-base font-black text-base-content tabular-nums">${{ cashReceived() | number:'1.0-0' }}</span>
+                </div>
+
+                <div class="p-2.5 rounded-lg border transition-colors"
+                  [class.bg-emerald-500/10]="cashReceived() >= total()"
+                  [class.border-emerald-500/30]="cashReceived() >= total()"
+                  [class.text-emerald-600]="cashReceived() >= total()"
+                  [class.bg-error/10]="cashReceived() < total()"
+                  [class.border-error/30]="cashReceived() < total()"
+                  [class.text-error]="cashReceived() < total()">
+                  <span class="text-[9px] font-bold uppercase tracking-wider opacity-70 block">
+                    {{ cashReceived() >= total() ? 'Vuelto a Entregar' : 'Faltan' }}
+                  </span>
+                  <span class="text-base font-black tabular-nums">
+                    ${{ (cashReceived() >= total() ? cashChange() : (total() - cashReceived())) | number:'1.0-0' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Billetes Rápidos Argentinos -->
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <button (click)="setQuickCash(total())" class="btn btn-2xs btn-primary rounded-lg font-bold text-[10px]">
+                  Exacto (${{ total() | number:'1.0-0' }})
+                </button>
+                <button (click)="setQuickCash(10000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                  $10.000
+                </button>
+                <button (click)="setQuickCash(20000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                  $20.000
+                </button>
+                <button (click)="setQuickCash(50000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                  $50.000
+                </button>
+                <button (click)="setQuickCash(100000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                  $100.000
+                </button>
+              </div>
+
+              <!-- Teclado Numérico Táctil RestroBit (Keypad) -->
+              <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+                @for (k of ['1','2','3','4','5','6','7','8','9','C','0','⌫']; track k) {
+                  <button
+                    type="button"
+                    (click)="keypadPress(k)"
+                    class="btn btn-sm bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg font-black text-sm transition-all active:scale-95 shadow-2xs flex items-center justify-center">
+                    {{ k }}
+                  </button>
+                }
+              </div>
+            </div>
           }
-        </div>
 
-        @if (splitPayments().length > 0) {
-        <div class="p-3 rounded-sm bg-primary/5 border border-dashed border-primary/20 space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-[10px] font-bold opacity-35 uppercase tracking-widest">Acreditado</span>
-            <span class="text-sm font-bold tabular-nums">${{ getPaidAmount() | number:'1.0-0' }}</span>
-          </div>
-          <div class="flex justify-between items-center pt-2 border-t border-primary/10">
-            <span class="text-xs font-bold text-primary uppercase tracking-widest">Restante</span>
-            <span class="text-lg font-black text-primary tabular-nums">${{ getRemainingAmount() | number:'1.0-0'
-              }}</span>
-          </div>
-        </div>
-        }
-      </div>
+          <!-- ── TAB 2: QR DINÁMICO ─────────────────────────────────────────────── -->
+          @if (selectedMethod() === 'QR') {
+            <div class="p-3 bg-base-200/30 rounded-xl border border-base-200 text-center space-y-2 flex flex-col items-center">
+              <span class="text-xs font-bold text-base-content/70">Escaneá con Mercado Pago o cualquier app bancaria</span>
+              
+              <div class="p-2.5 bg-white rounded-xl shadow-2xs inline-block">
+                <img [src]="qrImageUrl()" alt="QR Cobro" class="w-44 h-44 object-contain" />
+              </div>
 
-      <!-- Right: Payment Form -->
-      <div class="w-full md:w-1/2 p-4 flex flex-col gap-4 bg-base-100">
+              <span class="text-xs font-black text-primary">Monto Exacto: ${{ total() | number:'1.0-0' }}</span>
+            </div>
+          }
 
-        <div class="space-y-2">
-          <label class="text-[10px] font-bold uppercase tracking-widest opacity-35">Método de Cobro</label>
-          <div class="grid grid-cols-2 gap-1.5">
-            @for (m of paymentMethods; track m.id) {
-            <button (click)="currentPaymentMethod.set(m.id)" [class.btn-primary]="currentPaymentMethod() === m.id"
-              [class.btn-outline]="currentPaymentMethod() !== m.id" class="btn btn-sm font-bold text-[10px] rounded-sm">
-              {{ m.name }}
+          <!-- ── TAB 3: TRANSFERENCIA BANCARIA (ALIAS + FOTO COMPROBANTE) ───────── -->
+          @if (selectedMethod() === 'TRANSFERENCIA') {
+            <div class="space-y-2.5 bg-base-200/30 p-3.5 rounded-xl border border-base-200">
+              
+              <!-- Datos Alias -->
+              <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-100 border border-base-200">
+                <div>
+                  <span class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block">Alias del Negocio</span>
+                  <span class="text-xs font-black text-base-content font-mono">{{ storeAlias() }}</span>
+                </div>
+                <button (click)="copyAlias()" class="btn btn-ghost btn-2xs btn-circle text-primary flex items-center justify-center cursor-pointer" title="Copiar Alias">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">content_copy</mat-icon>
+                </button>
+              </div>
+
+              <!-- Captura de Comprobante por Cámara o Archivo -->
+              <div>
+                <label class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block mb-1">
+                  Foto del Comprobante (Cámara / Subir)
+                </label>
+
+                @if (!transferReceiptPreview()) {
+                  <label class="flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-dashed border-base-300 hover:border-primary/50 bg-base-100 cursor-pointer transition-colors group text-center space-y-1">
+                    <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-primary">photo_camera</mat-icon>
+                    <span class="text-xs font-bold text-base-content/80 group-hover:text-primary">Tomar Foto con Cámara / Subir</span>
+                    <span class="text-[9px] text-base-content/40">Saca foto a la pantalla del cliente</span>
+                    <input type="file" accept="image/*" capture="environment" (change)="onReceiptFileSelected($event)" class="hidden" />
+                  </label>
+                } @else {
+                  <div class="relative rounded-xl overflow-hidden border border-base-300 bg-black aspect-16/9 flex items-center justify-center">
+                    <img [src]="transferReceiptPreview()" alt="Comprobante Adjunto" class="w-full h-full object-contain" />
+                    <button (click)="removeReceipt()" class="btn btn-error btn-2xs btn-circle absolute top-1.5 right-1.5 text-white flex items-center justify-center cursor-pointer">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- ── TAB 4: TARJETA / POS ───────────────────────────────────────────── -->
+          @if (selectedMethod() === 'TARJETA') {
+            <div class="p-5 bg-base-200/30 rounded-xl border border-base-200 text-center space-y-2">
+              <mat-icon class="text-[36px]! w-9! h-9! leading-none flex items-center justify-center text-primary mx-auto">credit_card</mat-icon>
+              <p class="text-xs font-bold text-base-content">Cobro por Terminal POS / Tarjeta</p>
+              <p class="text-xs text-base-content/50">Cobrá el monto de ${{ total() | number:'1.0-0' }} en el posnet físico y confirma.</p>
+            </div>
+          }
+
+          <!-- Botones Finales Modal -->
+          <div class="flex gap-2 pt-2 border-t border-base-200">
+            <button
+              type="button"
+              (click)="showPaymentModal.set(false)"
+              class="btn btn-ghost btn-sm rounded-xl font-bold flex-1">
+              Volver
             </button>
-            }
+
+            <button
+              type="button"
+              (click)="processSale()"
+              [disabled]="isProcessing() || (selectedMethod() === 'EFECTIVO' && cashReceived() < total())"
+              class="btn btn-primary btn-sm rounded-xl font-black flex-[2] gap-1.5 shadow-sm cursor-pointer flex items-center justify-center">
+              @if (isProcessing()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Registrando...</span>
+              } @else {
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">verified</mat-icon>
+                <span>CONFIRMAR VENTA (${{ total() | number:'1.0-0' }})</span>
+              }
+            </button>
           </div>
-        </div>
 
-        <div class="form-control">
-          <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1">Monto</label>
-          <div class="relative group">
-            <span
-              class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-base-content/20 group-focus-within:text-primary transition-colors">$</span>
-            <input type="number" [ngModel]="paymentAmount()" (ngModelChange)="paymentAmount.set($event)"
-              class="input input-bordered w-full pl-10 font-black text-xl h-14 rounded-sm" />
-          </div>
-        </div>
-
-        <button class="btn btn-neutral w-full h-10 rounded-sm font-bold text-xs uppercase" (click)="addPayment()">
-          <mat-icon>add_card</mat-icon>
-          Adjuntar al cobro
-        </button>
-
-        <div class="form-control mt-auto">
-          <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1">Notas</label>
-          <textarea class="textarea textarea-bordered h-20 rounded-sm text-sm" [ngModel]="notes()"
-            (ngModelChange)="notes.set($event)" placeholder="Observaciones internas..."></textarea>
         </div>
       </div>
-    </div>
+    }
 
-    <!-- Modal Footer -->
-    <div class="px-5 py-3 border-t border-base-200 bg-base-100 flex gap-3 shrink-0">
-      <button class="btn btn-ghost flex-1 rounded-sm font-bold text-xs uppercase"
-        (click)="showPaymentModal.set(false)">Volver</button>
-      <button class="btn btn-primary flex-[2] h-11 font-bold text-sm rounded-sm group"
-        [disabled]="getRemainingAmount() > 0 || isProcessing()" (click)="processSale()">
-        @if (isProcessing()) {
-        <span class="loading loading-spinner loading-sm"></span>
-        Procesando...
-        } @else {
-        Confirmar Venta
-        <mat-icon class="group-hover:scale-110 transition-transform">verified</mat-icon>
-        }
-      </button>
-    </div>
+    <!-- ========================================================================= -->
+    <!-- MODAL: VENTA EXITOSA & POST-VENTA                                         -->
+    <!-- ========================================================================= -->
+    @if (showSuccessModal() && lastCompletedOrder(); as order) {
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-sm w-full p-5 text-center space-y-3.5 animate-scale-up">
+          
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+            <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center">task_alt</mat-icon>
+          </div>
+
+          <div>
+            <h3 class="text-base font-black text-base-content">¡Venta Registrada!</h3>
+            <p class="text-xs font-mono text-base-content/50 mt-0.5">Orden #{{ order.orderNumber }}</p>
+            <p class="text-lg font-black text-primary tabular-nums mt-1">${{ order.total | number:'1.0-0' }}</p>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button (click)="printTicket()" class="btn btn-neutral btn-sm w-full rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">print</mat-icon>
+              <span>Imprimir Ticket Térmico</span>
+            </button>
+
+            <button (click)="shareWhatsApp()" class="btn btn-ghost border border-base-300 btn-sm w-full rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 text-emerald-600 cursor-pointer">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">share</mat-icon>
+              <span>Enviar por WhatsApp</span>
+            </button>
+
+            <button (click)="startNewSale()" class="btn btn-primary btn-sm w-full rounded-xl font-black text-xs cursor-pointer">
+              <span>➕ Nueva Venta</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    }
 
   </div>
-</div>
-}
+</app-page-layout>

@@ -417,6 +417,28 @@ export class ProductStoreService {
     }
   }
 
+  async bulkCreateProducts(products: any[]) {
+    try {
+      const res = await this.#productService.bulkCreate(products);
+      this.#allProductsForStats.reload();
+      this.#fetchedProducts.reload();
+      return res;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async bulkUpdateProducts(updates: any[]) {
+    try {
+      const res = await this.#productService.bulkUpdate(updates);
+      this.#allProductsForStats.reload();
+      this.#fetchedProducts.reload();
+      return res;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   #addProduct(product: IProduct) {
     this.#fetchedProducts.update((state) => {
       if (!state) return state;

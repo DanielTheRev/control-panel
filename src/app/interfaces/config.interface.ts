@@ -80,6 +80,12 @@ export interface IDolarRate {
   fechaActualizacion: string;
 }
 
+export interface IPOSConfig {
+  transferValidationMode: 'fast_receipt' | 'strict_admin_approval';
+  allowManualDiscount?: boolean;
+  autoPrintReceipt?: boolean;
+}
+
 export interface IEcommerceConfig {
   name: string;
   logo?: string;
@@ -93,6 +99,7 @@ export interface IEcommerceConfig {
   dollarQuoteType?: 'oficial' | 'blue' | 'bolsa' | 'ccl' | 'tarjeta' | 'mayorista' | 'cripto' | 'custom';
   customDollarRate?: number;
   pricingStrategy?: IPricingStrategy;
+  posConfig?: IPOSConfig;
   integrations?: IEcommerceIntegrations;
   contact: {
     email: string;

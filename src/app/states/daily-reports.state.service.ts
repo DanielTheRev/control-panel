@@ -1,27 +1,38 @@
 import { httpResource } from '@angular/common/http';
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { OrdersService } from '../services/orders.service';
+import { SaleWithDetail } from '../interfaces/sales.interface';
 
-interface DailyStats {
+export interface HourlyBreakpoint {
+  hour: number;
+  revenue: number;
+  count: number;
+}
+
+export interface DailyStats {
   date: string;
   totalRevenue: number;
   totalEarnings: number;
+  totalCostPrice?: number;
   salesCount: {
     total: number;
     local: number;
     online: number;
   };
+  refunds: {
+    total: number;
+    count: number;
+  };
   incomeByMethod: Record<string, number>;
+  revenueByMethod: Record<string, number>;
+  hourlyBreakdown: HourlyBreakpoint[];
+  salesWithDetails: SaleWithDetail[];
 }
-
 
 @Injectable({
   providedIn: 'root',
 })
 export class DailyReportsStoreService {
-  #orderService = inject(OrdersService);
-
   // Date signal for reactivity
   private _selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
   readonly selectedDate = this._selectedDate.asReadonly();
@@ -44,7 +55,7 @@ export class DailyReportsStoreService {
 
     return {
       isLoading,
-      hasError: !!error, // Convertimos el objeto de error a booleano
+      hasError: !!error,
       hasData: this.#fetchedStats.value() !== null,
       stats
     };
@@ -52,6 +63,22 @@ export class DailyReportsStoreService {
 
   setDate(date: string) {
     this._selectedDate.set(date);
+  }
+
+  setToday() {
+    this._selectedDate.set(new Date().toISOString().split('T')[0]);
+  }
+
+  prevDay() {
+    const current = new Date(this._selectedDate());
+    current.setDate(current.getDate() - 1);
+    this._selectedDate.set(current.toISOString().split('T')[0]);
+  }
+
+  nextDay() {
+    const current = new Date(this._selectedDate());
+    current.setDate(current.getDate() + 1);
+    this._selectedDate.set(current.toISOString().split('T')[0]);
   }
 
   refresh() {

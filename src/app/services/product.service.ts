@@ -189,11 +189,11 @@ export class ProductService {
     );
   }
 
-  searchProducts(query: string): Observable<IPaginatedResult<any>> {
+  searchProducts(query: string, limit: number = 200): Observable<IPaginatedResult<any>> {
+    const params: any = { limit: limit.toString() };
+    if (query) params.q = query;
     return this.#http
-      .get<IPaginatedResult<any>>(`${this.#apiUrl}/search`, {
-        params: { q: query },
-      })
+      .get<IPaginatedResult<any>>(`${this.#apiUrl}/search`, { params })
       .pipe(
         map((res) => {
           if (res && Array.isArray(res.data)) {
@@ -228,6 +228,34 @@ export class ProductService {
             loading: 'Actualizando estado de los productos...',
             success: `Productos ${isActive ? 'activados' : 'desactivados'} correctamente`,
             error: 'Error al actualizar el estado de los productos',
+          }),
+        ),
+    );
+  }
+
+  bulkCreate(products: any[]) {
+    return firstValueFrom(
+      this.#http
+        .post<any>(`${this.#apiUrl}/bulk-create`, { products })
+        .pipe(
+          this.#toast.observe({
+            loading: 'Creando productos en masa...',
+            success: (res) => `¡${res.createdCount || products.length} productos creados exitosamente!`,
+            error: (err: any) => err?.error?.message || 'Error en la creación masiva de productos',
+          }),
+        ),
+    );
+  }
+
+  bulkUpdate(updates: any[]) {
+    return firstValueFrom(
+      this.#http
+        .patch<any>(`${this.#apiUrl}/bulk-update`, { updates })
+        .pipe(
+          this.#toast.observe({
+            loading: 'Actualizando productos seleccionados...',
+            success: (res) => `¡${res.updatedCount || updates.length} productos actualizados exitosamente!`,
+            error: (err: any) => err?.error?.message || 'Error en la actualización masiva de productos',
           }),
         ),
     );

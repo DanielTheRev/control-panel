@@ -116,7 +116,7 @@ export class OrdersService {
   }
 
   /** Registra una venta física en sucursal (POS) */
-  async registerLocalSale(data: { items: any[], splitPayments: any[], userId?: string, notes?: string }): Promise<any> {
+  async registerLocalSale(data: { items: any[], splitPayments: any[], userId?: string, notes?: string, paymentReceipt?: { url: string, public_id?: string } }): Promise<any> {
     return await firstValueFrom(
       this._http.post<any>(`${this.apiURI}/admin/local-sale`, data).pipe(
         map(res => {
@@ -126,6 +126,29 @@ export class OrdersService {
           return res;
         })
       )
+    );
+  }
+
+  /** Aprueba una transferencia bancaria auditada manualmente */
+  async approveTransfer(orderId: string): Promise<any> {
+    return await firstValueFrom(
+      this._http.patch<any>(`${this.apiURI}/admin/orders/${orderId}/approve-transfer`, {}).pipe(
+        map(res => {
+          if (res && res.order) {
+            res.order = sanitizeOrder(res.order);
+          }
+          return res;
+        })
+      )
+    );
+  }
+
+  /** Sube comprobante de pago */
+  async uploadReceipt(orderId: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('receipt', file);
+    return await firstValueFrom(
+      this._http.post<any>(`${this.apiURI}/${orderId}/receipt`, formData)
     );
   }
 

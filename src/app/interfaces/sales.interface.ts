@@ -2,6 +2,8 @@ export type SalesRange = 'day' | 'week' | 'month' | 'year';
 
 export interface SaleItemDetail {
   productName: string;
+  image?: string;
+  variant?: string;
   quantity: number;
   unitPrice: number;
   costPrice: number;
@@ -13,6 +15,8 @@ export interface SaleWithDetail {
   orderNumber: string;
   createdAt: string;
   saleType: 'LOCAL' | 'ONLINE';
+  status?: string;
+  paymentStatus?: string;
   total: number;
   earnings: number;
   paymentMethod: string;
@@ -24,7 +28,15 @@ export interface DailyBreakpoint {
   date: string;       // 'YYYY-MM-DD'
   revenue: number;
   earnings: number;
-  count: number;
+  ordersCount: number;
+}
+
+export interface TopProduct {
+  productName: string;
+  image: string;
+  quantity: number;
+  revenue: number;
+  earnings: number;
 }
 
 export interface SalesStatsResponse {
@@ -36,6 +48,8 @@ export interface SalesStatsResponse {
   totalRevenue: number;
   totalEarnings: number;
   totalCostPrice: number;
+  averageTicket: number;
+  averageMargin: number;
 
   salesCount: {
     total: number;
@@ -43,7 +57,13 @@ export interface SalesStatsResponse {
     online: number;
   };
 
+  refunds: {
+    total: number;
+    count: number;
+  };
+
   revenueByMethod: Record<string, number>;
   dailyBreakdown: DailyBreakpoint[];
+  topProducts: TopProduct[];
   salesWithDetails: SaleWithDetail[];
 }

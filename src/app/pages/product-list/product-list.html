@@ -116,6 +116,17 @@
         <span class="hidden xl:inline text-xs font-bold">Copiar p/ IA</span>
       </button>
 
+      <!-- Botón Crear Masivo con IA -->
+      <button
+        type="button"
+        (click)="openAiBulkModal('create')"
+        class="btn btn-sm btn-outline border-purple-300 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all duration-200 shrink-0 font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer"
+        matTooltip="Crear productos masivamente con IA"
+      >
+        <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
+        <span class="hidden md:inline">Crear con IA</span>
+      </button>
+
       <!-- Botón Nuevo Producto -->
       <button
         type="button"
@@ -473,6 +484,15 @@
               </div>
               <div class="flex items-center gap-1 sm:gap-2">
                 <button
+                  class="btn btn-xs sm:btn-sm bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-2xs cursor-pointer flex items-center gap-1"
+                  [disabled]="selectedProducts().length === 0"
+                  (click)="openAiBulkModal('update')"
+                  title="Actualizar masivamente estos productos con IA"
+                >
+                  <mat-icon class="text-xs sm:text-sm">auto_awesome</mat-icon>
+                  <span>Actualizar con IA</span>
+                </button>
+                <button
                   class="btn btn-xs sm:btn-sm btn-ghost text-success hover:bg-success/10"
                   [disabled]="selectedProducts().length === 0"
                   (click)="activateSelected()"
@@ -517,7 +537,7 @@
                 class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full px-3 sm:px-6 pt-2.5 pb-8"
               >
                 <div
-                  class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4.5"
+                  class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5"
                 >
                   @for (p of Products.data; track p._id) {
                     @let imageURL =
@@ -525,17 +545,32 @@
                     @let stock = getTotalStock(p);
 
                     <div
-                      class="product-card bg-base-100 rounded-2xl border border-base-300 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer"
+                      class="product-card rounded-2xl border shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer"
+                      [ngClass]="
+                        selectedProducts().includes(p._id)
+                          ? 'border-primary ring-2 ring-primary/40 bg-primary/[0.04] shadow-md'
+                          : 'bg-base-100 border-base-300 hover:border-primary/30'
+                      "
                       (click)="viewProduct(p)"
                     >
                       <!-- Top Floating Actions & Checkbox -->
                       <div
-                        class="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200"
+                        class="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center transition-opacity duration-200"
+                        [ngClass]="
+                          selectedProducts().includes(p._id)
+                            ? 'opacity-100'
+                            : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                        "
                         (click)="$event.stopPropagation()"
                       >
                         <!-- Checkbox selection -->
                         <label
-                          class="cursor-pointer bg-base-100/90 hover:bg-base-100 p-1.5 rounded-lg border border-base-300 shadow-sm flex items-center justify-center transition-all select-none"
+                          class="cursor-pointer p-1.5 rounded-lg border shadow-sm flex items-center justify-center transition-all select-none"
+                          [ngClass]="
+                            selectedProducts().includes(p._id)
+                              ? 'bg-primary text-primary-content border-primary shadow-md ring-2 ring-primary/30'
+                              : 'bg-base-100/90 hover:bg-base-100 border-base-300'
+                          "
                         >
                           <input
                             type="checkbox"
@@ -1638,4 +1673,265 @@
         </div>
 
       }
+
+</div>
+
+<!-- ============================================================== -->
+<!-- 🤖 MODAL DE ASISTENTE IA PARA CATÁLOGO (CREACIÓN Y ACTUALIZACIÓN) -->
+<!-- ============================================================== -->
+@if (showAiBulkModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn">
+    <div class="bg-base-100 border border-base-300 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scaleIn">
+      
+      <!-- Header del Modal -->
+      <div class="px-5 py-4 border-b border-base-300 flex items-center justify-between bg-base-200/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center border border-purple-500/20">
+            <mat-icon class="text-[20px]! w-5! h-5!">auto_awesome</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-base-content flex items-center gap-2">
+              <span>Asistente IA para Catálogo</span>
+              <span class="badge badge-sm" [ngClass]="aiBulkMode() === 'create' ? 'badge-primary' : 'badge-secondary'">
+                {{ aiBulkMode() === 'create' ? 'Crear Masivo' : 'Actualizar Masivo' }}
+              </span>
+            </h3>
+            <p class="text-xs text-base-content/60">
+              {{ aiBulkMode() === 'create' ? 'Creá decenas de prendas con talles, costos y variantes en segundos usando ChatGPT o Gemini.' : 'Actualizá talles, costos, stock o descripciones de tus ' + selectedProducts().length + ' productos seleccionados.' }}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeAiBulkModal()"
+          class="btn btn-sm btn-ghost btn-circle text-base-content/60 hover:text-base-content"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Selector de Modo (Pestañas) -->
+      <div class="flex border-b border-base-300 bg-base-200/20 px-5 pt-2 gap-2">
+        <button
+          type="button"
+          (click)="openAiBulkModal('create')"
+          class="btn btn-sm rounded-b-none border-b-2 font-bold transition-all"
+          [ngClass]="aiBulkMode() === 'create' ? 'border-primary text-primary bg-base-100 shadow-2xs' : 'border-transparent text-base-content/50 hover:text-base-content'"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">add_box</mat-icon>
+          <span>⚡ Crear Masivo</span>
+        </button>
+        <button
+          type="button"
+          (click)="openAiBulkModal('update')"
+          class="btn btn-sm rounded-b-none border-b-2 font-bold transition-all"
+          [ngClass]="aiBulkMode() === 'update' ? 'border-secondary text-secondary bg-base-100 shadow-2xs' : 'border-transparent text-base-content/50 hover:text-base-content'"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">update</mat-icon>
+          <span>🔄 Actualizar Masivo ({{ selectedProducts().length }})</span>
+        </button>
+      </div>
+
+      <!-- Contenido Scrollable -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+        
+        <!-- PASO 1: Generador de Prompt -->
+        <div class="bg-base-200/50 p-4 rounded-xl border border-base-300 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-primary text-primary-content text-xs font-black flex items-center justify-center">1</span>
+              <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
+                {{ aiBulkMode() === 'create' ? 'Copiá el Prompt Maestro para la IA' : 'Copiá el Prompt con tus ' + selectedProducts().length + ' Productos' }}
+              </h4>
+            </div>
+
+            <button
+              type="button"
+              (click)="aiBulkMode() === 'create' ? copyAiCreatePrompt() : copyAiUpdatePrompt()"
+              class="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl shadow-sm cursor-pointer flex items-center gap-1.5"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">content_copy</mat-icon>
+              <span>{{ aiPromptCopied() ? '¡Prompt Copiado!' : 'Copiar Prompt para ChatGPT / IA' }}</span>
+            </button>
+          </div>
+
+          @if (aiPromptCopied()) {
+            <div class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <mat-icon class="text-[16px]! w-4! h-4! text-emerald-600">check_circle</mat-icon>
+              <span>¡Prompt copiado al portapapeles! Pegáselo a ChatGPT / Gemini con tu lista o indicaciones, y copiá su respuesta JSON.</span>
+            </div>
+          }
+
+          <!-- Guía Visual de Tipos Aceptados -->
+          <div class="text-[11px] bg-base-100 p-3 rounded-lg border border-base-300/80 text-base-content/70 space-y-1.5">
+            <p class="font-bold text-base-content/90 flex items-center gap-1">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">info</mat-icon>
+              <span>Propiedades que el sistema entiende automáticamente:</span>
+            </p>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <span class="badge badge-xs badge-neutral font-mono">model (string)</span>
+              <span class="badge badge-xs badge-neutral font-mono">costPriceARS (number)</span>
+              <span class="badge badge-xs badge-neutral font-mono">category (string)</span>
+              <span class="badge badge-xs badge-neutral font-mono">variants: [ {{ '{' }} colorName, colorHex, size, stock {{ '}' }} ]</span>
+              <span class="badge badge-xs badge-neutral font-mono">sizeGuide: {{ '{' }} headers, rows, tolerance {{ '}' }}</span>
+              <span class="badge badge-xs badge-neutral font-mono">shortDescription (string)</span>
+              <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex")</span>
+              <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
+              <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
+              @if (aiBulkMode() === 'update') {
+                <span class="badge badge-xs badge-secondary font-mono">_id (string ObjectId obligatorio)</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 2: Pegar Respuesta de la IA -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-primary text-primary-content text-xs font-black flex items-center justify-center">2</span>
+              <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
+                Pegá la respuesta JSON de la IA
+              </h4>
+            </div>
+            <button
+              type="button"
+              (click)="parseAiInput()"
+              class="btn btn-xs btn-primary font-bold rounded-lg gap-1 cursor-pointer"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">play_arrow</mat-icon>
+              <span>Validar y Previsualizar</span>
+            </button>
+          </div>
+
+          <textarea
+            [ngModel]="aiRawInput()"
+            (ngModelChange)="aiRawInput.set($event)"
+            rows="6"
+            class="textarea textarea-bordered w-full font-mono text-xs rounded-xl bg-base-200/30"
+            placeholder="Pegá acá el JSON que te devolvió ChatGPT [ { &quot;model&quot;: &quot;...&quot;, &quot;variants&quot;: [...] } ]..."
+          ></textarea>
+
+          @if (aiParseError()) {
+            <div class="p-2.5 rounded-xl bg-error/15 border border-error/30 text-error text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <mat-icon class="text-[16px]! w-4! h-4!">error</mat-icon>
+              <span>{{ aiParseError() }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- PASO 3: Previsualización de Cambios / Nuevos Productos -->
+        @if (aiParsedCreateItems().length > 0 || aiParsedUpdateItems().length > 0) {
+          <div class="space-y-3 pt-2 border-t border-base-300">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-success text-success-content text-xs font-black flex items-center justify-center">3</span>
+                <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
+                  Previsualización ({{ aiBulkMode() === 'create' ? aiParsedCreateItems().length + ' Productos a Crear' : aiParsedUpdateItems().length + ' Productos a Actualizar' }})
+                </h4>
+              </div>
+              <span class="text-xs font-bold text-success flex items-center gap-1">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">check</mat-icon>
+                <span>Estructura 100% Válida</span>
+              </span>
+            </div>
+
+            <!-- Grilla de Tarjetas Previsualizadas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
+              @if (aiBulkMode() === 'create') {
+                @for (item of aiParsedCreateItems(); track $index) {
+                  <div class="p-3 bg-base-200/60 border border-base-300 rounded-xl space-y-1.5 text-xs">
+                    <div class="flex items-start justify-between gap-1">
+                      <h5 class="font-black text-base-content truncate">{{ item.model }}</h5>
+                      <span class="badge badge-xs badge-neutral font-bold">{{ item.category }}</span>
+                    </div>
+                    <p class="text-[11px] text-base-content/60">{{ item.brand }} • Costo: ${{ item.costPriceARS | currency:'ARS':'symbol':'1.0-0' }}</p>
+                    @if (item.variants && item.variants.length > 0) {
+                      <div class="flex flex-wrap gap-1 pt-1">
+                        @for (v of item.variants; track $index) {
+                          <span class="badge badge-xs badge-outline text-[9px]">
+                            {{ v.colorName }}: {{ v.size }} (x{{ v.stock }})
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              } @else {
+                @for (item of aiParsedUpdateItems(); track $index) {
+                  <div class="p-3 bg-base-200/60 border border-base-300 rounded-xl space-y-1.5 text-xs">
+                    <div class="flex items-start justify-between gap-1">
+                      <h5 class="font-black text-base-content truncate">{{ item.model || 'ID: ' + item._id }}</h5>
+                      <span class="badge badge-xs badge-secondary font-mono">Modificación</span>
+                    </div>
+                    @if (item.costPriceARS) {
+                      <p class="text-[11px] text-base-content/70">Nuevo Costo: ${{ item.costPriceARS | currency:'ARS':'symbol':'1.0-0' }}</p>
+                    }
+                    @if (item.variants && item.variants.length > 0) {
+                      <div class="flex flex-wrap gap-1 pt-1">
+                        @for (v of item.variants; track $index) {
+                          <span class="badge badge-xs badge-outline text-[9px]">
+                            {{ v.colorName || 'Único' }}: {{ v.size }} (x{{ v.stock }})
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer con Acciones -->
+      <div class="px-5 py-4 border-t border-base-300 flex items-center justify-between bg-base-200/50">
+        <button
+          type="button"
+          (click)="closeAiBulkModal()"
+          class="btn btn-sm btn-ghost"
+        >
+          Cancelar
+        </button>
+
+        <div class="flex items-center gap-2">
+          @if (aiBulkMode() === 'create') {
+            <button
+              type="button"
+              [disabled]="aiParsedCreateItems().length === 0 || aiProcessing()"
+              (click)="executeAiBulkCreate()"
+              class="btn btn-sm btn-primary font-black rounded-xl gap-1.5 shadow-md cursor-pointer"
+            >
+              @if (aiProcessing()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Creando productos...</span>
+              } @else {
+                <mat-icon class="text-[16px]! w-4! h-4!">check</mat-icon>
+                <span>Crear {{ aiParsedCreateItems().length }} Productos</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              [disabled]="aiParsedUpdateItems().length === 0 || aiProcessing()"
+              (click)="executeAiBulkUpdate()"
+              class="btn btn-sm btn-secondary font-black rounded-xl gap-1.5 shadow-md cursor-pointer"
+            >
+              @if (aiProcessing()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Actualizando productos...</span>
+              } @else {
+                <mat-icon class="text-[16px]! w-4! h-4!">check</mat-icon>
+                <span>Aplicar a {{ aiParsedUpdateItems().length }} Productos</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+    </div>
+  </div>
+}
 

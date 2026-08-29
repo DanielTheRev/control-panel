@@ -1,18 +1,20 @@
 import {
   AfterViewInit,
   Component,
+  computed,
   effect,
   ElementRef,
   inject,
+  signal,
   ViewChild,
 } from '@angular/core';
-import { CommonModule, DecimalPipe, PercentPipe } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { SalesStateService } from '../../states/sales.state.service';
-import { SalesRange } from '../../interfaces/sales.interface';
+import { DailyBreakpoint, SalesRange, SaleWithDetail } from '../../interfaces/sales.interface';
 
 // Dynamic import de Chart.js para evitar errores si aún no está instalado
 let ChartLib: any;
@@ -20,7 +22,7 @@ let ChartLib: any;
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageLayout, PageHeader, MatIconModule, DecimalPipe, PercentPipe],
+  imports: [CommonModule, FormsModule, PageLayout, PageHeader, MatIconModule, DecimalPipe],
   templateUrl: './sales.html',
   styleUrl: './sales.scss',
 })
@@ -34,12 +36,35 @@ export class SalesComponent implements AfterViewInit {
 
   readonly ranges: { value: SalesRange; label: string }[] = [
     { value: 'day', label: 'Hoy' },
-    { value: 'week', label: 'Semana' },
-    { value: 'month', label: 'Mes' },
-    { value: 'year', label: 'Año' },
+    { value: 'week', label: 'Esta Semana' },
+    { value: 'month', label: 'Este Mes' },
+    { value: 'year', label: 'Este Año' },
   ];
 
+  // Filtros locales
+  searchQuery = signal<string>('');
+  paymentFilter = signal<string>('all');
   expandedSales = new Set<string>();
+
+  // Ventas filtradas en vivo
+  filteredSales = computed<SaleWithDetail[]>(() => {
+    const all = this.state().stats?.salesWithDetails || [];
+    const query = this.searchQuery().toLowerCase().trim();
+    const method = this.paymentFilter();
+
+    return all.filter((sale) => {
+      const matchSearch =
+        !query ||
+        sale.orderNumber.toLowerCase().includes(query) ||
+        (sale.buyer?.name && sale.buyer.name.toLowerCase().includes(query)) ||
+        (sale.buyer?.email && sale.buyer.email.toLowerCase().includes(query)) ||
+        sale.items.some((i) => i.productName.toLowerCase().includes(query));
+
+      const matchMethod = method === 'all' || sale.paymentMethod === method;
+
+      return matchSearch && matchMethod;
+    });
+  });
 
   constructor() {
     // Cargar Chart.js de forma dinámica
@@ -48,14 +73,12 @@ export class SalesComponent implements AfterViewInit {
       ChartLib = Chart;
       this.chartReady = true;
 
-      // Si ya hay stats esperando, renderizar ahora
       const stats = this.state().stats;
       if (stats && this.revenueChartRef) {
         this.renderChart(stats.dailyBreakdown ?? [], stats.currency);
       }
     }).catch(() => {});
 
-    // Efecto reactivo: cuando cambian stats, re-renderizar
     effect(() => {
       const stats = this.state().stats;
       if (stats && this.revenueChartRef && this.chartReady) {
@@ -111,11 +134,7 @@ export class SalesComponent implements AfterViewInit {
   }
 
   getRangeLabel(range: SalesRange): string {
-    return this.ranges.find(r => r.value === range)?.label ?? range;
-  }
-
-  getMaxRevenue(breakdown: { revenue: number }[]): number {
-    return Math.max(...breakdown.map(d => d.revenue), 1);
+    return this.ranges.find((r) => r.value === range)?.label ?? range;
   }
 
   getMethodPercentage(amount: number, total: number): number {
@@ -130,8 +149,12 @@ export class SalesComponent implements AfterViewInit {
     return saleType === 'LOCAL' ? 'Mostrador' : 'Online';
   }
 
+  printReport(): void {
+    window.print();
+  }
+
   private renderChart(
-    breakdown: { date: string; revenue: number; earnings: number; count: number }[],
+    breakdown: DailyBreakpoint[],
     currency: 'USD' | 'ARS'
   ): void {
     if (!this.revenueChartRef?.nativeElement || !ChartLib) return;

@@ -1,163 +1,384 @@
 @if (reportState(); as state) {
 <app-page-layout>
-  <app-page-header header title="Reportes Diarios" subtitle="Resumen de ventas e ingresos por día">
-    <div actions class="flex items-center gap-2 bg-base-100 px-3 py-1.5 rounded-sm border border-base-300">
-      <mat-icon class="text-primary/50 text-sm">calendar_today</mat-icon>
-      <span class="text-[10px] font-bold uppercase tracking-widest opacity-35">Fecha:</span>
-      <input type="date" [ngModel]="state.stats?.date" (ngModelChange)="reportStore.setDate($event)"
-        class="input input-sm input-ghost bg-transparent border-none font-bold text-xs cursor-pointer p-0 h-auto min-h-0">
+  <!-- HEADER con navegación rápida de días y selector de fecha -->
+  <app-page-header header title="Resumen Diario & Arqueo" subtitle="Control de caja, ingresos y actividad por jornada">
+    <div actions class="flex items-center flex-wrap gap-2">
+
+      <!-- Botones de Navegación de Días -->
+      <div class="flex items-center bg-base-100 p-1 rounded-2xl border border-base-200 shadow-2xs">
+        <button
+          (click)="reportStore.prevDay()"
+          class="btn btn-xs btn-ghost btn-square rounded-xl"
+          title="Día anterior">
+          <mat-icon class="text-sm">chevron_left</mat-icon>
+        </button>
+
+        <button
+          (click)="reportStore.setToday()"
+          class="px-2.5 py-1 text-xs font-bold rounded-xl transition-colors"
+          [class.bg-primary]="isToday()"
+          [class.text-primary-content]="isToday()"
+          [class.text-base-content]="!isToday()"
+          [class.hover:bg-base-200]="!isToday()">
+          Hoy
+        </button>
+
+        <button
+          (click)="reportStore.nextDay()"
+          class="btn btn-xs btn-ghost btn-square rounded-xl"
+          title="Día siguiente">
+          <mat-icon class="text-sm">chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Datepicker integrado -->
+      <label class="date-input-clean" (click)="dailyDateInput.showPicker()">
+        <mat-icon class="text-primary text-[16px]! w-4! h-4! shrink-0 pointer-events-none">calendar_today</mat-icon>
+        <input
+          #dailyDateInput
+          type="date"
+          [ngModel]="reportStore.selectedDate()"
+          (ngModelChange)="reportStore.setDate($event)">
+      </label>
+
+      <!-- Botón Imprimir Reporte -->
+      <button class="btn btn-sm btn-ghost btn-square rounded-xl border border-base-200 bg-base-100 shadow-2xs" (click)="printReport()" title="Imprimir / Exportar Cierre del Día">
+        <mat-icon class="text-sm">print</mat-icon>
+      </button>
+
+      <!-- Botón refresh -->
+      <button class="btn btn-sm btn-ghost btn-square rounded-xl border border-base-200 bg-base-100 shadow-2xs" (click)="reportStore.refresh()" title="Actualizar datos">
+        <mat-icon class="text-sm" [class.animate-spin]="state.isLoading">refresh</mat-icon>
+      </button>
     </div>
   </app-page-header>
 
-  <div content class="flex flex-col gap-4 max-w-5xl mx-auto w-full pb-6">
+  <div content class="flex flex-col gap-5 w-full pb-10">
 
     <!-- Loading -->
     @if (state.isLoading) {
-      <div class="flex flex-col items-center justify-center py-20 space-y-3">
-        <span class="loading loading-ring loading-md text-primary"></span>
-        <p class="text-sm text-base-content/40 font-bold">Compilando datos del día...</p>
+      <div class="flex flex-col items-center justify-center py-24 space-y-3">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <p class="text-xs text-base-content/50 font-bold uppercase tracking-wider">Generando arqueo del día...</p>
       </div>
     }
 
-    @if (!state.isLoading && state.hasData && state.stats) {
-      <!-- KPI Row -->
+    @if (!state.isLoading && state.hasData && state.stats; as stats) {
+      
+      <!-- ── Fecha Destacada y Alertas ─────────────────────────────────────────── -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-primary badge-sm font-black uppercase tracking-wider">
+            {{ isToday() ? 'Jornada de Hoy' : (reportStore.selectedDate() | date:'EEEE dd/MM/yyyy':'':'es-AR') }}
+          </span>
+          <span class="badge badge-ghost badge-sm font-mono text-[11px] opacity-70">
+            {{ stats.salesCount.total }} operaciones
+          </span>
+        </div>
+
+        @if (stats.refunds && stats.refunds.count > 0) {
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-error/10 border border-error/20 text-error text-xs font-bold">
+            <mat-icon class="text-sm">assignment_return</mat-icon>
+            <span>{{ stats.refunds.count }} cancelaciones en el día (${{ stats.refunds.total | number:'1.0-0' }})</span>
+          </div>
+        }
+      </div>
+
+      <!-- ── KPI ROW (4 Tarjetas Principales) ─────────────────────────────────── -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
-        <!-- Total Revenue -->
-        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+        <!-- Facturación Total -->
+        <div class="bg-base-100 rounded-2xl p-4 border border-base-200 shadow-2xs space-y-2 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <div class="w-8 h-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center">
+            <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <mat-icon class="text-sm">payments</mat-icon>
             </div>
-            <mat-icon class="text-base-content/10">trending_up</mat-icon>
+            <mat-icon class="text-base-content/10 text-lg">trending_up</mat-icon>
           </div>
           <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Ingresos Brutos</p>
-            <h3 class="text-xl font-black tabular-nums">${{ state.stats.totalRevenue | number:'1.0-0' }}</h3>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Total Cobrado (Bruto)</p>
+            <h3 class="text-xl font-black tabular-nums text-base-content">${{ stats.totalRevenue | number:'1.0-0' }}</h3>
           </div>
         </div>
 
-        <!-- Net Earnings -->
-        <div class="bg-neutral text-neutral-content rounded-sm p-4 border border-neutral space-y-3">
+        <!-- Ganancia Neta Estimada -->
+        <div class="bg-primary/5 rounded-2xl p-4 border border-primary/20 shadow-2xs space-y-2 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <div class="w-8 h-8 rounded-sm bg-white/10 flex items-center justify-center">
-              <mat-icon class="text-sm text-white">trending_up</mat-icon>
+            <div class="w-8 h-8 rounded-xl bg-primary text-primary-content flex items-center justify-center shadow-xs">
+              <mat-icon class="text-sm">savings</mat-icon>
             </div>
-            <mat-icon class="opacity-10">show_chart</mat-icon>
+            <span class="badge badge-primary badge-xs text-[9px] font-black">Ganancia</span>
           </div>
           <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Ganancia Estimada</p>
-            <h3 class="text-xl font-black text-primary tabular-nums">${{ state.stats.totalEarnings | number:'1.0-0' }}</h3>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-primary font-bold">Ganancia Neta del Día</p>
+            <h3 class="text-xl font-black text-primary tabular-nums">${{ stats.totalEarnings | number:'1.0-0' }}</h3>
           </div>
         </div>
 
-        <!-- Local Sales -->
-        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+        <!-- Ventas Mostrador (POS) -->
+        <div class="bg-base-100 rounded-2xl p-4 border border-base-200 shadow-2xs space-y-2 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <div class="w-8 h-8 rounded-sm bg-secondary/10 text-secondary flex items-center justify-center">
+            <div class="w-8 h-8 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
               <mat-icon class="text-sm">storefront</mat-icon>
             </div>
-            <span class="text-xl font-black tabular-nums">{{ state.stats.salesCount.local }}</span>
+            <span class="text-lg font-black tabular-nums text-base-content">{{ stats.salesCount.local }}</span>
           </div>
           <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Ventas Mostrador</p>
-            <div class="w-full bg-base-200 h-1 rounded-full mt-1.5 overflow-hidden">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Ventas Mostrador (POS)</p>
+            <div class="w-full bg-base-200 h-1.5 rounded-full mt-2 overflow-hidden">
               <div class="bg-secondary h-full rounded-full transition-all duration-500"
-                [style.width.%]="state.stats.salesCount.total ? (state.stats.salesCount.local / state.stats.salesCount.total) * 100 : 0"></div>
+                [style.width.%]="stats.salesCount.total ? (stats.salesCount.local / stats.salesCount.total) * 100 : 0"></div>
             </div>
           </div>
         </div>
 
-        <!-- Online Sales -->
-        <div class="bg-base-100 rounded-sm p-4 border border-base-300 space-y-3">
+        <!-- Ventas Online -->
+        <div class="bg-base-100 rounded-2xl p-4 border border-base-200 shadow-2xs space-y-2 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <div class="w-8 h-8 rounded-sm bg-accent/10 text-accent flex items-center justify-center">
+            <div class="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
               <mat-icon class="text-sm">public</mat-icon>
             </div>
-            <span class="text-xl font-black tabular-nums">{{ state.stats.salesCount.online }}</span>
+            <span class="text-lg font-black tabular-nums text-base-content">{{ stats.salesCount.online }}</span>
           </div>
           <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Ventas Online</p>
-            <div class="w-full bg-base-200 h-1 rounded-full mt-1.5 overflow-hidden">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Ventas Tienda Online</p>
+            <div class="w-full bg-base-200 h-1.5 rounded-full mt-2 overflow-hidden">
               <div class="bg-accent h-full rounded-full transition-all duration-500"
-                [style.width.%]="state.stats.salesCount.total ? (state.stats.salesCount.online / state.stats.salesCount.total) * 100 : 0"></div>
+                [style.width.%]="stats.salesCount.total ? (stats.salesCount.online / stats.salesCount.total) * 100 : 0"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Detailed Breakdown -->
+      <!-- ── DETALLE DEL ARQUEO & HORAS PICO ─────────────────────────────────── -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-        <!-- Payment Methods (wider) -->
-        <div class="lg:col-span-3 bg-base-100 border border-base-300 rounded-sm overflow-hidden">
-          <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between bg-base-200/30">
-            <h3 class="text-sm font-bold flex items-center gap-2">
-              <mat-icon class="text-primary text-sm">donut_large</mat-icon>
-              Distribución de Ingresos
-            </h3>
-            <span class="badge badge-neutral badge-sm font-bold text-[9px]">{{ (state.stats.incomeByMethod | keyvalue).length }} MÉTODOS</span>
+        <!-- Distribución por Medios de Cobro -->
+        <div class="lg:col-span-3 bg-base-100 border border-base-200 rounded-3xl p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <mat-icon class="text-sm">donut_large</mat-icon>
+                </div>
+                <h3 class="text-sm font-bold text-base-content">Arqueo por Canal de Cobro</h3>
+              </div>
+              <span class="badge badge-neutral badge-sm font-mono text-[10px]">
+                {{ (stats.incomeByMethod | keyvalue).length }} CANALES
+              </span>
+            </div>
+
+            <div class="space-y-3.5">
+              @if (!stats.incomeByMethod || (stats.incomeByMethod | keyvalue).length === 0) {
+                <div class="py-12 text-center opacity-30 space-y-2">
+                  <mat-icon class="text-4xl!">credit_card_off</mat-icon>
+                  <p class="text-xs font-bold">Sin cobros registrados en esta fecha</p>
+                </div>
+              } @else {
+                @for (item of stats.incomeByMethod | keyvalue; track item.key) {
+                  <div class="space-y-1.5 group">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="font-bold text-base-content/80 group-hover:text-primary transition-colors">
+                        {{ getPaymentMethodLabel(item.key) }}
+                      </span>
+                      <div class="text-right">
+                        <span class="font-black tabular-nums">${{ item.value | number:'1.0-0' }}</span>
+                        <span class="text-[10px] font-mono opacity-50 ml-1.5">
+                          ({{ stats.totalRevenue > 0 ? ((item.value / stats.totalRevenue) * 100 | number:'1.0-0') : 0 }}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div class="w-full bg-base-200 h-2 rounded-full overflow-hidden">
+                      <div class="bg-primary h-full rounded-full transition-all duration-500"
+                        [style.width.%]="stats.totalRevenue > 0 ? (item.value / stats.totalRevenue) * 100 : 0">
+                      </div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
           </div>
-          <div class="p-5 space-y-4">
-            @if (!state.stats.incomeByMethod || (state.stats.incomeByMethod | keyvalue).length === 0) {
-              <div class="py-10 text-center opacity-20 space-y-2">
-                <mat-icon class="text-4xl!">no_sim</mat-icon>
-                <p class="text-xs font-bold">Sin transacciones registradas</p>
+
+          <div class="mt-4 pt-3 border-t border-base-200 flex items-center justify-between text-xs">
+            <span class="text-base-content/50 font-medium">Total Arqueo Consolidado:</span>
+            <span class="font-black tabular-nums text-primary text-sm">${{ stats.totalRevenue | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Horas Pico de Venta -->
+        <div class="lg:col-span-2 bg-base-100 border border-base-200 rounded-3xl p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <mat-icon class="text-sm">schedule</mat-icon>
+              </div>
+              <h3 class="text-sm font-bold text-base-content">Actividad Horaria</h3>
+            </div>
+
+            <!-- Mini histograma de 24h -->
+            @if (stats.hourlyBreakdown && stats.hourlyBreakdown.length > 0) {
+              <div class="grid grid-cols-12 gap-1 h-32 items-end pt-4 pb-1">
+                @for (slot of stats.hourlyBreakdown; track slot.hour) {
+                  @if (slot.hour >= 8 && slot.hour <= 21) {
+                    <div class="flex flex-col items-center gap-1 h-full justify-end group">
+                      <div
+                        class="w-full rounded-t-md transition-all duration-300"
+                        [class.bg-primary]="slot.count > 0"
+                        [class.bg-base-200]="slot.count === 0"
+                        [style.height.%]="getSlotHeight(slot.revenue, stats.totalRevenue)"
+                        [title]="slot.hour + ':00hs - ' + slot.count + ' ventas ($' + (slot.revenue | number:'1.0-0') + ')'">
+                      </div>
+                      <span class="text-[9px] font-mono text-base-content/40">{{ slot.hour }}</span>
+                    </div>
+                  }
+                }
               </div>
             } @else {
-              @for (item of state.stats.incomeByMethod | keyvalue; track item.key) {
-                <div class="space-y-2 group">
-                  <div class="flex justify-between items-end">
-                    <div>
-                      <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">{{ getPaymentMethodLabel(item.key) }}</p>
-                      <p class="font-black text-base group-hover:text-primary transition-colors tabular-nums">${{ item.value | number:'1.0-0' }}</p>
+              <div class="py-10 text-center opacity-30">
+                <p class="text-xs">Sin actividad horaria registrada</p>
+              </div>
+            }
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-base-200 text-center">
+            <p class="text-[11px] text-base-content/50 font-medium">Franja horaria comercial: 08:00 a 21:00hs</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LISTADO DE OPERACIONES DEL DÍA ────────────────────────────────── -->
+      @if (stats.salesWithDetails && stats.salesWithDetails.length > 0) {
+        <div class="bg-base-100 border border-base-200 rounded-3xl overflow-hidden shadow-2xs">
+          <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-200/30">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <mat-icon class="text-sm">receipt</mat-icon>
+              </div>
+              <h3 class="text-sm font-bold text-base-content">Operaciones Registradas en el Día</h3>
+            </div>
+            <span class="badge badge-neutral badge-sm font-mono text-[10px]">
+              {{ stats.salesWithDetails.length }} TICKETS
+            </span>
+          </div>
+
+          <div class="divide-y divide-base-200">
+            @for (sale of stats.salesWithDetails; track sale.orderId) {
+              <div class="group transition-colors">
+                <button
+                  class="w-full px-5 py-4 flex items-center justify-between hover:bg-base-200/50 transition-colors text-left"
+                  (click)="toggleSaleExpanded(sale.orderId)">
+
+                  <!-- Info Venta -->
+                  <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center"
+                      [class.bg-secondary/10]="sale.saleType === 'LOCAL'"
+                      [class.text-secondary]="sale.saleType === 'LOCAL'"
+                      [class.bg-accent/10]="sale.saleType === 'ONLINE'"
+                      [class.text-accent]="sale.saleType === 'ONLINE'">
+                      <mat-icon class="text-lg">{{ getSaleTypeIcon(sale.saleType) }}</mat-icon>
                     </div>
-                    <span class="text-[10px] font-bold opacity-25 tabular-nums">{{ (item.value / state.stats.totalRevenue) | percent:'1.1-1' }}</span>
+
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-black tracking-tight text-base-content">{{ sale.orderNumber }}</span>
+                        <span class="badge badge-xs font-bold"
+                          [class.badge-secondary]="sale.saleType === 'LOCAL'"
+                          [class.badge-accent]="sale.saleType === 'ONLINE'">
+                          {{ getSaleTypeLabel(sale.saleType) }}
+                        </span>
+                        <span class="badge badge-ghost badge-xs font-bold text-[10px]">
+                          {{ getPaymentMethodLabel(sale.paymentMethod) }}
+                        </span>
+                      </div>
+
+                      @if (sale.buyer) {
+                        <p class="text-xs text-base-content/60 truncate mt-0.5">
+                          <span class="font-semibold text-base-content/80">{{ sale.buyer.name }}</span> · {{ sale.buyer.email }}
+                        </p>
+                      } @else {
+                        <p class="text-xs text-base-content/40 italic mt-0.5">Comprador mostrador / invitado</p>
+                      }
+
+                      <p class="text-[10px] font-mono text-base-content/40 mt-0.5">{{ sale.createdAt | date:'HH:mm' }}hs ({{ sale.createdAt | date:'dd/MM/yyyy' }})</p>
+                    </div>
                   </div>
-                  <div class="w-full bg-base-200 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full transition-all duration-500"
-                      [style.width.%]="(item.value / state.stats.totalRevenue) * 100"></div>
+
+                  <!-- Montos -->
+                  <div class="flex items-center gap-4 shrink-0 ml-3">
+                    <div class="text-right">
+                      <p class="text-sm font-black tabular-nums text-base-content">${{ sale.total | number:'1.0-0' }}</p>
+                      <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">+${{ sale.earnings | number:'1.0-0' }}</p>
+                    </div>
+                    <div class="w-7 h-7 rounded-xl bg-base-200/60 flex items-center justify-center text-base-content/40 transition-transform duration-200"
+                      [style.transform]="isSaleExpanded(sale.orderId) ? 'rotate(180deg)' : 'rotate(0deg)'">
+                      <mat-icon class="text-sm">expand_more</mat-icon>
+                    </div>
                   </div>
-                </div>
-              }
+                </button>
+
+                <!-- Detalle Items -->
+                @if (isSaleExpanded(sale.orderId)) {
+                  <div class="px-5 pb-5 pt-2 bg-base-200/20 border-t border-base-200">
+                    <div class="rounded-2xl overflow-hidden border border-base-200 bg-base-100">
+                      <table class="w-full text-xs">
+                        <thead>
+                          <tr class="bg-base-200/50 text-[10px] uppercase tracking-wider text-base-content/50">
+                            <th class="text-left px-4 py-2.5 font-bold">Prenda</th>
+                            <th class="text-center px-3 py-2.5 font-bold">Cant.</th>
+                            <th class="text-right px-3 py-2.5 font-bold">Precio</th>
+                            <th class="text-right px-4 py-2.5 font-bold text-emerald-500">Ganancia</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-base-200">
+                          @for (item of sale.items; track $index) {
+                            <tr class="hover:bg-base-200/30 transition-colors">
+                              <td class="px-4 py-3 font-semibold">
+                                <div class="flex items-center gap-2.5">
+                                  @if (item.image) {
+                                    <img [src]="item.image" [alt]="item.productName" class="w-8 h-10 rounded-lg object-cover bg-base-200 shrink-0" />
+                                  }
+                                  <div class="min-w-0">
+                                    <p class="font-bold text-base-content truncate">{{ item.productName }}</p>
+                                    @if (item.variant) {
+                                      <span class="badge badge-ghost badge-2xs text-[9px] font-mono">{{ item.variant }}</span>
+                                    }
+                                  </div>
+                                </div>
+                              </td>
+                              <td class="px-3 py-3 text-center tabular-nums font-bold opacity-70">{{ item.quantity }}</td>
+                              <td class="px-3 py-3 text-right tabular-nums font-bold text-base-content">${{ item.unitPrice | number:'1.0-0' }}</td>
+                              <td class="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-bold">
+                                +${{ (item.unitPrice - item.costPrice) * item.quantity | number:'1.0-0' }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+              </div>
             }
           </div>
         </div>
-
-        <!-- Consolidated Volume -->
-        <div class="lg:col-span-2 bg-base-100 border border-base-300 rounded-sm overflow-hidden flex flex-col">
-          <div class="px-5 py-3 border-b border-base-200 bg-base-200/30 shrink-0">
-            <h3 class="text-sm font-bold flex items-center gap-2">
-              <mat-icon class="text-primary text-sm">bar_chart</mat-icon>
-              Volumen del Día
-            </h3>
-          </div>
-          <div class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-            <p class="text-6xl font-black text-primary tabular-nums leading-none">{{ state.stats.salesCount.total }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Operaciones Totales</p>
-            <div class="px-4 py-2 rounded-sm bg-base-200/60 border border-base-300">
-              <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">{{ state.stats.date | date:'fullDate' }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      }
     }
 
     <!-- No Data -->
     @if (!state.isLoading && !state.hasData && !state.hasError) {
-      <div class="flex flex-col items-center justify-center py-20 opacity-20 text-center space-y-3">
-        <mat-icon class="text-5xl!">search_off</mat-icon>
-        <h3 class="text-lg font-black">No hay datos disponibles</h3>
-        <p class="text-xs max-w-xs">No se encontraron registros de ventas para la fecha seleccionada.</p>
+      <div class="flex flex-col items-center justify-center py-24 opacity-30 text-center space-y-3">
+        <mat-icon class="text-6xl!">event_busy</mat-icon>
+        <h3 class="text-base font-black">No hay operaciones registradas en esta fecha</h3>
+        <p class="text-xs max-w-sm">Probá cambiando de día con los botones de navegación superiores.</p>
       </div>
     }
 
     <!-- Error -->
     @if (!state.isLoading && state.hasError) {
-      <div class="flex flex-col items-center justify-center py-20 opacity-20 text-center space-y-3">
-        <mat-icon class="text-5xl!">error</mat-icon>
-        <h3 class="text-lg font-black">Error al cargar los datos</h3>
-        <p class="text-xs max-w-xs">Intenta recargar la página o verifica tu conexión a internet.</p>
+      <div class="flex flex-col items-center justify-center py-24 opacity-40 text-center space-y-3 text-error">
+        <mat-icon class="text-6xl!">error_outline</mat-icon>
+        <h3 class="text-base font-black">Error al compilar el arqueo diario</h3>
+        <p class="text-xs max-w-xs">Verificá tu conexión o recargá el panel.</p>
       </div>
     }
 

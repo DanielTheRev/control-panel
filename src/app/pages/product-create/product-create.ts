@@ -247,7 +247,7 @@ export class ProductCreate {
 
     return {
       ...currentFormValue,
-      variants: this.#parseVariants(),
+      variants: this.parseVariants(),
       sizeGuide: sizeGuideData,
       ...(typeSpecific || {}), // Esparcimos los campos específicos
     };
@@ -661,36 +661,69 @@ export class ProductCreate {
   sizeGuideRawText = signal<string>('');
   sizeGuideParserError = signal<string | null>(null);
   showQuickPaste = signal<boolean>(true);
+  aiPromptCopied = signal<boolean>(false);
 
   toggleQuickPaste() {
     this.showQuickPaste.update((v) => !v);
+  }
+
+  copyAiPrompt() {
+    const model = this.productForm.get('model')?.value || 'Prenda / Modelo';
+    const prompt = `Por favor generá o extraé la tabla de medidas de la siguiente prenda (${model}) en este formato exacto de texto para importar en mi tienda:
+
+Talle, Ancho de Pecho (cm), Largo Total (cm), Hombro (cm)
+S: 50, 68, 44
+M: 52, 70, 46
+L: 54, 72, 48
+XL: 56, 74, 50
+* Las medidas pueden variar +/- 1.5 cm debido al proceso de confección.
+
+Reglas:
+- La primera línea debe tener los encabezados de medidas separados por coma.
+- Cada línea siguiente debe ser el Talle seguido de dos puntos y los valores en cm (ej: S: 50, 68, 44).
+- Al final podés agregar una nota de tolerancia con un asterisco *.`;
+
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(prompt);
+      this.aiPromptCopied.set(true);
+      this.showQuickPaste.set(true);
+      setTimeout(() => this.aiPromptCopied.set(false), 4000);
+    }
+  }
+
+  cleanCell(val: string): string {
+    return val
+      .replace(/^[*_~`#]+|[*_~`#]+$/g, '')
+      .replace(/\s*cm\b/gi, '')
+      .replace(/["']/g, '')
+      .trim();
   }
 
   tokenizeLine(line: string): string[] {
     if (line.includes('|')) {
       return line
         .split('|')
-        .map((s) => s.trim())
+        .map((s) => this.cleanCell(s))
         .filter((s) => s.length > 0);
     }
     if (line.includes('\t')) {
-      return line.split('\t').map((s) => s.trim());
+      return line.split('\t').map((s) => this.cleanCell(s));
     }
     if (line.includes(';')) {
-      return line.split(';').map((s) => s.trim());
+      return line.split(';').map((s) => this.cleanCell(s));
     }
-    return line.split(',').map((s) => s.trim());
+    return line.split(',').map((s) => this.cleanCell(s));
   }
 
   tokenizeValues(rest: string): string[] {
-    if (rest.includes('\t')) return rest.split('\t').map((s) => s.trim());
+    if (rest.includes('\t')) return rest.split('\t').map((s) => this.cleanCell(s));
     if (rest.includes('|'))
       return rest
         .split('|')
-        .map((s) => s.trim())
+        .map((s) => this.cleanCell(s))
         .filter((s) => s.length > 0);
-    if (rest.includes(';')) return rest.split(';').map((s) => s.trim());
-    return rest.split(',').map((s) => s.trim());
+    if (rest.includes(';')) return rest.split(';').map((s) => this.cleanCell(s));
+    return rest.split(',').map((s) => this.cleanCell(s));
   }
 
   parseAndApplySizeGuide(rawText?: string) {
@@ -1456,6 +1489,37 @@ XXL: 58, 76, 52
     this.colorGroupsControls.removeAt(index);
   }
 
+  addSizeToGroup(groupIndex: number, sizeName: string, defaultStock = 8) {
+    const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
+    const variantsArray = group.get('variants') as FormArray;
+    
+    // Evitar duplicados del mismo talle en este color
+    const exists = variantsArray.controls.some(
+      (ctrl) => ctrl.get('size')?.value?.toString().trim().toUpperCase() === sizeName.trim().toUpperCase()
+    );
+    if (exists) return;
+
+    variantsArray.push(
+      this.#fb.group({
+        _id: [''],
+        sku: [''],
+        size: [sizeName.toUpperCase(), Validators.required],
+        stock: [defaultStock, [Validators.required, Validators.min(0)]],
+        isActive: [true],
+      }),
+    );
+  }
+
+  loadPresetSizesToGroup(groupIndex: number, preset: 'remeras' | 'pantalones' | 'calzado' | 'unico') {
+    let sizes: string[] = [];
+    if (preset === 'remeras') sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+    else if (preset === 'pantalones') sizes = ['38', '40', '42', '44', '46'];
+    else if (preset === 'calzado') sizes = ['39', '40', '41', '42', '43', '44'];
+    else if (preset === 'unico') sizes = ['Único'];
+
+    sizes.forEach((sz) => this.addSizeToGroup(groupIndex, sz));
+  }
+
   addVariantToGroup(groupIndex: number) {
     const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
     const variantsArray = group.get('variants') as FormArray;
@@ -1516,7 +1580,7 @@ XXL: 58, 76, 52
     return group.get('variants') as FormArray;
   }
 
-  #parseVariants(): any[] {
+  private parseVariants(): any[] {
     const currentType = this.selectedType();
     const flatVariants: any[] = [];
 
@@ -1671,13 +1735,13 @@ XXL: 58, 76, 52
       try {
         this.#debug.log(this.productForm.value);
         // Le pasamos el fullProductData a tu armador de POST
-        this.#buildCreateFormData(formData, fullProductData);
+        this.buildCreateFormData(formData, fullProductData);
 
         this.#debug.log('=== DATOS QUE SE VAN AL BACKEND (POST) ===');
         formData.forEach((value, key) => this.#debug.log(`${key}:`, value));
 
         const id = await this.#productState.createProduct(formData);
-        this.#revokeBlobUrls();
+        this.revokeBlobUrls();
         this.#router.navigate(['/home/products', id]);
       } catch (error) {
         this.#debug.error('Error creating product', error);
@@ -1687,7 +1751,7 @@ XXL: 58, 76, 52
     }
   }
 
-  #buildCreateFormData(formData: FormData, data: any) {
+  private buildCreateFormData(formData: FormData, data: any) {
     formData.append('productType', data.productType);
     formData.append('provider', data.provider);
     if (data.linkProductProvider !== undefined && data.linkProductProvider !== null) {
@@ -1732,7 +1796,7 @@ XXL: 58, 76, 52
 
     formData.append('features', JSON.stringify(data.features));
     formData.append('specifications', JSON.stringify(data.specifications));
-    formData.append('variants', JSON.stringify(this.#parseVariants()));
+    formData.append('variants', JSON.stringify(this.parseVariants()));
 
     // Append type-specific fields from child form
     if (this.#typeSpecificValues()) {
@@ -1774,7 +1838,7 @@ XXL: 58, 76, 52
       // Si la imagen actual es una URL (ej: modo edición), la incluimos en el JSON
       if (
         typeof seoImageValue === 'string' &&
-        seoImageValue.startsWith('http')
+        (seoImageValue as string).startsWith('http')
       ) {
         seoData.metaImage = { url: seoImageValue, public_id: '' };
       }
@@ -1787,7 +1851,7 @@ XXL: 58, 76, 52
     }
   }
 
-  #revokeBlobUrls() {
+  private revokeBlobUrls() {
     this.imagesControls.value.forEach((img: any) => {
       if (img.link && img.link.startsWith('blob:')) {
         window.URL.revokeObjectURL(img.link);

@@ -1,5 +1,6 @@
 import { CurrencyPipe, NgClass } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
@@ -35,6 +36,7 @@ import { ProviderStateService } from '../../states/provider.state.service';
     RouterLink,
     MatSnackBarModule,
     MatTooltipModule,
+    FormsModule,
   ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.scss',
@@ -612,8 +614,9 @@ export class ProductList {
         if (p.finance?.additionalCosts && p.finance.additionalCosts.length > 0) {
           content += `- Costos Operativos Adicionales (Packaging/Fletes/Etc):\n`;
           p.finance.additionalCosts.forEach((c) => {
+            const normalizedConcept = /^(bolsas?|packaging|paqueter[ií]a)$/i.test(c.concept?.trim()) ? 'Paqueteria' : c.concept;
             const valStr = c.type === 'percent_over_provider' ? `${c.value}% s/costo proveedor` : `$${c.value.toLocaleString('es-AR')} fijos`;
-            content += `  • ${c.concept}: ${valStr}\n`;
+            content += `  • ${normalizedConcept}: ${valStr}\n`;
           });
         }
 
@@ -770,5 +773,286 @@ export class ProductList {
       isOld: diffDays >= 15,
       isVeryOld: diffDays >= 30
     };
+  }
+
+  // ==========================================
+  // 🤖 AI BULK SUITE (CREACIÓN Y ACTUALIZACIÓN)
+  // ==========================================
+  showAiBulkModal = signal<boolean>(false);
+  aiBulkMode = signal<'create' | 'update'>('create');
+  aiRawInput = signal<string>('');
+  aiParseError = signal<string | null>(null);
+  aiPromptCopied = signal<boolean>(false);
+  aiProcessing = signal<boolean>(false);
+
+  aiParsedCreateItems = signal<any[]>([]);
+  aiParsedUpdateItems = signal<any[]>([]);
+
+  openAiBulkModal(mode: 'create' | 'update') {
+    this.aiBulkMode.set(mode);
+    this.aiRawInput.set('');
+    this.aiParseError.set(null);
+    this.aiPromptCopied.set(false);
+    this.aiParsedCreateItems.set([]);
+    this.aiParsedUpdateItems.set([]);
+    this.showAiBulkModal.set(true);
+  }
+
+  closeAiBulkModal() {
+    this.showAiBulkModal.set(false);
+  }
+
+  async copyAiCreatePrompt() {
+    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Genera un array JSON válido con los productos solicitados siguiendo estrictamente este formato y tipos de datos:
+
+DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
+- model (string, OBLIGATORIO): Nombre/modelo del producto (ej: "Remera Oversize Vesper").
+- brand (string, OBLIGATORIO): Marca (ej: "Vura").
+- category (string, OBLIGATORIO): Categoría (ej: "Remeras", "Jeans", "Buzos").
+- productType (string, OBLIGATORIO): "ClothingProduct" | "TechProduct" | "BeautyProduct" | "GeneralProduct".
+- costPriceARS (number, OBLIGATORIO): Costo de compra al proveedor en pesos sin IVA (ej: 12500). El sistema calcula precios de venta, cuotas y márgenes automáticamente.
+- shortDescription (string, opcional): Resumen de 1-2 líneas para la tarjeta.
+- largeDescription (string HTML, opcional): Descripción completa en HTML limpio (<p>, <ul>, <li>).
+- gender (string, opcional): "Hombre" | "Mujer" | "Unisex" | "Niños".
+- material (string, opcional): Composición de la tela (ej: "100% Algodón Peinado 24/1").
+- fit (string, opcional): "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".
+- variants (Array de objetos, opcional):
+    [
+      { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "L", "stock": 12 },
+      { "colorName": "Blanco", "colorHex": "#FFFFFF", "size": "S", "stock": 8 }
+    ]
+- sizeGuide (Objeto, opcional):
+    {
+      "headers": ["Talle", "Ancho de Pecho (cm)", "Largo Total (cm)", "Hombro (cm)"],
+      "rows": [
+        { "size": "S", "values": ["52", "68", "44"] },
+        { "size": "M", "values": ["54", "70", "46"] }
+      ],
+      "tolerance": "* Medidas aproximadas (+/- 1.5 cm)."
+    }
+- images (string[] opcional): Array de URLs públicas de fotos.
+- tags (string[] opcional): Array de etiquetas (ej: ["verano", "algodon", "novedad"]).
+
+EJEMPLO COMPLETO QUE DEBES DEVOLVER:
+[
+  {
+    "model": "Remera Oversize Vesper",
+    "brand": "Vura",
+    "category": "Remeras",
+    "productType": "ClothingProduct",
+    "costPriceARS": 12500,
+    "shortDescription": "Remera oversize 100% algodón peinado 24/1.",
+    "largeDescription": "<p>Remera urbana con calce holgado y costuras reforzadas.</p>",
+    "gender": "Unisex",
+    "material": "100% Algodón Peinado 24/1",
+    "fit": "Oversized",
+    "variants": [
+      { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "L", "stock": 12 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "XL", "stock": 8 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "XXL", "stock": 5 }
+    ],
+    "sizeGuide": {
+      "headers": ["Talle", "Ancho de Pecho (cm)", "Largo Total (cm)", "Hombro (cm)"],
+      "rows": [
+        { "size": "S", "values": ["52", "68", "44"] },
+        { "size": "M", "values": ["54", "70", "46"] },
+        { "size": "L", "values": ["56", "72", "48"] },
+        { "size": "XL", "values": ["58", "74", "50"] },
+        { "size": "XXL", "values": ["60", "76", "52"] }
+      ],
+      "tolerance": "* Medidas tomadas en plano (+/- 1.5 cm)."
+    }
+  }
+]
+
+REGLAS CRÍTICAS:
+1. Responde ÚNICAMENTE con el bloque JSON (un array de objetos [ { ... } ]). No agregues texto introductorio ni explicaciones fuera del JSON.
+2. Todos los valores numéricos deben ser números reales (sin símbolos $ ni comas).`;
+
+    try {
+      await navigator.clipboard.writeText(prompt);
+      this.aiPromptCopied.set(true);
+      setTimeout(() => this.aiPromptCopied.set(false), 4000);
+      this.#snackBar.open('📋 ¡Prompt maestro de creación copiado al portapapeles!', 'Genial', { duration: 3000 });
+    } catch {
+      this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
+    }
+  }
+
+  async copyAiUpdatePrompt() {
+    const selectedIds = this.selectedProducts();
+    const allProducts = this.ProductState.products().data || [];
+    const productsToExport = allProducts.filter((p) => selectedIds.includes(p._id));
+
+    if (productsToExport.length === 0) {
+      this.#snackBar.open('Selecciona al menos un producto para actualizar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const compactProducts = productsToExport.map((p) => {
+      const cost = (p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0);
+      const variantsSummary = (p.variants || []).map((v: any) => ({
+        colorName: v.colorName || 'Único',
+        colorHex: v.colorHex || '#000000',
+        size: v.size || 'Único',
+        stock: v.stock || 0
+      }));
+
+      return {
+        _id: p._id,
+        model: p.model,
+        brand: p.brand,
+        category: p.category,
+        costPriceARS: cost,
+        currentVariants: variantsSummary,
+        shortDescription: p.shortDescription || ''
+      };
+    });
+
+    const prompt = `Actúa como especialista de catálogo para NexoCommerce. Necesito actualizar los siguientes ${compactProducts.length} productos existentes en mi tienda.
+
+A continuación tienes la lista actual de productos con sus IDs y estado actual:
+\`\`\`json
+${JSON.stringify(compactProducts, null, 2)}
+\`\`\`
+
+DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS PARA ACTUALIZAR:
+- _id (string, OBLIGATORIO): El ID original del producto que debes mantener para identificarlo.
+- model (string, opcional): Nuevo nombre del modelo.
+- brand (string, opcional): Nueva marca.
+- category (string, opcional): Nueva categoría.
+- costPriceARS (number, opcional): Nuevo costo en pesos sin IVA (ej: 14000).
+- shortDescription (string, opcional): Nueva descripción corta.
+- largeDescription (string HTML, opcional): Nueva descripción en HTML (<p>, <ul>, <li>).
+- material (string, opcional): Nueva tela/composición.
+- gender (string, opcional): "Hombre" | "Mujer" | "Unisex" | "Niños".
+- fit (string, opcional): "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".
+- variants (Array de objetos, opcional): Si vas a actualizar o agregar talles/colores/stock:
+    [
+      { "colorName": "Negro", "colorHex": "#000000", "size": "S", "stock": 10 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "M", "stock": 15 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "L", "stock": 12 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "XL", "stock": 8 },
+      { "colorName": "Negro", "colorHex": "#000000", "size": "XXL", "stock": 5 }
+    ]
+- sizeGuide (Objeto, opcional): Nueva tabla de medidas:
+    {
+      "headers": ["Talle", "Ancho (cm)", "Largo (cm)"],
+      "rows": [{ "size": "S", "values": ["50", "68"] }],
+      "tolerance": "* Medidas tomadas en plano."
+    }
+
+INSTRUCCIÓN:
+Genera un array JSON [ { "_id": "...", ...propiedadesActualizadas } ] donde para cada producto mantengas su _id e incluyas las propiedades que deben modificarse o añadirse (por ejemplo, los nuevos talles y variantes con stock, nuevos precios o descripciones).
+Responde ÚNICAMENTE con el bloque JSON.`;
+
+    try {
+      await navigator.clipboard.writeText(prompt);
+      this.aiPromptCopied.set(true);
+      setTimeout(() => this.aiPromptCopied.set(false), 4000);
+      this.#snackBar.open(`📋 ¡Prompt de actualización para ${compactProducts.length} productos copiado!`, 'Genial', { duration: 3000 });
+    } catch {
+      this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
+    }
+  }
+
+  parseAiInput() {
+    this.aiParseError.set(null);
+    let raw = this.aiRawInput().trim();
+    if (!raw) {
+      this.aiParseError.set('Por favor pega el JSON devuelto por la IA.');
+      return;
+    }
+
+    // Strip markdown code fences if present
+    raw = raw.replace(/^```(json)?/i, '').replace(/```$/i, '').trim();
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        this.aiParseError.set('El JSON debe ser un array de objetos [ { ... } ].');
+        return;
+      }
+
+      if (parsed.length === 0) {
+        this.aiParseError.set('El array JSON no contiene ningún producto.');
+        return;
+      }
+
+      if (this.aiBulkMode() === 'create') {
+        const validated = parsed.map((item: any, idx: number) => {
+          if (!item.model || !item.brand || !item.category) {
+            throw new Error(`Ítem #${idx + 1} no tiene modelo, marca o categoría.`);
+          }
+          return {
+            model: String(item.model).trim(),
+            brand: String(item.brand).trim(),
+            category: String(item.category).trim(),
+            productType: item.productType || 'ClothingProduct',
+            costPriceARS: Number(item.costPriceARS || item.price || 0),
+            shortDescription: item.shortDescription || '',
+            largeDescription: item.largeDescription || '',
+            gender: item.gender || 'Unisex',
+            material: item.material || '',
+            fit: item.fit || '',
+            variants: Array.isArray(item.variants) ? item.variants : [],
+            sizeGuide: item.sizeGuide || null,
+            images: Array.isArray(item.images) ? item.images : [],
+            tags: Array.isArray(item.tags) ? item.tags : []
+          };
+        });
+        this.aiParsedCreateItems.set(validated);
+        this.aiParsedUpdateItems.set([]);
+      } else {
+        // Update mode
+        const validated = parsed.map((item: any, idx: number) => {
+          if (!item._id) {
+            throw new Error(`Ítem #${idx + 1} (${item.model || 'sin nombre'}) no tiene la propiedad _id.`);
+          }
+          return item;
+        });
+        this.aiParsedUpdateItems.set(validated);
+        this.aiParsedCreateItems.set([]);
+      }
+    } catch (err: any) {
+      this.aiParseError.set(err.message || 'JSON inválido. Verifica la sintaxis devuelta por la IA.');
+    }
+  }
+
+  async executeAiBulkCreate() {
+    const items = this.aiParsedCreateItems();
+    if (items.length === 0) return;
+
+    this.aiProcessing.set(true);
+    try {
+      await this.ProductState.bulkCreateProducts(items);
+      this.closeAiBulkModal();
+      this.#snackBar.open(`🎉 ¡${items.length} productos creados exitosamente!`, 'Cerrar', { duration: 4000 });
+    } catch (err: any) {
+      this.#snackBar.open(err?.error?.message || 'Error al crear productos en lote.', 'Cerrar', { duration: 4000 });
+    } finally {
+      this.aiProcessing.set(false);
+    }
+  }
+
+  async executeAiBulkUpdate() {
+    const items = this.aiParsedUpdateItems();
+    if (items.length === 0) return;
+
+    this.aiProcessing.set(true);
+    try {
+      await this.ProductState.bulkUpdateProducts(items);
+      this.clearSelection();
+      this.closeAiBulkModal();
+      this.#snackBar.open(`🎉 ¡${items.length} productos actualizados exitosamente!`, 'Cerrar', { duration: 4000 });
+    } catch (err: any) {
+      this.#snackBar.open(err?.error?.message || 'Error al actualizar productos en lote.', 'Cerrar', { duration: 4000 });
+    } finally {
+      this.aiProcessing.set(false);
+    }
   }
 }

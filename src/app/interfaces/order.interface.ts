@@ -107,6 +107,10 @@ export interface IPaymentInfo {
   paymentDate?: Date;
   amount: number;
   receiptUrl?: string;
+  paymentReceipt?: {
+    url: string;
+    public_id?: string;
+  };
   receiptUploadedAt?: Date;
 }
 
@@ -114,6 +118,10 @@ export interface IPaymentInfo {
 export interface IOrder {
   _id: string;
   user?: IUser;
+  seller?: {
+    _id: string;
+    name: string;
+  };
   items: IOrderItem[];
   history: { status: OrderStatus; timestamp: Date; note?: string; target?: 'client' | 'admin' | 'all' }[];
   shippingInfo: IShippingInfo;

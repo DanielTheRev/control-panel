@@ -17,6 +17,9 @@ import { PageHeader } from "../../shared/components/page-header/page-header";
 import { PageLayout } from "../../shared/components/page-layout/page-layout";
 import { OrdersStateService } from '../../states/order.state.service';
 
+import { OrdersService } from '../../services/orders.service';
+import { NotificationsService } from '../../services/notifications.service';
+
 @Component({
   selector: 'app-client-orders',
   standalone: true,
@@ -36,14 +39,20 @@ import { OrdersStateService } from '../../states/order.state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientOrders {
-  // Inyectar el servicio de estado
+  // Inyectar servicios
   private orderStateService = inject(OrdersStateService);
+  private ordersService = inject(OrdersService);
+  private notifications = inject(NotificationsService);
   #SidebarService = inject(SidebarService);
   #debug = inject(DebugService);
 
   // Search & Filtering
   searchQuery = signal<string>('');
   copiedOrderId = signal<string | null>(null);
+
+  // Transfer Auditing Modal
+  auditingReceiptOrder = signal<IOrder | null>(null);
+  isApprovingTransfer = signal<boolean>(false);
 
   // Exponer propiedades del servicio para el template
   readonly orders = this.orderStateService.orders;
@@ -156,6 +165,28 @@ export class ClientOrders {
     setTimeout(() => {
       this.copiedOrderId.set(null);
     }, 2000);
+  }
+
+  openAuditReceipt(order: IOrder, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.auditingReceiptOrder.set(order);
+  }
+
+  async confirmApproveTransfer(): Promise<void> {
+    const order = this.auditingReceiptOrder();
+    if (!order?._id) return;
+
+    this.isApprovingTransfer.set(true);
+    try {
+      await this.ordersService.approveTransfer(order._id);
+      this.notifications.success(`Transferencia de orden #${order.orderNumber} aprobada con éxito.`);
+      this.auditingReceiptOrder.set(null);
+      this.orderStateService.refresh();
+    } catch (err: any) {
+      this.notifications.error(err.error?.message || 'Error al aprobar la transferencia.');
+    } finally {
+      this.isApprovingTransfer.set(false);
+    }
   }
 
   /**

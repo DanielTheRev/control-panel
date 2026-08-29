@@ -92,6 +92,16 @@
         <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
         <span>Indumentaria</span>
       </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('pos')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'pos' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">point_of_sale</mat-icon>
+        <span>Mostrador & POS</span>
+      </button>
     </div>
   </app-page-header>
 
@@ -1593,6 +1603,102 @@
                 }
               </div>
             </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- PESTAÑA: MOSTRADOR & POS                                                  -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'pos') {
+          <div formGroupName="posConfig" class="space-y-6">
+
+            <!-- Card: Política de Validación de Transferencias -->
+            <div class="bg-base-100 p-5 rounded-3xl border border-base-200 shadow-2xs space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <mat-icon class="text-[18px]! w-4.5! h-4.5!">account_balance</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content">Política de Transferencias en Mostrador</h3>
+                  <p class="text-xs text-base-content/50 font-medium">Define cómo deben gestionar los empleados los cobros por transferencia bancaria en el local.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <!-- Modo Rápido (Foto de Comprobante) -->
+                <label class="flex items-start gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer select-none"
+                  [class.border-primary]="configForm.get('posConfig.transferValidationMode')?.value === 'fast_receipt'"
+                  [class.bg-primary/5]="configForm.get('posConfig.transferValidationMode')?.value === 'fast_receipt'"
+                  [class.border-base-200]="configForm.get('posConfig.transferValidationMode')?.value !== 'fast_receipt'">
+                  <input
+                    type="radio"
+                    formControlName="transferValidationMode"
+                    value="fast_receipt"
+                    class="radio radio-primary radio-sm mt-0.5"
+                  />
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-base-content">Modo Rápido (Foto de Comprobante)</span>
+                      <span class="badge badge-success badge-xs font-bold text-[9px]">Recomendado</span>
+                    </div>
+                    <p class="text-[11px] text-base-content/60 leading-relaxed">
+                      El cajero puede cerrar la venta y entregar la mercadería al instante tras adjuntar la foto del comprobante. La orden queda registrada para que el administrador audite las transferencias cuando lo desee.
+                    </p>
+                  </div>
+                </label>
+
+                <!-- Modo Estricto (Aprobación en Vivo) -->
+                <label class="flex items-start gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer select-none"
+                  [class.border-primary]="configForm.get('posConfig.transferValidationMode')?.value === 'strict_admin_approval'"
+                  [class.bg-primary/5]="configForm.get('posConfig.transferValidationMode')?.value === 'strict_admin_approval'"
+                  [class.border-base-200]="configForm.get('posConfig.transferValidationMode')?.value !== 'strict_admin_approval'">
+                  <input
+                    type="radio"
+                    formControlName="transferValidationMode"
+                    value="strict_admin_approval"
+                    class="radio radio-primary radio-sm mt-0.5"
+                  />
+                  <div class="space-y-1">
+                    <span class="text-xs font-bold text-base-content">Modo Estricto (Aprobación en Vivo)</span>
+                    <p class="text-[11px] text-base-content/60 leading-relaxed">
+                      El cajero no puede cerrar la venta hasta que el administrador verifique el ingreso del dinero en su cuenta bancaria y apruebe el cobro en tiempo real por el sistema.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Card: Opciones Adicionales de Terminal POS -->
+            <div class="bg-base-100 p-5 rounded-3xl border border-base-200 shadow-2xs space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center">
+                  <mat-icon class="text-[18px]! w-4.5! h-4.5!">print</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content">Impresión y Tickets</h3>
+                  <p class="text-xs text-base-content/50 font-medium">Configuración de salida de comprobantes fiscales y térmicos.</p>
+                </div>
+              </div>
+
+              <div class="divide-y divide-base-200">
+                <div class="py-3 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-base-content">Descarga automática de Ticket Térmico</p>
+                    <p class="text-[11px] text-base-content/50">Abre el diálogo de impresión en formato 80mm al confirmar una venta en mostrador.</p>
+                  </div>
+                  <input type="checkbox" formControlName="autoPrintReceipt" class="toggle toggle-primary toggle-sm" />
+                </div>
+
+                <div class="py-3 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-base-content">Permitir descuentos manuales en mostrador</p>
+                    <p class="text-[11px] text-base-content/50">Habilita a los cajeros a modificar el total o aplicar rebajas directas.</p>
+                  </div>
+                  <input type="checkbox" formControlName="allowManualDiscount" class="toggle toggle-primary toggle-sm" />
+                </div>
+              </div>
+            </div>
+
           </div>
         }
 
