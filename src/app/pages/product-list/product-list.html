@@ -139,7 +139,7 @@
     </div>
 
     <!-- Barra de Píldoras de Categorías en Sub-Menu -->
-    <div sub-menu class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 overflow-x-auto w-full max-w-full flex-nowrap shrink-0 custom-scrollbar">
+    <div sub-menu class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 overflow-x-auto w-full max-w-full flex-nowrap shrink-0 no-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
       <button
         class="btn btn-xs sm:btn-sm rounded-full transition-all shrink-0 font-medium"
         [ngClass]="
@@ -151,6 +151,7 @@
       >
         Todas
       </button>
+
       @for (cat of Categories(); track cat) {
         <button
           class="btn btn-xs sm:btn-sm rounded-full transition-all shrink-0 font-medium"
@@ -176,13 +177,33 @@
     ProductState.currentNoSeoOnlyFilter() ||
     ProductState.currentHasSeoImageFilter() !== undefined ||
     ProductState.currentHasSizeGuideFilter() !== undefined ||
-    ProductState.currentHasLinkProviderFilter() !== undefined
+    ProductState.currentHasLinkProviderFilter() !== undefined ||
+    ProductState.currentIsFeaturedFilter() !== undefined ||
+    (ProductState.currentSortBy() && ProductState.currentSortBy() !== 'newest')
   ) {
     <div class="mx-3 sm:mx-6 my-2 px-3.5 py-2 rounded-2xl bg-base-100/90 border border-base-200/80 shadow-2xs backdrop-blur-xs flex flex-wrap items-center gap-2 text-xs shrink-0">
       <div class="flex items-center gap-1.5 text-base-content/60 font-semibold text-[11px] mr-0.5">
         <mat-icon class="text-[15px]! w-4! h-4! text-primary">filter_alt</mat-icon>
         <span>Filtros:</span>
       </div>
+
+      @if (ProductState.currentSortBy() && ProductState.currentSortBy() !== 'newest') {
+        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
+          ↕️ {{ getSortLabel(ProductState.currentSortBy()) }}
+          <button (click)="ProductState.setSortBy('newest')" class="hover:opacity-75 cursor-pointer ml-0.5">
+            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+          </button>
+        </span>
+      }
+
+      @if (ProductState.currentIsFeaturedFilter() !== undefined) {
+        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
+          ⭐ {{ ProductState.currentIsFeaturedFilter() ? 'Solo Destacados' : 'No Destacados' }}
+          <button (click)="ProductState.setIsFeaturedFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
+            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+          </button>
+        </span>
+      }
 
       @if (ProductState.currentHasSeoImageFilter() !== undefined) {
         <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
@@ -299,6 +320,26 @@
             </div>
           </div>
 
+          <!-- Ordenamiento del Catálogo -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
+              ↕️ Ordenar Catálogo Por
+            </label>
+            <select
+              class="select select-bordered w-full text-sm"
+              [value]="ProductState.currentSortBy()"
+              (change)="ProductState.setSortBy($any($event.target).value)"
+            >
+              <option value="newest">Más Nuevos (Por defecto)</option>
+              <option value="oldest">Más Antiguos</option>
+              <option value="price_asc">💰 Menor Precio (Efectivo / Transferencia)</option>
+              <option value="price_desc">💰 Mayor Precio (Efectivo / Transferencia)</option>
+              <option value="name_asc">🔤 Nombre / Modelo (A - Z)</option>
+              <option value="name_desc">🔤 Nombre / Modelo (Z - A)</option>
+              <option value="featured">⭐ Destacados Primero</option>
+            </select>
+          </div>
+
           <!-- Filtro por Proveedor -->
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
@@ -329,6 +370,27 @@
               <option value="">Todos los estados</option>
               <option value="true">Activos (Visibles en tienda)</option>
               <option value="false">Inactivos (Pausados)</option>
+            </select>
+          </div>
+
+          <!-- Filtro Productos Destacados -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
+                ⭐ Productos Destacados
+              </label>
+              @if (ProductState.featuredCount() > 0) {
+                <span class="badge badge-xs badge-warning font-bold">{{ ProductState.featuredCount() }} destacados</span>
+              }
+            </div>
+            <select
+              class="select select-bordered w-full text-sm"
+              [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')"
+              (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+            >
+              <option value="">Todos los productos</option>
+              <option value="true">⭐ Solo Productos Destacados ({{ ProductState.featuredCount() }})</option>
+              <option value="false">⚪ No Destacados ({{ ProductState.nonFeaturedCount() }})</option>
             </select>
           </div>
 
@@ -743,11 +805,30 @@
 
                           <!-- Model Name -->
                           <h3
-                            class="text-sm font-extrabold text-base-content tracking-tight line-clamp-2 mb-3 group-hover:text-primary transition-colors"
+                            class="text-sm font-extrabold text-base-content tracking-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors"
                             [ngClass]="{ 'opacity-50': !p.isActive }"
                           >
                             {{ p.model }}
                           </h3>
+
+                          <!-- Color Swatches & Variants Summary -->
+                          @let colors = getProductColors(p);
+                          @if (colors.length > 0) {
+                            <div class="flex items-center gap-1.5 mb-3 flex-wrap" (click)="$event.stopPropagation()">
+                              <div class="flex items-center -space-x-1">
+                                @for (c of colors.slice(0, 5); track c.name) {
+                                  <span
+                                    class="w-3.5 h-3.5 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block transition-transform hover:scale-125 hover:z-10 cursor-pointer"
+                                    [style.backgroundColor]="c.hex || '#000000'"
+                                    [matTooltip]="c.name"
+                                  ></span>
+                                }
+                              </div>
+                              <span class="text-[9px] font-bold text-base-content/60">
+                                {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
+                              </span>
+                            </div>
+                          }
                         </div>
 
                         <div>
@@ -1046,6 +1127,25 @@
                                 >
                               }
                             </div>
+
+                            <!-- Color Swatches & Variants Summary in Table -->
+                            @let colors = getProductColors(p);
+                            @if (colors.length > 0) {
+                              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <div class="flex items-center -space-x-1">
+                                  @for (c of colors.slice(0, 5); track c.name) {
+                                    <span
+                                      class="w-3 h-3 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block transition-transform hover:scale-125 hover:z-10"
+                                      [style.backgroundColor]="c.hex || '#000000'"
+                                      [matTooltip]="c.name"
+                                    ></span>
+                                  }
+                                </div>
+                                <span class="text-[9px] font-bold text-base-content/50">
+                                  {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
+                                </span>
+                              </div>
+                            }
                           </div>
                         </div>
                       </td>
@@ -1373,6 +1473,26 @@
                               >
                             }
                           </div>
+
+                          <!-- Color Swatches Mobile -->
+                          @let colors = getProductColors(p);
+                          @if (colors.length > 0) {
+                            <div class="flex items-center gap-1 my-1 flex-wrap">
+                              <div class="flex items-center -space-x-1">
+                                @for (c of colors.slice(0, 4); track c.name) {
+                                  <span
+                                    class="w-2.5 h-2.5 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block"
+                                    [style.backgroundColor]="c.hex || '#000000'"
+                                    [title]="c.name"
+                                  ></span>
+                                }
+                              </div>
+                              <span class="text-[8.5px] font-bold text-base-content/50">
+                                {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
+                              </span>
+                            </div>
+                          }
+
                           <p class="text-xs text-success font-bold mt-0.5">
                             {{
                               p.price.cashTransferPrice

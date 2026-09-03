@@ -1,248 +1,1278 @@
 <app-page-layout>
-  <app-page-header header title="Métodos de Pago" subtitle="Configura cómo tus clientes pueden pagar">
-    <div actions class="flex">
+  <app-page-header
+    header
+    title="Cobros & Pagos"
+    subtitle="Gestioná pasarelas fintech, cuotas sin interés, descuentos en efectivo/transferencia y cuentas bancarias."
+  >
+    <div actions class="flex items-center gap-2">
       @if (activeTab() === 'manual') {
-      <a routerLink="/home/payment-methods/create" class="btn btn-primary btn-sm md:btn-md shadow-lg">
-        <mat-icon>add</mat-icon>
-        Nuevo Método
-      </a>
+        <a routerLink="/home/payment-methods/create" class="btn btn-primary btn-sm rounded-xl font-bold shadow-sm">
+          <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+          <span>Nueva Cuenta / Método</span>
+        </a>
       }
+      @if (activeTab() === 'gateways') {
+        <button
+          type="button"
+          class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-sm px-4"
+          [disabled]="isSavingGateways()"
+          (click)="saveGateways()"
+        >
+          @if (isSavingGateways()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Guardando...</span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+            <span>Guardar Pasarelas</span>
+          }
+        </button>
+      }
+      @if (activeTab() === 'pricing') {
+        <button
+          type="button"
+          class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-sm px-4"
+          [disabled]="isSavingPricing()"
+          (click)="savePricing()"
+        >
+          @if (isSavingPricing()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Guardando...</span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+            <span>Guardar Estrategia</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Pestañas de Navegación del Hub -->
+    <div sub-menu class="inline-flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs overflow-x-auto max-w-full custom-scrollbar">
+      <button
+        type="button"
+        (click)="activeTab.set('gateways')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'gateways' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">bolt</mat-icon>
+        <span>Pasarelas Online (MP, Getnet & Ualá)</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('manual')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'manual' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">account_balance</mat-icon>
+        <span>Transferencia & Efectivo</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('pricing')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'pricing' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">trending_up</mat-icon>
+        <span>Márgenes & Precios</span>
+      </button>
     </div>
   </app-page-header>
 
   <ng-container content>
-    <div class="flex flex-col h-full gap-6">
-      <!-- Tabs Navigation -->
-      <div
-        class="flex items-center gap-2 p-1.5 bg-base-100 rounded-2xl shadow-inner border border-base-content/10 self-start">
-        <button class="flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-300 font-bold text-sm"
-          [class.bg-primary]="activeTab() === 'manual'" [class.text-primary-content]="activeTab() === 'manual'"
-          [class.shadow-lg]="activeTab() === 'manual'" [class.hover:bg-base-200]="activeTab() !== 'manual'"
-          (click)="activeTab.set('manual')">
-          <mat-icon class="text-lg">home_repair_service</mat-icon>
-          Métodos Manuales
-        </button>
-        <button class="flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-300 font-bold text-sm"
-          [class.bg-primary]="activeTab() === 'mercadopago'"
-          [class.text-primary-content]="activeTab() === 'mercadopago'" [class.shadow-lg]="activeTab() === 'mercadopago'"
-          [class.hover:bg-base-200]="activeTab() !== 'mercadopago'" (click)="activeTab.set('mercadopago')">
-          <mat-icon class="text-lg">bolt</mat-icon>
-          Mercado Pago (Checkout)
-        </button>
-      </div>
+    <div class="p-3 sm:p-5 w-full max-w-6xl mx-auto space-y-6">
 
-      <!-- Tab Content: Manual Methods -->
-      @if (activeTab() === 'manual') {
-      <div class="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div class="table-container rounded-2xl overflow-hidden bg-base-100 shadow-xl border border-base-content/5">
-          <table mat-table [dataSource]="state().manualMethods" class="w-full">
-            <!-- Name Column -->
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef> Nombre </th>
-              <td mat-cell *matCellDef="let element">
-                <div class="flex flex-col">
-                  <span class="font-bold text-base-content">{{element.name}}</span>
-                  <span class="text-xs opacity-50">{{element.type}}</span>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef> Estado </th>
-              <td mat-cell *matCellDef="let element">
-                @if (element.isActive) {
-                <div class="badge badge-success badge-outline gap-2 py-3 px-4">
-                  <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
-                  Activo
-                </div>
-                } @else {
-                <div class="badge badge-ghost opacity-50 gap-2 py-3 px-4">
-                  <span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span>
-                  Inactivo
-                </div>
-                }
-              </td>
-            </ng-container>
-
-            <!-- Description Column -->
-            <ng-container matColumnDef="description">
-              <th mat-header-cell *matHeaderCellDef> Descripción / Datos de Cuenta </th>
-              <td mat-cell *matCellDef="let element">
-                <div class="flex flex-col gap-1.5 py-2 max-w-xs">
-                  <span class="text-sm opacity-60 italic max-w-62.5 truncate block">
-                    {{element.description || 'Sin descripción'}}
-                  </span>
-                  @if (element.type === 'BANK_TRANSFER' || element.type === 'ALIAS_TRANSFER') {
-                    @if (element.bankName || element.titular || element.cbuCvu || element.alias) {
-                      <div class="flex flex-wrap gap-1 mt-1 font-mono text-[10px]">
-                        @if (element.bankName) {
-                          <span class="badge badge-sm bg-base-200 text-base-content/85 border-base-content/10 font-bold">{{element.bankName}}</span>
-                        }
-                        @if (element.titular) {
-                          <span class="badge badge-sm badge-outline text-base-content/75 border-base-content/20">Tit: {{element.titular}}</span>
-                        }
-                        @if (element.cbuCvu) {
-                          <span class="badge badge-sm badge-neutral font-bold text-neutral-content">CBU/CVU: {{element.cbuCvu}}</span>
-                        }
-                        @if (element.alias) {
-                          <span class="badge badge-sm badge-primary badge-outline font-bold">Alias: {{element.alias}}</span>
-                        }
-                      </div>
-                    }
-                  }
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef> </th>
-              <td mat-cell *matCellDef="let element" class="text-right">
-                <button mat-icon-button [matMenuTriggerFor]="menu" class="hover:bg-base-200 transition-colors">
-                  <mat-icon>more_vert</mat-icon>
-                </button>
-                <mat-menu #menu="matMenu" class="modern-menu">
-                  <button mat-menu-item [routerLink]="['/home/payment-methods/edit', element._id]">
-                    <mat-icon>edit</mat-icon>
-                    <span>Editar Detalles</span>
-                  </button>
-                  <div class="divider my-0"></div>
-                  <button mat-menu-item class="!text-error" (click)="delete(element._id)">
-                    <mat-icon class="!text-error">delete_outline</mat-icon>
-                    <span>Eliminar Método</span>
-                  </button>
-                </mat-menu>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="h-16! bg-base-200/50!"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-              class="hover:bg-primary/5 transition-all duration-200 cursor-pointer"></tr>
-          </table>
-
-          @if (state().manualMethods.length === 0) {
-          <div class="p-12 text-center">
-            <mat-icon class="text-6xl mb-4 opacity-20">payments</mat-icon>
-            <p class="text-lg font-medium opacity-50">No hay métodos manuales configurados</p>
-            <button class="btn btn-ghost btn-sm mt-4" routerLink="/home/payment-methods/create">Agregar el
-              primero</button>
-          </div>
-          }
-        </div>
-      </div>
-      }
-
-      <!-- Tab Content: Mercado Pago -->
-      @if (activeTab() === 'mercadopago') {
-      <div class="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-
-          <!-- Sidebar Settings -->
-          <div class="lg:col-span-4 flex flex-col gap-6">
-            <div class="card bg-base-100 shadow-xl border-2 border-primary/10 p-6 pt-2">
-              <!-- <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                  <div class="p-2 bg-blue-500/10 rounded-lg">
-                    <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/6.7.0/mercadopago/favicon.svg" class="w-6 h-6" alt="MP">
-                  </div>
-                  <h3 class="font-black text-lg tracking-tight">Estado Global</h3>
-                </div>
-                <input type="checkbox" class="toggle toggle-primary toggle-lg shadow-sm" 
-                       [checked]="state().automaticGateways.mercadopago.active" 
-                       (change)="toggleMPActive(!state().automaticGateways.mercadopago.active)">
+      <!-- ========================================================================= -->
+      <!-- PESTAÑA 1: PASARELAS ONLINE (MERCADO PAGO & GETNET)                       -->
+      <!-- ========================================================================= -->
+      <!-- ========================================================================= -->
+      <!-- PESTAÑA 1: PASARELAS ONLINE (MERCADO PAGO, GETNET & UALÁ)                 -->
+      <!-- ========================================================================= -->
+      @if (activeTab() === 'gateways') {
+        <!-- BANNER DE RECÁLCULO PENDIENTE TRAS CAMBIO DE TASAS -->
+        @if (hasPendingRecalculation()) {
+          <div class="p-4 bg-warning/15 border border-warning/30 rounded-2xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-warning/20 text-warning flex items-center justify-center font-bold">
+                <mat-icon class="text-[22px]! w-5.5! h-5.5!">sync</mat-icon>
               </div>
-              <p class="text-sm opacity-70 mb-4 leading-relaxed">
-                Activa o desactiva Mercado Pago como pasarela de pago principal en tu ecommerce.
-              </p> -->
+              <div>
+                <h4 class="text-xs font-black text-base-content uppercase tracking-wider">¡Tasas o Pasarelas Actualizadas!</h4>
+                <p class="text-xs text-base-content/70">Es indispensable recalcular los precios del catálogo para que tomen las nuevas comisiones y cuotas.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost text-base-content/60"
+                (click)="hasPendingRecalculation.set(false)"
+              >
+                Descartar
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-warning font-bold rounded-xl gap-1.5 shadow-sm text-warning-content"
+                (click)="openRecalculateModal()"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">calculate</mat-icon>
+                <span>Simular y Recalcular Precios Ahora</span>
+              </button>
+            </div>
+          </div>
+        }
 
-              <div
-                class="divider before:bg-base-300 after:bg-base-300 font-bold uppercase text-[10px] tracking-widest opacity-40">
-                Exclusiones de Efectivo</div>
-              <div
-                class="flex items-center justify-between p-3 bg-base-200/50 rounded-xl border border-base-content/5 transition-all hover:border-primary/20">
+        <form
+          [formGroup]="gatewaysForm"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          class="space-y-6 animate-fadeIn"
+        >
+          <!-- Dummy hidden inputs to prevent Browser Password Managers from capturing API keys -->
+          <input type="text" name="fake_user_prevent" class="hidden" tabindex="-1" autocomplete="off" />
+          <input type="password" name="fake_pass_prevent" class="hidden" tabindex="-1" autocomplete="new-password" />
+          
+          <!-- Banner Informativo -->
+          <div class="p-3.5 bg-info/10 border border-info/20 rounded-2xl flex items-center gap-3">
+            <mat-icon class="text-info text-[20px]! w-5! h-5! shrink-0">info</mat-icon>
+            <p class="text-xs text-base-content/70 leading-relaxed">
+              Configurá tus credenciales de cobro online. Podés operar con <strong>Mercado Pago</strong>, <strong>Getnet</strong> o <strong>Ualá Bis</strong> para procesamiento de tarjetas de crédito y débito.
+            </p>
+          </div>
+
+          <!-- MERCADO PAGO CARD -->
+          <div formGroupName="mercadopago" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#009ee3]/10 text-[#009ee3] flex items-center justify-center font-black">
+                  <mat-icon class="text-[20px]! w-5! h-5!">bolt</mat-icon>
+                </div>
                 <div>
-                  <span class="font-bold text-sm">Rapipago / Pagofácil</span>
-                  <p class="text-[10px] opacity-50">Permitir pagos en efectivo vía cupón</p>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-base-content">Mercado Pago</h3>
+                    @if (gatewaysForm.get('mercadopago.active')?.value) {
+                      <span class="badge badge-xs badge-success text-white font-bold">Activo en Checkout</span>
+                    } @else {
+                      <span class="badge badge-xs badge-ghost text-base-content/50">Desactivado</span>
+                    }
+                  </div>
+                  <p class="text-xs text-base-content/50">Cobros transparentes con tarjetas, dinero en cuenta y cupón en efectivo.</p>
                 </div>
-                <input type="checkbox" class="toggle toggle-sm"
-                  [checked]="!state().automaticGateways.mercadopago.excludedPaymentTypes.includes('ticket')"
-                  (change)="toggleTypeExclusion('ticket', state().automaticGateways.mercadopago.excludedPaymentTypes.includes('ticket'))">
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  formControlName="active"
+                  (change)="toggleMPActive(gatewaysForm.get('mercadopago.active')?.value)"
+                  class="toggle toggle-primary"
+                />
               </div>
             </div>
 
-            <div class="card bg-primary text-primary-content p-6 shadow-xl relative overflow-hidden">
-              <div class="absolute -right-4 -bottom-4 opacity-10 rotate-12 scale-150">
-                <mat-icon class="text-8xl">bolt</mat-icon>
+            <!-- Botón de Vinculación Oficial OAuth -->
+            <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 flex flex-wrap items-center justify-between gap-3">
+              <div class="space-y-0.5">
+                <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                  <mat-icon class="text-primary text-[16px]! w-4! h-4!">verified</mat-icon>
+                  <span>Conexión Rápida (Recomendado)</span>
+                </span>
+                <p class="text-[11px] text-base-content/60">Vinculá tu cuenta de Mercado Pago con un clic sin copiar credenciales manualmente.</p>
               </div>
-              <h4 class="font-bold flex items-center gap-2 mb-2 relative z-10">
-                <mat-icon>info</mat-icon>
-                Información
+              <button
+                type="button"
+                (click)="signMercadoPago()"
+                class="btn btn-sm bg-[#009ee3] hover:bg-[#0081b8] text-white font-bold rounded-xl gap-1.5 border-none shadow-xs"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">login</mat-icon>
+                <span>Vincular con Mercado Pago</span>
+              </button>
+            </div>
+
+            <!-- Credenciales Manuales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Public Key</label>
+                <input
+                  type="text"
+                  name="mp_public_key_field"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="publicKey"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-base-content/80">Access Token (Secreto)</label>
+                  <button
+                    type="button"
+                    (click)="showMpToken.set(!showMpToken())"
+                    class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showMpToken() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    <span>{{ showMpToken() ? 'Ocultar' : 'Ver' }}</span>
+                  </button>
+                </div>
+                <input
+                  [type]="showMpToken() ? 'text' : 'password'"
+                  name="mp_access_token_field"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="accessToken"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="APP_USR-xxxxxxxxxxxxxx-xxxxxx"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-base-content/80">Webhook Secret</label>
+                  <button
+                    type="button"
+                    (click)="showMpWebhook.set(!showMpWebhook())"
+                    class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showMpWebhook() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    <span>{{ showMpWebhook() ? 'Ocultar' : 'Ver' }}</span>
+                  </button>
+                </div>
+                <input
+                  [type]="showMpWebhook() ? 'text' : 'password'"
+                  name="mp_webhook_secret_field"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="webhookSecret"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="whsec_xxxxxxxxxxxxxxxxxxxx"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Entorno</label>
+                <select formControlName="environment" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="sandbox">Sandbox (Pruebas)</option>
+                  <option value="production">Producción (Cobros Reales)</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Tipo de Integración / Checkout</label>
+                <select formControlName="checkoutMode" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="bricks">Checkout Bricks (Formulario Embebido en Tienda)</option>
+                  <option value="pro">Checkout Pro (Redirección / Modal Oficial MP)</option>
+                  <option value="api">Checkout API (Integración Personalizada / Custom)</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Máximo de Cuotas Ofrecidas</label>
+                <select formControlName="maxInstallments" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option [value]="1">1 Cuota</option>
+                  <option [value]="3">Hasta 3 Cuotas</option>
+                  <option [value]="6">Hasta 6 Cuotas</option>
+                  <option [value]="12">Hasta 12 Cuotas</option>
+                  <option [value]="18">Hasta 18 Cuotas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Comisiones y Costo Financiero Total (CFT) -->
+            <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-3">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-[16px]! w-4! h-4! text-primary">analytics</mat-icon>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/80">Comisiones & Costo Financiero (CFT)</h4>
+              </div>
+              <p class="text-[11px] text-base-content/50">Definí las tasas que te cobra Mercado Pago para que el sistema calcule los márgenes y precios de lista automáticamente.</p>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                <div class="space-y-1 bg-base-100 p-2.5 rounded-xl border border-base-200">
+                  <label class="text-[10px] font-bold text-base-content/70 block">Comisión 1 Pago</label>
+                  <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                    <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="6.6" />
+                    <span class="text-[10px] font-bold text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1 bg-base-100 p-2.5 rounded-xl border border-base-200">
+                  <label class="text-[10px] font-bold text-base-content/70 block">CFT 3 Cuotas</label>
+                  <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                    <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12.09" />
+                    <span class="text-[10px] font-bold text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1 bg-base-100 p-2.5 rounded-xl border border-base-200">
+                  <label class="text-[10px] font-bold text-base-content/70 block">CFT 6 Cuotas</label>
+                  <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                    <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="19.09" />
+                    <span class="text-[10px] font-bold text-base-content/40">%</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1 bg-base-100 p-2.5 rounded-xl border border-base-200">
+                  <label class="text-[10px] font-bold text-base-content/70 block">CFT 12 Cuotas</label>
+                  <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                    <input type="number" formControlName="cft12cuotas" class="grow text-xs font-bold" placeholder="35.0" />
+                    <span class="text-[10px] font-bold text-base-content/40">%</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Botón Rápido de Simulación y Recálculo -->
+              <div class="flex items-center justify-between pt-2 border-t border-base-200/60 mt-1">
+                <span class="text-[11px] text-base-content/60 font-medium">¿Modificaste las tasas o cuotas?</span>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-outline btn-primary rounded-lg font-bold gap-1 shadow-xs"
+                  (click)="openRecalculateModal()"
+                >
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">sync</mat-icon>
+                  <span>Simular y Recalcular Precios</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Financiación en Cuotas y Exclusiones de Mercado Pago -->
+            <div class="p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
+                <mat-icon class="text-[15px]! w-4! h-4! text-primary">credit_card</mat-icon>
+                <span>Financiación & Cuotas Sin Interés</span>
               </h4>
-              <p class="text-xs relative z-10 opacity-90 leading-relaxed">
-                Las exclusiones se aplican instantáneamente en el checkout de tus clientes. Asegúrate de tener
-                configuradas tus credenciales en Ajustes de la Tienda.
-              </p>
-            </div>
-          </div>
 
-          <!-- Main Grid -->
-          <div class="lg:col-span-8">
-            <div class="card bg-base-100 shadow-xl border border-base-content/10 h-full">
-              <div class="p-6 border-b border-base-content/5 bg-base-200/20">
-                <h3 class="font-black text-lg">Métodos Disponibles</h3>
-                <p class="text-sm opacity-50">Selecciona qué tarjetas/medios habilitar</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="flex items-center justify-between p-3 bg-base-100 rounded-xl border border-base-200 cursor-pointer">
+                  <div class="space-y-0.5">
+                    <span class="text-xs font-bold block">Ofrecer Cuotas Sin Interés</span>
+                    <span class="text-[10px] text-base-content/50 block">Absorbe el costo financiero en el precio de lista.</span>
+                  </div>
+                  <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="absorbInstallments" />
+                </label>
+
+                @if (gatewaysForm.get('mercadopago.absorbInstallments')?.value) {
+                  <div class="space-y-1 bg-base-100 p-3 rounded-xl border border-base-200">
+                    <label class="text-[11px] font-bold text-base-content/70 block">Máximo de Cuotas a Absorber</label>
+                    <select formControlName="maxInstallmentsToAbsorb" class="select select-xs select-bordered w-full rounded-lg text-xs font-bold">
+                      <option [value]="3">Hasta 3 Cuotas sin interés</option>
+                      <option [value]="6">Hasta 6 Cuotas sin interés</option>
+                      <option [value]="12">Hasta 12 Cuotas sin interés</option>
+                    </select>
+                  </div>
+                }
               </div>
 
-              <div class="p-8">
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                  @for (method of state().automaticGateways.mercadopago.availableMethods; track method) {
+              <!-- Cupón en Efectivo (Rapipago / Pago Fácil) -->
+              <div class="flex items-center justify-between p-3 bg-base-100 rounded-xl border border-base-200">
+                <div class="space-y-0.5">
+                  <span class="text-xs font-bold block">Permitir Cupones en Efectivo (Rapipago / Pago Fácil)</span>
+                  <span class="text-[10px] text-base-content/50 block">Habilita o excluye los cupones de pago físico en el checkout de Mercado Pago.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-sm"
+                  [checked]="!state().automaticGateways.mercadopago.excludedPaymentTypes.includes('ticket')"
+                  (change)="toggleTypeExclusion('ticket')"
+                />
+              </div>
+            </div>
+
+            <!-- Selector Visual de Tarjetas Habilitadas -->
+            <div class="space-y-3 pt-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/80">Tarjetas y Medios Habilitados</h4>
+                  <p class="text-[11px] text-base-content/50">Hacé clic en una tarjeta para habilitarla o excluirla del checkout.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                @for (method of state().automaticGateways.mercadopago.availableMethods; track method.id) {
                   <div
-                    class="group relative flex flex-col items-center p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden"
+                    class="group relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden text-center"
                     [class.border-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
                     [class.bg-primary/5]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
-                    [class.border-base-content/10]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
-                    [class.opacity-60]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
-                    (click)="toggleMethodExclusion(method.id, state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id))">
-
-                    <div class="w-14 h-10 mb-3 flex items-center justify-center">
-                      <img [src]="method.thumbnail" [alt]="method.name"
-                        class="max-w-full max-h-full object-contain transition-all duration-500"
-                        [class.grayscale]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)">
+                    [class.border-base-200]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    [class.opacity-50]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                    (click)="toggleMethodExclusion(method.id)"
+                  >
+                    <div class="w-12 h-8 mb-2 flex items-center justify-center">
+                      <img
+                        [src]="method.thumbnail"
+                        [alt]="method.name"
+                        class="max-w-full max-h-full object-contain"
+                        [class.grayscale]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
+                      />
                     </div>
-
-                    <span
-                      class="text-[11px] font-black uppercase tracking-tighter text-center mb-3 line-clamp-1">{{method.name}}</span>
-
-                    <div class="mt-auto">
-                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                    <span class="text-[10px] font-bold uppercase truncate w-full">{{ method.name }}</span>
+                    <div class="mt-2">
+                      <div
+                        class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
                         [class.bg-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
                         [class.border-primary]="!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)"
-                        [class.border-base-content/20]="state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)">
+                      >
                         @if (!state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)) {
-                        <mat-icon class="text-[14px]! w-3.5! h-3.5! flex items-center justify-center text-primary-content">check</mat-icon>
+                          <mat-icon class="text-[12px]! w-3! h-3! text-primary-content">check</mat-icon>
                         }
                       </div>
                     </div>
+                  </div>
+                } @empty {
+                  <div class="col-span-full py-8 text-center bg-base-200/30 rounded-2xl border border-dashed border-base-300 p-6">
+                    <mat-icon class="text-3xl text-base-content/30 mb-2 animate-pulse">credit_card</mat-icon>
+                    <p class="text-xs text-base-content/60 font-medium">No se detectaron medios de pago o la cuenta no está conectada.</p>
+                    <p class="text-[10px] text-base-content/40 mt-1">Conectá tu cuenta de Mercado Pago con el botón superior para cargar las tarjetas disponibles.</p>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
 
-                    @if (state().automaticGateways.mercadopago.excludedPaymentMethods.includes(method.id)) {
-                    <div class="absolute inset-0 bg-base-300/5 backdrop-blur-[0.5px] pointer-events-none"></div>
+          <!-- GETNET (SANTANDER) CARD -->
+          <div formGroupName="getnet" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#ec0000]/10 text-[#ec0000] flex items-center justify-center font-black">
+                  <mat-icon class="text-[20px]! w-5! h-5!">account_balance</mat-icon>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-base-content">Getnet (Santander)</h3>
+                    @if (gatewaysForm.get('getnet.active')?.value) {
+                      <span class="badge badge-xs badge-success text-white font-bold">Activo</span>
+                    } @else {
+                      <span class="badge badge-xs badge-ghost text-base-content/50">Desactivado</span>
                     }
                   </div>
-                  } @empty {
-                  <div class="col-span-full py-12 text-center opacity-30">
-                    <mat-icon class="text-4xl mb-2">sync</mat-icon>
-                    <p>Sincronizando métodos disponibles...</p>
+                  <p class="text-xs text-base-content/50">Cobros oficiales con tarjetas de débito y crédito vía Santander Getnet.</p>
+                </div>
+              </div>
+              <input type="checkbox" formControlName="active" class="toggle toggle-error" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="space-y-1.5 sm:col-span-2">
+                <label class="text-xs font-bold text-base-content/80">Client ID</label>
+                <input
+                  type="text"
+                  name="getnet_client_id_val"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="clientId"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="ej: getnet_client_id_..."
+                />
+              </div>
+
+              <div class="space-y-1.5 sm:col-span-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-base-content/80">Client Secret</label>
+                  <button
+                    type="button"
+                    (click)="showGetnetSecret.set(!showGetnetSecret())"
+                    class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showGetnetSecret() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    <span>{{ showGetnetSecret() ? 'Ocultar' : 'Ver' }}</span>
+                  </button>
+                </div>
+                <input
+                  [type]="showGetnetSecret() ? 'text' : 'password'"
+                  name="getnet_client_secret_val"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="clientSecret"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="••••••••••••••••••••••••"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Entorno</label>
+                <select formControlName="environment" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="sandbox">Sandbox (Pruebas)</option>
+                  <option value="production">Producción (Cobros Reales)</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Presentación Checkout</label>
+                <select formControlName="checkoutMode" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="redirect">Redirección a Getnet</option>
+                  <option value="modal">Modal / Pop-up</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Comisión Base 1 Pago</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="3.5" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="0" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="10" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 12 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft12cuotas" class="grow text-xs font-bold" placeholder="25" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Máximo de Cuotas</label>
+                <select formControlName="maxInstallments" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option [value]="1">1 Cuota</option>
+                  <option [value]="3">3 Cuotas</option>
+                  <option [value]="6">6 Cuotas</option>
+                  <option [value]="12">12 Cuotas</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- UALÁ BIS CARD -->
+          <div formGroupName="uala" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center font-black">
+                  <mat-icon class="text-[20px]! w-5! h-5!">credit_score</mat-icon>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-base-content">Ualá Bis</h3>
+                    @if (gatewaysForm.get('uala.active')?.value) {
+                      <span class="badge badge-xs badge-success text-white font-bold">Activo</span>
+                    } @else {
+                      <span class="badge badge-xs badge-ghost text-base-content/50">Desactivado</span>
+                    }
                   </div>
-                  }
+                  <p class="text-xs text-base-content/50">Cobros con tarjetas y links de pago vía pasarela Ualá Bis.</p>
+                </div>
+              </div>
+              <input type="checkbox" formControlName="active" class="toggle toggle-error" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">User Name / Email</label>
+                <input
+                  type="text"
+                  name="uala_merchant_user_field"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="userName"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs"
+                  placeholder="ej: comercio@ualabis.com.ar"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Client ID</label>
+                <input
+                  type="text"
+                  name="uala_client_id_field"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="clientId"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="ej: uala_client_id_..."
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-base-content/80">Client Secret</label>
+                  <button
+                    type="button"
+                    (click)="showUalaSecret.set(!showUalaSecret())"
+                    class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showUalaSecret() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    <span>{{ showUalaSecret() ? 'Ocultar' : 'Ver' }}</span>
+                  </button>
+                </div>
+                <input
+                  [type]="showUalaSecret() ? 'text' : 'password'"
+                  name="uala_client_secret_field"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  spellcheck="false"
+                  formControlName="clientSecret"
+                  class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                  placeholder="••••••••••••••••••••••••"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">Comisión Base 1 Pago</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="4.4" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12.0" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="19.5" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/80">CFT 12 Cuotas</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="cft12cuotas" class="grow text-xs font-bold" placeholder="32.0" />
+                  <span class="font-bold text-xs text-base-content/40">%</span>
+                </label>
+              </div>
+
+              <!-- URLs de Retorno y Webhook -->
+              <div class="col-span-full pt-3 border-t border-base-200">
+                <div class="flex items-center gap-2 mb-3">
+                  <mat-icon class="text-[16px]! w-4! h-4! text-error">link</mat-icon>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/80">URLs de Retorno & Webhook (Notificación)</h4>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-base-content/70 block">Callback Éxito (Success URL)</label>
+                    <input
+                      type="url"
+                      formControlName="callbackSuccess"
+                      class="input input-xs input-bordered w-full rounded-lg text-xs font-mono"
+                      placeholder="https://mitienda.com/order/confirmed"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-base-content/70 block">Callback Fallo (Fail URL)</label>
+                    <input
+                      type="url"
+                      formControlName="callbackFail"
+                      class="input input-xs input-bordered w-full rounded-lg text-xs font-mono"
+                      placeholder="https://mitienda.com/order/failed"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-base-content/70 block">Webhook Notificación (IPN URL)</label>
+                    <input
+                      type="url"
+                      formControlName="notificationUrl"
+                      class="input input-xs input-bordered w-full rounded-lg text-xs font-mono"
+                      placeholder="https://api.mitienda.com/api/webhooks/uala"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-        </div>
-      </div>
+          <!-- Botón Flotante / Footer de Guardar Pasarelas -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <button
+              type="button"
+              class="btn btn-outline btn-primary rounded-xl font-bold gap-1.5 shadow-xs"
+              (click)="openRecalculateModal()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon>
+              <span>Simular Recálculo de Precios</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-primary rounded-xl font-bold gap-1.5 shadow-md px-6"
+              [disabled]="isSavingGateways()"
+              (click)="saveGateways()"
+            >
+              @if (isSavingGateways()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Guardando...</span>
+              } @else {
+                <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+                <span>Guardar Pasarelas</span>
+              }
+            </button>
+          </div>
+        </form>
       }
+
+      <!-- ========================================================================= -->
+      <!-- PESTAÑA 2: TRANSFERENCIA BANCARIA & EFECTIVO                              -->
+      <!-- ========================================================================= -->
+      @if (activeTab() === 'manual') {
+        <div class="space-y-6 animate-fadeIn">
+          
+          <!-- MASTER SWITCH: HABILITAR TRANSFERENCIAS EN EL CHECKOUT -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                <mat-icon class="text-[22px]! w-5! h-5!">account_balance</mat-icon>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-base-content">Habilitar Transferencias Bancarias Directas</h3>
+                  @if (gatewaysForm.get('transfer.active')?.value) {
+                    <span class="badge badge-xs badge-success text-white font-bold">Activo</span>
+                  } @else {
+                    <span class="badge badge-xs badge-ghost text-base-content/50">Desactivado</span>
+                  }
+                </div>
+                <p class="text-xs text-base-content/50">Si está desactivado, la opción de pagar por transferencia no aparecerá en el checkout de la tienda web.</p>
+              </div>
+            </div>
+
+            <input
+              type="checkbox"
+              class="toggle toggle-primary"
+              [checked]="gatewaysForm.get('transfer.active')?.value"
+              (change)="toggleTransferActive(!gatewaysForm.get('transfer.active')?.value)"
+            />
+          </div>
+
+          <!-- SECCIÓN 2: CUENTAS BANCARIAS CONFIGURADAS -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">account_balance</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content">Cuentas Bancarias & Alias Registrados</h3>
+                  <p class="text-xs text-base-content/50">Datos que se le muestran al cliente al finalizar su pedido para transferir.</p>
+                </div>
+              </div>
+
+              <a routerLink="/home/payment-methods/create" class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shadow-xs">
+                <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+                <span>Nueva Cuenta</span>
+              </a>
+            </div>
+
+            @if (state().manualMethods.length === 0) {
+              <div class="p-12 text-center bg-base-200/20 rounded-2xl border border-dashed border-base-300">
+                <mat-icon class="text-5xl mb-2 opacity-20">account_balance_wallet</mat-icon>
+                <p class="text-sm font-bold text-base-content/60">No tenés cuentas bancarias ni métodos manuales agregados</p>
+                <p class="text-xs text-base-content/40 mt-0.5">Agregá tu CBU, CVU o Alias para permitir transferencias bancarias directas.</p>
+                <a routerLink="/home/payment-methods/create" class="btn btn-primary btn-sm rounded-xl font-bold mt-4">
+                  Agregar Cuenta Bancaria
+                </a>
+              </div>
+            } @else {
+              <div class="overflow-x-auto rounded-xl border border-base-200">
+                <table mat-table [dataSource]="state().manualMethods" class="w-full text-xs">
+                  <!-- Nombre Column -->
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef class="font-bold uppercase text-[11px]">Método</th>
+                    <td mat-cell *matCellDef="let element" class="font-bold text-base-content py-3">
+                      <div class="flex flex-col">
+                        <span>{{ element.name }}</span>
+                        <span class="text-[10px] text-base-content/50 font-mono">{{ element.type }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Estado Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef class="font-bold uppercase text-[11px]">Estado</th>
+                    <td mat-cell *matCellDef="let element">
+                      <button
+                        type="button"
+                        (click)="toggleManualMethodStatus(element)"
+                        class="badge badge-sm font-bold cursor-pointer transition-all hover:scale-105"
+                        [ngClass]="element.isActive ? 'badge-success text-white' : 'badge-ghost text-base-content/40'"
+                        [matTooltip]="element.isActive ? 'Clic para desactivar' : 'Clic para activar'"
+                      >
+                        {{ element.isActive ? 'Activo' : 'Inactivo' }}
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <!-- Datos de Cuenta Column -->
+                  <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef class="font-bold uppercase text-[11px]">Datos Bancarios</th>
+                    <td mat-cell *matCellDef="let element" class="py-3">
+                      <div class="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                        @if (element.bankName) {
+                          <span class="badge badge-sm bg-base-200 font-bold">{{ element.bankName }}</span>
+                        }
+                        @if (element.titular) {
+                          <span class="badge badge-sm badge-outline">Tit: {{ element.titular }}</span>
+                        }
+                        @if (element.cbuCvu) {
+                          <span class="badge badge-sm badge-neutral font-bold">CBU/CVU: {{ element.cbuCvu }}</span>
+                        }
+                        @if (element.alias) {
+                          <span class="badge badge-sm badge-primary badge-outline font-bold">Alias: {{ element.alias }}</span>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Acciones Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef class="text-right font-bold uppercase text-[11px]">Acciones</th>
+                    <td mat-cell *matCellDef="let element" class="text-right py-3">
+                      <div class="flex items-center justify-end gap-1">
+                        <a
+                          [routerLink]="['/home/payment-methods/edit', element._id]"
+                          class="btn btn-ghost btn-xs btn-circle text-primary"
+                          matTooltip="Editar"
+                        >
+                          <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
+                        </a>
+                        <button
+                          type="button"
+                          (click)="delete(element._id)"
+                          class="btn btn-ghost btn-xs btn-circle text-error"
+                          matTooltip="Eliminar"
+                        >
+                          <mat-icon class="text-[16px]! w-4! h-4!">delete</mat-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-base-200/50"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-base-200/30 transition-colors"></tr>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================================= -->
+      <!-- PESTAÑA 3: MÁRGENES & ESTRATEGIA FINANCIERA                                -->
+      <!-- ========================================================================= -->
+      @if (activeTab() === 'pricing') {
+        <form [formGroup]="pricingForm" (ngSubmit)="savePricing()" class="space-y-6 animate-fadeIn">
+          
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">trending_up</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content">Estrategia de Precios & Márgenes</h3>
+                  <p class="text-xs text-base-content/50">Definí cómo se calcula el precio de venta final a partir de tus costos.</p>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-xs px-4"
+                [disabled]="isSavingPricing()"
+              >
+                @if (isSavingPricing()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                } @else {
+                  <mat-icon class="text-[15px]! w-4! h-4!">save</mat-icon>
+                  <span>Guardar Estrategia</span>
+                }
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Margen Global Objetivo -->
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content block">Margen de Ganancia Global Objetivo</label>
+                <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
+                  <input type="number" formControlName="profit" class="grow text-xs font-bold" placeholder="50" />
+                  <span class="font-bold text-xs text-primary">%</span>
+                </label>
+                <p class="text-[11px] text-base-content/50">Porcentaje que se aplica por defecto a nuevos productos sin margen personalizado.</p>
+              </div>
+
+              <!-- Método de Cálculo -->
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content block">Método de Fijación de Precios</label>
+                <select formControlName="method" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="markup">Markup (Sobre el Costo Base)</option>
+                  <option value="margin">Margen Real (Sobre el Precio de Venta)</option>
+                </select>
+                <div class="p-2.5 bg-base-200/40 rounded-xl text-[11px] text-base-content/60 border border-base-200">
+                  @if (pricingForm.get('method')?.value === 'markup') {
+                    <strong class="text-primary">Markup:</strong> Añade el % directo sobre el costo del producto.
+                  } @else {
+                    <strong class="text-primary">Margen:</strong> Calcula el precio para que el % sea la ganancia neta de la venta.
+                  }
+                </div>
+              </div>
+
+              <!-- Moneda de Costo -->
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content block">Moneda de Costo de Proveedores</label>
+                <select formControlName="costCurrency" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
+                  <option value="ARS">Pesos Argentinos (ARS)</option>
+                  <option value="USD">Dólares Estadounidenses (USD)</option>
+                </select>
+              </div>
+
+            </div>
+
+            <!-- Cotizaciones Dólar (DolarAPI) -->
+            <div class="space-y-3 pt-4 border-t border-base-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-xs font-bold text-base-content uppercase tracking-wider">Cotización del Dólar en Vivo (DolarAPI)</h4>
+                  <p class="text-[11px] text-base-content/50">Hacé clic en la cotización que regirá el cálculo de costos en USD.</p>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="fetchDolarQuotes(true)"
+                  class="btn btn-xs btn-ghost gap-1 font-bold text-primary hover:bg-primary/10"
+                  [disabled]="isLoadingDolares()"
+                  title="Actualizar cotizaciones en vivo"
+                >
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!" [class.animate-spin]="isLoadingDolares()">refresh</mat-icon>
+                  <span>Actualizar</span>
+                </button>
+              </div>
+
+              <!-- Grilla de Cotizaciones Disponibles -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                @for (dolar of dolarQuotes(); track dolar.casa) {
+                  <div
+                    (click)="selectDollarQuote(dolar.casa)"
+                    class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
+                    [ngClass]="pricingForm.get('dollarQuoteType')?.value === dolar.casa 
+                      ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
+                      : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-base-content truncate">{{ dolar.nombre }}</span>
+                      @if (pricingForm.get('dollarQuoteType')?.value === dolar.casa) {
+                        <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
+                      }
+                    </div>
+                    
+                    <div class="mt-2 space-y-0.5">
+                      <div class="flex items-baseline justify-between text-[11px]">
+                        <span class="text-base-content/50">Venta:</span>
+                        <span class="font-black text-base-content text-sm">${{ dolar.venta | number:'1.0-2' }}</span>
+                      </div>
+                      <div class="flex items-baseline justify-between text-[10px] text-base-content/40">
+                        <span>Compra:</span>
+                        <span>${{ dolar.compra | number:'1.0-2' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Opción Personalizada / Manual -->
+                <div
+                  (click)="selectDollarQuote('custom')"
+                  class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
+                  [ngClass]="pricingForm.get('dollarQuoteType')?.value === 'custom' 
+                    ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
+                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-base-content">Personalizado</span>
+                    @if (pricingForm.get('dollarQuoteType')?.value === 'custom') {
+                      <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
+                    }
+                  </div>
+                  
+                  <div class="mt-2 space-y-1">
+                    <span class="text-[10px] text-base-content/50 block">Valor Fijo Manual:</span>
+                    <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
+                      <span class="text-[10px] font-bold text-base-content/40">$</span>
+                      <input
+                        type="number"
+                        formControlName="customDollarRate"
+                        class="grow font-bold text-xs"
+                        placeholder="1450"
+                        (click)="$event.stopPropagation()"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botón de Recálculo Masivo de Precios -->
+            <div class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex flex-wrap items-center justify-between gap-3 mt-4">
+              <div class="space-y-0.5">
+                <span class="text-xs font-bold text-primary flex items-center gap-1.5">
+                  <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon>
+                  <span>Recálculo Masivo de Catálogo</span>
+                </span>
+                <p class="text-[11px] text-base-content/60">Simulá cómo impactan las cotizaciones y márgenes en tu catálogo antes de aplicarlos.</p>
+              </div>
+
+              <button
+                type="button"
+                (click)="openRecalculateModal()"
+                class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-xs"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">visibility</mat-icon>
+                <span>Simular y Recalcular Precios</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- ========================================================================= -->
+      <!-- MODAL DE SIMULACIÓN Y RECÁLCULO MASIVO DE PRECIOS                         -->
+      <!-- ========================================================================= -->
+      @if (showRecalculateModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div class="bg-base-100 rounded-3xl border border-base-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-scaleUp">
+            
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-base-200 flex items-center justify-between bg-base-200/30">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  <mat-icon class="text-[22px]! w-5.5! h-5.5!">calculate</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-base font-black text-base-content">Simulación de Recálculo Masivo de Precios</h3>
+                  <p class="text-xs text-base-content/50">Visualizá el antes y después de cada producto antes de confirmar los cambios en la base de datos.</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-ghost btn-circle btn-sm" (click)="closeRecalculateModal()">
+                <mat-icon class="text-[18px]! w-4! h-4!">close</mat-icon>
+              </button>
+            </div>
+
+            <!-- Scope Selector & Stats Bar -->
+            <div class="p-3 sm:p-4 bg-base-100 border-b border-base-200 flex flex-wrap items-center justify-between gap-3">
+              <!-- Selector de Alcance (Scope) -->
+              <div class="flex items-center gap-1.5 bg-base-200 p-1 rounded-xl">
+                <button
+                  type="button"
+                  class="btn btn-xs rounded-lg font-bold border-none transition-all"
+                  [ngClass]="recalculateOnlyActive() ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+                  (click)="toggleRecalculateScope(true)"
+                >
+                  Solo Productos Activos
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs rounded-lg font-bold border-none transition-all"
+                  [ngClass]="!recalculateOnlyActive() ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+                  (click)="toggleRecalculateScope(false)"
+                >
+                  Todos los Productos
+                </button>
+              </div>
+
+              <!-- Buscador Rápido -->
+              <div class="relative min-w-[200px] grow sm:grow-0">
+                <input
+                  type="text"
+                  [(ngModel)]="previewSearch"
+                  placeholder="Buscar por modelo o marca..."
+                  class="input input-xs input-bordered w-full rounded-xl pl-8 text-xs"
+                />
+                <mat-icon class="absolute left-2.5 top-1.5 text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
+              </div>
+
+              <!-- Mini Info de Parámetros -->
+              @if (recalculatePreviewData(); as pData) {
+                <div class="flex items-center gap-2 text-xs font-bold text-base-content/70">
+                  <span class="badge badge-sm badge-ghost border-base-300 font-mono">Dólar {{ pData.quoteType | uppercase }}: ${{ pData.dolar | number }}</span>
+                  <span class="badge badge-sm badge-primary/20 text-primary font-bold">{{ pData.totalProducts }} productos</span>
+                </div>
+              }
+            </div>
+
+            <!-- Modal Body (Table or Loading) -->
+            <div class="overflow-y-auto grow p-3 sm:p-4">
+              @if (isLoadingPreview()) {
+                <div class="py-16 flex flex-col items-center justify-center gap-3 text-center">
+                  <span class="loading loading-spinner loading-lg text-primary"></span>
+                  <p class="text-xs font-bold text-base-content/70">Calculando matriz financiera y simulando precios...</p>
+                </div>
+              } @else if (filteredPreviewItems.length === 0) {
+                <div class="py-16 flex flex-col items-center justify-center gap-2 text-center text-base-content/40">
+                  <mat-icon class="text-4xl text-base-content/20">inventory_2</mat-icon>
+                  <p class="text-sm font-bold">No se encontraron productos para simular</p>
+                  <p class="text-xs">Verificá que existan productos con costos base cargados.</p>
+                </div>
+              } @else {
+                <div class="overflow-x-auto rounded-2xl border border-base-200">
+                  <table class="table table-xs w-full">
+                    <thead class="bg-base-200/60 text-base-content/70 uppercase text-[10px] tracking-wider">
+                      <tr>
+                        <th class="py-2.5">Producto</th>
+                        <th class="py-2.5 text-center">Estado</th>
+                        <th class="py-2.5 text-right">Precio Efectivo/Transf.</th>
+                        <th class="py-2.5 text-right">Precio Lista / Tarjeta</th>
+                        <th class="py-2.5 text-right">Cuotas</th>
+                        <th class="py-2.5 text-center">Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-base-200">
+                      @for (item of filteredPreviewItems; track item._id) {
+                        <tr class="hover:bg-base-200/40 transition-colors">
+                          <td class="py-2">
+                            <div class="flex items-center gap-2.5">
+                              @if (item.image) {
+                                <img [src]="item.image" class="w-8 h-8 rounded-lg object-cover bg-base-200 border border-base-300" />
+                              } @else {
+                                <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center text-base-content/30">
+                                  <mat-icon class="text-[16px]! w-4! h-4!">image</mat-icon>
+                                </div>
+                              }
+                              <div>
+                                <p class="text-xs font-bold text-base-content leading-tight">{{ item.model }}</p>
+                                <p class="text-[10px] text-base-content/50">{{ item.brand || 'Sin marca' }}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="text-center">
+                            @if (item.isActive) {
+                              <span class="badge badge-xs badge-success text-white font-bold">Activo</span>
+                            } @else {
+                              <span class="badge badge-xs badge-ghost text-base-content/40">Inactivo</span>
+                            }
+                          </td>
+                          <td class="text-right">
+                            <div class="flex flex-col items-end">
+                              <span class="text-[10px] text-base-content/40 line-through">${{ item.oldPrice.cashTransferPrice | number:'1.0-0' }}</span>
+                              <span class="text-xs font-black text-success">${{ item.newPrice.cashTransferPrice | number:'1.0-0' }}</span>
+                            </div>
+                          </td>
+                          <td class="text-right">
+                            <div class="flex flex-col items-end">
+                              <span class="text-[10px] text-base-content/40 line-through">${{ item.oldPrice.cardPrice | number:'1.0-0' }}</span>
+                              <span class="text-xs font-black text-primary">${{ item.newPrice.cardPrice | number:'1.0-0' }}</span>
+                            </div>
+                          </td>
+                          <td class="text-right font-mono text-[11px]">
+                            @if (item.newPrice.installments) {
+                              <span class="badge badge-xs badge-outline font-bold text-primary">
+                                {{ item.newPrice.installments.count }}x ${{ item.newPrice.installments.amount | number:'1.0-0' }}
+                              </span>
+                            } @else {
+                              <span class="text-base-content/30">-</span>
+                            }
+                          </td>
+                          <td class="text-center">
+                            @if (item.diff.cardDiffPercent > 0) {
+                              <span class="badge badge-xs badge-warning font-bold text-warning-content gap-0.5">
+                                +{{ item.diff.cardDiffPercent }}%
+                              </span>
+                            } @else if (item.diff.cardDiffPercent < 0) {
+                              <span class="badge badge-xs badge-info font-bold text-info-content gap-0.5">
+                                {{ item.diff.cardDiffPercent }}%
+                              </span>
+                            } @else {
+                              <span class="badge badge-xs badge-ghost text-base-content/40 font-bold">Sin cambio</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 sm:p-4 border-t border-base-200 flex flex-wrap items-center justify-between gap-3 bg-base-200/30">
+              <div class="text-xs text-base-content/60">
+                <span class="font-bold">⚠️ Atención:</span> Los precios se impactarán en la base de datos únicamente al presionar confirmar.
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-ghost rounded-xl font-bold"
+                  [disabled]="isExecutingRecalculate()"
+                  (click)="closeRecalculateModal()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-md px-5"
+                  [disabled]="isExecutingRecalculate() || isLoadingPreview() || filteredPreviewItems.length === 0"
+                  (click)="confirmRecalculation()"
+                >
+                  @if (isExecutingRecalculate()) {
+                    <span class="loading loading-spinner loading-xs"></span>
+                    <span>Aplicando Cambios...</span>
+                  } @else {
+                    <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+                    <span>Confirmar y Aplicar Cambios</span>
+                  }
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      }
+
     </div>
   </ng-container>
 </app-page-layout>

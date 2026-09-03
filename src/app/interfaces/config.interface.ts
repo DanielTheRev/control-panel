@@ -54,6 +54,13 @@ export interface IEmailTemplatesConfig {
   backInStock?: IEmailTemplateItem;
 }
 
+export interface IAuthConfig {
+  allowEmailPassword: boolean;
+  allowMagicCode: boolean;
+  allowGoogle: boolean;
+  defaultMethod?: 'google' | 'magic_code' | 'password';
+}
+
 export interface IEcommerceIntegrations {
   metaPixel?: IMetaPixelConfig;
   googleAnalytics?: IGoogleAnalyticsConfig;
@@ -101,6 +108,7 @@ export interface IEcommerceConfig {
   pricingStrategy?: IPricingStrategy;
   posConfig?: IPOSConfig;
   integrations?: IEcommerceIntegrations;
+  authConfig?: IAuthConfig;
   contact: {
     email: string;
     phone: string;
@@ -133,6 +141,10 @@ export interface IEcommerceConfig {
       baseCommission: number;
       cft3cuotas: number;
       cft6Cuotas: number;
+      cft12cuotas?: number;
+      callbackSuccess?: string;
+      callbackFail?: string;
+      notificationUrl?: string;
       credentials?: {
         userName: string;
         clientId: string;
@@ -144,12 +156,27 @@ export interface IEcommerceConfig {
       baseCommission: number;
       cft3cuotas: number;
       cft6Cuotas: number;
+      cft12cuotas?: number;
       accessToken: string;
       publicKey: string;
+      environment?: 'sandbox' | 'production';
+      checkoutMode?: 'transparent' | 'redirect' | 'modal' | 'bricks' | 'pro' | 'api';
       webhookSecret?: string;
       maxInstallments: number;
       excludedPaymentMethods?: string[];
       excludedPaymentTypes?: string[];
+    };
+    getnet?: {
+      active: boolean;
+      clientId: string;
+      clientSecret: string;
+      environment: 'sandbox' | 'production';
+      baseCommission: number;
+      cft3cuotas: number;
+      cft6Cuotas: number;
+      cft12cuotas?: number;
+      maxInstallments: number;
+      checkoutMode?: 'redirect' | 'modal' | 'iframe';
     };
     transfer: {
       active: boolean;
@@ -158,5 +185,10 @@ export interface IEcommerceConfig {
       bankName?: string;
       titular?: string;
     };
+  };
+  callbackURLs?: {
+    success?: string;
+    fail?: string;
+    notification?: string;
   };
 }

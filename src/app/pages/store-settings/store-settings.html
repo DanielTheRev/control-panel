@@ -35,22 +35,12 @@
 
       <button
         type="button"
-        (click)="activeTab.set('pricing')"
+        (click)="activeTab.set('auth')"
         class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'pricing' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        [ngClass]="activeTab() === 'auth' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
       >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">trending_up</mat-icon>
-        <span>Precios & Márgenes</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="activeTab.set('gateways')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'gateways' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">payments</mat-icon>
-        <span>Pasarelas de Pago</span>
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">lock_person</mat-icon>
+        <span>Autenticación</span>
       </button>
 
       <button
@@ -63,15 +53,13 @@
         <span>Integraciones</span>
       </button>
 
-      <button
-        type="button"
-        (click)="activeTab.set('emails')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'emails' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      <a
+        routerLink="/home/emails"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs btn-ghost text-base-content/70 hover:bg-base-200"
       >
         <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
         <span>Emails & Plantillas</span>
-      </button>
+      </a>
 
       <button
         type="button"
@@ -91,6 +79,16 @@
       >
         <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
         <span>Indumentaria</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeTab.set('connection')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'connection' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">link</mat-icon>
+        <span>Conexión & Tienda Web</span>
       </button>
 
       <button
@@ -232,585 +230,215 @@
         }
 
         <!-- ========================================================================= -->
-        <!-- 2. PRECIOS, MÁRGENES & ESTRATEGIA                                         -->
+        <!-- 2. AUTENTICACIÓN & LOGIN DE CLIENTES                                       -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'pricing') {
-          <div class="space-y-6">
-            <!-- 1. Moneda Base Primordial de Costos -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                  <mat-icon class="text-[20px]! w-5! h-5!">currency_exchange</mat-icon>
+        @if (activeTab() === 'auth') {
+          <div formGroupName="authConfig" class="space-y-6">
+
+            <!-- Header Informativo de la sección -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <mat-icon class="text-[20px]! w-5! h-5!">lock_person</mat-icon>
+                  </div>
+                  <h3 class="text-base font-black text-base-content">Métodos de Inicio de Sesión de Clientes</h3>
                 </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Moneda Primordial de Costos</h3>
-                  <p class="text-xs text-base-content/50">Elegí la moneda en la que ingresás los costos de compra a tus proveedores.</p>
-                </div>
+                <p class="text-xs text-base-content/60">
+                  Elegí las opciones que tendrán disponibles tus clientes para registrarse, ingresar a sus cuentas y guardar pedidos en tu tienda.
+                </p>
               </div>
 
-              <!-- 2 Cards Selector: USD vs ARS -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Opción USD -->
-                <div
-                  (click)="configForm.get('costCurrency')?.setValue('USD'); configForm.markAsDirty()"
-                  class="p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 shadow-2xs hover:scale-[1.01]"
-                  [ngClass]="configForm.get('costCurrency')?.value === 'USD' 
-                    ? 'bg-primary/10 border-primary ring-2 ring-primary/20' 
-                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
-                >
-                  <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 font-black text-sm">
-                    USD $
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-base-content block">Dólares Estadounidenses (USD)</span>
-                      @if (configForm.get('costCurrency')?.value === 'USD') {
-                        <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
-                      }
-                    </div>
-                    <p class="text-[11px] text-base-content/50 mt-1 leading-tight">
-                      Cargás costos en USD. El sistema los convierte automáticamente a pesos usando la cotización elegida de DolarAPI.
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Opción ARS -->
-                <div
-                  (click)="configForm.get('costCurrency')?.setValue('ARS'); configForm.markAsDirty()"
-                  class="p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 shadow-2xs hover:scale-[1.01]"
-                  [ngClass]="configForm.get('costCurrency')?.value === 'ARS' 
-                    ? 'bg-primary/10 border-primary ring-2 ring-primary/20' 
-                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
-                >
-                  <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 flex items-center justify-center shrink-0 font-black text-sm">
-                    ARS $
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-base-content block">Pesos Argentinos (ARS)</span>
-                      @if (configForm.get('costCurrency')?.value === 'ARS') {
-                        <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
-                      }
-                    </div>
-                    <p class="text-[11px] text-base-content/50 mt-1 leading-tight">
-                      Cargás costos directamente en Pesos Argentinos ($ ARS). Sin conversiones cambiarias automáticas.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <!-- Alerta si todos los métodos están apagados -->
+              @if (!configForm.get('authConfig.allowGoogle')?.value && !configForm.get('authConfig.allowMagicCode')?.value && !configForm.get('authConfig.allowEmailPassword')?.value) {
+                <span class="badge badge-error text-white font-bold text-xs gap-1 py-3 px-3 shadow-xs">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">warning</mat-icon>
+                  ¡Alerta! Todos los métodos apagados
+                </span>
+              }
             </div>
 
-            <!-- Banner si opera en ARS -->
-            @if (configForm.get('costCurrency')?.value === 'ARS') {
-              <div class="bg-base-100 rounded-2xl border border-base-200 p-4 flex items-center gap-3 text-xs text-base-content/70 shadow-2xs">
-                <div class="w-8 h-8 rounded-xl bg-info/10 text-info flex items-center justify-center shrink-0">
-                  <mat-icon class="text-[18px]! w-4.5! h-4.5!">info</mat-icon>
-                </div>
-                <span>Tu tienda opera con costos en <strong>Pesos Argentinos (ARS)</strong>. Los precios de venta de tus productos se calculan directo sobre pesos. Podés cambiar a USD cuando quieras seleccionando la opción superior.</span>
-              </div>
-            }
+            <!-- Grilla de los 3 Métodos de Autenticación -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-            <!-- Cotizaciones Dólar (DolarAPI) -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                    <mat-icon class="text-[20px]! w-5! h-5!">attach_money</mat-icon>
+              <!-- 🔵 1. Google Sign-In (OAuth) -->
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 flex flex-col justify-between space-y-4 hover:border-base-300 transition-colors">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center font-black">
+                      <mat-icon class="text-[22px]! w-5.5! h-5.5!">g_mobiledata</mat-icon>
+                    </div>
+                    <input type="checkbox" formControlName="allowGoogle" class="toggle toggle-error" />
                   </div>
-                  <div>
-                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cotización del Dólar (DolarAPI)</h3>
-                    <p class="text-xs text-base-content/50">Elegí la cotización en vivo que rige el cálculo de costos en USD.</p>
-                  </div>
-                </div>
 
-                <button
-                  type="button"
-                  (click)="loadDolarQuotes(true)"
-                  class="btn btn-xs btn-ghost gap-1 font-bold text-primary hover:bg-primary/10"
-                  [disabled]="isLoadingDolares()"
-                  title="Actualizar cotizaciones en vivo"
-                >
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5!" [class.animate-spin]="isLoadingDolares()">refresh</mat-icon>
-                  <span>Actualizar</span>
-                </button>
-              </div>
-
-              <!-- Grilla de Cotizaciones Disponibles -->
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                @for (dolar of dolarQuotes(); track dolar.casa) {
-                  <div
-                    (click)="selectDollarQuote(dolar.casa)"
-                    class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
-                    [ngClass]="configForm.get('dollarQuoteType')?.value === dolar.casa 
-                      ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
-                      : 'bg-base-200/40 border-base-200 hover:border-base-300'"
-                  >
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-base-content truncate">{{ dolar.nombre }}</span>
-                      @if (configForm.get('dollarQuoteType')?.value === dolar.casa) {
-                        <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-bold text-sm text-base-content">Google Sign-In</h4>
+                      @if (configForm.get('authConfig.allowGoogle')?.value) {
+                        @if (configForm.get('integrations.googleAuth.clientId')?.value) {
+                          <span class="badge badge-xs badge-success text-[9px] font-bold text-white px-1.5 py-0.5">Listo</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[9px] font-bold text-warning-content px-1.5 py-0.5">Falta Client ID</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[9px] text-base-content/40 px-1.5 py-0.5">Apagado</span>
                       }
                     </div>
-                    
-                    <div class="mt-2 space-y-0.5">
-                      <div class="flex items-baseline justify-between text-[11px]">
-                        <span class="text-base-content/50">Venta:</span>
-                        <span class="font-black text-base-content text-sm">${{ dolar.venta | number:'1.0-2' }}</span>
-                      </div>
-                      <div class="flex items-baseline justify-between text-[10px] text-base-content/40">
-                        <span>Compra:</span>
-                        <span>${{ dolar.compra | number:'1.0-2' }}</span>
-                      </div>
+                    <p class="text-xs text-base-content/60 leading-relaxed">
+                      Login en 1 clic usando cuenta de Google sin contraseñas. Rápido y con alta conversión.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Callout de Validación Google OAuth -->
+                @if (configForm.get('authConfig.allowGoogle')?.value && !configForm.get('integrations.googleAuth.clientId')?.value) {
+                  <div class="p-3 bg-warning/10 border border-warning/30 rounded-xl space-y-2">
+                    <div class="flex items-start gap-1.5 text-warning-content text-[11px] font-semibold">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! text-warning shrink-0 mt-0.5">warning</mat-icon>
+                      <span>Falta configurar Google Client ID para que funcione en la tienda.</span>
                     </div>
+                    <button
+                      type="button"
+                      (click)="activeTab.set('integrations')"
+                      class="btn btn-xs btn-warning w-full font-bold gap-1 shadow-2xs"
+                    >
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">settings</mat-icon>
+                      <span>Configurar en Integraciones</span>
+                    </button>
                   </div>
                 }
-
-                <!-- Opción Personalizada / Manual -->
-                <div
-                  (click)="selectDollarQuote('custom')"
-                  class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:scale-[1.02]"
-                  [ngClass]="configForm.get('dollarQuoteType')?.value === 'custom' 
-                    ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10 ring-2 ring-primary/20' 
-                    : 'bg-base-200/40 border-base-200 hover:border-base-300'"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-base-content">Personalizado</span>
-                    @if (configForm.get('dollarQuoteType')?.value === 'custom') {
-                      <span class="badge badge-2xs badge-primary text-white font-bold">Activo</span>
-                    }
-                  </div>
-                  
-                  <div class="mt-2 space-y-1">
-                    <span class="text-[10px] text-base-content/50 block">Valor Fijo Manual:</span>
-                    <label class="input input-xs input-bordered flex items-center gap-1 rounded-lg">
-                      <span class="text-[10px] font-bold text-base-content/40">$</span>
-                      <input
-                        type="number"
-                        formControlName="customDollarRate"
-                        class="grow font-bold text-xs"
-                        placeholder="1450"
-                        (click)="$event.stopPropagation()"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Estrategia Global de Precios -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-9 h-9 rounded-xl bg-success/10 text-success flex items-center justify-center font-bold">
-                  <mat-icon class="text-[20px]! w-5! h-5!">trending_up</mat-icon>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Márgenes de Ganancia Globales</h3>
-                  <p class="text-xs text-base-content/50">Porcentaje de ganancia aplicado a todos los productos que no tengan margen individual.</p>
-                </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Margen Contado / 1 Pago -->
-                <div class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Margen Contado / 1 Pago</span>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="number"
-                      formControlName="profit1Pay"
-                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
-                      placeholder="60"
-                    />
-                    <span class="badge badge-sm font-bold bg-base-300">%</span>
-                  </div>
-                  <p class="text-[10px] text-base-content/40">Ganancia para transferencias y tarjeta en 1 cuota.</p>
-                </div>
-
-                <!-- Margen Cuotas -->
-                <div class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Margen para Cuotas</span>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="number"
-                      formControlName="profitInstallments"
-                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
-                      placeholder="80"
-                    />
-                    <span class="badge badge-sm font-bold bg-base-300">%</span>
-                  </div>
-                  <p class="text-[10px] text-base-content/40">Ganancia para planes financiados en cuotas.</p>
-                </div>
-
-                <!-- IVA / Impuesto -->
-                <div formGroupName="taxes" class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-2">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Alícuota IVA</span>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="number"
-                      formControlName="iva"
-                      class="input input-sm input-bordered rounded-xl w-full text-xs font-black"
-                      placeholder="21"
-                    />
-                    <span class="badge badge-sm font-bold bg-base-300">%</span>
-                  </div>
-                  <p class="text-[10px] text-base-content/40">Porcentaje de impuesto al valor agregado.</p>
-                </div>
-              </div>
-
-              <!-- Envío Gratis -->
-              <div formGroupName="shippingConfig" class="pt-4 border-t border-base-200 flex items-center justify-between gap-4">
-                <div>
-                  <span class="text-xs font-bold text-base-content block">Umbral de Envío Gratis</span>
-                  <p class="text-[11px] text-base-content/50 mt-0.5">Monto mínimo de compra para bonificar el envío al cliente.</p>
-                </div>
-                <div class="w-48">
-                  <label class="input input-sm input-bordered flex items-center gap-1.5 rounded-xl">
-                    <span class="text-xs text-base-content/40 font-bold">$</span>
-                    <input type="number" formControlName="freeShippingThreshold" class="grow font-bold text-xs" placeholder="50000" />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Estrategia de Pricing & Cuotas -->
-            <div formGroupName="pricingStrategy" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
-                  <mat-icon class="text-[20px]! w-5! h-5!">calculate</mat-icon>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Estrategia de Cálculo y Cuotas</h3>
-                  <p class="text-xs text-base-content/50">Elegí la fórmula de cálculo de precios y la absorción de intereses.</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Método de Cálculo -->
-                <div class="space-y-2">
-                  <label class="text-xs font-bold text-base-content block">Fórmula de Cálculo</label>
-                  <select formControlName="method" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
-                    <option value="markup">Markup (Sobre el Costo Base)</option>
-                    <option value="margin">Margen Real (Sobre el Precio de Venta)</option>
-                  </select>
-                  <div class="p-3 bg-base-200/50 rounded-xl text-[11px] text-base-content/60 leading-relaxed border border-base-200">
-                    @if (configForm.get('pricingStrategy.method')?.value === 'markup') {
-                      <strong class="text-primary">Markup:</strong> Se añade el % directo sobre el costo del producto.
-                    } @else {
-                      <strong class="text-primary">Margen:</strong> Calcula el precio para que el % sea la ganancia neta de la venta.
-                    }
-                  </div>
-                </div>
-
-                <!-- Cuotas sin Interés -->
+              <!-- ✉️ 2. Código Único por Email (OTP / Passwordless) -->
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 flex flex-col justify-between space-y-4 hover:border-base-300 transition-colors">
                 <div class="space-y-3">
-                  <label class="text-xs font-bold text-base-content block">Cuotas Sin Interés</label>
-                  <label class="flex items-center justify-between p-3 bg-base-200/40 rounded-xl border border-base-200 cursor-pointer">
-                    <div class="space-y-0.5">
-                      <span class="text-xs font-bold block">Ofrecer Cuotas Sin Interés</span>
-                      <span class="text-[10px] text-base-content/50 block">Absorbe el costo financiero en el precio de lista.</span>
+                  <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center font-black">
+                      <mat-icon class="text-[22px]! w-5.5! h-5.5!">pin</mat-icon>
                     </div>
-                    <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="absorbInstallments" />
-                  </label>
+                    <input type="checkbox" formControlName="allowMagicCode" class="toggle toggle-info" />
+                  </div>
 
-                  @if (configForm.get('pricingStrategy.absorbInstallments')?.value) {
-                    <div class="space-y-1.5">
-                      <label class="text-[11px] font-bold text-base-content/70 block">Máximo de Cuotas a Absorber</label>
-                      <select formControlName="maxInstallmentsToAbsorb" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
-                        <option [value]="3">Hasta 3 Cuotas sin interés</option>
-                        <option [value]="6">Hasta 6 Cuotas sin interés</option>
-                        <option [value]="12">Hasta 12 Cuotas sin interés</option>
-                      </select>
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <!-- Descuentos por Medio de Pago -->
-              <div class="pt-4 border-t border-base-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content block">Descuento Transferencia</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="transferDiscountPercentage" class="grow text-xs font-bold" placeholder="10" />
-                    <span class="font-bold text-xs text-success">% OFF</span>
-                  </label>
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content block">Descuento Efectivo (En Local)</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="cashDiscountPercentage" class="grow text-xs font-bold" placeholder="15" />
-                    <span class="font-bold text-xs text-success">% OFF</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Modo de Precio para 1 Pago con Tarjeta / Débito -->
-              <div class="pt-4 border-t border-base-200">
-                <label class="flex items-center justify-between p-4 bg-base-200/40 rounded-2xl border border-base-200 cursor-pointer hover:bg-base-200/60 transition-all">
-                  <div class="space-y-1 max-w-xl">
+                  <div class="space-y-1">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs font-bold text-base-content block">💳 Aplicar Precio de Oferta / Contado a Débito y 1 Pago con Tarjeta</span>
-                      @if (configForm.get('pricingStrategy.card1PayDiscount')?.value) {
-                        <span class="badge badge-xs badge-info font-bold text-white">Modo 1 Pago Rebajado</span>
+                      <h4 class="font-bold text-sm text-base-content">Código Único (Email OTP)</h4>
+                      @if (configForm.get('authConfig.allowMagicCode')?.value) {
+                        @if (configForm.get('integrations.resend.apiKey')?.value) {
+                          <span class="badge badge-xs badge-success text-[9px] font-bold text-white px-1.5 py-0.5">Listo</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[9px] font-bold text-warning-content px-1.5 py-0.5">Falta Resend</span>
+                        }
                       } @else {
-                        <span class="badge badge-xs badge-success font-bold text-white">Modo Tradicional (Recomendado)</span>
+                        <span class="badge badge-xs badge-ghost text-[9px] text-base-content/40 px-1.5 py-0.5">Apagado</span>
                       }
                     </div>
-                    <p class="text-[11px] text-base-content/60 leading-relaxed">
-                      <strong>Desactivado (Recomendado):</strong> Toda tarjeta paga Precio de Lista para que en 1 pago ganes la máxima rentabilidad (+45% margen) y el descuento sea exclusivo para Transferencia / Efectivo.<br/>
-                      <strong>Activado:</strong> Quien pague con débito o tarjeta en 1 cuota paga el precio con descuento (la tienda absorbe el 6.6% de Mercado Pago).
+                    <p class="text-xs text-base-content/60 leading-relaxed">
+                      El cliente ingresa su email y recibe un código de 6 dígitos para entrar. Sin contraseñas que recordar.
                     </p>
                   </div>
-                  <input type="checkbox" class="toggle toggle-primary toggle-md shrink-0 ml-4" formControlName="card1PayDiscount" />
+                </div>
+
+                <!-- Callout de Validación Resend -->
+                @if (configForm.get('authConfig.allowMagicCode')?.value && !configForm.get('integrations.resend.apiKey')?.value) {
+                  <div class="p-3 bg-warning/10 border border-warning/30 rounded-xl space-y-2">
+                    <div class="flex items-start gap-1.5 text-warning-content text-[11px] font-semibold">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5! text-warning shrink-0 mt-0.5">warning</mat-icon>
+                      <span>Para enviar el código necesitas tener Resend configurado.</span>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="activeTab.set('integrations')"
+                      class="btn btn-xs btn-warning w-full font-bold gap-1 shadow-2xs"
+                    >
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
+                      <span>Conectar Resend</span>
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <!-- 🔑 3. Email y Contraseña Tradicional -->
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 flex flex-col justify-between space-y-4 hover:border-base-300 transition-colors">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                      <mat-icon class="text-[22px]! w-5.5! h-5.5!">password</mat-icon>
+                    </div>
+                    <input type="checkbox" formControlName="allowEmailPassword" class="toggle toggle-primary" />
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-bold text-sm text-base-content">Email y Contraseña</h4>
+                      @if (configForm.get('authConfig.allowEmailPassword')?.value) {
+                        <span class="badge badge-xs badge-success text-[9px] font-bold text-white px-1.5 py-0.5">Activo</span>
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[9px] text-base-content/40 px-1.5 py-0.5">Apagado</span>
+                      }
+                    </div>
+                    <p class="text-xs text-base-content/60 leading-relaxed">
+                      El método clásico donde los usuarios eligen su contraseña y la recuerdan para compras futuras.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-base-200/50 rounded-xl text-[11px] text-base-content/60">
+                  <span>Siempre disponible de forma nativa sin requerir proveedores externos.</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Método Predeterminado (Default View) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div>
+                <h4 class="font-bold text-sm text-base-content">Método Principal / Destacado en el Modal de Login</h4>
+                <p class="text-xs text-base-content/60">
+                  ¿Qué formulario o botón querés mostrar en primer plano cuando el usuario presiona "Iniciar Sesión" en tu tienda?
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label
+                  class="flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all"
+                  [ngClass]="configForm.get('authConfig.defaultMethod')?.value === 'google' ? 'bg-primary/5 border-primary shadow-xs font-bold text-primary' : 'border-base-200 bg-base-100 hover:bg-base-200/50'"
+                >
+                  <input type="radio" formControlName="defaultMethod" value="google" class="radio radio-primary radio-sm" />
+                  <div class="text-xs">
+                    <div class="font-bold text-base-content">Google Sign-In</div>
+                    <div class="text-[11px] text-base-content/50 font-normal">Botón destacado de Google</div>
+                  </div>
+                </label>
+
+                <label
+                  class="flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all"
+                  [ngClass]="configForm.get('authConfig.defaultMethod')?.value === 'magic_code' ? 'bg-primary/5 border-primary shadow-xs font-bold text-primary' : 'border-base-200 bg-base-100 hover:bg-base-200/50'"
+                >
+                  <input type="radio" formControlName="defaultMethod" value="magic_code" class="radio radio-primary radio-sm" />
+                  <div class="text-xs">
+                    <div class="font-bold text-base-content">Código por Email (OTP)</div>
+                    <div class="text-[11px] text-base-content/50 font-normal">Input rápido de email</div>
+                  </div>
+                </label>
+
+                <label
+                  class="flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all"
+                  [ngClass]="configForm.get('authConfig.defaultMethod')?.value === 'password' ? 'bg-primary/5 border-primary shadow-xs font-bold text-primary' : 'border-base-200 bg-base-100 hover:bg-base-200/50'"
+                >
+                  <input type="radio" formControlName="defaultMethod" value="password" class="radio radio-primary radio-sm" />
+                  <div class="text-xs">
+                    <div class="font-bold text-base-content">Email y Contraseña</div>
+                    <div class="text-[11px] text-base-content/50 font-normal">Campos de email + pass</div>
+                  </div>
                 </label>
               </div>
             </div>
+
           </div>
         }
 
         <!-- ========================================================================= -->
-        <!-- 3. PASARELAS DE PAGO                                                      -->
-        <!-- ========================================================================= -->
-        @if (activeTab() === 'gateways') {
-          <div formGroupName="paymentGateways" class="space-y-6">
-
-            <!-- Banner Informativo de Pasarela Activa -->
-            <div class="p-3.5 bg-info/10 border border-info/20 rounded-2xl flex items-center gap-3">
-              <mat-icon class="text-info text-[20px]! w-5! h-5! shrink-0">info</mat-icon>
-              <p class="text-xs text-base-content/70 leading-relaxed">
-                <strong>Regla de Pasarelas:</strong> Podés tener una sola pasarela fintech (Mercado Pago o Ualá Bis) activa como procesador principal de tarjetas a la vez. <strong>Transferencia Bancaria</strong> puede coexistir simultáneamente.
-              </p>
-            </div>
-
-            <!-- Mercado Pago -->
-            <div formGroupName="mercadopago" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-[#009ee3]/10 text-[#009ee3] flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">credit_card</mat-icon>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-bold text-base-content">Mercado Pago</h3>
-                      @if (configForm.get('paymentGateways.mercadopago.active')?.value) {
-                        @if (configForm.get('paymentGateways.mercadopago.publicKey')?.value && configForm.get('paymentGateways.mercadopago.publicKey')?.value !== 'no asignado') {
-                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Vinculado</span>
-                        } @else {
-                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Pendiente de Vinculación</span>
-                        }
-                      } @else {
-                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
-                      }
-                    </div>
-                    <p class="text-xs text-base-content/50">Cobros con tarjeta de crédito, débito y dinero en cuenta.</p>
-                  </div>
-                </div>
-                <input type="checkbox" formControlName="active" class="toggle toggle-info" />
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Public Key -->
-                <div class="space-y-1.5 sm:col-span-2">
-                  <label class="text-xs font-bold text-base-content/80">Public Key (Clave Pública)</label>
-                  <input type="text" formControlName="publicKey" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-..." />
-                </div>
-
-                <!-- Access Token (Opcional manual) -->
-                <div class="space-y-1.5 sm:col-span-2">
-                  <label class="text-xs font-bold text-base-content/80">Access Token (Manual / Sandbox)</label>
-                  <input type="password" formControlName="accessToken" autocomplete="new-password" data-lpignore="true" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="APP_USR-... o TEST-..." />
-                </div>
-
-                <!-- Comisión Base -->
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Comisión Base 1 Pago</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="6" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-
-                <!-- Costo Financiero 3 Cuotas -->
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-
-                <!-- Costo Financiero 6 Cuotas -->
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="18.9" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-
-                <!-- Máximo de Cuotas -->
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Máximo de Cuotas</label>
-                  <select formControlName="maxInstallments" class="select select-sm select-bordered w-full rounded-xl text-xs font-bold">
-                    <option [value]="1">1 Cuota</option>
-                    <option [value]="3">3 Cuotas</option>
-                    <option [value]="6">6 Cuotas</option>
-                    <option [value]="12">12 Cuotas</option>
-                    <option [value]="18">18 Cuotas</option>
-                    <option [value]="24">24 Cuotas</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="pt-2 flex items-center justify-between border-t border-base-200">
-                <button type="button" class="btn btn-sm btn-outline btn-info rounded-xl font-bold gap-1.5 shadow-2xs" (click)="syncMercadoPago()">
-                  <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon> Sincronizar con Cuenta de Mercado Pago
-                </button>
-              </div>
-            </div>
-
-            <!-- Ualá Bis -->
-            <div formGroupName="uala" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-[#e5233d]/10 text-[#e5233d] flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">payments</mat-icon>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-bold text-base-content">Ualá Bis</h3>
-                      @if (configForm.get('paymentGateways.uala.active')?.value) {
-                        @if (configForm.get('paymentGateways.uala.credentials.clientId')?.value) {
-                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Vinculado</span>
-                        } @else {
-                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Pendiente de Credenciales</span>
-                        }
-                      } @else {
-                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
-                      }
-                    </div>
-                    <p class="text-xs text-base-content/50">Cobros con tarjeta de crédito, débito y transferencias vía Ualá Bis.</p>
-                  </div>
-                </div>
-                <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="active" />
-              </div>
-
-              <!-- Credenciales API Ualá Bis -->
-              <div formGroupName="credentials" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Usuario / Merchant Name</label>
-                  <input
-                    type="text"
-                    formControlName="userName"
-                    autocomplete="off"
-                    data-lpignore="true"
-                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
-                    placeholder="ej: nombre_comercio"
-                  />
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Client ID (API Key)</label>
-                  <input
-                    type="text"
-                    formControlName="clientId"
-                    autocomplete="off"
-                    data-lpignore="true"
-                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
-                    placeholder="ej: client_id_ualabis"
-                  />
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Client Secret</label>
-                  <input
-                    type="password"
-                    formControlName="clientSecret"
-                    autocomplete="new-password"
-                    data-lpignore="true"
-                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
-                    placeholder="••••••••••••••••"
-                  />
-                </div>
-              </div>
-
-              <!-- Comisiones y Cuotas Ualá Bis -->
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-base-200">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Comisión Base (1 Pago / Débito)</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="baseCommission" class="grow text-xs font-bold" placeholder="4.9" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">CFT 3 Cuotas</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="cft3cuotas" class="grow text-xs font-bold" placeholder="12" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">CFT 6 Cuotas</label>
-                  <label class="input input-sm input-bordered flex items-center gap-2 rounded-xl">
-                    <input type="number" formControlName="cft6Cuotas" class="grow text-xs font-bold" placeholder="18.9" />
-                    <span class="font-bold text-xs text-base-content/40">%</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Transferencia Bancaria -->
-            <div formGroupName="transfer" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">account_balance</mat-icon>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-bold text-base-content">Transferencia Bancaria</h3>
-                      @if (configForm.get('paymentGateways.transfer.active')?.value) {
-                        @if (configForm.get('paymentGateways.transfer.alias')?.value || configForm.get('paymentGateways.transfer.cbuCvu')?.value) {
-                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Datos Cargados</span>
-                        } @else {
-                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Faltan Datos</span>
-                        }
-                      } @else {
-                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
-                      }
-                    </div>
-                    <p class="text-xs text-base-content/50">Datos bancarios que se le muestran al cliente para transferir.</p>
-                  </div>
-                </div>
-                <input type="checkbox" formControlName="active" class="toggle toggle-success" />
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Alias</label>
-                  <input type="text" formControlName="alias" class="input input-sm input-bordered w-full rounded-xl text-xs font-bold text-success font-mono" placeholder="MI.TIENDA.PAGOS" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">CBU / CVU</label>
-                  <input type="text" formControlName="cbuCvu" class="input input-sm input-bordered w-full rounded-xl text-xs font-mono" placeholder="000000310001000..." />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Banco / Entidad</label>
-                  <input type="text" formControlName="bankName" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Mercado Pago / Banco Galicia" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Titular de la Cuenta</label>
-                  <input type="text" formControlName="titular" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Nombre completo o Razón Social" />
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- ========================================================================= -->
-        <!-- 4. INTEGRACIONES & APIS (GOOGLE, RESEND, META)                            -->
+        <!-- 3. INTEGRACIONES & APIS (GOOGLE, RESEND, META)                            -->
         <!-- ========================================================================= -->
         @if (activeTab() === 'integrations') {
           <div formGroupName="integrations" class="space-y-6">
@@ -885,16 +513,88 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5 sm:col-span-3">
-                  <label class="text-xs font-bold text-base-content/80">API Key de Resend</label>
-                  <input type="password" formControlName="apiKey" autocomplete="new-password" data-lpignore="true" class="input input-sm input-bordered w-full rounded-xl font-mono text-xs" placeholder="re_123456789_..." />
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-base-content/80">API Key de Resend (Secreto)</label>
+                    <button
+                      type="button"
+                      (click)="showResendKey.set(!showResendKey())"
+                      class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                    >
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showResendKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                      <span>{{ showResendKey() ? 'Ocultar' : 'Ver' }}</span>
+                    </button>
+                  </div>
+                  <input
+                    [type]="showResendKey() ? 'text' : 'password'"
+                    formControlName="apiKey"
+                    autocomplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
+                    spellcheck="false"
+                    class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
+                    placeholder="re_123456789_xxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <p class="text-[11px] text-base-content/50">
+                    Obtenela en tu panel de <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" class="link link-primary font-bold">Resend.com ➔ API Keys</a>.
+                  </p>
                 </div>
+
                 <div class="space-y-1.5 sm:col-span-2">
                   <label class="text-xs font-bold text-base-content/80">Email Remitente (From Email)</label>
-                  <input type="email" formControlName="fromEmail" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="pedidos@mitienda.com" />
+                  <input
+                    type="email"
+                    formControlName="fromEmail"
+                    autocomplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="pedidos@mitienda.com o onboarding@resend.dev"
+                  />
                 </div>
+
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold text-base-content/80">Nombre Remitente</label>
-                  <input type="text" formControlName="fromName" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Mi Tienda" />
+                  <input
+                    type="text"
+                    formControlName="fromName"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs"
+                    placeholder="Mi Tienda"
+                  />
+                </div>
+
+                <!-- 💡 Cartelito Informativo Pedagógico sobre From Email -->
+                <div class="sm:col-span-3 p-3.5 bg-info/10 border border-info/20 rounded-2xl space-y-2 text-xs text-base-content/80">
+                  <div class="flex items-center gap-2 font-bold text-info">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">info</mat-icon>
+                    <span class="text-xs uppercase tracking-wider">¿Qué colocar en "Email Remitente (From Email)"?</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
+                      <div class="flex items-center gap-1.5 font-bold text-success text-[11px]">
+                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">domain</mat-icon>
+                        <span>1. Con Dominio Propio (Recomendado)</span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-relaxed">
+                        Si tenés tu dominio verificado en Resend (ej. <code>vura.com.ar</code>), poné cualquier casilla de tu marca: <br />
+                        <strong class="font-mono text-primary text-[10px]">pedidos@vura.com.ar</strong> o <strong class="font-mono text-primary text-[10px]">hola@vura.com.ar</strong>.
+                      </p>
+                    </div>
+
+                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
+                      <div class="flex items-center gap-1.5 font-bold text-amber-500 text-[11px]">
+                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">science</mat-icon>
+                        <span>2. Sin Dominio / Modo Pruebas</span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-relaxed">
+                        Si todavía no configuraste tu dominio propio, escribí exactamente: <br />
+                        <strong class="font-mono text-amber-600 text-[10px]">onboarding@resend.dev</strong><br />
+                        <span class="text-[10px] text-base-content/50"><em>(Resend te presta este dominio para pruebas y solo envía a tu email de registro).</em></span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1702,31 +1402,190 @@
           </div>
         }
 
+        <!-- Conexión & Tienda Web -->
+        @if (activeTab() === 'connection') {
+          <div class="space-y-6">
+
+            <!-- Banner Informativo -->
+            <div class="bg-gradient-to-r from-primary/10 via-base-100 to-base-100 rounded-2xl border border-primary/20 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-success animate-pulse"></span>
+                  <h3 class="text-sm font-bold text-base-content">Conexión de Tienda & API</h3>
+                  <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-0.5">
+                    {{ configState.connectionSettings()?.subscriptionStatus === 'active' ? '🟢 Conexión Activa' : '🟡 Estado: ' + (configState.connectionSettings()?.subscriptionStatus || 'Activo') }}
+                  </span>
+                </div>
+                <p class="text-xs text-base-content/60 max-w-2xl leading-relaxed">
+                  Usá esta llave para conectar tu sitio web personalizado, una aplicación móvil o compartila con tu programador/diseñador para vincular tu tienda con el catálogo de NexoCommerce.
+                </p>
+              </div>
+            </div>
+
+            <!-- Tarjeta 1: Llave Pública de Tienda (Storefront API Key) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">key</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Llave de Conexión de tu Tienda (Pública)</h3>
+                    <p class="text-xs text-base-content/50">Esta clave identifica a tu tienda de forma segura en tu página web.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="showRegenerateConfirm.set(true)"
+                  class="btn btn-xs btn-ghost text-error hover:bg-error/10 font-bold gap-1 rounded-xl"
+                >
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">sync</mat-icon>
+                  <span>Regenerar Llave</span>
+                </button>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-base-content/80">Storefront API Key</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readonly
+                    [value]="configState.connectionSettings()?.apiKey || 'Cargando llave...'"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono bg-base-200/50 text-base-content font-bold select-all"
+                  />
+                  <button
+                    type="button"
+                    (click)="copyApiKey()"
+                    class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shrink-0 shadow-xs"
+                  >
+                    <mat-icon class="text-[16px]! w-4! h-4!">content_copy</mat-icon>
+                    <span>Copiar</span>
+                  </button>
+                </div>
+                <p class="text-[11px] text-base-content/50">
+                  🔒 Es segura para incluirse en el código frontend de tu web (permite consultar catálogo y crear pedidos).
+                </p>
+              </div>
+            </div>
+
+            <!-- Tarjeta 2: Dominios Autorizados (CORS / Whitelist) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">Dominios Autorizados (Seguridad Web)</h3>
+                    <p class="text-xs text-base-content/50">Solo las webs listadas acá pueden consultar los datos de tu tienda.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input para agregar nuevo dominio -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="text"
+                  [value]="newDomainInput()"
+                  (input)="newDomainInput.set($any($event.target).value)"
+                  (keydown.enter)="addDomain()"
+                  placeholder="https://vura.com.ar o http://localhost:4200"
+                  class="input input-sm input-bordered grow rounded-xl text-xs font-mono"
+                />
+                <button
+                  type="button"
+                  (click)="addDomain()"
+                  [disabled]="isUpdatingOrigins() || !newDomainInput().trim()"
+                  class="btn btn-sm btn-primary rounded-xl text-xs font-bold gap-1 shadow-xs"
+                >
+                  <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+                  <span>Agregar Dominio</span>
+                </button>
+              </div>
+
+              <!-- Lista de dominios configurados -->
+              <div class="space-y-2 pt-2">
+                <label class="text-xs font-bold text-base-content/80">Dominios con acceso permitido:</label>
+                @if (configState.connectionSettings()?.allowedOrigins?.length) {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    @for (domain of configState.connectionSettings()?.allowedOrigins; track domain) {
+                      <div class="flex items-center justify-between p-2.5 bg-base-200/50 rounded-xl border border-base-200 text-xs font-mono">
+                        <div class="flex items-center gap-2 truncate">
+                          <span class="w-2 h-2 rounded-full bg-success"></span>
+                          <span class="truncate font-bold text-base-content/85">{{ domain }}</span>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="removeDomain(domain)"
+                          [disabled]="isUpdatingOrigins()"
+                          class="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg p-1"
+                          title="Eliminar dominio"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="p-4 bg-base-200/30 rounded-xl border border-dashed border-base-300 text-center">
+                    <p class="text-xs text-base-content/50">No hay dominios restringidos (cualquier origen autorizado con la llave puede consultar).</p>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Tarjeta 3: Guía Rápida para Desarrolladores & IAs -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">smart_toy</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">¿Cómo conectar tu sitio web o pasarle esto a una IA?</h3>
+                    <p class="text-xs text-base-content/50">Pegá este encabezado en tu web o compartí esta instrucción con Cursor / ChatGPT.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 bg-neutral text-neutral-content rounded-xl font-mono text-xs space-y-2 overflow-x-auto">
+                <p class="text-primary font-bold"># Encabezado HTTP en cada petición a la API:</p>
+                <p>x-api-key: {{ configState.connectionSettings()?.apiKey || 'pk_live_tu_llave' }}</p>
+                <p class="text-base-content/40 pt-1"># URL Base:</p>
+                <p>https://api.vura.com.ar/api</p>
+              </div>
+            </div>
+
+          </div>
+        }
+
       </form>
     </div>
   </ng-container>
 </app-page-layout>
 
-<!-- Modal de Recalcular Precios -->
-@if (showRecalculateModal()) {
+
+
+<!-- Modal de Confirmar Regeneración de Llave -->
+@if (showRegenerateConfirm()) {
   <div class="modal modal-open">
     <div class="modal-box rounded-2xl border border-base-200 shadow-xl space-y-4">
-      <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning flex items-center justify-center">
-        <mat-icon class="text-[24px]! w-6! h-6!">update</mat-icon>
+      <div class="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center">
+        <mat-icon class="text-[24px]! w-6! h-6!">warning</mat-icon>
       </div>
-      <h3 class="font-bold text-base text-base-content">¿Deseas recalcular los precios de tus productos?</h3>
+      <h3 class="font-bold text-base text-base-content">¿Regenerar llave de conexión?</h3>
       <p class="text-xs text-base-content/60 leading-relaxed">
-        Detectamos cambios en los márgenes de ganancia o impuestos globales. Podés actualizar automáticamente los precios de venta de todo tu catálogo según esta nueva configuración.
+        Al generar una nueva llave, la anterior dejará de funcionar inmediatamente. Vas a tener que actualizar la clave en tu página web o aplicación para que sigan cargando los productos.
       </p>
       <div class="modal-action flex gap-2">
-        <button class="btn btn-sm btn-ghost rounded-xl text-xs font-bold" (click)="cancelRecalculate()">
-          Omitir por ahora
+        <button class="btn btn-sm btn-ghost rounded-xl text-xs font-bold" (click)="showRegenerateConfirm.set(false)">
+          Cancelar
         </button>
-        <button class="btn btn-sm btn-primary rounded-xl text-xs font-bold gap-1" [disabled]="isRecalculating()" (click)="confirmRecalculate()">
-          @if (isRecalculating()) {
+        <button class="btn btn-sm btn-error rounded-xl text-xs font-bold gap-1 text-white" [disabled]="isRegeneratingKey()" (click)="confirmRegenerateKey()">
+          @if (isRegeneratingKey()) {
             <span class="loading loading-spinner loading-xs"></span>
           }
-          Recalcular Precios
+          Sí, Regenerar Llave
         </button>
       </div>
     </div>

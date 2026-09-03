@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,7 +20,7 @@ import { SingleImageUpload } from '../../shared/components/single-image-upload/s
   templateUrl: './store-settings.html',
   styleUrl: './store-settings.scss'
 })
-export class StoreSettings {
+export class StoreSettings implements OnInit {
   configState = inject(StoreConfigStateService);
   #storeConfigService = inject(StoreConfigService);
   #sidebarService = inject(SidebarService);
@@ -39,7 +39,15 @@ export class StoreSettings {
   dolarQuotes = signal<IDolarRate[]>([]);
   isLoadingDolares = signal(false);
 
-  activeTab = signal<'general' | 'pricing' | 'gateways' | 'integrations' | 'emails' | 'contact' | 'clothing' | 'pos'>('general');
+  activeTab = signal<'general' | 'integrations' | 'auth' | 'emails' | 'contact' | 'clothing' | 'pos' | 'connection'>('general');
+
+  // Conexión & Tienda Web (API Keys & Dominios)
+  newDomainInput = signal<string>('');
+  isUpdatingOrigins = signal<boolean>(false);
+  isRegeneratingKey = signal<boolean>(false);
+  showRegenerateConfirm = signal<boolean>(false);
+
+  showResendKey = signal<boolean>(false);
 
   // Emails & Templates signals
   selectedEmailTemplate = signal<string>('orderConfirmation');
@@ -158,28 +166,12 @@ export class StoreSettings {
   };
 
   constructor() {
-    this.#sidebarService.navbarTitle.set({ title: 'Configuración de la Tienda' });
+    this.#sidebarService.navbarTitle.set({ title: 'Ajustes de Tienda' });
 
     this.configForm = this.#fb.group({
       name: [''],
-      profit: [0],
-      profit1Pay: [null],
-      profitInstallments: [null],
       costCurrency: ['USD'],
-      dollarQuoteType: ['oficial'],
-      customDollarRate: [0],
-      taxes: this.#fb.group({
-        iva: [21]
-      }),
-      pricingStrategy: this.#fb.group({
-        method: ['markup'],
-        transferGrossUp: [true],
-        absorbInstallments: [true],
-        maxInstallmentsToAbsorb: [3],
-        transferDiscountPercentage: [0],
-        cashDiscountPercentage: [0],
-        card1PayDiscount: [false]
-      }),
+
       integrations: this.#fb.group({
         metaPixel: this.#fb.group({
           active: [false],
@@ -201,6 +193,12 @@ export class StoreSettings {
           fromEmail: [''],
           fromName: ['']
         })
+      }),
+      authConfig: this.#fb.group({
+        allowEmailPassword: [true],
+        allowMagicCode: [true],
+        allowGoogle: [true],
+        defaultMethod: ['google']
       }),
       posConfig: this.#fb.group({
         transferValidationMode: ['fast_receipt'],
@@ -246,51 +244,27 @@ export class StoreSettings {
         twitter: [''],
         tiktok: ['']
       }),
-      clothingFits: [[]],
-      paymentGateways: this.#fb.group({
-        mercadopago: this.#fb.group({
-          active: [false],
-          baseCommission: [0],
-          cft3cuotas: [0],
-          cft6Cuotas: [0],
-          accessToken: [''],
-          publicKey: [''],
-          webhookSecret: [''],
-          maxInstallments: [12],
-          excludedPaymentMethods: [[]],
-          excludedPaymentTypes: [[]]
-        }),
-        uala: this.#fb.group({
-          active: [false],
-          baseCommission: [0],
-          cft3cuotas: [0],
-          cft6Cuotas: [0],
-          credentials: this.#fb.group({
-            userName: [''],
-            clientId: [''],
-            clientSecret: ['']
-          })
-        }),
-        transfer: this.#fb.group({
-          active: [false],
-          cbu: [''],
-          cbuCvu: [''],
-          alias: [''],
-          bankName: [''],
-          titular: ['']
-        })
-      })
+      clothingFits: [[]]
     });
 
     effect(() => {
       const { hasData, config, hasError, isLoading } = this.configState.StoreConfig();
-      if (hasData && !hasError && !isLoading) {
+      if (hasData && !hasError && !isLoading && config) {
         this.configForm.patchValue(config);
+        if (config.costCurrency) {
+          this.configForm.get('costCurrency')?.setValue(config.costCurrency);
+        }
+        if (config.workingHours) {
+          this.configForm.get('workingHours')?.patchValue(config.workingHours);
+        }
         if (config.logo) {
           this.logoControl.setValue(config.logo);
         }
         if (config.contact?.email && !this.testEmailRecipient()) {
           this.testEmailRecipient.set(config.contact.email);
+        }
+        if (config.authConfig) {
+          this.configForm.get('authConfig')?.patchValue(config.authConfig);
         }
       }
     });
@@ -312,27 +286,69 @@ export class StoreSettings {
 
     effect(() => {
       const requestedTab = this.tab();
-      if (requestedTab && ['general', 'pricing', 'gateways', 'integrations', 'emails', 'contact', 'clothing'].includes(requestedTab)) {
+      if (requestedTab === 'pricing' || requestedTab === 'gateways') {
+        this.#router.navigate(['/home/payment-methods']);
+        return;
+      }
+      if (requestedTab === 'emails') {
+        this.#router.navigate(['/home/emails']);
+        return;
+      }
+      if (requestedTab && ['general', 'integrations', 'auth', 'contact', 'clothing', 'pos', 'connection'].includes(requestedTab)) {
         this.activeTab.set(requestedTab as any);
       }
     });
 
-    // Mutua exclusividad entre pasarelas de tarjeta (Mercado Pago vs Ualá Bis)
-    this.configForm.get('paymentGateways.mercadopago.active')?.valueChanges.subscribe((isActive) => {
-      if (isActive && this.configForm.get('paymentGateways.uala.active')?.value) {
-        this.configForm.get('paymentGateways.uala.active')?.setValue(false, { emitEvent: false });
-        this.#NotificationService.info('Mercado Pago activada como pasarela principal de tarjetas. Ualá Bis desactivada.');
-      }
-    });
+    this.configState.loadConnectionSettings();
+  }
 
-    this.configForm.get('paymentGateways.uala.active')?.valueChanges.subscribe((isActive) => {
-      if (isActive && this.configForm.get('paymentGateways.mercadopago.active')?.value) {
-        this.configForm.get('paymentGateways.mercadopago.active')?.setValue(false, { emitEvent: false });
-        this.#NotificationService.info('Ualá Bis activada como pasarela principal de tarjetas. Mercado Pago desactivada.');
-      }
-    });
+  ngOnInit() {
+    this.configState.refresh();
+  }
 
-    this.loadDolarQuotes();
+  copyApiKey() {
+    const key = this.configState.connectionSettings()?.apiKey;
+    if (key) {
+      navigator.clipboard.writeText(key);
+      this.#NotificationService.success('¡Llave de la tienda copiada al portapapeles! 📋');
+    }
+  }
+
+  async addDomain() {
+    const raw = this.newDomainInput().trim();
+    if (!raw) return;
+
+    let domain = raw.replace(/\/+$/, '');
+    if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+      domain = `https://${domain}`;
+    }
+
+    const currentOrigins = this.configState.connectionSettings()?.allowedOrigins || [];
+    if (currentOrigins.includes(domain)) {
+      this.#NotificationService.warning('Este dominio ya está en la lista.');
+      return;
+    }
+
+    const updated = [...currentOrigins, domain];
+    this.isUpdatingOrigins.set(true);
+    await this.configState.updateAllowedOrigins(updated);
+    this.isUpdatingOrigins.set(false);
+    this.newDomainInput.set('');
+  }
+
+  async removeDomain(domainToRemove: string) {
+    const currentOrigins = this.configState.connectionSettings()?.allowedOrigins || [];
+    const updated = currentOrigins.filter(d => d !== domainToRemove);
+    this.isUpdatingOrigins.set(true);
+    await this.configState.updateAllowedOrigins(updated);
+    this.isUpdatingOrigins.set(false);
+  }
+
+  async confirmRegenerateKey() {
+    this.isRegeneratingKey.set(true);
+    await this.configState.regenerateApiKey();
+    this.isRegeneratingKey.set(false);
+    this.showRegenerateConfirm.set(false);
   }
 
   private createTemplateGroup(defaults: any): FormGroup {
@@ -550,27 +566,10 @@ export class StoreSettings {
       await this.uploadLogo();
     }
     await this.saveSlice('general', {
-      name: this.configForm.get('name')?.value
-    });
-  }
-
-  async savePricingSettings() {
-    await this.saveSlice('pricing', {
-      profit: this.configForm.get('profit')?.value,
-      profit1Pay: this.configForm.get('profit1Pay')?.value,
-      profitInstallments: this.configForm.get('profitInstallments')?.value,
+      name: this.configForm.get('name')?.value,
       costCurrency: this.configForm.get('costCurrency')?.value,
-      dollarQuoteType: this.configForm.get('dollarQuoteType')?.value,
-      customDollarRate: this.configForm.get('customDollarRate')?.value,
-      taxes: this.configForm.get('taxes')?.value,
-      pricingStrategy: this.configForm.get('pricingStrategy')?.value,
-      shippingConfig: this.configForm.get('shippingConfig')?.value
-    });
-  }
-
-  async savePaymentGateways() {
-    await this.saveSlice('gateways', {
-      paymentGateways: this.configForm.get('paymentGateways')?.value
+      shippingConfig: this.configForm.get('shippingConfig')?.value,
+      workingHours: this.configForm.get('workingHours')?.value
     });
   }
 
@@ -600,11 +599,16 @@ export class StoreSettings {
     });
   }
 
+  async saveAuthSettings() {
+    await this.saveSlice('auth', {
+      authConfig: this.configForm.get('authConfig')?.value
+    });
+  }
+
   get currentTabSaveLabel(): string {
     switch (this.activeTab()) {
       case 'general': return 'Guardar Identidad & Logo';
-      case 'pricing': return 'Guardar Precios & Márgenes';
-      case 'gateways': return 'Guardar Pasarelas de Pago';
+      case 'auth': return 'Guardar Métodos de Autenticación';
       case 'integrations': return 'Guardar Integraciones';
       case 'emails': return 'Guardar Plantillas de Email';
       case 'contact': return 'Guardar Contacto & Redes';
@@ -617,37 +621,13 @@ export class StoreSettings {
     const tab = this.activeTab();
     switch (tab) {
       case 'general': return this.saveGeneralSettings();
-      case 'pricing': return this.savePricingSettings();
-      case 'gateways': return this.savePaymentGateways();
+      case 'auth': return this.saveAuthSettings();
       case 'integrations': return this.saveIntegrations();
       case 'emails': return this.saveEmailTemplates();
       case 'contact': return this.saveContactSettings();
       case 'clothing': return this.saveClothingSettings();
       default: return this.saveGeneralSettings();
     }
-  }
-
-  async loadDolarQuotes(refresh = false) {
-    this.isLoadingDolares.set(true);
-    const quotes = await this.configState.getDolares(refresh);
-    this.dolarQuotes.set(quotes);
-    this.isLoadingDolares.set(false);
-  }
-
-  selectDollarQuote(casa: string) {
-    this.configForm.get('dollarQuoteType')?.setValue(casa);
-    this.configForm.markAsDirty();
-  }
-
-  async confirmRecalculate() {
-    this.isRecalculating.set(true);
-    await this.configState.recalculatePrices();
-    this.isRecalculating.set(false);
-    this.showRecalculateModal.set(false);
-  }
-
-  cancelRecalculate() {
-    this.showRecalculateModal.set(false);
   }
 
   get clothingFits() {

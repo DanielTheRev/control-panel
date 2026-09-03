@@ -162,6 +162,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/recommendations/recommendations').then(c => c.RecommendationsComponent)
       },
       {
+        path: 'emails',
+        title: 'Emails & Plantillas',
+        loadComponent: () => import('./pages/emails/emails').then(c => c.EmailsComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./pages/store-settings/store-settings').then(c => c.StoreSettings)
       },

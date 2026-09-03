@@ -1,6 +1,6 @@
 <app-page-layout>
   <app-page-header header [title]="isEditMode() ? 'Editar Slide' : 'Nuevo Slide'"
-    [subtitle]="isEditMode() ? 'Modifica los datos del slide principal' : 'Subí una nueva imagen al carrusel para impactar a tus clientes'">
+    [subtitle]="isEditMode() ? 'Modifica los datos del slide' : 'Crea un nuevo banner para el carrusel de la tienda'">
     <div actions class="flex items-center gap-3">
       <a routerLink="/home/hero" class="btn btn-ghost hover:bg-base-200 text-base-content/60 font-medium" [class.btn-disabled]="isSaving()">Cancelar</a>
       <button class="btn btn-neutral shadow-lg hover:shadow-xl transition-all flex items-center gap-2" (click)="saveSlide()"
@@ -15,159 +15,221 @@
   </app-page-header>
 
   <ng-container content>
-    <form [formGroup]="heroForm" class="mt-8 grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <!-- Selector de Tipo de Slide (3 Modos Claros) -->
+    <div class="mt-6 mb-8">
+      <label class="block text-xs font-black uppercase tracking-widest text-base-content/60 mb-3">
+        Elegí el estilo de este Banner:
+      </label>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Modo 1: Visual Puro -->
+        <div 
+          (click)="setSlideType('visual')"
+          class="cursor-pointer p-4.5 rounded-2xl border-2 transition-all duration-200 flex flex-col justify-between"
+          [ngClass]="selectedSlideType() === 'visual' 
+            ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' 
+            : 'border-base-300 bg-base-100 hover:border-base-content/30 hover:bg-base-200/50'"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">🖼️</span>
+              <span class="font-extrabold text-sm text-base-content">Visual Puro</span>
+            </div>
+            @if (selectedSlideType() === 'visual') {
+              <span class="badge badge-primary badge-xs font-bold uppercase text-[9px]">Activo</span>
+            }
+          </div>
+          <p class="text-xs text-base-content/60 leading-relaxed">
+            Solo <strong>Fotos + Link</strong>. Sin textos flotantes. Toda la imagen es clickeable (Recomendado para Vura y marcas de moda).
+          </p>
+        </div>
 
-      <div class="xl:col-span-5 flex flex-col gap-6">
+        <!-- Modo 2: Editorial con Textos -->
+        <div 
+          (click)="setSlideType('editorial')"
+          class="cursor-pointer p-4.5 rounded-2xl border-2 transition-all duration-200 flex flex-col justify-between"
+          [ngClass]="selectedSlideType() === 'editorial' 
+            ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' 
+            : 'border-base-300 bg-base-100 hover:border-base-content/30 hover:bg-base-200/50'"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">✍️</span>
+              <span class="font-extrabold text-sm text-base-content">Editorial con Textos</span>
+            </div>
+            @if (selectedSlideType() === 'editorial') {
+              <span class="badge badge-primary badge-xs font-bold uppercase text-[9px]">Activo</span>
+            }
+          </div>
+          <p class="text-xs text-base-content/60 leading-relaxed">
+            Fotos + <strong>Título, Subtítulo, Descripción y Botón CTA</strong> superpuestos con tipografía editorial.
+          </p>
+        </div>
 
-        <app-single-image-upload title="Imagen Desktop 1 (Principal)" ratioBadge="16:9 RATIO" [control]="imageDesktop1Value">
-        </app-single-image-upload>
+        <!-- Modo 3: Split Dual -->
+        <div 
+          (click)="setSlideType('split')"
+          class="cursor-pointer p-4.5 rounded-2xl border-2 transition-all duration-200 flex flex-col justify-between"
+          [ngClass]="selectedSlideType() === 'split' 
+            ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' 
+            : 'border-base-300 bg-base-100 hover:border-base-content/30 hover:bg-base-200/50'"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">🔀</span>
+              <span class="font-extrabold text-sm text-base-content">Split Dual (50/50)</span>
+            </div>
+            @if (selectedSlideType() === 'split') {
+              <span class="badge badge-primary badge-xs font-bold uppercase text-[9px]">Activo</span>
+            }
+          </div>
+          <p class="text-xs text-base-content/60 leading-relaxed">
+            <strong>2 Fotos en Desktop</strong> (lado a lado) + 1 en Mobile. Ideal para combinar plano medio con plano detalle.
+          </p>
+        </div>
 
-        <app-single-image-upload title="Imagen Desktop 2 (Opcional - Split)" ratioBadge="16:9 RATIO" [control]="imageDesktop2Value">
-        </app-single-image-upload>
+      </div>
+    </div>
 
-        <app-single-image-upload title="Imagen Mobile 1 (Principal)" ratioBadge="4:5 RATIO" [control]="imageMobile1Value">
-        </app-single-image-upload>
+    <!-- Formulario Principal -->
+    <form [formGroup]="heroForm" class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
 
-        <app-single-image-upload title="Imagen Mobile 2 (Opcional - Split)" ratioBadge="4:5 RATIO" [control]="imageMobile2Value">
-        </app-single-image-upload>
+      <!-- Columna Izquierda: Carga de Imágenes Adaptativa -->
+      <div class="xl:col-span-5 flex flex-col gap-5">
+        
+        <div class="card bg-base-100 shadow-sm border border-base-200 p-5">
+          <h4 class="font-bold text-sm text-base-content uppercase tracking-wider mb-4 flex items-center gap-2">
+            <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">image</mat-icon>
+            Archivos de Imagen
+          </h4>
+
+          <div class="flex flex-col gap-4.5">
+            <app-single-image-upload 
+              [title]="selectedSlideType() === 'split' ? 'Imagen Desktop Izquierda' : 'Imagen Desktop (Panorámica)'" 
+              ratioBadge="16:9 RATIO" 
+              [control]="imageDesktop1Value">
+            </app-single-image-upload>
+
+            @if (selectedSlideType() === 'split') {
+              <div class="p-3 bg-base-200/50 rounded-xl border border-primary/20 animate-fade-in">
+                <app-single-image-upload 
+                  title="Imagen Desktop Derecha" 
+                  ratioBadge="16:9 RATIO" 
+                  [control]="imageDesktop2Value">
+                </app-single-image-upload>
+              </div>
+            }
+
+            <app-single-image-upload 
+              title="Imagen Mobile (Vertical)" 
+              ratioBadge="4:5 / 9:16 RATIO" 
+              [control]="imageMobile1Value">
+            </app-single-image-upload>
+          </div>
+        </div>
 
       </div>
 
+      <!-- Columna Derecha: Configuración y Enlace -->
       <div class="xl:col-span-7 card bg-base-100 shadow-sm border border-base-200">
         <div class="card-body p-6 lg:p-8">
 
+          <!-- Header de Estado -->
           <div class="flex items-center justify-between mb-6 border-b border-base-200 pb-4">
-            <h3 class="card-title text-xl">Configuración del Contenido</h3>
-            <label
-              class="cursor-pointer flex items-center gap-3 bg-base-200 px-4 py-2 rounded-full border border-base-300 hover:bg-base-300 transition-colors">
-              <span class="label-text font-bold text-xs uppercase tracking-widest">Estado</span>
+            <div>
+              <h3 class="card-title text-lg font-bold">
+                @if (selectedSlideType() === 'visual') {
+                  Enlace y Destino
+                } @else if (selectedSlideType() === 'split') {
+                  Enlace del Banner Split
+                } @else {
+                  Contenido Editorial
+                }
+              </h3>
+              <p class="text-xs text-base-content/50">
+                @if (selectedSlideType() === 'visual') {
+                  Toda la imagen llevará al link que configures acá abajo.
+                } @else {
+                  Completá los textos y el link de acción.
+                }
+              </p>
+            </div>
+
+            <label class="cursor-pointer flex items-center gap-3 bg-base-200 px-4 py-2 rounded-full border border-base-300 hover:bg-base-300 transition-colors">
+              <span class="label-text font-bold text-xs uppercase tracking-widest">Activo</span>
               <input type="checkbox" class="toggle toggle-success toggle-sm" formControlName="isActive" />
             </label>
           </div>
 
           <div class="grid grid-cols-1 gap-5">
-            <div class="form-control w-full">
-              <label class="label pb-1"><span
-                  class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Título
-                  Principal</span></label>
-              <input type="text"
-                class="input input-bordered w-full font-serif text-lg focus:ring-2 focus:ring-neutral/20"
-                placeholder="Ej. Vura Essentials" formControlName="title" />
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label pb-1"><span
-                  class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Subtítulo /
-                  Etiqueta</span></label>
-              <input type="text" class="input input-bordered w-full focus:ring-2 focus:ring-neutral/20"
-                placeholder="Ej. FW / 2026" formControlName="sub_title" />
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label pb-1"><span
-                  class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Descripción</span></label>
-              <textarea class="textarea textarea-bordered w-full h-24 focus:ring-2 focus:ring-neutral/20"
-                placeholder="Prendas diseñadas para perdurar..." formControlName="description"></textarea>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 p-5 bg-base-200/50 rounded-xl border border-base-200">
-            <div class="form-control w-full">
-              <label class="label pb-1"><span
-                  class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Botón
-                  CTA</span></label>
-              <input type="text" class="input input-bordered input-sm w-full bg-base-100"
-                placeholder="Ej. Comprar Colección" formControlName="ctaText" />
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label pb-1"><span
-                  class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Link del
-                  Botón</span></label>
-              <input type="text" class="input input-bordered input-sm w-full bg-base-100 text-info"
-                placeholder="/products?collection=..." formControlName="ctaLink" />
-            </div>
-          </div>
-
-          <div class="divider my-6">Shop the Look</div>
-
-          <div class="form-control w-full">
-            <label class="label pb-1"><span
-                class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Vincular Productos
-                de la Imagen</span></label>
-
-            <div class="relative w-full">
-              <input type="text"
-                class="input input-bordered w-full pr-10 focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
-                placeholder="Buscar por modelo (Ej. Air Force 1)..." (input)="onSearchChange($event)" />
-
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                @if (isSearching()) {
-                <mat-icon class="animate-spin text-primary">autorenew</mat-icon>
-                } @else {
-                <mat-icon class="text-base-content/40">search</mat-icon>
-                }
+            
+            <!-- Link de Destino (Destacado y común a todos) -->
+            <div class="form-control w-full p-4 bg-primary/[0.03] rounded-2xl border border-primary/20">
+              <label class="label pb-1.5 flex justify-between items-center">
+                <span class="label-text font-black text-xs uppercase tracking-widest text-primary flex items-center gap-1.5">
+                  <mat-icon class="text-[16px]! w-4! h-4!">link</mat-icon>
+                  Link de Destino al hacer Clic *
+                </span>
+              </label>
+              <input 
+                type="text" 
+                class="input input-bordered w-full font-mono text-sm bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl"
+                placeholder="Ej: /products?category=Remeras o /products" 
+                formControlName="ctaLink" 
+              />
+              <div class="flex items-center gap-2 mt-2 flex-wrap text-[11px] text-base-content/50">
+                <span>Atajos rápidos:</span>
+                <button type="button" class="badge badge-outline badge-xs hover:badge-primary cursor-pointer" (click)="heroForm.patchValue({ ctaLink: '/products' })">/products</button>
+                <button type="button" class="badge badge-outline badge-xs hover:badge-primary cursor-pointer" (click)="heroForm.patchValue({ ctaLink: '/products?category=Remeras' })">Remeras</button>
+                <button type="button" class="badge badge-outline badge-xs hover:badge-primary cursor-pointer" (click)="heroForm.patchValue({ ctaLink: '/products?category=Pantalones' })">Pantalones</button>
+                <button type="button" class="badge badge-outline badge-xs hover:badge-primary cursor-pointer" (click)="heroForm.patchValue({ ctaLink: '/products?category=Sweaters' })">Sweaters</button>
               </div>
-
-              @if (suggestions().length > 0) {
-              <div
-                class="absolute z-20 w-full mt-2 bg-base-100 rounded-xl shadow-2xl border border-base-300 max-h-64 overflow-y-auto">
-                <ul class="menu menu-sm p-2 gap-1">
-                  @for (suggestion of suggestions(); track suggestion._id) {
-                  <li>
-                    <a (click)="addProduct(suggestion); $event.preventDefault()"
-                      class="flex items-center gap-4 hover:bg-base-200 rounded-lg p-2 transition-colors">
-                      <div class="avatar">
-                        <div class="w-12 h-12 rounded bg-base-200">
-                          <img [src]="suggestion.images[0]?.url || 'assets/no-image.png'" alt="Img"
-                            class="object-cover">
-                        </div>
-                      </div>
-                      <div class="flex-1">
-                        <div class="font-bold text-sm">{{ suggestion.model }}</div>
-                        <div class="text-[10px] text-base-content/50 uppercase tracking-widest">{{ suggestion.brand }}
-                        </div>
-                      </div>
-                      <mat-icon
-                        class="text-success opacity-0 group-hover:opacity-100 transition-opacity">add_circle</mat-icon>
-                    </a>
-                  </li>
-                  }
-                </ul>
-              </div>
-              }
             </div>
 
-            <div class="mt-4 flex flex-col gap-2">
-              @for (prod of selectedProducts(); track prod._id) {
-              <div
-                class="flex items-center justify-between p-2 pl-3 bg-base-100 rounded-lg border border-base-300 shadow-sm hover:border-error/50 transition-colors group">
-                <div class="flex items-center gap-4">
-                  <div class="avatar">
-                    <div class="w-10 h-10 rounded">
-                      <img [src]="prod.images[0]?.url || 'assets/no-image.png'" alt="Img" class="object-cover">
-                    </div>
-                  </div>
-                  <div>
-                    <div class="font-bold text-sm leading-tight">{{ prod.model }}</div>
-                    <div class="text-[10px] text-base-content/50 font-medium uppercase tracking-wider">{{ prod.brand }}
-                    </div>
-                  </div>
+            <!-- Nombre de Referencia Interno -->
+            <div class="form-control w-full">
+              <label class="label pb-1">
+                <span class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">
+                  Nombre de Referencia {{ selectedSlideType() === 'visual' ? '(Opcional para tu control interno)' : 'o Título Principal *' }}
+                </span>
+              </label>
+              <input 
+                type="text" 
+                class="input input-bordered w-full text-sm rounded-xl"
+                [placeholder]="selectedSlideType() === 'visual' ? 'Ej: Banner Invierno Vura' : 'Ej: Vura Essentials'" 
+                formControlName="title" 
+              />
+            </div>
+
+            <!-- Campos Exclusivos del Modo Editorial -->
+            @if (selectedSlideType() === 'editorial') {
+              <div class="flex flex-col gap-4.5 pt-2 border-t border-base-200 animate-fade-in">
+                <div class="form-control w-full">
+                  <label class="label pb-1">
+                    <span class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Subtítulo / Colección</span>
+                  </label>
+                  <input type="text" class="input input-bordered w-full text-sm rounded-xl"
+                    placeholder="Ej. FW / 2026 o Edición Limitada" formControlName="sub_title" />
                 </div>
-                <button type="button"
-                  class="btn btn-sm btn-ghost btn-circle text-base-content/30 group-hover:text-error transition-colors"
-                  (click)="removeProduct(prod._id)" title="Quitar producto">
-                  <mat-icon class="text-[18px]">close</mat-icon>
-                </button>
+
+                <div class="form-control w-full">
+                  <label class="label pb-1">
+                    <span class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Descripción Breve</span>
+                  </label>
+                  <textarea class="textarea textarea-bordered w-full h-20 text-sm rounded-xl"
+                    placeholder="Prendas diseñadas con siluetas atemporales..." formControlName="description"></textarea>
+                </div>
+
+                <div class="form-control w-full">
+                  <label class="label pb-1">
+                    <span class="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">Texto del Botón CTA</span>
+                  </label>
+                  <input type="text" class="input input-bordered w-full text-sm rounded-xl"
+                    placeholder="Ej. Comprar Colección" formControlName="ctaText" />
+                </div>
               </div>
-              } @empty {
-              <div class="text-center py-6 border-2 border-dashed border-base-200 rounded-lg bg-base-50/50">
-                <mat-icon class="text-base-content/20 text-4xl mb-2">style</mat-icon>
-                <p class="text-xs font-medium text-base-content/50 uppercase tracking-widest">No hay productos
-                  vinculados aún</p>
-              </div>
-              }
-            </div>
+            }
+
           </div>
 
         </div>
@@ -175,84 +237,91 @@
 
     </form>
 
-    <div class="divider my-8 text-base-content/50 font-medium tracking-widest uppercase text-sm">Vista Previa del Slide</div>
+    <!-- Vista Previa Dinámica del Slide -->
+    <div class="divider my-10 text-base-content/50 font-black tracking-widest uppercase text-xs">
+      Vista Previa en Tiempo Real
+    </div>
 
-    <div class="bg-base-200 rounded-xl p-4 lg:p-6 border border-base-300">
-      <div class="max-w-300 mx-auto overflow-hidden relative bg-white shadow-xl rounded-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center h-full p-4 lg:p-6">
+    <div class="bg-base-200 rounded-3xl p-4 lg:p-8 border border-base-300 shadow-inner mb-12">
+      <div class="max-w-4xl mx-auto overflow-hidden relative bg-black shadow-2xl rounded-2xl aspect-16/9 flex items-center justify-center">
+        
+        <!-- Modo 1: Visual Puro Preview -->
+        @if (selectedSlideType() === 'visual') {
+          @if (previewDesktop()) {
+            <img [src]="previewDesktop()" class="w-full h-full object-cover" />
+            <div class="absolute inset-0 border-2 border-primary/40 pointer-events-none rounded-2xl">
+              <div class="absolute bottom-4 right-4 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">touch_app</mat-icon>
+                <span>Clic lleva a: {{ heroForm.value.ctaLink || '/products' }}</span>
+              </div>
+            </div>
+          } @else {
+            <div class="flex flex-col items-center justify-center text-white/40 gap-3 p-6 text-center">
+              <mat-icon class="text-5xl">wallpaper</mat-icon>
+              <span class="text-xs font-bold tracking-widest uppercase">Subí una imagen Desktop para ver el Banner Visual</span>
+            </div>
+          }
+        }
 
-          <!-- Columna Imagen -->
-          <div class="lg:col-span-7 rounded-sm relative h-87.5 md:h-112.5 lg:h-137.5 overflow-hidden group-slide bg-base-300/30">
-            @if (previewDesktop() || previewMobile()) {
-            <picture class="w-full h-full block">
-              <source media="(min-width: 1024px)" [srcset]="previewDesktop() || previewMobile()">
-              <source media="(max-width: 1023px)" [srcset]="previewMobile() || previewDesktop()">
-              <img [src]="previewDesktop() || previewMobile()" [alt]="heroForm.value.title"
-                class="w-full h-full object-cover object-top transition-transform duration-6000 ease-out rounded-sm scale-100 group-hover:scale-[1.03]">
-            </picture>
+        <!-- Modo 2: Split Dual Preview -->
+        @if (selectedSlideType() === 'split') {
+          <div class="w-full h-full grid grid-cols-2 gap-1 bg-black">
+            <div class="relative w-full h-full bg-base-300/20 flex items-center justify-center overflow-hidden">
+              @if (previewDesktop()) {
+                <img [src]="previewDesktop()" class="w-full h-full object-cover" />
+              } @else {
+                <span class="text-white/40 text-xs font-bold uppercase">Foto Izquierda</span>
+              }
+            </div>
+            <div class="relative w-full h-full bg-base-300/20 flex items-center justify-center overflow-hidden">
+              @if (previewDesktop2()) {
+                <img [src]="previewDesktop2()" class="w-full h-full object-cover" />
+              } @else {
+                <span class="text-white/40 text-xs font-bold uppercase">Foto Derecha</span>
+              }
+            </div>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">touch_app</mat-icon>
+            <span>Split Clic: {{ heroForm.value.ctaLink || '/products' }}</span>
+          </div>
+        }
+
+        <!-- Modo 3: Editorial Preview -->
+        @if (selectedSlideType() === 'editorial') {
+          <div class="relative w-full h-full">
+            @if (previewDesktop()) {
+              <img [src]="previewDesktop()" class="w-full h-full object-cover opacity-85" />
             } @else {
-            <div class="w-full h-full flex flex-col items-center justify-center text-base-content/30 gap-4">
-              <mat-icon class="text-6xl text-base-content/20">wallpaper</mat-icon>
-              <span class="font-medium tracking-widest uppercase text-xs">Subí tus imágenes para previsualizar</span>
-            </div>
+              <div class="w-full h-full bg-neutral-900 flex items-center justify-center text-white/30 text-xs uppercase font-bold">
+                Fondo Editorial
+              </div>
             }
-
-            @if (heroForm.value.sub_title) {
-            <div
-              class="absolute top-6 left-6 border-l-2 pl-3 py-1 z-20 border-black bg-white/60 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-none transition-all duration-700 delay-300 opacity-100 translate-y-0">
-              <span class="block text-[8px] lg:text-[10px] uppercase font-sans tracking-[0.4em] font-bold text-black">
-                {{ heroForm.value.sub_title }}
-              </span>
-            </div>
-            }
-          </div>
-
-          <!-- Columna Textos -->
-          <div class="lg:col-span-5 flex flex-col h-full justify-center lg:pr-8 px-4 lg:px-0 py-6 lg:py-0">
-            <div class="transition-all duration-700 delay-200 transform opacity-100 translate-x-0">
-
-              <div class="inline-flex items-center gap-2 mb-4">
-                <span
-                  class="text-[8px] lg:text-[9px] font-bold tracking-[0.3em] text-green-600 uppercase font-sans bg-green-50 px-2.5 py-1 rounded-full border border-green-200/50">
-                  6 Cuotas Sin Interés
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-8 lg:px-14 text-white">
+              @if (heroForm.value.sub_title) {
+                <span class="text-[10px] uppercase font-bold tracking-[0.3em] text-white/70 mb-1">
+                  {{ heroForm.value.sub_title }}
                 </span>
-                <span class="text-[8px] font-medium text-gray-300 uppercase tracking-widest">|</span>
-                <span class="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">
-                  15% OFF Efectivo/Transf.
+              }
+              <h2 class="text-3xl lg:text-5xl font-serif font-black tracking-tight text-white mb-2"
+                [innerHTML]="formatTitle(heroForm.value.title || 'Título Principal')">
+              </h2>
+              @if (heroForm.value.description) {
+                <p class="text-xs text-white/80 max-w-sm font-light leading-relaxed mb-4">
+                  {{ heroForm.value.description }}
+                </p>
+              }
+              <div class="inline-flex">
+                <span class="bg-white text-black text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-xs shadow-lg">
+                  {{ heroForm.value.ctaText || 'Comprar Ahora' }} →
                 </span>
               </div>
-
-              <h1 class="text-5xl md:text-6xl lg:text-7xl font-serif text-black leading-[0.85] mb-6 tracking-tighter"
-                [innerHTML]="formatTitle(heroForm.value.title || 'Título\nPrincipal')"></h1>
-
-              <p class="text-gray-500 font-sans text-xs lg:text-sm max-w-70 lg:max-w-80 leading-relaxed mb-8 border-l border-gray-200 pl-6">
-                {{ heroForm.value.description || 'Escribí una breve descripción del slide para atrapar la atención de tus clientes y destacar el valor de tu marca.' }}
-              </p>
-
-              <a class="group relative flex items-center justify-between text-[11px] bg-black text-white px-6 py-4 lg:py-5 rounded-sm transition-all duration-300 hover:bg-gray-900 w-full lg:w-[80%] cursor-default">
-                <span class="font-bold tracking-[0.4em] uppercase text-center w-full">{{ heroForm.value.ctaText || 'Comprar Ahora' }}</span>
-                <svg class="w-4 h-4 absolute right-5 transform group-hover:translate-x-1.5 transition-transform text-orange-200" fill="none"
-                  stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-
-              <div class="mt-10 lg:mt-12 grid grid-cols-2 gap-6 opacity-40">
-                <div class="space-y-1">
-                  <p class="text-[8px] font-bold uppercase tracking-[0.2em] text-black">Envíos a todo el país</p>
-                  <div class="h-px w-6 bg-black"></div>
-                </div>
-                <div class="space-y-1">
-                  <p class="text-[8px] font-bold uppercase tracking-[0.2em] text-black">Cambios sin cargo</p>
-                  <div class="h-px w-6 bg-black"></div>
-                </div>
-              </div>
-
             </div>
           </div>
+        }
 
-        </div>
       </div>
     </div>
+
   </ng-container>
 </app-page-layout>

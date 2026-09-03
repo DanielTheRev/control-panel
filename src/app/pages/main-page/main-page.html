@@ -175,21 +175,21 @@
           }
           <a routerLink="/home/settings" routerLinkActive="active" class="menu-item text-primary"
             [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Tienda & Finanzas' : ''" matTooltipPosition="right">
-            <mat-icon>settings</mat-icon>
-            @if (isExpanded) { <span class="menu-text font-semibold">Tienda & Finanzas</span> }
+            [matTooltip]="isCollapsed ? 'Ajustes de Tienda' : ''" matTooltipPosition="right">
+            <mat-icon>store</mat-icon>
+            @if (isExpanded) { <span class="menu-text font-semibold">Ajustes de Tienda</span> }
           </a>
-          <a routerLink="/home/settings" [queryParams]="{ tab: 'emails' }" class="menu-item"
+          <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Cobros & Pagos' : ''" matTooltipPosition="right">
+            <mat-icon>payments</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Cobros & Pagos</span> }
+          </a>
+          <a routerLink="/home/emails" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
             [matTooltip]="isCollapsed ? 'Emails & Plantillas' : ''" matTooltipPosition="right">
             <mat-icon>mail</mat-icon>
             @if (isExpanded) { <span class="menu-text">Emails & Plantillas</span> }
-          </a>
-          <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Métodos de Pago' : ''" matTooltipPosition="right">
-            <mat-icon>payments</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Métodos de Pago</span> }
           </a>
           <a routerLink="/home/shipping-options" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
@@ -352,16 +352,16 @@
           <div class="flex flex-col gap-0.5">
             <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
             <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item text-primary">
-              <mat-icon>settings</mat-icon>
-              <span class="menu-text font-semibold">Tienda & Finanzas</span>
-            </a>
-            <a routerLink="/home/settings" [queryParams]="{ tab: 'emails' }" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>mail</mat-icon>
-              <span class="menu-text">Emails & Plantillas</span>
+              <mat-icon>store</mat-icon>
+              <span class="menu-text font-semibold">Ajustes de Tienda</span>
             </a>
             <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
               <mat-icon>payments</mat-icon>
-              <span class="menu-text">Métodos de Pago</span>
+              <span class="menu-text">Cobros & Pagos</span>
+            </a>
+            <a routerLink="/home/emails" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>mail</mat-icon>
+              <span class="menu-text">Emails & Plantillas</span>
             </a>
             <a routerLink="/home/shipping-options" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
               <mat-icon>local_shipping</mat-icon>

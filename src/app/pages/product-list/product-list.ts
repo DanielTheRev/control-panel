@@ -64,6 +64,8 @@ export class ProductList {
     if (this.ProductState.currentHasSeoImageFilter() !== undefined) count++;
     if (this.ProductState.currentHasSizeGuideFilter() !== undefined) count++;
     if (this.ProductState.currentHasLinkProviderFilter() !== undefined) count++;
+    if (this.ProductState.currentIsFeaturedFilter() !== undefined) count++;
+    if (this.ProductState.currentSortBy() && this.ProductState.currentSortBy() !== 'newest') count++;
     return count;
   });
 
@@ -171,6 +173,20 @@ export class ProductList {
     this.ProductState.setNoSeoOnlyFilter(false);
     this.ProductState.setHasSeoImageFilter(undefined);
     this.ProductState.setHasSizeGuideFilter(undefined);
+    this.ProductState.setHasLinkProviderFilter(undefined);
+    this.ProductState.setIsFeaturedFilter(undefined);
+    this.ProductState.setSortBy('newest');
+  }
+
+  getSortLabel(sortBy: string): string {
+    switch (sortBy) {
+      case 'price_asc': return 'Menor Precio';
+      case 'price_desc': return 'Mayor Precio';
+      case 'oldest': return 'Más Antiguos';
+      case 'name_asc': return 'Nombre: A-Z';
+      case 'name_desc': return 'Nombre: Z-A';
+      default: return 'Más Nuevos';
+    }
   }
 
   onPageChange(event: PageEvent | { pageIndex: number; pageSize: number; length: number; previousPageIndex?: number }) {
@@ -197,6 +213,66 @@ export class ProductList {
     return product.variants
       ?.filter(v => v.isActive)
       .reduce((sum, v) => sum + v.stock, 0) || 0;
+  }
+
+  getProductColors(product: IProduct): Array<{ name: string; hex: string }> {
+    if (!product.variants || product.variants.length === 0) return [];
+
+    const colorMap = new Map<string, { name: string; hex: string }>();
+
+    for (const v of product.variants) {
+      if (v.isActive === false) continue;
+
+      // 1. Caso Indumentaria / General: variant.color
+      if ((v as any).color && (v as any).color.name) {
+        const name = String((v as any).color.name).trim();
+        const hex = (v as any).color.hex || '#000000';
+        if (name && !colorMap.has(name.toLowerCase())) {
+          colorMap.set(name.toLowerCase(), { name, hex });
+        }
+      }
+      // 2. Caso legacy: variant.colorName / variant.colorHex
+      else if ((v as any).colorName) {
+        const name = String((v as any).colorName).trim();
+        const hex = (v as any).colorHex || '#000000';
+        if (name && !colorMap.has(name.toLowerCase())) {
+          colorMap.set(name.toLowerCase(), { name, hex });
+        }
+      }
+      // 3. Caso Tecnología: variant.attributes con key 'Color'
+      else if (Array.isArray((v as any).attributes)) {
+        const colorAttr = (v as any).attributes.find(
+          (a: any) => a.key && a.key.toLowerCase() === 'color'
+        );
+        if (colorAttr && colorAttr.value) {
+          const name = String(colorAttr.value).trim();
+          const hex = this.getApproximateColorHex(name);
+          if (name && !colorMap.has(name.toLowerCase())) {
+            colorMap.set(name.toLowerCase(), { name, hex });
+          }
+        }
+      }
+    }
+
+    return Array.from(colorMap.values());
+  }
+
+  getApproximateColorHex(colorName: string): string {
+    const c = colorName.toLowerCase().trim();
+    if (c.includes('negro') || c.includes('black') || c.includes('space gray') || c.includes('titanio negro')) return '#0D0D0D';
+    if (c.includes('blanco') || c.includes('white') || c.includes('polar')) return '#FFFFFF';
+    if (c.includes('crudo') || c.includes('ivory') || c.includes('marfil') || c.includes('crema')) return '#F8F8F7';
+    if (c.includes('arena') || c.includes('sand') || c.includes('beige')) return '#EFE9E1';
+    if (c.includes('gris') || c.includes('gray') || c.includes('silver') || c.includes('plata')) return '#B0B0B0';
+    if (c.includes('azul') || c.includes('blue') || c.includes('navy') || c.includes('marino')) return '#1A237E';
+    if (c.includes('celeste') || c.includes('light blue') || c.includes('sky')) return '#81D4FA';
+    if (c.includes('rojo') || c.includes('red')) return '#D32F2F';
+    if (c.includes('rosa') || c.includes('pink') || c.includes('rose')) return '#F48FB1';
+    if (c.includes('verde') || c.includes('green') || c.includes('olive') || c.includes('oliva')) return '#388E3C';
+    if (c.includes('marron') || c.includes('brown') || c.includes('tostado') || c.includes('chocolate')) return '#5D4037';
+    if (c.includes('bordeaux') || c.includes('vino') || c.includes('burgundy')) return '#4A148C';
+    if (c.includes('oro') || c.includes('gold') || c.includes('dorado')) return '#FFD700';
+    return '#66625E';
   }
 
   getCategoryCount(category: string): number {
@@ -929,6 +1005,14 @@ export class ProductList {
       type: 'string',
       explanation: 'Nombre o modelo comercial.',
       example: 'Remera Oversize Vesper'
+    },
+    {
+      key: 'subtitle',
+      payloadKey: 'subtitle',
+      label: '📌 Subtítulo / Frase Comercial',
+      type: 'string',
+      explanation: 'Subtítulo breve o bajada del producto (ej: "100% Algodón Peinado 24/1").',
+      example: '100% Algodón Peinado 24/1'
     }
   ];
 
@@ -1372,6 +1456,10 @@ REGLAS CRÍTICAS:
         item.currentGender = (p as any).gender;
       }
 
+      if (scopeKeys.includes('subtitle') && p.subtitle) {
+        item.currentSubtitle = p.subtitle;
+      }
+
       return item;
     });
 
@@ -1460,6 +1548,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             model: String(item.model).trim(),
             brand: String(item.brand).trim(),
             category: String(item.category).trim(),
+            subtitle: item.subtitle ? String(item.subtitle).trim() : '',
             productType: item.productType || 'ClothingProduct',
             costPriceARS: Number(item.costPriceARS || item.price || 0),
             shortDescription: item.shortDescription || '',
@@ -1562,6 +1651,14 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
               label: 'Nombre',
               text: `${item.model} (Antes: ${orig.model})`,
               icon: 'edit'
+            });
+          }
+
+          if (item.subtitle !== undefined) {
+            changes.push({
+              label: 'Subtítulo',
+              text: item.subtitle ? String(item.subtitle) : '(vacío)',
+              icon: 'subtitles'
             });
           }
 

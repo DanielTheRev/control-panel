@@ -1,0 +1,839 @@
+@let state = storeConfigState.StoreConfig();
+<app-page-layout>
+  <app-page-header
+    header
+    title="Emails & Plantillas"
+    subtitle="Personalizá el diseño, textos y notificaciones transaccionales automáticas enviadas vía Resend."
+  >
+    <div actions class="flex items-center gap-2">
+      <!-- Botón Enviar Prueba -->
+      <button
+        type="button"
+        (click)="showTestEmailModal.set(true)"
+        class="btn btn-sm btn-ghost border border-base-200 rounded-xl font-bold gap-1.5 shadow-2xs hover:bg-base-200"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4! text-primary">send</mat-icon>
+        <span class="hidden sm:inline">Enviar Prueba</span>
+      </button>
+
+      <!-- Botón Guardar Plantillas -->
+      <button
+        class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4"
+        [disabled]="state.isLoading || isSaving()"
+        (click)="saveEmailTemplates()"
+      >
+        @if (state.isLoading || isSaving()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+          <span>Guardar Plantillas</span>
+        }
+      </button>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <div class="p-3 sm:p-5 w-full max-w-7xl mx-auto space-y-6">
+
+      <!-- ========================================================================= -->
+      <!-- ⚠️ CARTEL GIGANTE SI RESEND NO ESTÁ CONFIGURADO                           -->
+      <!-- ========================================================================= -->
+      @if (!isResendConfigured()) {
+        <div class="p-5 sm:p-6 bg-gradient-to-r from-amber-500/15 via-warning/15 to-error/10 border-2 border-warning/40 rounded-3xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5 animate-fadeIn">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-warning text-warning-content flex items-center justify-center shrink-0 shadow-md shadow-warning/20 mt-1 md:mt-0">
+              <mat-icon class="text-[32px]! w-8! h-8!">mark_email_unread</mat-icon>
+            </div>
+            <div class="space-y-1.5 max-w-2xl">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-warning font-black text-xs uppercase tracking-wider text-warning-content px-2.5 py-1">Servicio Desconectado</span>
+                <span class="text-xs font-bold text-base-content/60">Email Transaccional Inactivo</span>
+              </div>
+              <h3 class="text-base sm:text-lg font-black text-base-content tracking-tight">
+                ¡Tu tienda no puede enviar emails automáticos a los clientes!
+              </h3>
+              <p class="text-xs sm:text-sm text-base-content/70 leading-relaxed">
+                Para que tus clientes reciban las <strong>confirmaciones de compra</strong>, los <strong>datos de transferencia</strong> y el <strong>código de seguimiento del envío</strong>, necesitás conectar tu API Key de <strong>Resend</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
+            <button
+              type="button"
+              (click)="showResendHelpModal.set(true)"
+              class="btn btn-sm btn-ghost border border-base-300 rounded-xl font-bold gap-1.5"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">help_outline</mat-icon>
+              <span>¿Cómo funciona?</span>
+            </button>
+            <button
+              type="button"
+              (click)="showResendConfigModal.set(true)"
+              class="btn btn-sm btn-warning font-black rounded-xl gap-1.5 shadow-md shadow-warning/20 text-warning-content px-5"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">key</mat-icon>
+              <span>Configurar Resend Ahora</span>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- BANNER DE RESEND CONECTADO -->
+        <div class="p-3.5 bg-success/10 border border-success/20 rounded-2xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-success/20 text-success flex items-center justify-center font-bold">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">verified</mat-icon>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-xs font-bold text-base-content">Servicio de Resend Conectado</h4>
+                <span class="badge badge-xs badge-success text-white font-bold">🟢 Activo</span>
+              </div>
+              <p class="text-[11px] text-base-content/60">
+                Remitente configurado: <strong>{{ resendFromName() }}</strong> &lt;<code class="font-mono">{{ resendFromEmail() || 'onboarding@resend.dev' }}</code>&gt;
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="showResendHelpModal.set(true)"
+              class="btn btn-xs btn-ghost text-base-content/60 hover:text-base-content"
+            >
+              Ayuda & Dominios
+            </button>
+            <button
+              type="button"
+              (click)="showResendConfigModal.set(true)"
+              class="btn btn-xs btn-outline rounded-lg font-bold gap-1"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">tune</mat-icon>
+              <span>Editar Resend</span>
+            </button>
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="emailsForm" class="space-y-6">
+
+        <!-- ========================================================================= -->
+        <!-- 🎨 BRANDING GLOBAL DE CORREOS                                            -->
+        <!-- ========================================================================= -->
+        <div formGroupName="branding" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+          <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-black">
+              <mat-icon class="text-[20px]! w-5! h-5!">palette</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Identidad Visual & Branding de Correos</h3>
+              <p class="text-xs text-base-content/50">Personalizá los colores, logo y pie de página de todos los emails transaccionales.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <!-- Color Primario de la Marca -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-base-content/80 block">Color de Acento / Botones</label>
+              <div class="flex items-center gap-2">
+                <input
+                  type="color"
+                  formControlName="primaryColor"
+                  class="w-10 h-10 rounded-xl cursor-pointer border border-base-300 p-0.5 bg-base-100"
+                />
+                <input
+                  type="text"
+                  formControlName="primaryColor"
+                  class="input input-sm input-bordered w-full rounded-xl font-mono text-xs font-bold uppercase"
+                  placeholder="#111827"
+                />
+              </div>
+              <div class="flex items-center gap-1.5 pt-1">
+                <span class="text-[10px] text-base-content/50">Presets:</span>
+                <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#111827')" class="w-4 h-4 rounded-full bg-[#111827] border border-white/20" title="Negro Ébano"></button>
+                <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#4f46e5')" class="w-4 h-4 rounded-full bg-[#4f46e5] border border-white/20" title="Índigo"></button>
+                <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#059669')" class="w-4 h-4 rounded-full bg-[#059669] border border-white/20" title="Esmeralda"></button>
+                <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#dc2626')" class="w-4 h-4 rounded-full bg-[#dc2626] border border-white/20" title="Rojo Carmesí"></button>
+                <button type="button" (click)="emailBrandingControl.get('primaryColor')?.setValue('#d97706')" class="w-4 h-4 rounded-full bg-[#d97706] border border-white/20" title="Ámbar"></button>
+              </div>
+            </div>
+
+            <!-- Opciones de Cabecera y Redes -->
+            <div class="space-y-3 bg-base-200/40 p-3.5 rounded-xl border border-base-200">
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-xs font-bold text-base-content">Mostrar Logotipo en Cabecera</span>
+                <input type="checkbox" formControlName="showStoreLogo" class="toggle toggle-primary toggle-sm" />
+              </label>
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-xs font-bold text-base-content">Mostrar Enlaces a Redes</span>
+                <input type="checkbox" formControlName="showSocialLinks" class="toggle toggle-primary toggle-sm" />
+              </label>
+            </div>
+
+            <!-- Pie de Página (Footer Text) -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-base-content/80 block">Mensaje de Pie de Página (Footer)</label>
+              <textarea
+                formControlName="footerText"
+                rows="3"
+                class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                placeholder="¡Gracias por comprar en nuestra tienda! Si tenés dudas respondé a este correo."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- 📧 GRID PRINCIPAL: SELECTOR + EDITOR + LIVE PREVIEW                       -->
+        <!-- ========================================================================= -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- COLUMNA IZQUIERDA: Selector de Plantillas y Formulario de Edición (6 cols) -->
+          <div class="lg:col-span-6 xl:col-span-6 space-y-4">
+
+            <!-- Selector de Plantilla -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black uppercase tracking-wider text-base-content/60">Seleccionar Evento de Email</span>
+                <span class="badge badge-sm badge-neutral font-bold">{{ emailTemplatesCatalog.length }} Plantillas</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                @for (tpl of emailTemplatesCatalog; track tpl.key) {
+                  <button
+                    type="button"
+                    (click)="selectEmailTemplate(tpl.key)"
+                    class="p-2.5 rounded-xl border text-left transition-all flex items-start gap-2.5 shadow-2xs"
+                    [ngClass]="selectedEmailTemplate() === tpl.key
+                      ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20'
+                      : 'border-base-200 bg-base-100 hover:bg-base-200/50'"
+                  >
+                    <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center shrink-0 mt-0.5" [ngClass]="tpl.color">
+                      <mat-icon class="text-[18px]! w-4.5! h-4.5!">{{ tpl.icon }}</mat-icon>
+                    </div>
+                    <div class="grow min-w-0">
+                      <div class="flex items-center justify-between gap-1">
+                        <h4 class="text-xs font-bold text-base-content truncate">{{ tpl.title }}</h4>
+                        <span class="badge badge-xs text-[8px] font-bold" [ngClass]="selectedEmailTemplate() === tpl.key ? 'badge-primary' : 'badge-ghost'">{{ tpl.badge }}</span>
+                      </div>
+                      <p class="text-[10px] text-base-content/50 line-clamp-1 mt-0.5">{{ tpl.desc }}</p>
+                    </div>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Formulario de Edición de la Plantilla Seleccionada -->
+            @for (currentKey of [selectedEmailTemplate()]; track currentKey) {
+              <div [formGroup]="currentTemplateControl" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content">
+                      @for (tpl of emailTemplatesCatalog; track tpl.key) {
+                        @if (tpl.key === selectedEmailTemplate()) {
+                          {{ tpl.title }}
+                        }
+                      }
+                    </h3>
+                    <p class="text-[11px] text-base-content/50">Personalizá los textos exactos que recibirá el comprador.</p>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-base-content/70">Activo</span>
+                    <input type="checkbox" formControlName="enabled" class="toggle toggle-success toggle-sm" />
+                  </div>
+                </div>
+
+                <!-- Asunto (Subject) -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-base-content block">Asunto del Correo (Subject)</label>
+                    <span class="text-[10px] text-base-content/40">Visible en la bandeja de entrada</span>
+                  </div>
+                  <input
+                    type="text"
+                    formControlName="subject"
+                    (focus)="setFocusedField('subject')"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-bold"
+                    [placeholder]="currentDefaultTemplate.subject || 'Asunto del correo'"
+                  />
+                </div>
+
+                <!-- Título Principal (Heading) -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Título Principal (Encabezado dentro del mail)</label>
+                  <input
+                    type="text"
+                    formControlName="heading"
+                    (focus)="setFocusedField('heading')"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs"
+                    [placeholder]="currentDefaultTemplate.heading || 'Título principal'"
+                  />
+                </div>
+
+                <!-- Mensaje / Cuerpo (Message Body) -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-base-content block">Mensaje Principal</label>
+                    <span class="text-[10px] text-base-content/40">Texto introductorio</span>
+                  </div>
+                  <textarea
+                    formControlName="message"
+                    (focus)="setFocusedField('message')"
+                    rows="3"
+                    class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                    [placeholder]="currentDefaultTemplate.message || 'Mensaje principal'"
+                  ></textarea>
+                </div>
+
+                <!-- Instrucciones adicionales (Extra Instructions) -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Instrucciones Adicionales o Destacadas (Opcional)</label>
+                  <textarea
+                    formControlName="extraInstructions"
+                    (focus)="setFocusedField('extraInstructions')"
+                    rows="2"
+                    class="textarea textarea-sm textarea-bordered w-full rounded-xl text-xs resize-none"
+                    [placeholder]="currentDefaultTemplate.extraInstructions || 'Instrucciones adicionales o datos destacados (opcional)'"
+                  ></textarea>
+                </div>
+
+                <!-- Botón de Llamado a la Acción (CTA Button Text) -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content block">Texto del Botón Principal (CTA)</label>
+                  <input
+                    type="text"
+                    formControlName="buttonText"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs"
+                    [placeholder]="currentDefaultTemplate.buttonText || 'Ver Estado del Pedido'"
+                  />
+                </div>
+
+                <!-- Inserción de Variables Dinámicas con 1 Clic -->
+                <div class="pt-3 border-t border-base-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Variables Disponibles (Clic para insertar)</span>
+                    <span class="text-[10px] text-primary font-bold">Campo activo: {{ focusedField() }}</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto custom-scrollbar p-1 bg-base-200/40 rounded-xl border border-base-200">
+                    @for (v of availableVariables; track v.tag) {
+                      <button
+                        type="button"
+                        (click)="insertVariable(v.tag)"
+                        class="badge badge-sm badge-ghost border border-base-300 hover:badge-primary cursor-pointer text-[10px] font-mono py-2 transition-colors"
+                        [matTooltip]="v.label"
+                      >
+                        {{ v.tag }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Remitente Específico para esta plantilla (Opcional) -->
+                <div class="pt-3 border-t border-base-200 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 block">Remitente de este Evento (Opcional)</span>
+                    <span class="text-[10px] text-base-content/40">Hereda el general de Resend si está vacío</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="text-[11px] font-bold text-base-content/80">Nombre de Remitente</label>
+                      <input
+                        type="text"
+                        formControlName="fromName"
+                        class="input input-xs input-bordered w-full rounded-lg text-xs"
+                        [placeholder]="resendFromName()"
+                      />
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-[11px] font-bold text-base-content/80">Email de Remitente</label>
+                      <input
+                        type="email"
+                        formControlName="fromEmail"
+                        class="input input-xs input-bordered w-full rounded-lg text-xs font-mono"
+                        [placeholder]="resendFromEmail() || 'pedidos@mitienda.com'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- COLUMNA DERECHA: Live Preview (6 cols) -->
+          <div class="lg:col-span-6 xl:col-span-6 space-y-4">
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4 sticky top-6">
+              
+              <!-- Header del Previsualizador -->
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">visibility</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">Vista Previa en Tiempo Real</h3>
+                    <p class="text-[10px] text-base-content/50">Así verá el comprador el email en su bandeja de entrada.</p>
+                  </div>
+                </div>
+
+                <!-- Dispositivo Toggle (Desktop / Mobile) -->
+                <div class="flex items-center gap-1 bg-base-200 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    (click)="previewDevice.set('desktop')"
+                    class="btn btn-xs rounded-lg font-bold gap-1 transition-all"
+                    [ngClass]="previewDevice() === 'desktop' ? 'btn-neutral shadow-2xs' : 'btn-ghost text-base-content/60'"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">desktop_windows</mat-icon>
+                    <span class="hidden sm:inline">Desktop</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="previewDevice.set('mobile')"
+                    class="btn btn-xs rounded-lg font-bold gap-1 transition-all"
+                    [ngClass]="previewDevice() === 'mobile' ? 'btn-neutral shadow-2xs' : 'btn-ghost text-base-content/60'"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">smartphone</mat-icon>
+                    <span class="hidden sm:inline">Mobile</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Header Simulado de Email (Remitente y Asunto) -->
+              <div class="bg-base-200/60 p-3 rounded-xl border border-base-200 space-y-1.5 text-xs font-medium">
+                <div class="flex items-center gap-2 text-base-content/70">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 w-12 shrink-0">De:</span>
+                  <span class="font-semibold text-base-content truncate">{{ livePreviewSender }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-base-content/70">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 w-12 shrink-0">Para:</span>
+                  <span class="text-base-content/80 truncate">Federico Gómez &lt;cliente@ejemplo.com&gt;</span>
+                </div>
+                <div class="flex items-start gap-2 pt-1 border-t border-base-300/40">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 w-12 shrink-0 mt-0.5">Asunto:</span>
+                  <span class="font-bold text-base-content leading-snug">{{ livePreviewSubject }}</span>
+                </div>
+              </div>
+
+              <!-- Ventana del Correo Renderizado (Simulation Container) -->
+              <div class="bg-base-300/30 p-2 sm:p-4 rounded-2xl flex justify-center items-center overflow-x-auto">
+                <div
+                  class="bg-white text-gray-900 rounded-xl shadow-md border border-gray-200 transition-all duration-300 overflow-hidden"
+                  [style.width]="previewDevice() === 'mobile' ? '340px' : '100%'"
+                  [style.maxWidth]="'580px'"
+                >
+                  <!-- Cabecera del Email con Color de Acento -->
+                  <div class="h-2 w-full" [style.backgroundColor]="emailBrandingControl.get('primaryColor')?.value || '#111827'"></div>
+
+                  <div class="p-5 sm:p-7 space-y-5">
+                    <!-- Logo / Brand Header -->
+                    @if (emailBrandingControl.get('showStoreLogo')?.value) {
+                      <div class="text-center pb-2">
+                        @if (previewLogoUrl) {
+                          <img [src]="previewLogoUrl" [alt]="previewStoreName" class="h-10 mx-auto object-contain" />
+                        } @else {
+                          <span class="text-lg font-black tracking-tight uppercase text-gray-900">{{ previewStoreName }}</span>
+                        }
+                      </div>
+                    }
+
+                    <!-- Encabezado / Heading -->
+                    <div class="text-center space-y-1">
+                      <h2 class="text-base sm:text-lg font-black text-gray-900 leading-snug">
+                        {{ livePreviewHeading }}
+                      </h2>
+                    </div>
+
+                    <!-- Mensaje Principal -->
+                    <div class="text-xs sm:text-sm text-gray-600 leading-relaxed text-center whitespace-pre-line">
+                      {{ livePreviewMessage }}
+                    </div>
+
+                    <!-- Cuadro de Resumen del Pedido Simulado -->
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+                      <div class="flex items-center justify-between text-xs font-bold text-gray-900 pb-2 border-b border-gray-200">
+                        <span>Detalle de la Orden #ORD-8492</span>
+                        <span class="text-gray-500 font-normal">Hoy</span>
+                      </div>
+
+                      <div class="flex items-center justify-between text-xs text-gray-700">
+                        <div class="flex items-center gap-2">
+                          <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0 flex items-center justify-center font-bold text-[10px] text-gray-500">1x</div>
+                          <span class="font-medium">Remera Oversize Basic (Negro / M)</span>
+                        </div>
+                        <span class="font-bold text-gray-900">$ 45.900</span>
+                      </div>
+
+                      <div class="pt-2 border-t border-gray-200 flex items-center justify-between text-xs font-black text-gray-900">
+                        <span>Total Abonado</span>
+                        <span class="text-sm" [style.color]="emailBrandingControl.get('primaryColor')?.value || '#111827'">$ 45.900</span>
+                      </div>
+                    </div>
+
+                    <!-- Instrucciones Destacadas (si existen) -->
+                    @if (livePreviewExtraInstructions) {
+                      <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed font-medium">
+                        <div class="flex items-center gap-1.5 font-bold mb-1">
+                          <mat-icon class="text-[16px]! w-4! h-4! text-amber-600">info</mat-icon>
+                          <span>Importante:</span>
+                        </div>
+                        <p class="whitespace-pre-line">{{ livePreviewExtraInstructions }}</p>
+                      </div>
+                    }
+
+                    <!-- Botón de Acción Principal (CTA) -->
+                    <div class="text-center pt-2">
+                      <a
+                        href="javascript:void(0)"
+                        class="inline-block px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-sm hover:opacity-90 transition-opacity"
+                        [style.backgroundColor]="emailBrandingControl.get('primaryColor')?.value || '#111827'"
+                      >
+                        {{ livePreviewButtonText }}
+                      </a>
+                    </div>
+
+                    <!-- Enlaces a Redes Sociales Simulados -->
+                    @if (emailBrandingControl.get('showSocialLinks')?.value) {
+                      <div class="pt-4 border-t border-gray-100 flex items-center justify-center gap-3 text-gray-400 text-xs font-semibold">
+                        <span>Instagram</span>
+                        <span>•</span>
+                        <span>Facebook</span>
+                        <span>•</span>
+                        <span>WhatsApp</span>
+                      </div>
+                    }
+
+                    <!-- Footer del Email -->
+                    <div class="text-center text-[10px] text-gray-400 leading-relaxed pt-2">
+                      <p>{{ emailBrandingControl.get('footerText')?.value }}</p>
+                      <p class="mt-1 font-medium text-gray-300">© 2026 {{ previewStoreName }}. Todos los derechos reservados.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </ng-container>
+</app-page-layout>
+
+<!-- ========================================================================= -->
+<!-- MODAL: CONFIGURACIÓN RÁPIDA DE RESEND                                     -->
+<!-- ========================================================================= -->
+@if (showResendConfigModal()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
+    <div class="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- Header Modal -->
+      <div class="p-5 border-b border-base-200 flex items-center justify-between bg-base-200/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-neutral/10 text-base-content flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">mail</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Configuración de Resend</h3>
+            <p class="text-[11px] text-base-content/50">Servicio de envío de correos electrónicos transaccionales.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="showResendConfigModal.set(false)"
+          class="btn btn-sm btn-ghost btn-circle text-base-content/60"
+        >
+          <mat-icon class="text-[18px]">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Contenido Modal -->
+      <form [formGroup]="resendQuickForm" (ngSubmit)="saveResendQuickConfig()" class="p-5 space-y-5 overflow-y-auto grow custom-scrollbar">
+        
+        <!-- Toggle Activo -->
+        <div class="flex items-center justify-between p-3.5 bg-base-200/40 rounded-2xl border border-base-200">
+          <div>
+            <span class="text-xs font-bold text-base-content block">Activar Envío de Emails</span>
+            <span class="text-[11px] text-base-content/50">Habilita el envío automático al despachar o confirmar ventas.</span>
+          </div>
+          <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
+        </div>
+
+        <!-- API Key de Resend -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-base-content block">API Key de Resend (Secreto)</label>
+            <button
+              type="button"
+              (click)="showResendKey.set(!showResendKey())"
+              class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+            >
+              <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showResendKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              <span>{{ showResendKey() ? 'Ocultar' : 'Ver' }}</span>
+            </button>
+          </div>
+          <input
+            [type]="showResendKey() ? 'text' : 'password'"
+            formControlName="apiKey"
+            autocomplete="new-password"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
+            placeholder="re_123456789_xxxxxxxxxxxxxxxxxxxx"
+          />
+          <p class="text-[11px] text-base-content/50">
+            Creala gratis en <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" class="link link-primary font-bold">resend.com/api-keys</a> con permiso de Sending Access.
+          </p>
+        </div>
+
+        <!-- Nombre de Remitente (From Name) -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-base-content block">Nombre de Remitente (From Name)</label>
+          <input
+            type="text"
+            formControlName="fromName"
+            class="input input-sm input-bordered w-full rounded-xl text-xs"
+            placeholder="Ej. Vura Indumentaria"
+          />
+          <p class="text-[11px] text-base-content/50">Nombre que verá el cliente como remitente en su bandeja.</p>
+        </div>
+
+        <!-- Email de Remitente (From Email) con EXPLICACIÓN PEDAGÓGICA -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-base-content block">Email Remitente (From Email)</label>
+            <button
+              type="button"
+              (click)="showResendHelpModal.set(true)"
+              class="text-[10px] text-info hover:underline font-bold flex items-center gap-0.5"
+            >
+              <mat-icon class="text-[12px]! w-3! h-3!">help</mat-icon>
+              <span>¿Qué pongo acá?</span>
+            </button>
+          </div>
+
+          <input
+            type="email"
+            formControlName="fromEmail"
+            class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+            placeholder="pedidos@mitienda.com o onboarding@resend.dev"
+          />
+
+          <!-- Tarjeta Informativa Pedagógica -->
+          <div class="p-3 bg-info/10 border border-info/20 rounded-xl space-y-1.5 text-xs text-base-content/80">
+            <div class="flex items-center gap-1.5 font-bold text-info">
+              <mat-icon class="text-[15px]! w-3.5! h-3.5!">info</mat-icon>
+              <span>¿Cómo configurar el From Email?</span>
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-[11px] text-base-content/70 leading-relaxed">
+              <li><strong>Si tenés dominio propio verificado en Resend</strong> (ej: <code>mitienda.com</code>): Usá <code>pedidos@mitienda.com</code> o <code>hola@mitienda.com</code>.</li>
+              <li><strong>Si estás en modo desarrollo / pruebas</strong> (sin dominio propio): Usá <code>onboarding@resend.dev</code> <em>(Resend solo enviará al correo con el que te registraste)</em>.</li>
+            </ul>
+          </div>
+        </div>
+      </form>
+
+      <!-- Footer Modal -->
+      <div class="p-4 border-t border-base-200 flex items-center justify-end gap-2 bg-base-200/20">
+        <button
+          type="button"
+          (click)="showResendConfigModal.set(false)"
+          class="btn btn-sm btn-ghost rounded-xl font-bold"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="saveResendQuickConfig()"
+          [disabled]="isSavingResend()"
+          class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm"
+        >
+          @if (isSavingResend()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Guardando...</span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+            <span>Guardar Credenciales</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODAL: GUÍA PEDAGÓGICA Y DOMINIOS DE RESEND                               -->
+<!-- ========================================================================= -->
+@if (showResendHelpModal()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
+    <div class="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- Header Modal -->
+      <div class="p-5 border-b border-base-200 flex items-center justify-between bg-base-200/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-info/10 text-info flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">school</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Guía de Configuración: Resend & From Email</h3>
+            <p class="text-[11px] text-base-content/50">Todo lo que necesitás saber para enviar emails con tu marca.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="showResendHelpModal.set(false)"
+          class="btn btn-sm btn-ghost btn-circle text-base-content/60"
+        >
+          <mat-icon class="text-[18px]">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Contenido Modal -->
+      <div class="p-5 space-y-4 overflow-y-auto grow custom-scrollbar text-xs leading-relaxed text-base-content/80">
+        <div class="p-3.5 bg-primary/10 border border-primary/20 rounded-2xl space-y-1">
+          <h4 class="font-bold text-primary flex items-center gap-1.5 text-xs">
+            <mat-icon class="text-[16px]! w-4! h-4!">verified_user</mat-icon>
+            <span>¿Por qué Resend exige un email remitente válido?</span>
+          </h4>
+          <p class="text-[11px] text-base-content/70">
+            Los filtros antispam (Gmail, Outlook) exigen que el email remitente pertenezca a un dominio con registros DNS verificados (SPF y DKIM) para garantizar que los correos no terminen en la carpeta de Spam.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <h4 class="font-bold text-base-content uppercase tracking-wider text-[11px]">Opciones de Configuración:</h4>
+
+          <!-- Opción 1: Producción -->
+          <div class="p-3.5 bg-base-200/60 rounded-2xl border border-base-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-base-content flex items-center gap-1.5">
+                <span class="badge badge-xs badge-success text-white font-bold">1</span>
+                <span>Producción (Con tu Dominio Propio)</span>
+              </span>
+              <span class="badge badge-xs badge-success font-bold text-white">Recomendado</span>
+            </div>
+            <p class="text-[11px] text-base-content/70">
+              1. Creá tu cuenta en <a href="https://resend.com" target="_blank" class="link link-primary font-bold">Resend.com</a>.<br />
+              2. En el menú <strong>Domains</strong>, tocá <strong>Add Domain</strong> y agregá tu dominio (ej: <code>vura.com.ar</code>).<br />
+              3. Copiá los 3 registros DNS que te da Resend en tu proveedor de dominio (Nic.ar, Cloudflare, DonWeb, etc.).<br />
+              4. Una vez verificado, en <strong>From Email</strong> poné: <code>pedidos@vura.com.ar</code> o <code>hola@vura.com.ar</code>.
+            </p>
+          </div>
+
+          <!-- Opción 2: Desarrollo -->
+          <div class="p-3.5 bg-base-200/60 rounded-2xl border border-base-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-base-content flex items-center gap-1.5">
+                <span class="badge badge-xs badge-neutral font-bold">2</span>
+                <span>Desarrollo / Modo Pruebas (Sin Dominio)</span>
+              </span>
+              <span class="badge badge-xs badge-ghost font-bold text-base-content/60">Gratis & Rápido</span>
+            </div>
+            <p class="text-[11px] text-base-content/70">
+              Si estás probando el sistema y todavía no compraste o configuraste el dominio de tu tienda:<br />
+              • En <strong>From Email</strong> escribí exactamente: <code class="bg-base-300 px-1 py-0.5 rounded font-mono text-[10px]">onboarding&#64;resend.dev</code>.<br />
+              • <em>Limitación de Resend</em>: Con este email de prueba, solo vas a poder recibir correos en la misma casilla de correo con la que te registraste en Resend.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-4 border-t border-base-200 flex items-center justify-end bg-base-200/20">
+        <button
+          type="button"
+          (click)="showResendHelpModal.set(false)"
+          class="btn btn-sm btn-primary rounded-xl font-bold px-5"
+        >
+          ¡Entendido!
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODAL: ENVIAR EMAIL DE PRUEBA                                            -->
+<!-- ========================================================================= -->
+@if (showTestEmailModal()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
+    <div class="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+      
+      <!-- Header Modal -->
+      <div class="p-5 border-b border-base-200 flex items-center justify-between bg-base-200/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">send</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Enviar Email de Prueba</h3>
+            <p class="text-[11px] text-base-content/50">Comprobá el diseño real en tu casilla de correo.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="showTestEmailModal.set(false)"
+          class="btn btn-sm btn-ghost btn-circle text-base-content/60"
+        >
+          <mat-icon class="text-[18px]">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Contenido Modal -->
+      <div class="p-5 space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-base-content block">Plantilla a Probar</label>
+          <select
+            [value]="testEmailTemplateKey()"
+            (change)="testEmailTemplateKey.set($any($event.target).value)"
+            class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
+          >
+            @for (tpl of emailTemplatesCatalog; track tpl.key) {
+              <option [value]="tpl.key">{{ tpl.title }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-base-content block">Enviar a la Casilla de Correo</label>
+          <input
+            type="email"
+            [value]="testEmailRecipient()"
+            (input)="testEmailRecipient.set($any($event.target).value)"
+            class="input input-sm input-bordered w-full rounded-xl text-xs"
+            placeholder="tu-correo@gmail.com"
+          />
+          <p class="text-[11px] text-base-content/50">
+            Asegurate de haber configurado tu API Key de Resend antes de enviar.
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-4 border-t border-base-200 flex items-center justify-end gap-2 bg-base-200/20">
+        <button
+          type="button"
+          (click)="showTestEmailModal.set(false)"
+          class="btn btn-sm btn-ghost rounded-xl font-bold"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="sendTestEmail()"
+          [disabled]="isSendingTestEmail() || !testEmailRecipient()"
+          class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4"
+        >
+          @if (isSendingTestEmail()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Enviando...</span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">send</mat-icon>
+            <span>Enviar Prueba Ahora</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

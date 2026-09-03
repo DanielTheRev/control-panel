@@ -44,8 +44,41 @@ export class StoreConfigService {
     );
   }
 
-  async recalculatePrices(): Promise<{ success: boolean; message: string }> {
-    return firstValueFrom(this.#http.post<{ success: boolean; message: string }>(`${this.#apiUrl}/recalculate-prices`, {}));
+  async previewRecalculatePrices(onlyActive: boolean = true): Promise<{
+    success: boolean;
+    totalProducts: number;
+    onlyActive: boolean;
+    dolar: number;
+    quoteType: string;
+    items: Array<{
+      _id: string;
+      model: string;
+      brand: string;
+      image: string;
+      isActive: boolean;
+      oldPrice: {
+        cashTransferPrice: number;
+        cardPrice: number;
+        installments?: { count: number; amount: number };
+      };
+      newPrice: {
+        cashTransferPrice: number;
+        cardPrice: number;
+        installments?: { count: number; amount: number };
+      };
+      diff: {
+        cashDiff: number;
+        cashDiffPercent: number;
+        cardDiff: number;
+        cardDiffPercent: number;
+      };
+    }>;
+  }> {
+    return firstValueFrom(this.#http.post<any>(`${this.#apiUrl}/recalculate-preview`, { onlyActive }));
+  }
+
+  async recalculatePrices(onlyActive: boolean = true): Promise<{ success: boolean; message: string; updatedCount: number }> {
+    return firstValueFrom(this.#http.post<{ success: boolean; message: string; updatedCount: number }>(`${this.#apiUrl}/recalculate-prices`, { onlyActive }));
   }
 
   async updateMPConfig(config: Partial<IUpdateMPConfigDTO>) {
@@ -102,6 +135,36 @@ export class StoreConfigService {
         templateKey,
         recipientEmail
       })
+    );
+  }
+
+  async getConnectionSettings(): Promise<{
+    apiKey: string;
+    allowedOrigins: string[];
+    subscriptionStatus: string;
+    slug: string;
+    name: string;
+  }> {
+    return firstValueFrom(
+      this.#http.get<{
+        apiKey: string;
+        allowedOrigins: string[];
+        subscriptionStatus: string;
+        slug: string;
+        name: string;
+      }>(`${this.#apiUrl}/connection`)
+    );
+  }
+
+  async regenerateApiKey(): Promise<{ success: boolean; apiKey: string; message: string }> {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; apiKey: string; message: string }>(`${this.#apiUrl}/connection/regenerate-key`, {})
+    );
+  }
+
+  async updateAllowedOrigins(allowedOrigins: string[]): Promise<{ success: boolean; allowedOrigins: string[]; message: string }> {
+    return firstValueFrom(
+      this.#http.put<{ success: boolean; allowedOrigins: string[]; message: string }>(`${this.#apiUrl}/connection/allowed-origins`, { allowedOrigins })
     );
   }
 }

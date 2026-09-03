@@ -28,6 +28,8 @@ export class ProductStoreService {
   private hasSizeGuideFilter = signal<boolean | undefined>(undefined);
   private hasSeoImageFilter = signal<boolean | undefined>(undefined);
   private hasLinkProviderFilter = signal<boolean | undefined>(undefined);
+  private isFeaturedFilter = signal<boolean | undefined>(undefined);
+  private sortBy = signal<string>('newest');
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -48,6 +50,8 @@ export class ProductStoreService {
         ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
         ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
         ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
+        ...(this.isFeaturedFilter() !== undefined ? { isFeatured: this.isFeaturedFilter() } : {}),
+        ...(this.sortBy() && this.sortBy() !== 'newest' ? { sortBy: this.sortBy() } : {}),
       },
     }));
 
@@ -64,6 +68,7 @@ export class ProductStoreService {
           ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
           ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
           ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
+          ...(this.isFeaturedFilter() !== undefined ? { isFeatured: this.isFeaturedFilter() } : {}),
         },
       }),
     );
@@ -145,6 +150,7 @@ export class ProductStoreService {
   readonly currentHasSizeGuideFilter = computed(() => this.hasSizeGuideFilter());
   readonly currentHasSeoImageFilter = computed(() => this.hasSeoImageFilter());
   readonly currentHasLinkProviderFilter = computed(() => this.hasLinkProviderFilter());
+  readonly currentSortBy = computed(() => this.sortBy());
 
   // Statistics signals
   readonly allProducts = computed(() =>
@@ -208,6 +214,20 @@ export class ProductStoreService {
     return this.allProducts()
       .filter((p) => p.isActive)
       .filter((p) => p.linkProductProvider && p.linkProductProvider.trim() !== '')
+      .length;
+  });
+
+  readonly currentIsFeaturedFilter = computed(() => this.isFeaturedFilter());
+
+  readonly featuredCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive && p.isFeatured)
+      .length;
+  });
+
+  readonly nonFeaturedCount = computed(() => {
+    return this.allProducts()
+      .filter((p) => p.isActive && !p.isFeatured)
       .length;
   });
 
@@ -309,6 +329,16 @@ export class ProductStoreService {
 
   setHasLinkProviderFilter(value: boolean | undefined) {
     this.hasLinkProviderFilter.set(value);
+    this.pageNumber.set(1);
+  }
+
+  setIsFeaturedFilter(value: boolean | undefined) {
+    this.isFeaturedFilter.set(value);
+    this.pageNumber.set(1);
+  }
+
+  setSortBy(value: string) {
+    this.sortBy.set(value);
     this.pageNumber.set(1);
   }
 

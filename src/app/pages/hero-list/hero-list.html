@@ -27,10 +27,19 @@
 
           <!-- Title Column -->
           <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef> Título </th>
+            <th mat-header-cell *matHeaderCellDef> Título / Tipo </th>
             <td mat-cell *matCellDef="let slide">
-              <div class="font-bold">{{ slide.title }}</div>
-              <div class="text-xs text-base-content/50">{{ slide.ctaLink }}</div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold">{{ slide.title || 'Banner Visual' }}</span>
+                @if (slide.slideType === 'editorial') {
+                  <span class="badge badge-xs bg-purple-500/10 text-purple-600 font-bold border border-purple-500/20">✍️ Editorial</span>
+                } @else if (slide.slideType === 'split') {
+                  <span class="badge badge-xs bg-blue-500/10 text-blue-600 font-bold border border-blue-500/20">🔀 Split</span>
+                } @else {
+                  <span class="badge badge-xs bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20">🖼️ Visual</span>
+                }
+              </div>
+              <div class="text-xs text-base-content/50 font-mono mt-0.5">{{ slide.ctaLink || '/products' }}</div>
             </td>
           </ng-container>
 

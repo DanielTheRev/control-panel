@@ -28,6 +28,15 @@ export class SingleImageUpload {
     return 'aspect-video'; // 16:9 por defecto
   });
 
+  constructor() {
+    effect(() => {
+      const ctrl = this.control();
+      if (ctrl && ctrl.value) {
+        this.#CheckInitialValue(ctrl.value);
+      }
+    });
+  }
+
   ngOnInit() {
     // 1. Revisamos si ya vino con un valor inicial síncrono
     this.#CheckInitialValue(this.control().value);
@@ -87,11 +96,15 @@ export class SingleImageUpload {
   }
 
   #CheckInitialValue(val: any) {
-    if (typeof val === 'string' && val.startsWith('http')) {
+    if (typeof val === 'string' && val.trim() !== '') {
       this.previewUrl.set(val);
       this.isUrlMode.set(true);
       this.isFileMode.set(false);
       this.previewChange.emit(val);
+    } else if (!val) {
+      this.previewUrl.set(null);
+      this.isUrlMode.set(false);
+      this.isFileMode.set(false);
     }
   }
 

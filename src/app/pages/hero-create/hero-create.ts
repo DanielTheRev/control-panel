@@ -42,21 +42,19 @@ import { NotificationsService } from '../../services/notifications.service';
 export class HeroCreateComponent implements OnInit {
   #fb = inject(FormBuilder);
   #heroStateService = inject(HeroStateService);
-  #NotificationService = inject(NotificationsService)
+  #NotificationService = inject(NotificationsService);
   #router = inject(Router);
   #SidebarService = inject(SidebarService);
-  #productService = inject(ProductService);
-  #OriginalSlide = signal<IHeroSlide | null>(null)
+  #OriginalSlide = signal<IHeroSlide | null>(null);
 
-  readonly slideID = input.required<string>();
+  readonly slideID = input<string | undefined>(undefined);
 
-  searchQuery = new Subject<string>();
-  suggestions = signal<any[]>([]);
-  selectedProducts = signal<any[]>([]);
-  isSearching = signal(false);
+  selectedSlideType = signal<'visual' | 'editorial' | 'split'>('visual');
   isSaving = signal(false);
+  isEditMode = signal(false);
 
   previewDesktop = signal<string | null>(null);
+  previewDesktop2 = signal<string | null>(null);
   previewMobile = signal<string | null>(null);
 
   constructor() {
@@ -66,26 +64,23 @@ export class HeroCreateComponent implements OnInit {
   }
 
   heroForm: FormGroup = this.#fb.group({
-    title: ['', Validators.required],
-    sub_title: ['', Validators.required],
-    description: ['', Validators.required],
-    ctaText: ['', Validators.required],
-    ctaLink: ['/', Validators.required],
+    slideType: ['visual'],
+    title: [''],
+    sub_title: [''],
+    description: [''],
+    ctaText: [''],
+    ctaLink: ['/products', Validators.required],
     imageDesktop1: ['', Validators.required],
     imageDesktop2: [''],
     imageMobile1: ['', Validators.required],
     imageMobile2: [''],
-    featuredProducts: [[]],
-    isActive: [false, Validators.required]
+    isActive: [true]
   });
-
-  isEditMode = signal(false);
 
   get imageDesktop1Value() { return this.heroForm.get('imageDesktop1') as FormControl; }
   get imageDesktop2Value() { return this.heroForm.get('imageDesktop2') as FormControl; }
   get imageMobile1Value() { return this.heroForm.get('imageMobile1') as FormControl; }
   get imageMobile2Value() { return this.heroForm.get('imageMobile2') as FormControl; }
-
 
   ngOnInit(): void {
     const id = this.slideID();
@@ -95,29 +90,30 @@ export class HeroCreateComponent implements OnInit {
     }
 
     this.imageDesktop1Value.valueChanges.subscribe(val => this.updatePreview(val, this.previewDesktop));
+    this.imageDesktop2Value.valueChanges.subscribe(val => this.updatePreview(val, this.previewDesktop2));
     this.imageMobile1Value.valueChanges.subscribe(val => this.updatePreview(val, this.previewMobile));
+  }
 
-    this.searchQuery.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(query => {
-        if (!query || query.trim().length === 0) {
-          this.suggestions.set([]);
-          this.isSearching.set(false);
-          return [];
-        }
-        this.isSearching.set(true);
-        return this.#productService.getSuggestions(query);
-      })
-    ).subscribe({
-      next: (results) => {
-        this.suggestions.set(results);
-        this.isSearching.set(false);
-      },
-      error: () => {
-        this.isSearching.set(false);
-      }
-    });
+  setSlideType(type: 'visual' | 'editorial' | 'split') {
+    this.selectedSlideType.set(type);
+    this.heroForm.patchValue({ slideType: type });
+
+    const titleCtrl = this.heroForm.get('title');
+    const imageDesktop2Ctrl = this.heroForm.get('imageDesktop2');
+
+    if (type === 'editorial') {
+      titleCtrl?.setValidators([Validators.required]);
+    } else {
+      titleCtrl?.clearValidators();
+    }
+    titleCtrl?.updateValueAndValidity();
+
+    if (type === 'split') {
+      imageDesktop2Ctrl?.setValidators([Validators.required]);
+    } else {
+      imageDesktop2Ctrl?.clearValidators();
+    }
+    imageDesktop2Ctrl?.updateValueAndValidity();
   }
 
   updatePreview(val: any, targetSignal: import('@angular/core').WritableSignal<string | null>) {
@@ -143,20 +139,28 @@ export class HeroCreateComponent implements OnInit {
     try {
       const slide = await this.#heroStateService.getSlideById(id);
       if (slide) {
-        this.#OriginalSlide.set(slide)
+        this.#OriginalSlide.set(slide);
+        const inferredType: 'visual' | 'editorial' | 'split' = slide.slideType || (slide.imageDesktop2?.url ? 'split' : (slide.title && slide.sub_title ? 'editorial' : 'visual'));
+        this.selectedSlideType.set(inferredType);
+
         this.heroForm.reset({
-          ...slide,
+          slideType: inferredType,
+          title: slide.title || '',
+          sub_title: slide.sub_title || '',
+          description: slide.description || '',
+          ctaText: slide.ctaText || '',
+          ctaLink: slide.ctaLink || '/products',
           imageDesktop1: slide.imageDesktop1?.url || '',
           imageDesktop2: slide.imageDesktop2?.url || '',
           imageMobile1: slide.imageMobile1?.url || '',
           imageMobile2: slide.imageMobile2?.url || '',
-          featuredProducts: slide.featuredProducts.map(p => p._id)
+          isActive: slide.isActive ?? true
         });
 
-        this.selectedProducts.set(slide.featuredProducts);
+        this.setSlideType(inferredType);
       }
     } catch (error) {
-      this.#NotificationService.error('Error al cargar slide')
+      this.#NotificationService.error('Error al cargar slide');
     }
   }
 
@@ -165,22 +169,20 @@ export class HeroCreateComponent implements OnInit {
     this.isSaving.set(true);
 
     const OriginalSlide = this.#OriginalSlide();
-    const isEditMode = this.isEditMode()
+    const isEditMode = this.isEditMode();
+    const formVal = this.heroForm.value;
 
     const formData = new FormData();
 
-    // 1. Agregamos los textos (los sacas de tu FormGroup o Signal)
-    formData.append('title', this.heroForm.value.title);
-    formData.append('sub_title', this.heroForm.value.sub_title);
-    formData.append('description', this.heroForm.value.description);
-    formData.append('ctaText', this.heroForm.value.ctaText);
-    formData.append('ctaLink', this.heroForm.value.ctaLink);
-    formData.append('isActive', this.heroForm.value.isActive);
+    formData.append('slideType', formVal.slideType || this.selectedSlideType());
+    formData.append('title', formVal.title || (this.selectedSlideType() === 'visual' ? 'Banner Visual' : ''));
+    formData.append('sub_title', formVal.sub_title || '');
+    formData.append('description', formVal.description || '');
+    formData.append('ctaText', formVal.ctaText || '');
+    formData.append('ctaLink', formVal.ctaLink || '/products');
+    formData.append('isActive', formVal.isActive ? 'true' : 'false');
+    formData.append('featuredProducts', '[]');
 
-    // Ojo con el array de productos (Shop The Look), a veces hay que mandarlo como JSON stringified
-    formData.append('featuredProducts', JSON.stringify(this.heroForm.value.featuredProducts));
-
-    // 2. Agregamos los archivos con LOS MISMOS NOMBRES que pusimos en upload.fields()
     const appendImage = (field: string, formValue: any, originalUrl?: string) => {
       if (!formValue) return;
       if (isEditMode) {
@@ -193,13 +195,17 @@ export class HeroCreateComponent implements OnInit {
     };
 
     appendImage('imageDesktop1', this.imageDesktop1Value.value, OriginalSlide?.imageDesktop1?.url);
-    appendImage('imageDesktop2', this.imageDesktop2Value.value, OriginalSlide?.imageDesktop2?.url);
+    if (this.selectedSlideType() === 'split') {
+      appendImage('imageDesktop2', this.imageDesktop2Value.value, OriginalSlide?.imageDesktop2?.url);
+    }
     appendImage('imageMobile1', this.imageMobile1Value.value, OriginalSlide?.imageMobile1?.url);
-    appendImage('imageMobile2', this.imageMobile2Value.value, OriginalSlide?.imageMobile2?.url);
-    const request = this.isEditMode()
-      ? this.#heroStateService.updateSlide(this.slideID(), formData)
+
+    const slideId = this.slideID();
+    const request = isEditMode && slideId
+      ? this.#heroStateService.updateSlide(slideId, formData)
       : this.#heroStateService.addSlide(formData);
-    const message = this.isEditMode() ? 'Slide actualizado correctamente' : 'Slide guardado correctamente';
+
+    const message = isEditMode ? 'Slide actualizado correctamente' : 'Slide guardado correctamente';
     try {
       await request;
       this.#NotificationService.success(message);
@@ -210,25 +216,4 @@ export class HeroCreateComponent implements OnInit {
       this.isSaving.set(false);
     }
   }
-
-  onSearchChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.searchQuery.next(input.value);
-  }
-
-  addProduct(product: any) {
-    if (!this.selectedProducts().find(p => p._id === product._id)) {
-      this.selectedProducts.update(s => [...s, product]);
-      const current = this.heroForm.get('featuredProducts')?.value || [];
-      this.heroForm.patchValue({ featuredProducts: [...current, product._id] });
-    }
-    this.suggestions.set([]);
-  }
-
-  removeProduct(id: string) {
-    this.selectedProducts.update(s => s.filter(p => p._id !== id));
-    const current = this.heroForm.get('featuredProducts')?.value || [];
-    this.heroForm.patchValue({ featuredProducts: current.filter((pid: string) => pid !== id) });
-  }
-
 }
