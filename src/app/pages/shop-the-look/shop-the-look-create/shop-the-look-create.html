@@ -75,16 +75,19 @@
                 [class.hover:bg-base-200]="activeTabIndex() !== i" (click)="setActiveTab(i)"
                 class="flex justify-between items-center rounded-xl p-2 transition-all cursor-pointer">
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 min-w-0">
                   <div
-                    class="w-10 h-10 rounded-lg shadow-sm bg-base-200 flex items-center justify-center overflow-hidden border border-base-300">
+                    class="w-10 h-10 rounded-lg shadow-sm bg-base-200 flex items-center justify-center overflow-hidden border border-base-300 shrink-0">
                     @if (draft.previewImage) {
                     <img [src]="draft.previewImage" class="w-full h-full object-cover object-top" />
                     } @else {
                     <mat-icon class="opacity-30 text-[20px]">image</mat-icon>
                     }
                   </div>
-                  <span class="font-medium">Look {{ i + 1 }}</span>
+                  <div class="flex flex-col min-w-0">
+                    <span class="font-medium text-sm truncate max-w-[130px]">{{ draft.nameControl.value || ('Look ' + (i + 1)) }}</span>
+                    <span class="text-[10px] opacity-70">{{ draft.hotspots.length }} prendas</span>
+                  </div>
                 </div>
 
                 <button
@@ -104,13 +107,19 @@
         <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl">
           <div class="card-body p-6">
             <div class="flex items-center justify-between mb-4 border-b border-base-200 pb-4">
-              <h3 class="font-bold text-lg">Portada del Look</h3>
+              <h3 class="font-bold text-lg">Configuración del Look</h3>
               <label class="cursor-pointer flex items-center gap-2">
                 <span class="label-text text-xs font-bold uppercase text-base-content/50">Habilitado</span>
                 <input type="checkbox" class="toggle toggle-primary toggle-sm" [checked]="activeLook!.isActive"
                   (change)="toggleActiveLookStatus()" />
               </label>
             </div>
+
+            <label class="form-control w-full mb-4">
+              <span class="label-text font-medium mb-1.5 text-base-content/70">Nombre del Look</span>
+              <input type="text" [formControl]="activeLook!.nameControl" placeholder="Ej: Buzo Oversize Washed & Cargo"
+                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors input-sm" />
+            </label>
 
             <app-single-image-upload [control]="activeLook!.imageControl" folder="shop-the-look"
               title="Sube este Outfit" ratioBadge="Vertical: 3:4">

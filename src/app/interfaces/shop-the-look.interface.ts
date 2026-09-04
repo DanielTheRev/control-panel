@@ -22,6 +22,7 @@ export interface IShopTheLookHotspot {
 
 export interface ILookItem {
   _id?: string;
+  name?: string;
   mainImage: IShopTheLookImage; // POST: No necesario si envías un archivo. PUT: Indispensable si NO cambias la imagen.
   hotspots: IShopTheLookHotspot[];
   isActive: boolean;

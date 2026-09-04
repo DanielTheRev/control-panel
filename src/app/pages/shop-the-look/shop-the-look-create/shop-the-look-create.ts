@@ -18,6 +18,7 @@ import { ShopTheLookStateService } from '../../../states/shop-the-look.state.ser
 interface ILookDraft {
   internalId: string;
   dbId?: string;
+  nameControl: FormControl;
   imageControl: FormControl;
   previewImage: string | null;
   hotspots: IShopTheLookHotspot[];
@@ -90,12 +91,14 @@ export class ShopTheLookCreateComponent implements OnInit {
   generateInternalId() { return Math.random().toString(36).substring(2, 9); }
 
   addLook(initialData?: Partial<ILookItem>) {
+    const nameControl = new FormControl(initialData?.name || '');
     const control = new FormControl(initialData?.mainImage?.url || '', Validators.required);
     const internalId = this.generateInternalId();
 
     const newDraft: ILookDraft = {
       internalId,
       dbId: initialData?._id,
+      nameControl,
       imageControl: control,
       previewImage: initialData?.mainImage?.url || null,
       hotspots: initialData?.hotspots || [],
@@ -293,6 +296,7 @@ export class ShopTheLookCreateComponent implements OnInit {
         });
 
         const lookPayload: any = {
+          name: draft.nameControl.value?.trim() || '',
           isActive: draft.isActive,
           hotspots: hData
         };
