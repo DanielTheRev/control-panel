@@ -1,0 +1,496 @@
+<app-page-layout>
+  <!-- Page Header -->
+  <app-page-header
+    header
+    [title]="isEditMode() ? 'Editar Macro-Categoría' : 'Nueva Macro-Categoría'"
+    [subtitle]="isEditMode() ? 'Modifica las agrupaciones y sinónimos para ' + (groupForm.get('name')?.value || 'esta categoría') : 'Define una nueva macro-categoría para agrupar productos y potenciar las búsquedas.'">
+    <div actions class="flex items-center gap-2">
+      <a routerLink="/home/categories" class="btn btn-ghost btn-sm rounded-xl gap-1 text-base-content/60">
+        <mat-icon class="text-[18px]">arrow_back</mat-icon>
+        <span>Volver</span>
+      </a>
+      <button
+        type="button"
+        (click)="onSubmit()"
+        [disabled]="isSaving()"
+        class="btn btn-primary btn-sm rounded-xl gap-1.5 shadow-sm text-white">
+        @if (isSaving()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <mat-icon class="text-[18px]">save</mat-icon>
+          <span>{{ isEditMode() ? 'Guardar Cambios' : 'Crear Categoría' }}</span>
+        }
+      </button>
+    </div>
+  </app-page-header>
+
+  <div content class="p-3 sm:p-5 w-full max-w-7xl mx-auto space-y-4">
+    @if (isLoading()) {
+      <div class="flex flex-col items-center justify-center py-20 gap-3">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <span class="text-xs font-semibold text-base-content/50">Cargando datos de la categoría...</span>
+      </div>
+    } @else {
+      <form [formGroup]="groupForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-10">
+
+        <!-- Banner de Alerta DaisyUI para Errores de Validación al Enviar -->
+        @if (isSubmitted() && formErrors().length > 0) {
+          <div role="alert" class="alert alert-error shadow-sm rounded-2xl lg:col-span-12 flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6 mt-0.5" fill="none" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-1">
+              <h3 class="font-bold text-sm">No se puede guardar la categoría</h3>
+              <div class="text-xs mt-1">
+                <ul class="list-disc list-inside space-y-1">
+                  @for (err of formErrors(); track err) {
+                    <li>{{ err }}</li>
+                  }
+                </ul>
+              </div>
+              @if (groupForm.get('slug')?.invalid && groupForm.get('slug')?.errors?.['pattern']) {
+                <div class="mt-3">
+                  <button
+                    type="button"
+                    (click)="autoFormatSlug()"
+                    class="btn btn-xs bg-white text-error hover:bg-white/90 border-0 rounded-lg font-bold gap-1 shadow-xs">
+                    <mat-icon class="text-[14px]">auto_fix_high</mat-icon>
+                    <span>Auto-corregir Identificador URL a formato válido</span>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================= -->
+        <!-- COLUMNA IZQUIERDA: DATOS BÁSICOS & SINÓNIMOS (5 COLS)     -->
+        <!-- ========================================================= -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+          
+          <!-- CARD 1: INFORMACIÓN PRINCIPAL -->
+          <div class="bg-base-100 border border-base-200 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+            <div class="flex items-center gap-2 border-b border-base-200 pb-3">
+              <mat-icon class="text-primary text-[20px]">tune</mat-icon>
+              <div>
+                <h2 class="font-bold text-sm text-base-content">Información Principal</h2>
+                <p class="text-[11px] text-base-content/50">Datos comerciales y configuración de acceso en la tienda.</p>
+              </div>
+            </div>
+
+            <!-- Nombre -->
+            <div class="form-control w-full">
+              <label class="label py-1 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Nombre Visible *</span>
+                  <div class="tooltip tooltip-right" data-tip="El título que verán tus clientes en el menú de navegación y en los filtros de la tienda.">
+                    <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">info</mat-icon>
+                  </div>
+                </div>
+              </label>
+              <input
+                type="text"
+                formControlName="name"
+                (input)="onNameInput()"
+                placeholder="Ej: Abrigos, Remeras y Tops, Calzado..."
+                class="input input-bordered input-sm w-full text-xs font-medium rounded-xl"
+                [class.input-error]="groupForm.get('name')?.invalid && (groupForm.get('name')?.touched || isSubmitted())" />
+              @if (groupForm.get('name')?.invalid && (groupForm.get('name')?.touched || isSubmitted())) {
+                <span class="text-[10px] text-error mt-1">El nombre es obligatorio (mínimo 2 caracteres).</span>
+              } @else {
+                <span class="text-[10px] text-base-content/50 mt-1">Nombre que aparecerá en botones del menú y encabezados del catálogo.</span>
+              }
+            </div>
+
+            <!-- Slug (URL Identifier) -->
+            <div class="form-control w-full">
+              <label class="label py-1 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Identificador URL (Slug) *</span>
+                  <div class="tooltip tooltip-right" data-tip="Dirección web que se usará para consultar esta categoría (?category=slug). Solo admite letras minúsculas, números y guiones.">
+                    <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">info</mat-icon>
+                  </div>
+                </div>
+                <span class="text-[10px] text-base-content/40 font-mono">?category=slug</span>
+              </label>
+              <div class="relative">
+                <input
+                  type="text"
+                  formControlName="slug"
+                  (input)="onSlugInput()"
+                  (blur)="onSlugBlur()"
+                  placeholder="ej: remeras-y-tops"
+                  class="input input-bordered input-sm w-full text-xs font-mono pl-7 rounded-xl"
+                  [class.input-error]="groupForm.get('slug')?.invalid && (groupForm.get('slug')?.touched || isSubmitted())" />
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 font-mono text-xs">/</span>
+              </div>
+
+              <!-- Advertencia y Explicación en Vivo si el usuario tipea caracteres especiales como & o espacios -->
+              @if (slugSpecialWarning(); as warning) {
+                <div class="alert alert-warning text-xs py-2.5 px-3 rounded-xl mt-2 flex items-start gap-2.5 shadow-xs">
+                  <mat-icon class="text-warning-content text-[18px] shrink-0 mt-0.5">info</mat-icon>
+                  <div class="flex-1 text-[11px]">
+                    <p class="font-bold text-warning-content">{{ warning.title }}</p>
+                    <p class="text-warning-content/90 mt-0.5 leading-snug">{{ warning.reason }}</p>
+                    <div class="mt-2 flex items-center gap-2 flex-wrap">
+                      <span class="font-semibold text-warning-content">Formato sugerido:</span>
+                      <code class="bg-base-100 text-base-content px-1.5 py-0.5 rounded font-mono font-bold">{{ warning.suggested }}</code>
+                      <button
+                        type="button"
+                        (click)="autoFormatSlug()"
+                        class="btn btn-xs bg-base-100 hover:bg-base-200 text-base-content font-bold h-6 min-h-0 px-2 rounded-md shadow-2xs">
+                        Aplicar corrección
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              } @else if (groupForm.get('slug')?.invalid && (groupForm.get('slug')?.touched || isSubmitted())) {
+                <div class="text-[10px] text-error mt-1 flex items-center justify-between gap-1 flex-wrap">
+                  <span class="flex-1 min-w-0">
+                    @if (groupForm.get('slug')?.errors?.['required']) {
+                      El identificador es obligatorio.
+                    } @else if (groupForm.get('slug')?.errors?.['pattern']) {
+                      No se permite '&', espacios ni caracteres especiales. Solo letras minúsculas (a-z), números y guiones (-).
+                    }
+                  </span>
+                  <button
+                    type="button"
+                    (click)="autoFormatSlug()"
+                    class="btn btn-xs btn-outline btn-error text-[10px] h-5 min-h-0 px-2 rounded-md font-bold">
+                    Auto-corregir
+                  </button>
+                </div>
+              } @else {
+                <span class="text-[10px] text-base-content/50 mt-1 block">
+                  Se usa en URLs como: <code class="bg-base-200 px-1 py-0.5 rounded text-[10px] font-mono">/products?category={{ groupForm.get('slug')?.value || 'slug' }}</code>
+                </span>
+              }
+            </div>
+
+            <!-- Descripción -->
+            <div class="form-control w-full">
+              <label class="label py-1 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Descripción / Resumen (Opcional)</span>
+                  <div class="tooltip tooltip-right" data-tip="Texto descriptivo para optimización en buscadores (SEO) y subtítulo en tu tienda online.">
+                    <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">info</mat-icon>
+                  </div>
+                </div>
+              </label>
+              <textarea
+                formControlName="description"
+                rows="2"
+                placeholder="Breve detalle de las prendas o productos que abarca..."
+                class="textarea textarea-bordered textarea-sm w-full text-xs rounded-xl"></textarea>
+              <span class="text-[10px] text-base-content/50 mt-1">Breve resumen para motores de búsqueda (SEO) y subtítulo en la web.</span>
+            </div>
+
+            <!-- Orden y Estado con explicaciones -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-base-200">
+              
+              <!-- Posición / Orden -->
+              <div class="form-control">
+                <label class="label py-1 flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Posición / Orden</span>
+                    <div class="tooltip tooltip-top" data-tip="Define la prioridad de visualización en la tienda y menús. Los números menores (0, 1) aparecen primero; números mayores van después.">
+                      <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">help_outline</mat-icon>
+                    </div>
+                  </div>
+                </label>
+                <input
+                  type="number"
+                  formControlName="order"
+                  min="0"
+                  class="input input-bordered input-sm w-full text-xs font-mono rounded-xl" />
+                <span class="text-[10px] text-base-content/50 mt-1">
+                  <strong>0</strong> = primero en la lista.
+                </span>
+              </div>
+
+              <!-- Habilitada -->
+              <div class="form-control flex flex-col justify-start">
+                <label class="label py-1 flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Estado</span>
+                    <div class="tooltip tooltip-top" data-tip="Permite activar o pausar temporalmente la categoría en la tienda sin necesidad de borrarla.">
+                      <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">help_outline</mat-icon>
+                    </div>
+                  </div>
+                </label>
+                <label class="label cursor-pointer py-1.5 justify-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    formControlName="isActive"
+                    class="toggle toggle-primary toggle-sm" />
+                  <span class="label-text text-xs font-semibold text-base-content">
+                    {{ groupForm.get('isActive')?.value ? 'Visible en tienda' : 'Pausada / Oculta' }}
+                  </span>
+                </label>
+                <span class="text-[10px] text-base-content/50">
+                  {{ groupForm.get('isActive')?.value ? 'Aparece en menús y filtros.' : 'Oculta para los clientes.' }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- CARD 2: SINÓNIMOS DE BÚSQUEDA -->
+          <div class="bg-base-100 border border-base-200 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+            <div class="flex items-center gap-2 border-b border-base-200 pb-3">
+              <mat-icon class="text-secondary text-[20px]">search</mat-icon>
+              <div class="flex-1">
+                <div class="flex items-center gap-1.5">
+                  <h2 class="font-bold text-sm text-base-content">Sinónimos & Palabras Clave</h2>
+                  <div class="tooltip tooltip-right" data-tip="Términos alternativos que los clientes buscan. Si buscan 'hoodie' o 'campera', encontrarán esta categoría automáticamente.">
+                    <mat-icon class="text-[15px] text-base-content/40 hover:text-secondary cursor-help">help_outline</mat-icon>
+                  </div>
+                </div>
+                <p class="text-[11px] text-base-content/50">Palabras adicionales que activarán esta categoría en el buscador de la tienda.</p>
+              </div>
+            </div>
+
+            <!-- Input para agregar sinónimo -->
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                [ngModel]="newSynonymInput()"
+                (ngModelChange)="newSynonymInput.set($event)"
+                [ngModelOptions]="{standalone: true}"
+                (keyup.enter)="addSynonym()"
+                placeholder="Ej: campera, hoodie, jacket (presiona Enter)..."
+                class="input input-bordered input-sm flex-1 text-xs rounded-xl" />
+              <button
+                type="button"
+                (click)="addSynonym()"
+                [disabled]="!newSynonymInput().trim()"
+                class="btn btn-secondary btn-sm rounded-xl gap-1">
+                <mat-icon class="text-[16px]">add</mat-icon>
+                <span>Agregar</span>
+              </button>
+            </div>
+
+            <!-- Tags de sinónimos -->
+            <div class="flex flex-wrap gap-1.5 min-h-12 p-2.5 bg-base-200/50 rounded-xl border border-base-200 max-h-40 overflow-y-auto">
+              @for (syn of synonyms(); track syn) {
+                <span class="badge badge-neutral gap-1.5 text-xs py-2 px-2.5">
+                  <span>{{ syn }}</span>
+                  <button
+                    type="button"
+                    (click)="removeSynonym(syn)"
+                    class="hover:text-error text-base-content/60 transition-colors">
+                    <mat-icon class="text-[12px] leading-none">close</mat-icon>
+                  </button>
+                </span>
+              }
+              @if (synonyms().length === 0) {
+                <div class="text-[11px] text-base-content/40 italic flex items-center justify-center w-full py-2">
+                  No hay sinónimos agregados aún. Agrega palabras que tus clientes suelen buscar.
+                </div>
+              }
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- COLUMNA DERECHA: SELECTOR DE CATEGORÍAS & PREVIEW (7 COLS) -->
+        <!-- ========================================================= -->
+        <div class="lg:col-span-7 flex flex-col gap-5">
+          
+          <!-- CARD 3: SELECTOR DE CATEGORÍAS REALES DEL CATÁLOGO -->
+          <div class="bg-base-100 border border-base-200 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-base-200 pb-3 flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-primary text-[20px]">checklist</mat-icon>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <h2 class="font-bold text-sm text-base-content">
+                      Categorías Incluidas ({{ targetCategories().length }})
+                    </h2>
+                    <div class="tooltip tooltip-right" data-tip="Selecciona qué categorías individuales de tu base de datos componen este grupo general.">
+                      <mat-icon class="text-[15px] text-base-content/40 hover:text-primary cursor-help">help_outline</mat-icon>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-base-content/50">
+                    Marca qué categorías de productos se agruparán bajo esta macro-categoría.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Acciones rápidas -->
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  (click)="selectAllCategories()"
+                  class="btn btn-ghost btn-xs text-primary font-semibold">
+                  Seleccionar todas
+                </button>
+                <span class="text-base-content/20">|</span>
+                <button
+                  type="button"
+                  (click)="clearAllCategories()"
+                  class="btn btn-ghost btn-xs text-base-content/60">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            <!-- Chips interactivos de categorías detectadas en DB -->
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-2">
+                Categorías detectadas en tus productos:
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (raw of rawCategories(); track raw.category) {
+                  <button
+                    type="button"
+                    (click)="toggleTargetCategory(raw.category)"
+                    class="btn btn-sm transition-all duration-150 gap-1.5 rounded-xl"
+                    [class.btn-primary]="isCategorySelected(raw.category)"
+                    [class.btn-outline]="!isCategorySelected(raw.category)"
+                    [class.opacity-60]="!isCategorySelected(raw.category)">
+                    @if (isCategorySelected(raw.category)) {
+                      <mat-icon class="text-[16px]">check</mat-icon>
+                    } @else {
+                      <mat-icon class="text-[16px]">add</mat-icon>
+                    }
+                    <span class="font-semibold text-xs">{{ raw.category }}</span>
+                    <span
+                      class="badge badge-xs font-mono ml-0.5"
+                      [class.badge-primary-content]="isCategorySelected(raw.category)"
+                      [class.badge-ghost]="!isCategorySelected(raw.category)">
+                      {{ raw.count }}
+                    </span>
+                  </button>
+                }
+                @if (rawCategories().length === 0) {
+                  <div class="text-xs text-base-content/50 italic py-2">
+                    No se detectaron productos con categoría en la base de datos.
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Categorías personalizadas adicionales asignadas -->
+            @if (targetCategories().length > 0) {
+              <div class="pt-3 border-t border-base-200">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-2">
+                  Resumen de selección activa ({{ targetCategories().length }}):
+                </div>
+                <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                  @for (cat of targetCategories(); track cat) {
+                    <span class="badge badge-primary gap-1.5 py-2 px-2.5 text-xs font-medium">
+                      <span>{{ cat }}</span>
+                      <button
+                        type="button"
+                        (click)="removeTargetCategory(cat)"
+                        class="hover:text-error transition-colors">
+                        <mat-icon class="text-[12px] leading-none">close</mat-icon>
+                      </button>
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Agregar categoría manual / futura -->
+            <div class="pt-3 border-t border-base-200">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1.5">
+                ¿Quieres incluir una categoría que aún no tienes cargada?
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  [ngModel]="newCustomCategoryInput()"
+                  (ngModelChange)="newCustomCategoryInput.set($event)"
+                  [ngModelOptions]="{standalone: true}"
+                  (keyup.enter)="addCustomCategory()"
+                  placeholder="Ej: Parkas, Tapados, Chalecos..."
+                  class="input input-bordered input-sm flex-1 text-xs rounded-xl" />
+                <button
+                  type="button"
+                  (click)="addCustomCategory()"
+                  [disabled]="!newCustomCategoryInput().trim()"
+                  class="btn btn-outline btn-sm rounded-xl gap-1">
+                  <mat-icon class="text-[16px]">add</mat-icon>
+                  <span>Incluir</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 4: VISTA PREVIA DEL MOTOR DE BÚSQUEDA -->
+          <div class="bg-base-100 border border-primary/20 bg-primary/5 rounded-2xl p-5 shadow-xs flex flex-col gap-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-primary text-[20px]">smart_toy</mat-icon>
+                <h3 class="font-bold text-xs uppercase tracking-wider text-primary">¿Cómo responderá tu tienda con esta configuración?</h3>
+              </div>
+              <span class="badge badge-primary badge-outline text-[10px] font-bold">Vista previa en vivo</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div class="bg-base-100/90 border border-base-200 rounded-xl p-3 flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                  <mat-icon class="text-[14px]">link</mat-icon> 1. Enlace Web
+                </span>
+                <p class="text-xs text-base-content/80">
+                  Al entrar a <code class="font-mono bg-base-200 px-1 py-0.5 rounded text-[11px] font-bold text-primary">?category={{ groupForm.get('slug')?.value || 'slug' }}</code>
+                </p>
+              </div>
+
+              <div class="bg-base-100/90 border border-base-200 rounded-xl p-3 flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                  <mat-icon class="text-[14px]">inventory_2</mat-icon> 2. Productos
+                </span>
+                <p class="text-xs text-base-content/80">
+                  @if (targetCategories().length > 0) {
+                    Traerá productos de: <strong class="text-base-content">[{{ targetCategories().join(', ') }}]</strong>
+                  } @else {
+                    <span class="text-warning italic">Solo categoría [{{ groupForm.get('name')?.value || 'Nombre' }}]</span>
+                  }
+                </p>
+              </div>
+
+              <div class="bg-base-100/90 border border-base-200 rounded-xl p-3 flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                  <mat-icon class="text-[14px]">search</mat-icon> 3. Buscador
+                </span>
+                <p class="text-xs text-base-content/80">
+                  @if (synonyms().length > 0) {
+                    Activado por: <strong class="text-base-content">[{{ synonyms().join(', ') }}]</strong>
+                  } @else {
+                    <span class="text-base-content/40 italic">Sin sinónimos configurados</span>
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de Acción al pie -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <a routerLink="/home/categories" class="btn btn-ghost btn-sm rounded-xl">
+              Cancelar
+            </a>
+            <button
+              type="submit"
+              [disabled]="isSaving()"
+              class="btn btn-primary btn-sm rounded-xl px-6 shadow-sm text-white">
+              @if (isSaving()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Guardando...</span>
+              } @else {
+                <mat-icon class="text-[18px]">save</mat-icon>
+                <span>{{ isEditMode() ? 'Guardar Cambios' : 'Crear Macro-Categoría' }}</span>
+              }
+            </button>
+          </div>
+
+        </div>
+
+      </form>
+    }
+  </div>
+</app-page-layout>

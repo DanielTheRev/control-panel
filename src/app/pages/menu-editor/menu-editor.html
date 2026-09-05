@@ -1,0 +1,637 @@
+<app-page-layout>
+  <!-- Header con acciones -->
+  <app-page-header
+    header
+    [title]="isEditMode() ? 'Editar Menú' : 'Crear Nuevo Menú'"
+    subtitle="Configurá los ítems, enlaces, fotos de portada y subcategorías de este menú"
+  >
+    <div actions class="flex items-center gap-2">
+      <a
+        routerLink="/home/menus"
+        class="btn btn-ghost btn-sm rounded-xl font-bold"
+      >
+        Cancelar
+      </a>
+
+      <button
+        (click)="saveMenu()"
+        [disabled]="isSaving()"
+        type="button"
+        class="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-sm flex items-center gap-1.5 px-4"
+      >
+        @if (isSaving()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+          <span>Guardar Menú</span>
+        }
+      </button>
+    </div>
+  </app-page-header>
+
+  <div content class="p-3 sm:p-5 w-full max-w-7xl mx-auto space-y-4">
+    @if (isLoading()) {
+      <div class="py-24 flex flex-col items-center justify-center gap-3">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <span class="text-xs font-bold text-base-content/40">Cargando menú...</span>
+      </div>
+    } @else {
+      <form [formGroup]="menuForm" (ngSubmit)="saveMenu()" class="grid grid-cols-1 lg:grid-cols-12 gap-5 pb-16">
+        
+        <!-- COLUMNA PRINCIPAL: FORMULARIO (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-4">
+          
+          <!-- CARD 1: INFORMACIÓN GENERAL DEL MENÚ (COMPACTA) -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xs p-4 sm:p-5">
+            <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-base-200/80">
+              <h2 class="text-sm font-bold text-base-content flex items-center gap-2">
+                <mat-icon class="text-primary text-lg">tune</mat-icon>
+                <span>Configuración del Menú</span>
+              </h2>
+
+              <!-- Switch Activo inline en header -->
+              <label class="cursor-pointer flex items-center gap-2 select-none">
+                <span class="text-xs font-semibold text-base-content/70">Menú Activo</span>
+                <input type="checkbox" formControlName="isActive" class="toggle toggle-primary toggle-sm" />
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <!-- Nombre -->
+              <div class="md:col-span-6 form-control">
+                <label class="label py-0.5">
+                  <span class="label-text font-semibold text-xs text-base-content/80">Nombre del Menú <span class="text-error">*</span></span>
+                </label>
+                <input
+                  type="text"
+                  formControlName="name"
+                  (input)="onNameInput()"
+                  placeholder="Ej. Categorías Principales, Menú Sidebar"
+                  class="input input-bordered input-sm w-full font-semibold rounded-xl"
+                />
+              </div>
+
+              <!-- Slug / Identificador -->
+              <div class="md:col-span-6 form-control">
+                <label class="label py-0.5">
+                  <span class="label-text font-semibold text-xs text-base-content/80">Identificador (Slug) <span class="text-error">*</span></span>
+                </label>
+                <div class="join w-full">
+                  <span class="join-item bg-base-200 border border-r-0 border-base-300 text-[11px] font-mono text-base-content/50 px-2.5 flex items-center">
+                    /api/menus/
+                  </span>
+                  <input
+                    type="text"
+                    formControlName="slug"
+                    placeholder="categories"
+                    class="input input-bordered input-sm join-item w-full font-mono text-xs font-bold text-primary"
+                  />
+                </div>
+              </div>
+
+              <!-- Descripción en 1 fila compacta -->
+              <div class="md:col-span-12 form-control mt-0.5">
+                <label class="label py-0.5">
+                  <span class="label-text font-semibold text-[11px] text-base-content/60">Descripción / Ubicación (Opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  formControlName="description"
+                  placeholder="Describe dónde se renderiza este menú (ej. Categorías con fotos para el Home)..."
+                  class="input input-bordered input-sm w-full text-xs rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: ÍTEMS Y SUBCATEGORÍAS -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xs p-4 sm:p-5">
+            <!-- Barra de Acciones de Ítems -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-base-200/80">
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold text-base-content flex items-center gap-1.5">
+                  <mat-icon class="text-primary text-lg">account_tree</mat-icon>
+                  <span>Ítems del Menú</span>
+                </h2>
+                <span class="badge badge-primary badge-sm font-bold">{{ items.length }}</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  (click)="expandAll()"
+                  type="button"
+                  class="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content font-semibold"
+                  title="Expandir todos los ítems"
+                >
+                  Expandir todo
+                </button>
+                <span class="text-base-content/20 text-xs">|</span>
+                <button
+                  (click)="collapseAll()"
+                  type="button"
+                  class="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content font-semibold"
+                  title="Colapsar todos los ítems"
+                >
+                  Colapsar todo
+                </button>
+
+                <button
+                  (click)="addItem()"
+                  type="button"
+                  class="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-2xs flex items-center gap-1 ml-1"
+                >
+                  <mat-icon class="text-xs">add</mat-icon>
+                  <span>Agregar Ítem</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- LISTA DE ÍTEMS CON TRACKING ÚNICO POR UID -->
+            <div formArrayName="items" class="flex flex-col gap-3">
+              @for (item of items.controls; track trackByItemUid($index, item); let i = $index) {
+                <div [formGroupName]="i" class="bg-base-100 rounded-xl border border-base-300 shadow-2xs item-card overflow-hidden">
+                  
+                  <!-- HEADER COMPACTO DEL ÍTEM (ALTURA 42px) -->
+                  <div
+                    class="px-3 py-2 bg-base-200/50 border-b border-base-300/80 flex items-center justify-between gap-2 select-none"
+                  >
+                    <!-- Izquierda: Índice, Mini Thumb, Título Dinámico, Badge, Conteo -->
+                    <div
+                      class="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                      (click)="toggleCollapse(i)"
+                    >
+                      <span class="w-5 h-5 rounded-md bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0">
+                        {{ i + 1 }}
+                      </span>
+
+                      <!-- Mini thumbnail si tiene imagen cargada -->
+                      @if (getImagePreview(item)) {
+                        <img
+                          [src]="getImagePreview(item)"
+                          alt=""
+                          class="w-6 h-6 rounded-md object-cover border border-base-300 shrink-0"
+                        />
+                      }
+
+                      <span class="font-bold text-xs sm:text-sm text-base-content truncate">
+                        {{ item.get('label')?.value || ('Nuevo Ítem #' + (i + 1)) }}
+                      </span>
+
+                      @if (item.get('badge')?.value) {
+                        <span class="badge badge-primary badge-xs font-bold text-[8px] uppercase tracking-wider px-1.5 shrink-0">
+                          {{ item.get('badge')?.value }}
+                        </span>
+                      }
+
+                      @if (getChildren(i).length > 0) {
+                        <span class="badge badge-ghost badge-xs text-[9px] text-base-content/60 font-semibold px-1.5 shrink-0 hidden sm:inline-flex">
+                          {{ getChildren(i).length }} {{ getChildren(i).length === 1 ? 'subcategoría' : 'subcategorías' }}
+                        </span>
+                      }
+                    </div>
+
+                    <!-- Derecha: Acciones Rápidas (Subir, Bajar, Colapsar, Eliminar) -->
+                    <div class="flex items-center gap-1 shrink-0">
+                      <!-- Subir posición -->
+                      <button
+                        (click)="moveItemUp(i)"
+                        [disabled]="i === 0"
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-square h-7 w-7 rounded-lg"
+                        title="Mover arriba"
+                      >
+                        <mat-icon class="text-sm text-base-content/70">arrow_upward</mat-icon>
+                      </button>
+
+                      <!-- Bajar posición -->
+                      <button
+                        (click)="moveItemDown(i)"
+                        [disabled]="i === items.length - 1"
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-square h-7 w-7 rounded-lg"
+                        title="Mover abajo"
+                      >
+                        <mat-icon class="text-sm text-base-content/70">arrow_downward</mat-icon>
+                      </button>
+
+                      <!-- Colapsar / Expandir -->
+                      <button
+                        (click)="toggleCollapse(i)"
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-square h-7 w-7 rounded-lg"
+                        [title]="item.get('isCollapsed')?.value ? 'Expandir' : 'Colapsar'"
+                      >
+                        <mat-icon class="text-sm text-base-content/70">
+                          {{ item.get('isCollapsed')?.value ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}
+                        </mat-icon>
+                      </button>
+
+                      <!-- Eliminar -->
+                      <button
+                        (click)="removeItem(i)"
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-square h-7 w-7 text-error hover:bg-error/10 rounded-lg ml-0.5"
+                        title="Eliminar este ítem"
+                      >
+                        <mat-icon class="text-sm">delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- CUERPO DEL ÍTEM (VISIBILIDAD CONTROLADA POR isCollapsed) -->
+                  @if (!item.get('isCollapsed')?.value) {
+                    <div class="p-3 sm:p-4 space-y-3.5">
+                      
+                      <!-- FILA 1: CAMPOS PRINCIPALES EN GRID DE 4 COLUMNAS -->
+                      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                        <!-- Nombre / Título -->
+                        <div class="sm:col-span-3 form-control">
+                          <label class="label py-0.5">
+                            <span class="label-text font-semibold text-[11px] text-base-content/80">
+                              Nombre / Título <span class="text-error">*</span>
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            formControlName="label"
+                            placeholder="Ej. Hombre, Mujer, Ofertas"
+                            class="input input-bordered input-sm w-full font-semibold rounded-lg"
+                          />
+                        </div>
+
+                        <!-- Enlace / URL -->
+                        <div class="sm:col-span-4 form-control">
+                          <label class="label py-0.5">
+                            <span class="label-text font-semibold text-[11px] text-base-content/80">
+                              Enlace de Destino <span class="text-error">*</span>
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            formControlName="link"
+                            placeholder="/products?gender=Hombre"
+                            class="input input-bordered input-sm w-full font-mono text-xs rounded-lg"
+                          />
+                        </div>
+
+                        <!-- Subtítulo / Eyebrow -->
+                        <div class="sm:col-span-3 form-control">
+                          <label class="label py-0.5">
+                            <span class="label-text font-semibold text-[11px] text-base-content/80">
+                              Subtítulo (Opcional)
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            formControlName="subtitle"
+                            placeholder="Ej. Colección 2026"
+                            class="input input-bordered input-sm w-full text-xs rounded-lg"
+                          />
+                        </div>
+
+                        <!-- Badge -->
+                        <div class="sm:col-span-2 form-control">
+                          <label class="label py-0.5">
+                            <span class="label-text font-semibold text-[11px] text-base-content/80">
+                              Badge (Opcional)
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            formControlName="badge"
+                            placeholder="NUEVO"
+                            class="input input-bordered input-sm w-full font-bold uppercase text-xs rounded-lg"
+                          />
+                        </div>
+                      </div>
+
+                      <!-- FILA 2: IMAGEN COMPACTA + SUBCATEGORÍAS EN 2 BLOQUES BALANCEADOS -->
+                      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1 border-t border-base-200">
+                        
+                        <!-- BLOQUE 1: IMAGEN DE PORTADA (4 cols) -->
+                        <div class="md:col-span-4 bg-base-200/30 p-2.5 rounded-xl border border-base-200 flex flex-col justify-between">
+                          <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold text-base-content/80 flex items-center gap-1">
+                              <mat-icon class="text-xs text-primary">image</mat-icon>
+                              <span>Foto Portada</span>
+                            </span>
+
+                            <button
+                              type="button"
+                              (click)="toggleUrlInput(i)"
+                              class="text-[10px] text-primary hover:underline font-semibold cursor-pointer"
+                            >
+                              {{ item.get('showUrlInput')?.value ? 'Ocultar URL' : 'Pegar URL' }}
+                            </button>
+                          </div>
+
+                          <!-- Vista previa o Dropzone -->
+                          @if (getImagePreview(item)) {
+                            <div class="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-base-300 bg-neutral-900 group">
+                              <img
+                                [src]="getImagePreview(item)"
+                                alt="Preview"
+                                class="w-full h-full object-cover"
+                              />
+                              <!-- Overlay con acciones -->
+                              <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                                <label class="btn btn-xs btn-neutral text-white font-bold cursor-pointer rounded-lg">
+                                  Cambiar
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    class="hidden"
+                                    (change)="onImageFileSelected($event, i)"
+                                  />
+                                </label>
+                                <button
+                                  (click)="removeImage(i)"
+                                  type="button"
+                                  class="btn btn-xs btn-error text-white font-bold rounded-lg"
+                                  title="Quitar foto"
+                                >
+                                  Quitar
+                                </button>
+                              </div>
+                            </div>
+                          } @else {
+                            <div
+                              (paste)="onPasteImage($event, i)"
+                              class="relative w-full aspect-[16/9] rounded-lg border-2 border-dashed border-base-300 hover:border-primary/50 transition-colors bg-base-100 flex flex-col items-center justify-center p-2 text-center"
+                            >
+                              <label class="w-full h-full flex flex-col items-center justify-center cursor-pointer">
+                                <mat-icon class="text-xl text-base-content/30 mb-0.5">add_photo_alternate</mat-icon>
+                                <span class="text-[10px] font-bold text-base-content/70">Subir foto o Pegar (Ctrl+V)</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  class="hidden"
+                                  (change)="onImageFileSelected($event, i)"
+                                />
+                              </label>
+                            </div>
+                          }
+
+                          <!-- Input opcional de URL directa -->
+                          @if (item.get('showUrlInput')?.value) {
+                            <div class="mt-2">
+                              <input
+                                type="text"
+                                [value]="item.get('imageUrl')?.value || ''"
+                                (input)="onImageUrlChange($any($event.target).value, i)"
+                                placeholder="https://ejemplo.com/foto.jpg"
+                                class="input input-bordered input-xs w-full font-mono text-[10px] rounded-lg"
+                              />
+                            </div>
+                          }
+                        </div>
+
+                        <!-- BLOQUE 2: SUBCATEGORÍAS ANIDADAS (8 cols) -->
+                        <div class="md:col-span-8 bg-base-200/30 p-2.5 rounded-xl border border-base-200 flex flex-col justify-between">
+                          <!-- Header Subcategorías -->
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold text-base-content/80 flex items-center gap-1">
+                              <mat-icon class="text-xs text-primary">subdirectory_arrow_right</mat-icon>
+                              <span>Subcategorías / Enlaces Anidados ({{ getChildren(i).length }})</span>
+                            </span>
+
+                            <button
+                              (click)="addChild(i)"
+                              type="button"
+                              class="btn btn-outline btn-primary btn-xs rounded-lg gap-0.5 font-bold h-6 min-h-6 text-[10px] px-2"
+                            >
+                              <mat-icon class="text-[12px]! w-3! h-3!">add</mat-icon>
+                              <span>Agregar Subcategoría</span>
+                            </button>
+                          </div>
+
+                          <!-- Lista de Subcategorías Compacta -->
+                          <div [formArrayName]="'children'" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-0.5 custom-scrollbar">
+                            @for (child of getChildren(i).controls; track trackByChildUid($index, child); let cIdx = $index) {
+                              <div [formGroupName]="cIdx" class="flex items-center gap-1.5 p-1.5 bg-base-100 rounded-lg border border-base-300">
+                                <span class="text-[9px] font-bold text-base-content/40 w-3 text-center">
+                                  {{ cIdx + 1 }}
+                                </span>
+
+                                <input
+                                  type="text"
+                                  formControlName="label"
+                                  placeholder="Nombre (ej. Remeras)"
+                                  class="input input-bordered input-xs flex-1 min-w-[100px] font-semibold text-xs rounded-md"
+                                />
+
+                                <input
+                                  type="text"
+                                  formControlName="link"
+                                  placeholder="Enlace (/products?category=remeras)"
+                                  class="input input-bordered input-xs flex-1 min-w-[120px] font-mono text-[10px] rounded-md"
+                                />
+
+                                <input
+                                  type="text"
+                                  formControlName="badge"
+                                  placeholder="Badge"
+                                  class="input input-bordered input-xs w-16 font-bold uppercase text-[9px] rounded-md"
+                                />
+
+                                <button
+                                  (click)="removeChild(i, cIdx)"
+                                  type="button"
+                                  class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10 h-6 w-6 min-h-6 rounded-md"
+                                  title="Quitar subcategoría"
+                                >
+                                  <mat-icon class="text-xs">close</mat-icon>
+                                </button>
+                              </div>
+                            }
+
+                            @if (getChildren(i).length === 0) {
+                              <div
+                                (click)="addChild(i)"
+                                class="border border-dashed border-base-300 hover:border-primary/50 rounded-lg p-2.5 text-center text-[11px] text-base-content/40 cursor-pointer hover:text-primary transition-colors select-none"
+                              >
+                                + Agregar primera subcategoría (ej. Remeras, Pantalones, Buzos...)
+                              </div>
+                            }
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- BOTÓN INFERIOR AGREGAR OTRO ÍTEM -->
+            <button
+              (click)="addItem()"
+              type="button"
+              class="btn btn-outline btn-primary btn-sm rounded-xl font-bold w-full mt-3 flex items-center justify-center gap-1 border-dashed"
+            >
+              <mat-icon class="text-sm">add</mat-icon>
+              <span>Agregar Otro Ítem al Menú</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: PREVIEW EN VIVO TOTALMENTE REACTIVO (4 cols) -->
+        <div class="lg:col-span-4">
+          <div class="sticky top-4 flex flex-col gap-3">
+            
+            <!-- Card de Preview -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xs p-4">
+              <div class="flex items-center justify-between pb-2.5 border-b border-base-200 mb-3">
+                <h3 class="font-bold text-xs uppercase tracking-wider text-base-content flex items-center gap-1.5">
+                  <mat-icon class="text-base text-primary">visibility</mat-icon>
+                  <span>Vista Previa en Vivo</span>
+                </h3>
+
+                <!-- Selector de pestañas de previsualización -->
+                <div class="join">
+                  <button
+                    type="button"
+                    (click)="previewMode.set('cards')"
+                    class="btn btn-xs join-item font-bold"
+                    [class.btn-active]="previewMode() === 'cards'"
+                  >
+                    Cards
+                  </button>
+                  <button
+                    type="button"
+                    (click)="previewMode.set('sidebar')"
+                    class="btn btn-xs join-item font-bold"
+                    [class.btn-active]="previewMode() === 'sidebar'"
+                  >
+                    Sidebar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="previewMode.set('json')"
+                    class="btn btn-xs join-item font-bold"
+                    [class.btn-active]="previewMode() === 'json'"
+                  >
+                    JSON
+                  </button>
+                </div>
+              </div>
+
+              <!-- MODO 1: CARDS EDITORIALES DE LA TIENDA (HOME SHOWCASE) -->
+              @if (previewMode() === 'cards') {
+                <div class="flex flex-col gap-2.5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                  @for (item of formSnapshot().items; track item.uid; let idx = $index) {
+                    <div class="relative overflow-hidden rounded-xl bg-neutral-900 aspect-[16/9] flex flex-col justify-between p-3.5 select-none shadow-xs group">
+                      @if (item.previewUrl) {
+                        <img [src]="item.previewUrl" [alt]="item.label" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                      }
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
+
+                      <!-- Top Badge -->
+                      <div class="relative z-10 flex items-start justify-between">
+                        @if (item.badge) {
+                          <span class="bg-white/95 text-black text-[8px] font-sans font-bold uppercase tracking-widest px-2 py-0.5 rounded-xs shadow-xs">
+                            {{ item.badge }}
+                          </span>
+                        } @else {
+                          <span></span>
+                        }
+                      </div>
+
+                      <!-- Bottom Content -->
+                      <div class="relative z-10 flex flex-col items-start">
+                        @if (item.subtitle) {
+                          <span class="text-[9px] uppercase tracking-wider font-semibold text-white/80 block leading-none mb-1">
+                            {{ item.subtitle }}
+                          </span>
+                        }
+                        <span class="text-white font-bold text-base leading-tight drop-shadow-sm font-serif uppercase tracking-wide">
+                          {{ item.label || 'Título Ítem' }}
+                        </span>
+
+                        @if (item.children && item.children.length > 0) {
+                          <div class="flex flex-wrap gap-1 mt-2">
+                            @for (child of item.children; track child.uid) {
+                              <span class="px-2 py-0.5 text-[9px] rounded-full bg-white/20 hover:bg-white text-white hover:text-black backdrop-blur-sm transition-colors cursor-default">
+                                {{ child.label || 'Subítem' }}
+                              </span>
+                            }
+                          </div>
+                        }
+
+                        <div class="mt-2 text-[9px] uppercase font-bold tracking-widest text-white/70 flex items-center gap-1">
+                          <span>Explorar</span>
+                          <span>→</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                  @if (formSnapshot().items.length === 0) {
+                    <p class="text-xs text-base-content/40 italic text-center py-8">
+                      Agregá ítems para ver la vista previa.
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- MODO 2: SIDEBAR TREE VIEW -->
+              @if (previewMode() === 'sidebar') {
+                <div class="bg-base-200/50 p-3 rounded-xl flex flex-col gap-1.5 max-h-[520px] overflow-y-auto custom-scrollbar">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 px-1 mb-1">
+                    {{ formSnapshot().name || 'Menú de Navegación' }}
+                  </span>
+
+                  @for (item of formSnapshot().items; track item.uid) {
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-base-100 font-semibold text-xs text-base-content border border-base-200/60 shadow-2xs">
+                        <div class="flex items-center gap-1.5 truncate">
+                          <mat-icon class="text-xs text-primary">label</mat-icon>
+                          <span class="truncate">{{ item.label || 'Ítem' }}</span>
+                        </div>
+                        @if (item.badge) {
+                          <span class="badge badge-primary badge-xs text-[7px] font-bold uppercase">{{ item.badge }}</span>
+                        }
+                      </div>
+
+                      @if (item.children && item.children.length > 0) {
+                        <div class="flex flex-col pl-4 pr-1 py-0.5 gap-1 border-l-2 border-primary/30 ml-3">
+                          @for (child of item.children; track child.uid) {
+                            <div class="flex items-center justify-between py-0.5 text-[11px] text-base-content/70 hover:text-primary transition-colors">
+                              <span>{{ child.label }}</span>
+                              @if (child.badge) {
+                                <span class="badge badge-ghost badge-xs text-[7px] opacity-70">{{ child.badge }}</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- MODO 3: JSON INSPECTOR -->
+              @if (previewMode() === 'json') {
+                <pre class="bg-neutral-900 text-emerald-400 p-3 rounded-xl text-[10px] font-mono max-h-[520px] overflow-auto custom-scrollbar">
+{{ formSnapshot() | json }}
+                </pre>
+              }
+            </div>
+
+            <!-- Ayuda / Info rápida -->
+            <div class="alert alert-info text-xs bg-info/10 text-info border border-info/20 shadow-2xs rounded-xl p-3">
+              <mat-icon class="text-sm">lightbulb</mat-icon>
+              <div>
+                <span class="font-bold">Tip:</span> Usá el slug <code class="font-mono bg-info/20 px-1 py-0.5 rounded font-bold">categories</code> para que este menú alimente el bloque de Categorías del Home.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </form>
+    }
+  </div>
+</app-page-layout>
+

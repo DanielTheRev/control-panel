@@ -63,6 +63,24 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'categories',
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/category-group-list/category-group-list').then(c => c.CategoryGroupListComponent)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/category-group-editor/category-group-editor').then(c => c.CategoryGroupEditorComponent)
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () => import('./pages/category-group-editor/category-group-editor').then(c => c.CategoryGroupEditorComponent)
+          }
+        ]
+      },
+      {
         path: 'payment-methods',
         children: [
           {
@@ -117,8 +135,27 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'menus',
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./pages/menu-list/menu-list').then(c => c.MenuListComponent)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./pages/menu-editor/menu-editor').then(c => c.MenuEditorComponent)
+          },
+          {
+            path: 'edit/:menuId',
+            loadComponent: () => import('./pages/menu-editor/menu-editor').then(c => c.MenuEditorComponent)
+          }
+        ]
+      },
+      {
         path: 'bento',
-        loadComponent: () => import('./pages/bento-editor/bento-editor').then(c => c.BentoEditorComponent)
+        redirectTo: 'menus',
+        pathMatch: 'full'
       },
       {
         path: 'hero',

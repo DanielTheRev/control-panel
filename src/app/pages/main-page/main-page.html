@@ -114,6 +114,12 @@
           <mat-icon>inventory_2</mat-icon>
           @if (isExpanded) { <span class="menu-text">Productos</span> }
         </a>
+        <a routerLink="/home/categories" routerLinkActive="active" class="menu-item"
+          [class.justify-center]="isCollapsed"
+          [matTooltip]="isCollapsed ? 'Categorías' : ''" matTooltipPosition="right">
+          <mat-icon>category</mat-icon>
+          @if (isExpanded) { <span class="menu-text">Categorías</span> }
+        </a>
         @if (authService.isAdmin()) {
           <a routerLink="/home/providers" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
@@ -135,11 +141,11 @@
           <mat-icon>view_carousel</mat-icon>
           @if (isExpanded) { <span class="menu-text">Banners</span> }
         </a>
-        <a routerLink="/home/bento" routerLinkActive="active" class="menu-item"
+        <a routerLink="/home/menus" routerLinkActive="active" class="menu-item"
           [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Editor Bento' : ''" matTooltipPosition="right">
-          <mat-icon>dashboard_customize</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Editor Bento</span> }
+          [matTooltip]="isCollapsed ? 'Menús' : ''" matTooltipPosition="right">
+          <mat-icon>menu_book</mat-icon>
+          @if (isExpanded) { <span class="menu-text">Menús</span> }
         </a>
         <a routerLink="/home/hero" routerLinkActive="active" class="menu-item"
           [class.justify-center]="isCollapsed"
@@ -310,6 +316,10 @@
             <mat-icon>inventory_2</mat-icon>
             <span class="menu-text">Productos</span>
           </a>
+          <a routerLink="/home/categories" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+            <mat-icon>category</mat-icon>
+            <span class="menu-text">Categorías</span>
+          </a>
           @if (authService.isAdmin()) {
             <a routerLink="/home/providers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
               <mat-icon>domain</mat-icon>
@@ -325,9 +335,9 @@
             <mat-icon>view_carousel</mat-icon>
             <span class="menu-text">Banners</span>
           </a>
-          <a routerLink="/home/bento" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>dashboard_customize</mat-icon>
-            <span class="menu-text">Editor Bento</span>
+          <a routerLink="/home/menus" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+            <mat-icon>menu_book</mat-icon>
+            <span class="menu-text">Menús</span>
           </a>
           <a routerLink="/home/hero" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
             <mat-icon>view_day</mat-icon>

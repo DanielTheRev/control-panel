@@ -1,0 +1,139 @@
+<app-page-layout>
+  <app-page-header
+    header
+    title="Menús de Navegación"
+    subtitle="Gestioná los menús y categorías de tu tienda (Home Showcase, Sidebar, Header, etc.)"
+  >
+    <div actions>
+      <a
+        routerLink="create"
+        class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4 text-white"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+        Crear Menú
+      </a>
+    </div>
+  </app-page-header>
+
+  <div content class="p-3 sm:p-5 w-full max-w-7xl mx-auto space-y-4">
+    @if (isLoading()) {
+      <div class="py-24 flex flex-col items-center justify-center gap-3">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <span class="text-xs font-bold text-base-content/40">Cargando menús de navegación...</span>
+      </div>
+    } @else if (menus().length === 0) {
+      <div class="py-16 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-3 bg-base-100 rounded-3xl border border-dashed border-base-300 p-8 shadow-xs">
+        <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+          <mat-icon class="text-2xl">menu_book</mat-icon>
+        </div>
+        <h3 class="font-bold text-base text-base-content">No tenés menús creados todavía</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed">
+          Creá un menú para organizar las categorías en el Home, los enlaces del Sidebar o la navegación de tu tienda.
+        </p>
+        <a routerLink="create" class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shadow-sm mt-1 text-white">
+          <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon> Crear Mi Primer Menú
+        </a>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+        @for (menu of menus(); track menu._id || menu.slug) {
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xs menu-card flex flex-col justify-between overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all duration-200">
+            <!-- Header Card -->
+            <div class="p-4 sm:p-5 border-b border-base-200/80">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-base-content leading-snug truncate">{{ menu.name }}</h3>
+                    @if (menu.slug === 'categories' || menu.slug === 'categorias') {
+                      <span class="badge badge-primary badge-xs font-bold text-[8px] uppercase tracking-wider px-1.5 shrink-0">
+                        Home
+                      </span>
+                    }
+                  </div>
+
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <button
+                      (click)="copySlug(menu.slug)"
+                      class="badge badge-neutral badge-xs font-mono text-[10px] tracking-tight cursor-pointer hover:badge-primary transition-colors flex items-center gap-1 py-2 px-2"
+                      title="Click para copiar slug"
+                    >
+                      <span>slug: {{ menu.slug }}</span>
+                      <mat-icon class="text-[10px]! w-2.5! h-2.5!">content_copy</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <span
+                  class="badge badge-sm font-bold text-[10px] py-1.5 px-2"
+                  [class.badge-success]="menu.isActive !== false"
+                  [class.text-white]="menu.isActive !== false"
+                  [class.badge-ghost]="menu.isActive === false"
+                >
+                  {{ menu.isActive !== false ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+
+              @if (menu.description) {
+                <p class="text-xs text-base-content/65 line-clamp-2 mt-1.5 leading-relaxed">
+                  {{ menu.description }}
+                </p>
+              }
+            </div>
+
+            <!-- Items Preview -->
+            <div class="p-4 sm:p-5 bg-base-200/25 flex-1">
+              <div class="flex items-center justify-between text-[11px] font-bold text-base-content/55 uppercase tracking-wider mb-2.5">
+                <span>Ítems configurados ({{ menu.items.length || 0 }})</span>
+              </div>
+
+              @if (menu.items && menu.items.length > 0) {
+                <div class="flex flex-wrap gap-1.5">
+                  @for (item of menu.items.slice(0, 6); track item.label + '-' + $index) {
+                    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs bg-base-100 border border-base-300 font-medium text-base-content shadow-2xs">
+                      @if (item.image?.url) {
+                        <img [src]="item.image?.url" [alt]="item.label" class="w-3.5 h-3.5 rounded-xs object-cover" />
+                      }
+                      <span class="font-semibold text-[11px]">{{ item.label }}</span>
+                      @if (item.children && item.children.length > 0) {
+                        <span class="badge badge-xs badge-ghost text-[8px] font-bold px-1">+{{ item.children.length }}</span>
+                      }
+                    </span>
+                  }
+                  @if (menu.items.length > 6) {
+                    <span class="inline-flex items-center px-2 py-1 text-xs text-base-content/50 font-medium">
+                      +{{ menu.items.length - 6 }} más
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="text-xs text-base-content/40 italic">Sin ítems configurados</p>
+              }
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-3 sm:px-5 border-t border-base-200 bg-base-100 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                (click)="deleteMenu(menu)"
+                class="btn btn-ghost btn-xs text-error font-bold flex items-center gap-1 rounded-lg hover:bg-error/10"
+                title="Eliminar menú"
+              >
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                <span>Eliminar</span>
+              </button>
+
+              <a
+                [routerLink]="['edit', menu._id || menu.slug]"
+                class="btn btn-xs btn-primary text-white font-bold flex items-center gap-1 rounded-lg shadow-2xs px-3"
+              >
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon>
+                <span>Editar Menú</span>
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</app-page-layout>
+

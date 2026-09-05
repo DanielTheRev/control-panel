@@ -1,226 +1,244 @@
 <app-page-layout>
-  <app-page-header header title="Editor de Bento Grid"
-    subtitle="Agrega, elimina, reordena y edita las tarjetas de la sección Bento Grid en tiempo real.">
+  <app-page-header header title="Menú Visual & Grillas"
+    subtitle="Diseñá la arquitectura de categorías y departamentos de tu tienda con grillas CSS personalizadas y subenlaces.">
     <div actions class="flex gap-2">
       <button type="button" class="btn btn-outline" (click)="addItem()">
         <mat-icon>add</mat-icon> Nueva Tarjeta
       </button>
-      <button type="button" class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="bentoForm.invalid || loading()">
+      <button type="button" class="btn btn-primary px-8" (click)="onSubmit()" [disabled]="visualMenuForm.invalid || loading()">
         <mat-icon>save</mat-icon> {{ loading() ? 'Guardando...' : 'Guardar Cambios' }}
       </button>
     </div>
   </app-page-header>
 
   <ng-container content>
-    <form [formGroup]="bentoForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 pb-20">
+    <form [formGroup]="visualMenuForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 pb-20">
 
-      @if(bentoForm.invalid && !loading()) {
+      @if(visualMenuForm.invalid && !loading()) {
         <div role="alert" class="alert alert-warning shadow-sm lg:col-span-12 animate-fade-in-down">
           <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div>
-            <h3 class="font-bold">¡Atención! Falta Configuración</h3>
-            <div class="text-xs">Asegúrate de configurar el <b>Título</b>, <b>Link</b> e <b>Imagen (Desktop)</b> de cada tarjeta para guardar.</div>
+            <h3 class="font-bold">¡Atención! Faltan Campos Requeridos</h3>
+            <div class="text-xs">Verificá que cada tarjeta tenga <b>Título</b>, <b>Link</b> e <b>Imagen Desktop</b>.</div>
           </div>
         </div>
       }
 
-      <!-- PREVISUALIZACIÓN INTERACTIVA -->
-      <div [ngClass]="selectedIndex() !== null ? 'lg:col-span-8' : 'lg:col-span-12'"
-        class="bg-black/5 border border-base-300 rounded-xl overflow-hidden p-4 relative flex flex-col items-center select-none shadow-inner transition-all duration-300">
+      <!-- PREVISUALIZACIÓN INTERACTIVA (12 COLUMNAS) -->
+      <div [ngClass]="selectedIndex() !== null ? 'lg:col-span-7 xl:col-span-8' : 'lg:col-span-12'"
+        class="bg-black/5 border border-base-300 rounded-2xl overflow-hidden p-4 sm:p-6 relative flex flex-col items-center select-none shadow-inner transition-all duration-300">
         
-        <div class="w-full flex items-center justify-between mb-4 px-2">
-          <span class="badge badge-primary font-bold">Previsualización Dinámica ({{ itemsFormArray.length }} Tarjetas)</span>
-          <button type="button" class="btn btn-xs btn-ghost text-primary" (click)="addItem()">
-            + Agregar Tarjeta
-          </button>
+        <!-- Header de Configuración General -->
+        <div class="w-full bg-base-100 p-4 rounded-xl border border-base-200 mb-6 space-y-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="badge badge-primary font-bold">Grilla de Categorías ({{ itemsFormArray.length }} Tarjetas)</span>
+            <button type="button" class="btn btn-xs btn-ghost text-primary" (click)="addItem()">
+              + Agregar Tarjeta
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-bold uppercase">Título de Sección</span></label>
+              <input type="text" formControlName="sectionTitle" class="input input-sm input-bordered" placeholder="Ej: Vura / Catálogo" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-bold uppercase">Subtítulo de Sección</span></label>
+              <input type="text" formControlName="sectionSubtitle" class="input input-sm input-bordered" placeholder="Ej: Explorá la Colección" />
+            </div>
+          </div>
         </div>
 
-        <div class="w-full origin-top relative scale-[0.85] sm:scale-95 md:scale-100">
-          <section class="w-full py-6">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+        <!-- CANVAS DE LA GRILLA EN VIVO -->
+        <div class="w-full origin-top relative">
+          <div class="grid grid-cols-12 gap-4">
 
-              @for (ctrl of itemsFormArray.controls; track $index; let i = $index) {
-                @let itemGroup = ctrl;
-                @let span = itemGroup.get('gridSpan')?.value || 'main';
+            @for (ctrl of itemsFormArray.controls; track $index; let i = $index) {
+              @let itemGroup = ctrl;
+              @let colDesktop = itemGroup.get('colSpanDesktop')?.value || 6;
+              @let rowDesktop = itemGroup.get('rowSpanDesktop')?.value || 1;
 
-                <div (click)="selectItem(i)"
-                  [ngClass]="{
-                    'lg:col-span-7 h-[45vh]': span === 'main',
-                    'lg:col-span-5 h-[22vh]': span === 'top-right' || span === 'bottom-right' || span === 'third',
-                    'lg:col-span-12 h-[30vh]': span === 'full-width',
-                    'lg:col-span-6 h-[30vh]': span === 'half',
-                    'ring-4 ring-primary ring-offset-4 ring-offset-base-100 shadow-[0_0_30px_rgba(139,92,246,0.5)] z-10': selectedIndex() === i,
-                    'opacity-40 grayscale': !itemGroup.get('isActive')?.value
-                  }"
-                  class="group relative overflow-hidden rounded-md block bg-base-200 cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 border border-black/10">
+              <div (click)="selectItem(i)"
+                [style.grid-column]="'span ' + colDesktop"
+                [style.grid-row]="'span ' + rowDesktop"
+                [style.min-height]="rowDesktop === 2 ? '460px' : '230px'"
+                [ngClass]="{
+                  'ring-4 ring-primary ring-offset-4 ring-offset-base-100 shadow-xl z-10': selectedIndex() === i,
+                  'opacity-40 grayscale': !itemGroup.get('isActive')?.value
+                }"
+                class="group relative overflow-hidden rounded-xl block bg-base-300 cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 border border-black/10">
 
-                  <img [src]="getPreviewUrl(i) || '/no-image.jpg'"
-                    [alt]="itemGroup.get('title')?.value || 'Bento Card'"
-                    class="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.03]">
+                <img [src]="getPreviewUrl(i) || '/no-image.jpg'"
+                  [alt]="itemGroup.get('title')?.value || 'Visual Menu Item'"
+                  class="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.03]">
 
-                  <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent opacity-85 group-hover:opacity-95 transition-opacity duration-500"></div>
 
-                  <div class="absolute bottom-6 left-6 right-6 z-10">
+                <!-- Contenido de la Tarjeta -->
+                <div class="absolute bottom-4 left-4 right-4 z-10 flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    @if (itemGroup.get('badge')?.value) {
+                      <span class="px-2 py-0.5 bg-primary text-primary-content text-[9px] font-bold uppercase tracking-wider rounded-sm shadow-xs">
+                        {{ itemGroup.get('badge')?.value }}
+                      </span>
+                    }
                     @if (itemGroup.get('subtitle')?.value) {
-                      <span class="inline-block px-2.5 py-0.5 bg-white/10 backdrop-blur-md text-white border border-white/20 text-[9px] font-bold uppercase tracking-widest mb-2 rounded-sm">
+                      <span class="px-2 py-0.5 bg-white/15 backdrop-blur-md text-white border border-white/20 text-[9px] font-bold uppercase tracking-widest rounded-sm">
                         {{ itemGroup.get('subtitle')?.value }}
                       </span>
                     }
-                    <h4 class="text-white text-2xl lg:text-4xl font-serif tracking-tighter mb-1">
-                      {{ itemGroup.get('title')?.value || 'Sin título' }}
-                    </h4>
-                    <div class="flex items-center gap-2 text-white/80 text-[10px] font-sans tracking-[0.2em] uppercase font-bold">
-                      {{ itemGroup.get('link')?.value }}
+                  </div>
+
+                  <h4 class="text-white text-xl sm:text-2xl font-serif tracking-tight leading-tight">
+                    {{ itemGroup.get('title')?.value || 'Sin título' }}
+                  </h4>
+
+                  <!-- Subcategorías Pills Preview -->
+                  @if (getChildrenFormArray(i).controls.length > 0) {
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                      @for (cCtrl of getChildrenFormArray(i).controls; track $index) {
+                        <span class="text-[9px] bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full border border-white/30">
+                          {{ cCtrl.get('label')?.value }}
+                        </span>
+                      }
                     </div>
-                  </div>
-
-                  <!-- Header Indicators -->
-                  <div class="absolute top-3 right-3 flex items-center gap-1.5 z-20">
-                    <button type="button" (click)="removeItem(i, $event)" title="Eliminar Tarjeta"
-                      class="w-7 h-7 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110">
-                      <mat-icon class="text-sm">delete</mat-icon>
-                    </button>
-                    @if (selectedIndex() === i) {
-                      <div class="bg-primary text-primary-content text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-md">
-                        Editando
-                      </div>
-                    }
-                  </div>
-
+                  }
                 </div>
-              }
 
-            </div>
-          </section>
+                <!-- Controles flotantes en tarjeta -->
+                <div class="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                  <button type="button" (click)="removeItem(i, $event)" title="Eliminar Tarjeta"
+                    class="w-7 h-7 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110">
+                    <mat-icon class="text-sm">delete</mat-icon>
+                  </button>
+                  @if (selectedIndex() === i) {
+                    <div class="bg-primary text-primary-content text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase shadow-md">
+                      Editando ({{ colDesktop }}/12)
+                    </div>
+                  }
+                </div>
+
+              </div>
+            }
+
+          </div>
         </div>
 
       </div>
 
-      <!-- PANEL DEL EDITOR DE TARJETA SELECCIONADA -->
-      @if (selectedIndex() !== null) {
-        <div class="lg:col-span-4 flex flex-col gap-6 animate-fade-in-right">
+      <!-- EDITOR DE TARJETA SELECCIONADA -->
+      @if (currentItemForm) {
+        <div class="lg:col-span-5 xl:col-span-4 bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm flex flex-col gap-6"
+          [formGroup]="currentItemForm">
 
-          <!-- CONTROLES GENERALES SECCIÓN -->
-          <div class="card bg-base-100/50 backdrop-blur outline outline-base-content/10">
-            <div class="card-body p-5">
-              <h2 class="card-title text-base mb-2">Encabezado de la Sección</h2>
-              <div class="form-control w-full mb-3">
-                <label class="label py-1"><span class="label-text text-xs">Título Superior</span></label>
-                <input type="text" formControlName="sectionTitle" class="input input-sm input-bordered w-full"
-                  placeholder="Vura / Catálogo" />
-              </div>
-              <div class="form-control w-full">
-                <label class="label py-1"><span class="label-text text-xs">Subtítulo Principal</span></label>
-                <textarea formControlName="sectionSubtitle" class="textarea textarea-sm textarea-bordered w-full h-16"
-                  placeholder="Explorá la colección."></textarea>
-              </div>
+          <div class="flex items-center justify-between border-b border-base-200 pb-3">
+            <div>
+              <h3 class="font-bold text-base text-base-content">
+                Tarjeta #{{ selectedIndex()! + 1 }}: {{ currentItemForm.get('title')?.value || 'Sin título' }}
+              </h3>
+              <p class="text-xs text-base-content/60">Configurá el layout, links y submenús</p>
+            </div>
+            <div class="form-control">
+              <label class="label cursor-pointer gap-2 py-0">
+                <span class="label-text text-xs">Activa</span>
+                <input type="checkbox" formControlName="isActive" class="toggle toggle-primary toggle-sm" />
+              </label>
             </div>
           </div>
 
-          <!-- REORDENADOR DE TARJETAS -->
-          <div class="card bg-base-100 outline outline-base-content/10">
-            <div class="card-body p-5">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="font-bold text-sm">Tarjetas ({{ itemsFormArray.length }})</h3>
-                <button type="button" class="btn btn-xs btn-primary" (click)="addItem()">
-                  + Agregar
-                </button>
+          <!-- TAMAÑO DE GRILLA (CSS GRID PRESETS) -->
+          <div class="space-y-2 bg-base-200/50 p-3.5 rounded-xl border border-base-200">
+            <span class="text-xs font-bold uppercase tracking-wider text-base-content/70 block">Proporción de Grilla (Desktop)</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              <button type="button" class="btn btn-xs" [ngClass]="currentItemForm.get('colSpanDesktop')?.value === 4 ? 'btn-primary' : 'btn-outline'" (click)="setPreset('third')">
+                1/3 Ancho (4)
+              </button>
+              <button type="button" class="btn btn-xs" [ngClass]="currentItemForm.get('colSpanDesktop')?.value === 6 && currentItemForm.get('rowSpanDesktop')?.value === 1 ? 'btn-primary' : 'btn-outline'" (click)="setPreset('half')">
+                1/2 Ancho (6)
+              </button>
+              <button type="button" class="btn btn-xs" [ngClass]="currentItemForm.get('colSpanDesktop')?.value === 8 ? 'btn-primary' : 'btn-outline'" (click)="setPreset('two-thirds')">
+                2/3 Ancho (8)
+              </button>
+              <button type="button" class="btn btn-xs" [ngClass]="currentItemForm.get('colSpanDesktop')?.value === 12 ? 'btn-primary' : 'btn-outline'" (click)="setPreset('full')">
+                Full Width (12)
+              </button>
+              <button type="button" class="btn btn-xs" [ngClass]="currentItemForm.get('rowSpanDesktop')?.value === 2 ? 'btn-primary' : 'btn-outline'" (click)="setPreset('tall')">
+                Alto 2 Filas
+              </button>
+            </div>
+          </div>
+
+          <!-- CAMPOS DE TEXTO -->
+          <div class="space-y-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-bold">Título *</span></label>
+              <input type="text" formControlName="title" class="input input-bordered input-sm" placeholder="Ej: Calzados, Moda Urbana..." />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-bold">Subtítulo</span></label>
+                <input type="text" formControlName="subtitle" class="input input-bordered input-sm" placeholder="Ej: Nueva Temporada" />
               </div>
-              <div class="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
-                @for (ctrl of itemsFormArray.controls; track $index; let i = $index) {
-                  <div (click)="selectItem(i)"
-                    [class.bg-primary/10]="selectedIndex() === i"
-                    [class.border-primary]="selectedIndex() === i"
-                    class="flex items-center justify-between p-2 rounded border border-base-200 cursor-pointer text-xs hover:bg-base-200 transition-colors">
-                    <div class="flex items-center gap-2 truncate">
-                      <span class="font-bold text-gray-400">#{{ i + 1 }}</span>
-                      <span class="font-medium truncate">{{ ctrl.get('title')?.value || 'Sin Título' }}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <button type="button" (click)="moveItemUp(i, $event)" [disabled]="i === 0" class="btn btn-ghost btn-xs px-1">
-                        <mat-icon class="text-xs">arrow_upward</mat-icon>
-                      </button>
-                      <button type="button" (click)="moveItemDown(i, $event)" [disabled]="i === itemsFormArray.length - 1" class="btn btn-ghost btn-xs px-1">
-                        <mat-icon class="text-xs">arrow_downward</mat-icon>
-                      </button>
-                      <button type="button" (click)="removeItem(i, $event)" class="btn btn-ghost btn-xs text-red-500 px-1">
-                        <mat-icon class="text-xs">delete</mat-icon>
-                      </button>
-                    </div>
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-bold">Badge / Tag</span></label>
+                <input type="text" formControlName="badge" class="input input-bordered input-sm" placeholder="Ej: HOT, -30%, NUEVO" />
+              </div>
+            </div>
+
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-bold">Enlace Principal (Link) *</span></label>
+              <input type="text" formControlName="link" class="input input-bordered input-sm" placeholder="Ej: /products?category=calzado" />
+            </div>
+          </div>
+
+          <!-- SUBCATEGORÍAS / ENLACES HIJOS -->
+          <div class="space-y-3 bg-base-200/40 p-3.5 rounded-xl border border-base-200">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-base-content/70 block">Subcategorías / Hijos</span>
+                <span class="text-[10px] text-base-content/50">Links rápidos dentro de esta tarjeta</span>
+              </div>
+              <button type="button" class="btn btn-xs btn-outline btn-primary" (click)="addChild(selectedIndex()!)">
+                <mat-icon class="text-xs">add</mat-icon> Agregar
+              </button>
+            </div>
+
+            @if (getChildrenFormArray(selectedIndex()!).controls.length === 0) {
+              <p class="text-xs text-base-content/40 italic text-center py-2">Sin subenlaces asignados</p>
+            } @else {
+              <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                @for (cCtrl of getChildrenFormArray(selectedIndex()!).controls; track $index; let cIdx = $index) {
+                  <div class="flex items-center gap-2 bg-base-100 p-2 rounded-lg border border-base-200" [formGroup]="$any(cCtrl)">
+                    <input type="text" formControlName="label" class="input input-xs input-bordered flex-1" placeholder="Nombre (ej: Zapatillas)" />
+                    <input type="text" formControlName="link" class="input input-xs input-bordered flex-1" placeholder="Link (/products?...)" />
+                    <button type="button" (click)="removeChild(selectedIndex()!, cIdx)" class="btn btn-xs btn-ghost btn-circle text-error">
+                      <mat-icon class="text-xs">close</mat-icon>
+                    </button>
                   </div>
                 }
               </div>
-            </div>
+            }
           </div>
 
-          <!-- EDICIÓN DE TARJETA SELECCIONADA -->
-          <div class="card bg-base-100 outline outline-primary shadow-xl shadow-primary/10">
-            <div class="card-body p-6">
-              <div class="flex items-center justify-between mb-4">
-                <h2 class="card-title text-lg text-primary">
-                  <mat-icon class="mr-1">edit</mat-icon> Tarjeta #{{ selectedIndex()! + 1 }}
-                </h2>
-                <button type="button" (click)="removeItem(selectedIndex()!)" class="btn btn-xs btn-error btn-outline">
-                  <mat-icon class="text-xs">delete</mat-icon> Eliminar
-                </button>
-              </div>
-
-              @if (currentItemForm; as formGroup) {
-                <ng-container [formGroup]="formGroup">
-                  
-                  <div class="form-control w-full mb-3">
-                    <label class="label py-1"><span class="label-text font-bold text-xs">Título de la Tarjeta</span></label>
-                    <input type="text" formControlName="title" class="input input-sm input-bordered w-full"
-                      placeholder="Ej: Hombre, Mujer, Sale..." />
-                  </div>
-
-                  <div class="form-control w-full mb-3">
-                    <label class="label py-1"><span class="label-text text-xs">Subtítulo / Badge</span></label>
-                    <input type="text" formControlName="subtitle" class="input input-sm input-bordered w-full"
-                      placeholder="Ej: Colección 2026, Hasta 40% OFF..." />
-                  </div>
-
-                  <div class="form-control w-full mb-3">
-                    <label class="label py-1"><span class="label-text font-bold text-xs">Link o Ruta</span></label>
-                    <input type="text" formControlName="link" class="input input-sm input-bordered w-full font-mono text-xs"
-                      placeholder="/products?gender=Hombre" />
-                  </div>
-
-                  <div class="form-control w-full mb-4">
-                    <label class="label py-1"><span class="label-text font-bold text-xs">Tamaño de Tarjeta (Layout)</span></label>
-                    <select formControlName="gridSpan" class="select select-sm select-bordered w-full text-xs font-medium">
-                      <option value="third">3 por Fila (Estilo Tucci / Wanama - 1/3)</option>
-                      <option value="half">2 por Fila (Media Pantalla - 1/2)</option>
-                      <option value="full-width">1 por Fila (Banner Ancho Completo - 100%)</option>
-                      <option value="main">Destacado Ancho (2/3 de Pantalla)</option>
-                      <option value="top-right">1/3 de Pantalla (Secundario)</option>
-                      <option value="bottom-right">1/3 de Pantalla (Inferior)</option>
-                    </select>
-                  </div>
-
-                  <div class="form-control mb-4">
-                    <label class="label cursor-pointer py-1">
-                      <span class="label-text font-bold text-xs">Tarjeta Activa / Visible</span>
-                      <input type="checkbox" formControlName="isActive" class="toggle toggle-primary toggle-sm" />
-                    </label>
-                  </div>
-
-                  <div class="divider text-xs text-base-content/50 uppercase tracking-widest my-3">Imagen</div>
-
-                  <div class="form-control w-full mb-4">
-                    <app-single-image-upload title="Imagen Principal (Desktop)" ratioBadge="Auto"
-                      [control]="getControl('imageDesktop')" />
-                  </div>
-
-                </ng-container>
-              }
-            </div>
+          <!-- SUBIDA DE IMAGEN -->
+          <div class="space-y-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-base-content/70 block">Imagen de Tarjeta *</span>
+            @if (getImageDesktopControl()) {
+              <app-single-image-upload
+                title="Imagen Desktop (Principal)"
+                ratioBadge="16:9 / 4:5"
+                [control]="getImageDesktopControl()">
+              </app-single-image-upload>
+            }
           </div>
+
         </div>
       }
+
     </form>
   </ng-container>
 </app-page-layout>
