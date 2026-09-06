@@ -63,6 +63,8 @@ export interface IGeneralVariant extends IBaseVariant {
 // Union type para contextos donde no se discrimina el tipo
 export type IVariant = IClothingVariant | ITechVariant | IGeneralVariant;
 
+export type ProductStatus = 'published' | 'draft' | 'paused' | 'archived';
+
 // ============ PRODUCT INTERFACES ============
 
 export interface IProduct {
@@ -87,7 +89,7 @@ export interface IProduct {
   specifications: { key: string; value: string }[];
   variants: IVariant[];
   lowStockThreshold?: number;
-  isActive?: boolean;
+  status: ProductStatus;
   isFeatured?: boolean;
   linkProductProvider?: string;
   recommendationsMode?: 'auto' | 'manual';
@@ -246,7 +248,7 @@ export interface IProductCreateDTO {
   customProfitMargin1Pay?: number | string;
   customProfitMarginInstallments?: number | string;
   customPricingMethod?: 'markup' | 'margin';
-  isActive?: boolean;
+  status?: ProductStatus;
   isFeatured?: boolean;
   image: { link: string; file: File }[];
   features: string[];

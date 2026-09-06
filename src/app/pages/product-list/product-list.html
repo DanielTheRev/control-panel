@@ -168,12 +168,86 @@
     </div>
   </app-page-header>
 
+  <!-- Barra de Pestañas de Ciclo de Vida (Tabs: Todos | Publicados | Borradores / IA | Pausados | Archivados) -->
+  <div class="px-3 sm:px-6 pt-1 pb-2 border-b border-base-200/80 shrink-0">
+    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
+      <!-- Tab Todos -->
+      <button
+        type="button"
+        (click)="setStatusTab('all')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+        [ngClass]="activeStatusTab() === 'all' ? 'bg-primary text-primary-content shadow-xs' : 'bg-base-200/60 hover:bg-base-200 text-base-content/70 hover:text-base-content'"
+      >
+        <span>Todos</span>
+        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'all' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
+          {{ statusCounts().all }}
+        </span>
+      </button>
+
+      <!-- Tab Publicados -->
+      <button
+        type="button"
+        (click)="setStatusTab('published')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+        [ngClass]="activeStatusTab() === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800'"
+      >
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Publicados</span>
+        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'published' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
+          {{ statusCounts().published }}
+        </span>
+      </button>
+
+      <!-- Tab Borradores / IA -->
+      <button
+        type="button"
+        (click)="setStatusTab('draft')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+        [ngClass]="activeStatusTab() === 'draft' ? 'bg-amber-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:text-amber-800'"
+      >
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span>Borradores / IA</span>
+        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'draft' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
+          {{ statusCounts().draft }}
+        </span>
+      </button>
+
+      <!-- Tab Pausados -->
+      <button
+        type="button"
+        (click)="setStatusTab('paused')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+        [ngClass]="activeStatusTab() === 'paused' ? 'bg-blue-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:text-blue-800'"
+      >
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">pause_circle</mat-icon>
+        <span>Pausados</span>
+        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'paused' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
+          {{ statusCounts().paused }}
+        </span>
+      </button>
+
+      <!-- Tab Archivados -->
+      <button
+        type="button"
+        (click)="setStatusTab('archived')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+        [ngClass]="activeStatusTab() === 'archived' ? 'bg-neutral text-neutral-content shadow-xs' : 'bg-base-200/60 hover:bg-base-300 text-base-content/60 hover:text-base-content'"
+      >
+        <mat-icon class="text-[14px]! w-3.5! h-3.5!">archive</mat-icon>
+        <span>Archivados</span>
+        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'archived' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
+          {{ statusCounts().archived }}
+        </span>
+      </button>
+    </div>
+  </div>
+
   <!-- Badges de Filtros Activos (Barra redondeada moderna) -->
   @if (
     ProductState.currentSearchQuery() ||
     ProductState.currentCategoryFilter() ||
     ProductState.currentProviderFilter() ||
-    ProductState.currentStatusFilter() ||
+    (ProductState.currentStatusFilter() && ProductState.currentStatusFilter() !== 'all') ||
     ProductState.currentNoSeoOnlyFilter() ||
     ProductState.currentHasSeoImageFilter() !== undefined ||
     ProductState.currentHasSizeGuideFilter() !== undefined ||
@@ -241,9 +315,10 @@
         </span>
       }
 
-      @if (ProductState.currentStatusFilter()) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          {{ ProductState.currentStatusFilter() === "true" ? "Activos" : "Inactivos" }}
+      @if (ProductState.currentStatusFilter() && ProductState.currentStatusFilter() !== 'all') {
+        @let badge = getStatusBadge(ProductState.currentStatusFilter());
+        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs border" [ngClass]="badge.class">
+          {{ badge.label }}
           <button (click)="clearStatus()" class="hover:opacity-75 cursor-pointer ml-0.5">
             <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
           </button>
@@ -367,9 +442,11 @@
               [value]="ProductState.currentStatusFilter()"
               (change)="onStatusChange($event)"
             >
-              <option value="">Todos los estados</option>
-              <option value="true">Activos (Visibles en tienda)</option>
-              <option value="false">Inactivos (Pausados)</option>
+              <option value="all">Todos los estados</option>
+              <option value="published">🟢 Publicados (Visibles en tienda)</option>
+              <option value="draft">🟡 Borradores / IA</option>
+              <option value="paused">⏸️ Pausados</option>
+              <option value="archived">⚪ Archivados</option>
             </select>
           </div>
 
@@ -546,7 +623,7 @@
                   </span>
                 </label>
               </div>
-              <div class="flex items-center gap-1 sm:gap-2">
+              <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                 <button
                   class="btn btn-xs sm:btn-sm bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-2xs cursor-pointer flex items-center gap-1"
                   [disabled]="selectedProducts().length === 0"
@@ -554,35 +631,59 @@
                   title="Actualizar masivamente estos productos con IA"
                 >
                   <mat-icon class="text-xs sm:text-sm">auto_awesome</mat-icon>
-                  <span>Actualizar con IA</span>
+                  <span class="hidden md:inline">Actualizar con IA</span>
                 </button>
+
                 <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-success hover:bg-success/10"
+                  class="btn btn-xs sm:btn-sm btn-ghost text-emerald-600 hover:bg-emerald-500/10 font-bold flex items-center gap-1"
                   [disabled]="selectedProducts().length === 0"
-                  (click)="activateSelected()"
-                  title="Activar seleccionados"
+                  (click)="publishSelected()"
+                  title="Publicar productos seleccionados (visibles en tienda)"
                 >
-                  <mat-icon class="text-xs sm:text-sm">visibility</mat-icon>
-                  <span class="hidden sm:inline">Activar</span>
+                  <mat-icon class="text-xs sm:text-sm">check_circle</mat-icon>
+                  <span>Publicar</span>
                 </button>
+
                 <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-warning hover:bg-warning/10"
+                  class="btn btn-xs sm:btn-sm btn-ghost text-blue-600 hover:bg-blue-500/10 font-bold flex items-center gap-1"
                   [disabled]="selectedProducts().length === 0"
-                  (click)="deactivateSelected()"
-                  title="Desactivar seleccionados"
+                  (click)="pauseSelected()"
+                  title="Pausar productos seleccionados"
                 >
-                  <mat-icon class="text-xs sm:text-sm">visibility_off</mat-icon>
-                  <span class="hidden sm:inline">Desactivar</span>
+                  <mat-icon class="text-xs sm:text-sm">pause_circle</mat-icon>
+                  <span>Pausar</span>
                 </button>
+
                 <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-error hover:bg-error/10"
+                  class="btn btn-xs sm:btn-sm btn-ghost text-amber-600 hover:bg-amber-500/10 font-bold flex items-center gap-1"
+                  [disabled]="selectedProducts().length === 0"
+                  (click)="draftSelected()"
+                  title="Mover seleccionados a Borrador"
+                >
+                  <mat-icon class="text-xs sm:text-sm">edit_note</mat-icon>
+                  <span class="hidden sm:inline">Borrador</span>
+                </button>
+
+                <button
+                  class="btn btn-xs sm:btn-sm btn-ghost text-base-content/70 hover:bg-base-300 font-bold flex items-center gap-1"
+                  [disabled]="selectedProducts().length === 0"
+                  (click)="archiveSelected()"
+                  title="Archivar productos seleccionados"
+                >
+                  <mat-icon class="text-xs sm:text-sm">archive</mat-icon>
+                  <span class="hidden sm:inline">Archivar</span>
+                </button>
+
+                <button
+                  class="btn btn-xs sm:btn-sm btn-ghost text-error hover:bg-error/10 font-bold flex items-center gap-1"
                   [disabled]="selectedProducts().length === 0"
                   (click)="deleteSelected()"
-                  title="Eliminar seleccionados"
+                  title="Eliminar seleccionados permanentemente"
                 >
                   <mat-icon class="text-xs sm:text-sm">delete</mat-icon>
                   <span class="hidden sm:inline">Eliminar</span>
                 </button>
+
                 <button
                   class="btn btn-xs sm:btn-sm btn-ghost"
                   [disabled]="selectedProducts().length === 0"
@@ -689,22 +790,31 @@
                             >
                             <span>Copiar enlace</span>
                           </button>
-                          <button
-                            mat-menu-item
-                            (click)="toggleProductStatus(p)"
-                          >
-                            <mat-icon
-                              class="text-[18px]! w-4.5! h-4.5!"
-                              [ngClass]="
-                                p.isActive ? 'text-warning' : 'text-success'
-                              "
-                            >
-                              {{ p.isActive ? "visibility_off" : "visibility" }}
-                            </mat-icon>
-                            <span>{{
-                              p.isActive ? "Desactivar" : "Activar"
-                            }}</span>
-                          </button>
+                          <!-- Quick status transitions -->
+                          @if (p.status !== 'published') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'published')">
+                              <mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
+                              <span>Publicar</span>
+                            </button>
+                          }
+                          @if (p.status !== 'paused') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'paused')">
+                              <mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon>
+                              <span>Pausar</span>
+                            </button>
+                          }
+                          @if (p.status !== 'draft') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'draft')">
+                              <mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon>
+                              <span>Mover a Borrador</span>
+                            </button>
+                          }
+                          @if (p.status !== 'archived') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'archived')">
+                              <mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon>
+                              <span>Archivar</span>
+                            </button>
+                          }
                           <mat-divider></mat-divider>
                           <button mat-menu-item (click)="deleteProduct(p)">
                             <mat-icon
@@ -725,19 +835,20 @@
                         <img
                           [src]="imageURL"
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          [ngClass]="{ 'opacity-50 grayscale': !p.isActive }"
+                          [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }"
                         />
 
                         <!-- Floating State Badges -->
                         <div
                           class="absolute bottom-2 left-2 flex flex-wrap gap-1 pointer-events-none"
                         >
-                          @if (!p.isActive) {
-                            <span
-                              class="bg-error text-error-content text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm"
-                              >Inactivo</span
-                            >
-                          }
+                          @let statusInfo = getStatusBadge(p.status);
+                          <span
+                            class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm border"
+                            [ngClass]="statusInfo.class"
+                          >
+                            {{ statusInfo.label }}
+                          </span>
                           @if (p.isFeatured) {
                             <span
                               class="bg-primary text-primary-content text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm"
@@ -806,7 +917,7 @@
                           <!-- Model Name -->
                           <h3
                             class="text-sm font-extrabold text-base-content tracking-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors"
-                            [ngClass]="{ 'opacity-50': !p.isActive }"
+                            [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
                           >
                             {{ p.model }}
                           </h3>
@@ -1030,16 +1141,25 @@
                               [src]="imageURL"
                               class="w-12 h-12 object-cover rounded-xl shadow-sm border border-base-content/10 transition-transform duration-300 group-hover:scale-105"
                               [ngClass]="{
-                                'opacity-50 grayscale': !p.isActive,
+                                'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused',
                               }"
                             />
-                            @if (!p.isActive) {
+                            @if (p.status === 'paused') {
                               <div
                                 class="absolute inset-0 bg-base-200/40 rounded-xl flex items-center justify-center"
                               >
                                 <mat-icon
-                                  class="text-error text-xs w-4 h-4 text-[16px]!"
-                                  >visibility_off</mat-icon
+                                  class="text-blue-500 text-xs w-4 h-4 text-[16px]!"
+                                  >pause_circle</mat-icon
+                                >
+                              </div>
+                            } @else if (p.status === 'archived') {
+                              <div
+                                class="absolute inset-0 bg-base-200/40 rounded-xl flex items-center justify-center"
+                              >
+                                <mat-icon
+                                  class="text-base-content/50 text-xs w-4 h-4 text-[16px]!"
+                                  >archive</mat-icon
                                 >
                               </div>
                             }
@@ -1116,16 +1236,16 @@
                               <button
                                 class="text-left text-sm font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer truncate max-w-70 lg:max-w-100"
                                 (click)="viewProduct(p)"
-                                [ngClass]="{ 'opacity-50': !p.isActive }"
+                                [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
                               >
                                 {{ p.model }}
                               </button>
-                              @if (!p.isActive) {
-                                <span
-                                  class="badge badge-error badge-xs text-[9px] font-bold uppercase rounded px-1.5 py-0.5"
-                                  >Inactivo</span
-                                >
-                              }
+                              @let statusBadge = getStatusBadge(p.status);
+                              <span
+                                class="badge badge-xs text-[9px] font-bold uppercase rounded px-1.5 py-0.5 border"
+                                [ngClass]="statusBadge.class"
+                                >{{ statusBadge.label }}</span
+                              >
                             </div>
 
                             <!-- Color Swatches & Variants Summary in Table -->
@@ -1364,22 +1484,31 @@
                             >
                             <span>Copiar enlace</span>
                           </button>
-                          <button
-                            mat-menu-item
-                            (click)="toggleProductStatus(p)"
-                          >
-                            <mat-icon
-                              class="text-[18px]! w-4.5! h-4.5!"
-                              [ngClass]="
-                                p.isActive ? 'text-warning' : 'text-success'
-                              "
-                            >
-                              {{ p.isActive ? "visibility_off" : "visibility" }}
-                            </mat-icon>
-                            <span>{{
-                              p.isActive ? "Desactivar" : "Activar"
-                            }}</span>
-                          </button>
+                          <!-- Quick status transitions in Table Menu -->
+                          @if (p.status !== 'published') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'published')">
+                              <mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
+                              <span>Publicar</span>
+                            </button>
+                          }
+                          @if (p.status !== 'paused') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'paused')">
+                              <mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon>
+                              <span>Pausar</span>
+                            </button>
+                          }
+                          @if (p.status !== 'draft') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'draft')">
+                              <mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon>
+                              <span>Mover a Borrador</span>
+                            </button>
+                          }
+                          @if (p.status !== 'archived') {
+                            <button mat-menu-item (click)="setProductStatus(p, 'archived')">
+                              <mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon>
+                              <span>Archivar</span>
+                            </button>
+                          }
                           <mat-divider></mat-divider>
                           <button mat-menu-item (click)="deleteProduct(p)">
                             <mat-icon
@@ -1427,6 +1556,7 @@
                         <img
                           [src]="imageURL"
                           class="w-14 h-14 object-cover rounded-lg shrink-0 border border-base-content/10"
+                          [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }"
                         />
                         <div class="flex-1 min-w-0">
                           <div
@@ -1462,16 +1592,16 @@
                           <div class="flex items-center gap-2">
                             <p
                               class="text-sm font-semibold text-base-content truncate"
-                              [ngClass]="{ 'opacity-50': !p.isActive }"
+                              [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
                             >
                               {{ p.model }}
                             </p>
-                            @if (!p.isActive) {
-                              <span
-                                class="badge badge-error badge-xs text-[9px] font-bold uppercase rounded-md px-1.5 py-0.5"
-                                >Inactivo</span
-                              >
-                            }
+                            @let mobileStatusBadge = getStatusBadge(p.status);
+                            <span
+                              class="badge badge-xs text-[9px] font-bold uppercase rounded-md px-1.5 py-0.5 border"
+                              [ngClass]="mobileStatusBadge.class"
+                              >{{ mobileStatusBadge.label }}</span
+                            >
                           </div>
 
                           <!-- Color Swatches Mobile -->
@@ -2024,24 +2154,29 @@
                 <span>Propiedades que el sistema entiende automáticamente:</span>
               </p>
               <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="badge badge-xs badge-neutral font-mono">provider (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">brand (string - "Vura")</span>
                 <span class="badge badge-xs badge-neutral font-mono">model (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">subtitle (string)</span>
-                <span class="badge badge-xs badge-neutral font-mono">brand (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">category (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">costPriceARS (number)</span>
+                <span class="badge badge-xs badge-neutral font-mono">images: [URL]</span>
                 <span class="badge badge-xs badge-neutral font-mono">shortDescription (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">largeDescription (HTML)</span>
+                <span class="badge badge-xs badge-neutral font-mono">specifications: [ {{ '{' }} key, value {{ '}' }} ]</span>
+                <span class="badge badge-xs badge-neutral font-mono">tags (string[])</span>
+                <span class="badge badge-xs badge-neutral font-mono">seo: {{ '{' }} metaTitle, metaDescription {{ '}' }}</span>
                 <span class="badge badge-xs badge-neutral font-mono">variants: [ {{ '{' }} colorName, colorHex, size, stock, imageIndex {{ '}' }} ]</span>
-                <span class="badge badge-xs badge-neutral font-mono">sizeGuide: {{ '{' }} headers, rows, tolerance {{ '}' }}</span>
+                <span class="badge badge-xs badge-neutral font-mono">sizeGuide: {{ '{' }} headers, rows {{ '}' }} (opcional)</span>
                 <span class="badge badge-xs badge-neutral font-mono">season (string)</span>
-                <span class="badge badge-xs badge-neutral font-mono">sizeType ("Ropa"|"Calzado"|"Numérico")</span>
-                <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex")</span>
+                <span class="badge badge-xs badge-neutral font-mono">sizeType ("Ropa"|"Calzado"|"Numérico"|"Talle Único")</span>
+                <span class="badge badge-xs badge-neutral font-mono">gender ("Hombre"|"Mujer"|"Unisex"|"Niños")</span>
                 <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">composition: [ {{ '{' }} material, percentage {{ '}' }} ]</span>
                 <span class="badge badge-xs badge-neutral font-mono">careInstructions (string[])</span>
                 <span class="badge badge-xs badge-neutral font-mono">linkProductProvider (string URL)</span>
-                <span class="badge badge-xs badge-ghost font-mono">isActive: false (Borrador)</span>
+                <span class="badge badge-xs badge-ghost font-mono">status: "draft" (Borrador)</span>
               </div>
             </div>
           }
@@ -2106,14 +2241,24 @@
               @if (aiBulkMode() === 'create') {
                 @for (item of aiParsedCreateItems(); track $index) {
                   <div class="p-3 bg-base-200/60 border border-base-300 rounded-xl space-y-2 text-xs shadow-2xs">
-                    <div class="flex items-start justify-between gap-1">
+                    <div class="flex items-start gap-2.5">
+                      @if (item.images && item.images.length > 0) {
+                        <img
+                          [src]="item.images[0]"
+                          [alt]="item.model"
+                          class="w-10 h-10 rounded-lg object-cover bg-base-300 border border-base-300 shrink-0"
+                          (error)="$any($event.target).style.display = 'none'"
+                        />
+                      }
                       <div class="min-w-0 flex-1">
-                        <h5 class="font-black text-base-content truncate">{{ item.model }}</h5>
+                        <div class="flex items-start justify-between gap-1">
+                          <h5 class="font-black text-base-content truncate">{{ item.model }}</h5>
+                          <span class="badge badge-xs badge-neutral font-bold shrink-0">{{ item.category }}</span>
+                        </div>
                         @if (item.subtitle) {
                           <p class="text-[10px] text-base-content/60 italic truncate">{{ item.subtitle }}</p>
                         }
                       </div>
-                      <span class="badge badge-xs badge-neutral font-bold shrink-0">{{ item.category }}</span>
                     </div>
 
                     <!-- Alerta de Nueva Categoría Sugerida por la IA -->
@@ -2124,12 +2269,20 @@
                       </div>
                     }
 
-                    <p class="text-[11px] text-base-content/70">
-                      {{ item.brand }} • Costo: <strong class="text-base-content">${{ item.costPriceARS | currency:'ARS':'symbol':'1.0-0' }}</strong>
-                    </p>
+                    <div class="flex items-center justify-between text-[11px] text-base-content/70">
+                      <span class="truncate">
+                        {{ item.brand }} @if (item.provider) { • Prov: <strong class="text-base-content">{{ item.provider }}</strong> }
+                      </span>
+                      <span class="shrink-0 ml-1">
+                        Costo: <strong class="text-base-content">${{ item.costPriceARS | currency:'ARS':'symbol':'1.0-0' }}</strong>
+                      </span>
+                    </div>
 
                     <!-- Atributos adicionales detectados -->
                     <div class="flex flex-wrap gap-1">
+                      @if (item.images && item.images.length > 0) {
+                        <span class="badge badge-xs badge-primary badge-outline text-[9px]">📷 {{ item.images.length }} Fotos</span>
+                      }
                       @if (item.season) {
                         <span class="badge badge-xs badge-ghost text-[9px]">{{ item.season }}</span>
                       }
@@ -2138,6 +2291,12 @@
                       }
                       @if (item.material) {
                         <span class="badge badge-xs badge-ghost text-[9px] truncate max-w-28">{{ item.material }}</span>
+                      }
+                      @if (item.specifications && item.specifications.length > 0) {
+                        <span class="badge badge-xs badge-secondary badge-outline text-[9px]">⚙️ {{ item.specifications.length }} specs</span>
+                      }
+                      @if (item.seo) {
+                        <span class="badge badge-xs badge-accent badge-outline text-[9px]">SEO</span>
                       }
                       @if (item.largeDescription) {
                         <span class="badge badge-xs badge-info badge-outline text-[9px]">HTML</span>

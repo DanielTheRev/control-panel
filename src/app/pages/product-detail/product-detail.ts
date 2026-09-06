@@ -4,7 +4,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
-import { IClothingVariant, IProduct, ITechVariant, ProductType } from '../../interfaces/product.interface';
+import { IClothingVariant, IProduct, ITechVariant, ProductStatus, ProductType } from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
@@ -202,6 +202,21 @@ export class ProductDetail implements OnInit {
     return p.productType === ProductType.TECH
       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
       : 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300';
+  }
+
+  getStatusBadge(status: ProductStatus | undefined): { label: string; class: string } {
+    switch (status) {
+      case 'published':
+        return { label: '🟢 Publicado', class: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400' };
+      case 'draft':
+        return { label: '🟡 Borrador / IA', class: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400' };
+      case 'paused':
+        return { label: '⏸️ Pausado', class: 'bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400' };
+      case 'archived':
+        return { label: '⚪ Archivado', class: 'bg-base-200 text-base-content/60 border-base-300' };
+      default:
+        return { label: '🟡 Borrador', class: 'bg-base-200 text-base-content/60' };
+    }
   }
 
   copyLink() {

@@ -1,3 +1,11 @@
+export interface IStatusCounts {
+  all: number;
+  published: number;
+  draft: number;
+  paused: number;
+  archived: number;
+}
+
 export interface IPaginationInfo {
   currentPage: number;
   totalPages: number;
@@ -8,4 +16,5 @@ export interface IPaginationInfo {
 export interface IPaginatedResult<T> {
   data: T[];
   pagination: IPaginationInfo;
+  statusCounts?: IStatusCounts;
 }

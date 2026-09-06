@@ -293,8 +293,30 @@
                 </fieldset>
               </div>
 
-              <!-- Switches: Activo y Novedades -->
+              <!-- Estado del Producto y Novedades -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <!-- Selector de Estado de Ciclo de Vida -->
+                <div class="bg-base-200/40 p-3.5 rounded-xl border border-base-200 flex flex-col justify-between gap-2">
+                  <div>
+                    <label class="text-xs font-bold block text-base-content mb-1">
+                      Estado del Producto
+                    </label>
+                    <span class="text-[11px] text-base-content/50 leading-tight block mb-2">
+                      Controla la visibilidad y disponibilidad en la tienda pública.
+                    </span>
+                  </div>
+                  <select
+                    class="select select-bordered select-sm w-full text-xs font-semibold rounded-lg"
+                    formControlName="status"
+                  >
+                    <option value="published">🟢 Publicado (Visible para clientes)</option>
+                    <option value="draft">🟡 Borrador (Oculto / En preparación)</option>
+                    <option value="paused">⏸️ Pausado (Sin stock / Pausa temporal)</option>
+                    <option value="archived">⚪ Archivado (Oculto / Histórico)</option>
+                  </select>
+                </div>
+
+                <!-- Switch Destacado en Novedades -->
                 <div class="bg-base-200/40 p-3.5 rounded-xl border border-base-200 flex items-start gap-3">
                   <input
                     type="checkbox"
@@ -305,20 +327,6 @@
                     <span class="text-xs font-bold block text-base-content">Destacar en Novedades</span>
                     <span class="text-[11px] text-base-content/50 leading-tight block mt-0.5">
                       Aparecerá en el slider / sección de Novedades de la página de inicio.
-                    </span>
-                  </div>
-                </div>
-
-                <div class="bg-base-200/40 p-3.5 rounded-xl border border-base-200 flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    class="toggle toggle-success toggle-sm mt-0.5"
-                    formControlName="isActive"
-                  />
-                  <div>
-                    <span class="text-xs font-bold block text-base-content">Producto Activo</span>
-                    <span class="text-[11px] text-base-content/50 leading-tight block mt-0.5">
-                      Visible para compra en la tienda. Desactivar para pausar temporalmente.
                     </span>
                   </div>
                 </div>

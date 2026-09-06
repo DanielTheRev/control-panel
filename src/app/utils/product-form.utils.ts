@@ -77,7 +77,7 @@ export class ProductFormUtils {
     }
 
     // --- 1. CAMPOS SIMPLES ---
-    const simpleFields = ['model', 'brand', 'subtitle', 'category', 'shortDescription', 'largeDescription', 'productType', 'isActive', 'isFeatured', 'linkProductProvider'];
+    const simpleFields = ['model', 'brand', 'subtitle', 'category', 'shortDescription', 'largeDescription', 'productType', 'status', 'isFeatured', 'linkProductProvider'];
 
     // --- PROVIDER (comparar contra ._id porque originalProduct.provider es un objeto poblado) ---
     const origProviderId = originalProduct.provider?._id || '';
@@ -92,7 +92,7 @@ export class ProductFormUtils {
       const prodVal = productData[field];
       let origVal = originalProduct[field];
 
-      if (field === 'isActive' && origVal === undefined) origVal = true;
+      if (field === 'status' && origVal === undefined) origVal = 'draft';
       if (field === 'isFeatured' && origVal === undefined) origVal = false;
 
       const normalizedProdVal = prodVal !== undefined && prodVal !== null ? String(prodVal).trim() : '';

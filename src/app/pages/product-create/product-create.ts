@@ -188,7 +188,7 @@ export class ProductCreate {
       { value: 0, disabled: true },
       [Validators.required, Validators.min(0)],
     ],
-    isActive: [true],
+    status: ['published'],
     isFeatured: [false],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
@@ -1160,7 +1160,7 @@ XXL: 58, 76, 52
           ? product.finance?.pricingStrategy?.targetProfit
           : defaultProfit,
         pricingMethodChoice: pricingMethodChoiceVal,
-        isActive: product.isActive !== false,
+        status: product.status || 'published',
         isFeatured: !!product.isFeatured,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
@@ -1788,7 +1788,7 @@ XXL: 58, 76, 52
       formData.append('additionalCosts', JSON.stringify(data.additionalCosts));
     }
 
-    formData.append('isActive', String(data.isActive));
+    formData.append('status', String(data.status || 'published'));
     formData.append('isFeatured', String(data.isFeatured));
 
     formData.append('shortDescription', data.shortDescription);

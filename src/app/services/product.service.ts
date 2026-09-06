@@ -6,6 +6,7 @@ import {
   IProductPrices,
   IProductFinance,
   ICostConcept,
+  ProductStatus,
 } from '../interfaces/product.interface';
 import { IPaginatedResult } from '../interfaces/pagination.interface';
 import { firstValueFrom, Observable, map } from 'rxjs';
@@ -219,18 +220,28 @@ export class ProductService {
       );
   }
 
-  bulkUpdateStatus(ids: string[], isActive: boolean) {
+  bulkUpdateStatus(ids: string[], status: ProductStatus) {
+    const statusLabels: Record<ProductStatus, string> = {
+      published: 'publicados',
+      draft: 'guardados en borrador',
+      paused: 'pausados',
+      archived: 'archivados',
+    };
     return firstValueFrom(
       this.#http
-        .patch<any>(`${this.#apiUrl}/bulk-status`, { ids, isActive })
+        .patch<any>(`${this.#apiUrl}/bulk-status`, { ids, status })
         .pipe(
           this.#toast.observe({
             loading: 'Actualizando estado de los productos...',
-            success: `Productos ${isActive ? 'activados' : 'desactivados'} correctamente`,
+            success: `Productos ${statusLabels[status] || status} correctamente`,
             error: 'Error al actualizar el estado de los productos',
           }),
         ),
     );
+  }
+
+  updateProductStatus(id: string, status: ProductStatus) {
+    return this.bulkUpdateStatus([id], status);
   }
 
   bulkCreate(products: any[]) {

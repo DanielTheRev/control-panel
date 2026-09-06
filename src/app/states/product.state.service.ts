@@ -5,8 +5,9 @@ import {
   IProduct,
   ProductType,
   ICostConcept,
+  ProductStatus,
 } from '../interfaces/product.interface';
-import { IPaginatedResult } from '../interfaces/pagination.interface';
+import { IPaginatedResult, IStatusCounts } from '../interfaces/pagination.interface';
 import { ProductService, mapProductPrices } from '../services/product.service';
 import { NotificationsService } from '../services/notifications.service';
 
@@ -23,7 +24,7 @@ export class ProductStoreService {
   private searchQuery = signal('');
   private categoryFilter = signal('');
   private providerFilter = signal('');
-  private statusFilter = signal<string>('');
+  private statusFilter = signal<string>('all');
   private noSeoOnly = signal(false);
   private hasSizeGuideFilter = signal<boolean | undefined>(undefined);
   private hasSeoImageFilter = signal<boolean | undefined>(undefined);
@@ -46,7 +47,7 @@ export class ProductStoreService {
         ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
         ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
         ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
-        ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+        ...(this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
         ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
         ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
         ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
@@ -64,7 +65,7 @@ export class ProductStoreService {
           ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
           ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
           ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
-          ...(this.statusFilter() ? { isActive: this.statusFilter() } : {}),
+          ...(this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
           ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
           ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
           ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
@@ -152,22 +153,32 @@ export class ProductStoreService {
   readonly currentHasLinkProviderFilter = computed(() => this.hasLinkProviderFilter());
   readonly currentSortBy = computed(() => this.sortBy());
 
+  readonly statusCounts = computed<IStatusCounts>(() => {
+    return this.#fetchedProducts.value()?.statusCounts || {
+      all: 0,
+      published: 0,
+      draft: 0,
+      paused: 0,
+      archived: 0,
+    };
+  });
+
   // Statistics signals
   readonly allProducts = computed(() =>
     (this.#allProductsForStats.value()?.data || []).map(mapProductPrices),
   );
   readonly statsLoading = computed(() => this.#allProductsForStats.isLoading());
   readonly totalProductsCount = computed(() => this.allProducts().length);
-  readonly activeProductsCount = computed(
-    () => this.allProducts().filter((p) => p.isActive).length,
-  );
-  readonly inactiveProductsCount = computed(
-    () => this.allProducts().filter((p) => !p.isActive).length,
-  );
+  readonly publishedProductsCount = computed(() => this.statusCounts().published);
+  readonly draftProductsCount = computed(() => this.statusCounts().draft);
+  readonly pausedProductsCount = computed(() => this.statusCounts().paused);
+  readonly archivedProductsCount = computed(() => this.statusCounts().archived);
+  readonly activeProductsCount = computed(() => this.statusCounts().published);
+  readonly inactiveProductsCount = computed(() => this.statusCounts().archived);
 
   readonly noSeoCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .filter((p) => {
         return (
           !p.seo || !p.seo.metaTitle?.trim() || !p.seo.metaDescription?.trim()
@@ -177,42 +188,42 @@ export class ProductStoreService {
 
   readonly noSeoImageCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .filter((p) => !p.seo || !p.seo.metaImage || !p.seo.metaImage.url || p.seo.metaImage.url.trim() === '')
       .length;
   });
 
   readonly hasSeoImageCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .filter((p) => p.seo && p.seo.metaImage && p.seo.metaImage.url && p.seo.metaImage.url.trim() !== '')
       .length;
   });
 
   readonly noSizeGuideCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive && p.productType === ProductType.CLOTHING)
+      .filter((p) => p.status === 'published' && p.productType === ProductType.CLOTHING)
       .filter((p: any) => !p.sizeGuide || !Array.isArray(p.sizeGuide.rows) || p.sizeGuide.rows.length === 0)
       .length;
   });
 
   readonly hasSizeGuideCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive && p.productType === ProductType.CLOTHING)
+      .filter((p) => p.status === 'published' && p.productType === ProductType.CLOTHING)
       .filter((p: any) => p.sizeGuide && Array.isArray(p.sizeGuide.rows) && p.sizeGuide.rows.length > 0)
       .length;
   });
 
   readonly noLinkProviderCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .filter((p) => !p.linkProductProvider || p.linkProductProvider.trim() === '')
       .length;
   });
 
   readonly hasLinkProviderCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .filter((p) => p.linkProductProvider && p.linkProductProvider.trim() !== '')
       .length;
   });
@@ -221,19 +232,19 @@ export class ProductStoreService {
 
   readonly featuredCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive && p.isFeatured)
+      .filter((p) => p.status === 'published' && p.isFeatured)
       .length;
   });
 
   readonly nonFeaturedCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive && !p.isFeatured)
+      .filter((p) => p.status === 'published' && !p.isFeatured)
       .length;
   });
 
   readonly estimatedEarningsCash = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .reduce(
         (acc, p) => acc + (p.finance?.calculatedProfits?.transfer || 0),
         0,
@@ -242,7 +253,7 @@ export class ProductStoreService {
 
   readonly estimatedEarningsCard1 = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .reduce(
         (acc, p) => acc + (p.finance?.calculatedProfits?.card_ticket1Pay || 0),
         0,
@@ -251,7 +262,7 @@ export class ProductStoreService {
 
   readonly estimatedEarningsCard3 = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .reduce(
         (acc, p) =>
           acc + (p.finance?.calculatedProfits?.card3Installments || 0),
@@ -261,7 +272,7 @@ export class ProductStoreService {
 
   readonly estimatedEarningsCard6 = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .reduce(
         (acc, p) =>
           acc + (p.finance?.calculatedProfits?.card6Installments || 0),
@@ -271,7 +282,7 @@ export class ProductStoreService {
 
   readonly totalStockCount = computed(() => {
     return this.allProducts()
-      .filter((p) => p.isActive)
+      .filter((p) => p.status === 'published')
       .reduce((acc, p) => {
         if (p.totalStock !== undefined) return acc + p.totalStock;
         const variantsStock =
@@ -422,7 +433,7 @@ export class ProductStoreService {
     }
   }
 
-  async bulkUpdateStatus(ids: string[], isActive: boolean) {
+  async bulkUpdateStatus(ids: string[], status: ProductStatus) {
     const previousState = this.#fetchedProducts.value();
 
     // Optimistic Update
@@ -431,20 +442,23 @@ export class ProductStoreService {
       return {
         ...state,
         data: state.data.map((p) =>
-          ids.includes(p._id) ? { ...p, isActive } : p,
+          ids.includes(p._id) ? { ...p, status } : p,
         ),
       };
     });
 
     try {
-      await this.#productService.bulkUpdateStatus(ids, isActive);
+      await this.#productService.bulkUpdateStatus(ids, status);
       this.#allProductsForStats.reload();
-      // Optional: reload to ensure consistency
-      // this.#fetchedProducts.reload();
+      this.#fetchedProducts.reload();
     } catch (error) {
       // Rollback
       this.#fetchedProducts.set(previousState);
     }
+  }
+
+  async updateProductStatus(id: string, status: ProductStatus) {
+    return this.bulkUpdateStatus([id], status);
   }
 
   async bulkCreateProducts(products: any[]) {

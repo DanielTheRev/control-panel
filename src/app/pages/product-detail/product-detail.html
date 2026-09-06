@@ -62,8 +62,9 @@
 
                 <!-- Badges Flotantes -->
                 <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap gap-1.5 z-10">
-                  <span class="badge badge-sm font-bold shadow-sm" [ngClass]="p.isActive ? 'badge-success text-white' : 'badge-neutral'">
-                    {{ p.isActive ? 'Activo' : 'Pausado' }}
+                  @let statusInfo = getStatusBadge(p.status);
+                  <span class="badge badge-sm font-bold shadow-sm border" [ngClass]="statusInfo.class">
+                    {{ statusInfo.label }}
                   </span>
                   <span class="badge badge-sm font-bold shadow-sm" [ngClass]="getProductTypeClass()">
                     {{ getProductTypeLabel() }}
