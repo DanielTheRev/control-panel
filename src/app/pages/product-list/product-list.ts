@@ -1,4 +1,4 @@
-import { CurrencyPipe, NgClass } from '@angular/common';
+import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
@@ -10,7 +10,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { IProduct, ProductType, ProductStatus } from '../../interfaces/product.interface';
+import { IProduct, ProductType, ProductStatus, IVariant } from '../../interfaces/product.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
@@ -32,6 +32,7 @@ import { ProviderStateService } from '../../states/provider.state.service';
     MatDividerModule,
     MatMenuModule,
     CurrencyPipe,
+    DatePipe,
     NgClass,
     RouterLink,
     MatSnackBarModule,
@@ -49,20 +50,24 @@ export class ProductList {
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
 
-  activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'all');
+  activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'published');
   statusCounts = this.ProductState.statusCounts;
   activeFilter = signal<string>('all');
   viewMode = signal<'grid' | 'list'>('grid');
   showStatsSidebar = signal<boolean>(false);
+  showFiltersSidebar = signal<boolean>(true);
   showFiltersDrawer = signal<boolean>(false);
   showMobileFilters = signal<boolean>(false);
+  showKpiBar = signal<boolean>(false);
+  quickOverviewProduct = signal<IProduct | null>(null);
+  selectedOverviewImageIndex = signal<number>(0);
   dataSource = new MatTableDataSource<IProduct>([]);
   private searchSubject = new Subject<string>();
 
   activeFiltersCount = computed(() => {
     let count = 0;
+    if (this.ProductState.currentCategoryFilter()) count++;
     if (this.ProductState.currentProviderFilter()) count++;
-    if (this.ProductState.currentStatusFilter() && this.ProductState.currentStatusFilter() !== 'all') count++;
     if (this.ProductState.currentHasSeoImageFilter() !== undefined) count++;
     if (this.ProductState.currentHasSizeGuideFilter() !== undefined) count++;
     if (this.ProductState.currentHasLinkProviderFilter() !== undefined) count++;
@@ -70,6 +75,10 @@ export class ProductList {
     if (this.ProductState.currentSortBy() && this.ProductState.currentSortBy() !== 'newest') count++;
     return count;
   });
+
+  toggleFiltersSidebar() {
+    this.showFiltersSidebar.update((v) => !v);
+  }
 
   simulateUnits = signal<number>(1);
 
@@ -171,7 +180,7 @@ export class ProductList {
     this.ProductState.setSearchQuery('');
     this.ProductState.setCategoryFilter('');
     this.ProductState.setProviderFilter('');
-    this.ProductState.setStatusFilter('');
+    this.ProductState.setStatusFilter('published');
     this.ProductState.setNoSeoOnlyFilter(false);
     this.ProductState.setHasSeoImageFilter(undefined);
     this.ProductState.setHasSizeGuideFilter(undefined);
@@ -294,6 +303,27 @@ export class ProductList {
     this.#router.navigate(['/home/products', product._id]);
   }
 
+  openQuickOverview(product: IProduct, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.selectedOverviewImageIndex.set(0);
+    this.quickOverviewProduct.set(product);
+  }
+
+  closeQuickOverview() {
+    this.quickOverviewProduct.set(null);
+  }
+
+  selectOverviewImage(index: number) {
+    this.selectedOverviewImageIndex.set(index);
+  }
+
+  getVariantSize(v: IVariant): string {
+    if ('size' in v && v.size) return v.size;
+    return 'U';
+  }
+
   async deleteProduct(product: IProduct) {
     if (confirm(`¿Estás seguro de que deseas eliminar el producto ${product.model}?`)) {
       try {
@@ -393,7 +423,7 @@ export class ProductList {
       case 'published':
         return {
           label: 'Publicado',
-          class: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20',
+          class: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700 font-bold',
           bgClass: 'bg-emerald-500',
           textClass: 'text-emerald-700 dark:text-emerald-400',
           icon: 'check_circle'
@@ -401,7 +431,7 @@ export class ProductList {
       case 'draft':
         return {
           label: 'Borrador / IA',
-          class: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20',
+          class: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-700 font-bold',
           bgClass: 'bg-amber-500',
           textClass: 'text-amber-700 dark:text-amber-400',
           icon: 'edit_note'
@@ -409,7 +439,7 @@ export class ProductList {
       case 'paused':
         return {
           label: 'Pausado',
-          class: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20',
+          class: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/90 dark:text-blue-300 dark:border-blue-700 font-bold',
           bgClass: 'bg-blue-500',
           textClass: 'text-blue-700 dark:text-blue-400',
           icon: 'pause_circle'
@@ -417,7 +447,7 @@ export class ProductList {
       case 'archived':
         return {
           label: 'Archivado',
-          class: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20',
+          class: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 font-bold',
           bgClass: 'bg-slate-400',
           textClass: 'text-slate-700 dark:text-slate-400',
           icon: 'archive'
@@ -425,10 +455,10 @@ export class ProductList {
       default:
         return {
           label: 'Borrador',
-          class: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20',
+          class: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 font-bold',
           bgClass: 'bg-slate-400',
           textClass: 'text-slate-700 dark:text-slate-400',
-          icon: 'help'
+          icon: 'edit_note'
         };
     }
   }
@@ -1962,11 +1992,20 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
 
     this.aiProcessing.set(true);
     try {
-      await this.ProductState.bulkCreateProducts(items);
+      const res: any = await this.ProductState.bulkCreateProducts(items);
       this.closeAiBulkModal();
-      this.#snackBar.open(`🎉 ¡${items.length} productos creados exitosamente!`, 'Cerrar', { duration: 4000 });
+      if (res && res.errors && res.errors.length > 0) {
+        if (res.createdCount > 0) {
+          this.#snackBar.open(`⚠️ Se crearon ${res.createdCount} de ${items.length} productos (${res.errors.length} con error).`, 'Cerrar', { duration: 5000 });
+        } else {
+          this.#snackBar.open(`❌ No se pudieron crear los productos: ${res.errors[0]?.error || 'Error desconocido'}`, 'Cerrar', { duration: 5000 });
+        }
+      } else {
+        const count = res?.createdCount ?? items.length;
+        this.#snackBar.open(`🎉 ¡${count} productos creados exitosamente!`, 'Cerrar', { duration: 4000 });
+      }
     } catch (err: any) {
-      this.#snackBar.open(err?.error?.message || 'Error al crear productos en lote.', 'Cerrar', { duration: 4000 });
+      this.#snackBar.open(err?.error?.message || err?.message || 'Error al crear productos en lote.', 'Cerrar', { duration: 4000 });
     } finally {
       this.aiProcessing.set(false);
     }
@@ -1978,12 +2017,21 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
 
     this.aiProcessing.set(true);
     try {
-      await this.ProductState.bulkUpdateProducts(items);
+      const res: any = await this.ProductState.bulkUpdateProducts(items);
       this.clearSelection();
       this.closeAiBulkModal();
-      this.#snackBar.open(`🎉 ¡${items.length} productos actualizados exitosamente!`, 'Cerrar', { duration: 4000 });
+      if (res && res.errors && res.errors.length > 0) {
+        if (res.updatedCount > 0) {
+          this.#snackBar.open(`⚠️ Se actualizaron ${res.updatedCount} de ${items.length} productos (${res.errors.length} con error).`, 'Cerrar', { duration: 5000 });
+        } else {
+          this.#snackBar.open(`❌ No se pudieron actualizar los productos: ${res.errors[0]?.error || 'Error desconocido'}`, 'Cerrar', { duration: 5000 });
+        }
+      } else {
+        const count = res?.updatedCount ?? items.length;
+        this.#snackBar.open(`🎉 ¡${count} productos actualizados exitosamente!`, 'Cerrar', { duration: 4000 });
+      }
     } catch (err: any) {
-      this.#snackBar.open(err?.error?.message || 'Error al actualizar productos en lote.', 'Cerrar', { duration: 4000 });
+      this.#snackBar.open(err?.error?.message || err?.message || 'Error al actualizar productos en lote.', 'Cerrar', { duration: 4000 });
     } finally {
       this.aiProcessing.set(false);
     }

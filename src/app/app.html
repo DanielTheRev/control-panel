@@ -1,3 +1,43 @@
-<div class="flex flex-col w-full h-screen overflow-auto">
+<div class="flex flex-col w-full h-screen overflow-auto relative">
   <router-outlet></router-outlet>
+
+  <!-- Banner Flotante de Actualización de Versión (PWA / Service Worker) -->
+  @if (updateAvailable()) {
+    <div class="fixed bottom-5 right-5 z-[9999] max-w-md w-[calc(100%-2.5rem)] shadow-2xl transition-all duration-300">
+      <div class="bg-neutral text-neutral-content border border-neutral-content/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 border border-primary/30 shadow-inner">
+            <mat-icon class="text-[22px]! w-5.5! h-5.5!">system_update</mat-icon>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-black tracking-wide uppercase text-primary">Nueva actualización</span>
+            <p class="text-xs text-neutral-content/80 font-medium">Hay una nueva versión del panel disponible.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+          <button
+            type="button"
+            (click)="dismissUpdate()"
+            class="btn btn-ghost btn-xs text-neutral-content/60 hover:text-neutral-content rounded-lg"
+          >
+            Más tarde
+          </button>
+          <button
+            type="button"
+            (click)="activateUpdate()"
+            [disabled]="isUpdating()"
+            class="btn btn-primary btn-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer"
+          >
+            @if (isUpdating()) {
+              <span class="loading loading-spinner loading-xs"></span>
+              <span>Actualizando...</span>
+            } @else {
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">refresh</mat-icon>
+              <span>Actualizar ahora</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

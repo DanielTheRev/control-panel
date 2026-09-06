@@ -1,565 +1,168 @@
 @let Products = ProductState.products();
 
 <div class="flex flex-col w-full h-full min-h-0">
-  @let subtitle = Products.itemsCount + " productos en total";
+  @let isSearching = !!ProductState.currentSearchQuery();
+  @let subtitle = isSearching ? (Products.itemsCount + " resultados en todos los estados") : ((statusCounts().published || 0) + " publicados · " + Products.itemsCount + " en total");
 
-  <!-- Header Superior Compacto (1 sola fila limpia) -->
+  <!-- Header Superior Compacto (1 sola fila limpia y funcional) -->
   <app-page-header header title="Productos" [subtitle]="subtitle">
-    <div actions class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+    <div actions class="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 w-full sm:w-auto">
       
-      <!-- Input de Búsqueda Integrado (Expandible en mobile) -->
-      <div class="relative flex-1 min-w-0 sm:w-60 md:w-80">
-        <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 text-[18px]! w-4.5! h-4.5! pointer-events-none">search</mat-icon>
-        <input
-          type="text"
-          name="search"
-          id="products-search"
-          class="input input-bordered input-sm w-full pl-9 pr-8 text-xs rounded-xl focus:outline-none focus:border-primary shadow-2xs"
-          placeholder="Buscar (ej: Aura, Viena, SKU)..."
-          matTooltip="Podés buscar múltiples prendas o SKUs separando con comas (ej: Aura, Viena, Fiore)"
-          [value]="ProductState.currentSearchQuery()"
-          (input)="$event.preventDefault(); onSearch($event)"
-        />
-        @if (ProductState.currentSearchQuery()) {
+      <!-- Fila 1 en Mobile: Buscador + Selector de Categoría juntos -->
+      <div class="flex items-center gap-1.5 w-full sm:w-auto">
+        <!-- Search Input -->
+        <div class="relative flex-1 min-w-0 sm:w-44 md:w-56 lg:w-64">
+          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 text-[18px]! w-4.5! h-4.5! pointer-events-none">search</mat-icon>
+          <input
+            type="text"
+            name="search"
+            id="products-search"
+            class="input input-bordered input-sm w-full pl-9 pr-8 text-xs rounded-xl focus:outline-none focus:border-primary shadow-2xs bg-base-100"
+            placeholder="Buscar prenda, modelo..."
+            matTooltip="Podés buscar múltiples prendas o SKUs separando con comas (ej: Aura, Viena, Fiore)"
+            [value]="ProductState.currentSearchQuery()"
+            (input)="$event.preventDefault(); onSearch($event)"
+          />
+          @if (ProductState.currentSearchQuery()) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content transition-colors cursor-pointer flex items-center justify-center p-0.5 rounded-full hover:bg-base-200"
+              title="Limpiar búsqueda"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
+            </button>
+          }
+        </div>
+
+        <!-- Categoría Select (Texto 'Todas' corto y directo) -->
+        <select
+          class="select select-bordered select-sm text-xs rounded-xl focus:outline-none focus:border-primary shadow-2xs font-semibold bg-base-100 max-w-32 sm:max-w-44 shrink-0"
+          [value]="ProductState.currentCategoryFilter()"
+          (change)="onCategoryChange($event)"
+          title="Filtrar por categoría"
+        >
+          <option value="">Todas</option>
+          @for (cat of Categories(); track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Fila 2 en Mobile: Botones de Acción (Grid/List, Filtros, IA, Nuevo) -->
+      <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-start">
+        
+        <!-- Selector de Vista (Grid / List) -->
+        <div class="inline-flex join border border-base-300 bg-base-100 shadow-2xs shrink-0">
           <button
             type="button"
-            (click)="clearSearch()"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content transition-colors cursor-pointer flex items-center justify-center p-0.5 rounded-full hover:bg-base-200"
-            title="Limpiar búsqueda"
+            class="join-item btn btn-sm btn-ghost hover:bg-base-200 px-2 sm:px-2.5"
+            [ngClass]="{
+              'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
+                viewMode() === 'grid',
+            }"
+            (click)="viewMode.set('grid')"
+            matTooltip="Vista de cuadrícula"
           >
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">grid_view</mat-icon>
           </button>
-        }
-      </div>
+          <button
+            type="button"
+            class="join-item btn btn-sm btn-ghost hover:bg-base-200 px-2 sm:px-2.5"
+            [ngClass]="{
+              'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
+                viewMode() === 'list',
+            }"
+            (click)="viewMode.set('list')"
+            matTooltip="Vista de lista"
+          >
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">view_list</mat-icon>
+          </button>
+        </div>
 
-      <!-- Toggle Modo Lista / Mosaico en Mobile -->
-      <button
-        type="button"
-        class="btn btn-sm btn-ghost border border-base-300 bg-base-100 sm:hidden shrink-0 px-2 text-base-content/80 hover:text-primary"
-        (click)="viewMode.set(viewMode() === 'grid' ? 'list' : 'grid')"
-        [title]="viewMode() === 'grid' ? 'Cambiar a Lista' : 'Cambiar a Mosaico'"
-      >
-        <mat-icon class="text-[18px]! w-4.5! h-4.5!">{{ viewMode() === 'grid' ? 'view_list' : 'grid_view' }}</mat-icon>
-      </button>
-
-      <!-- Botón Drawer de Filtros (Abre modal de derecha a izquierda) -->
-      <button
-        type="button"
-        class="btn btn-sm shrink-0 transition-all duration-200"
-        [ngClass]="activeFiltersCount() > 0 ? 'btn-primary shadow-xs' : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200'"
-        (click)="showFiltersDrawer.set(true)"
-        title="Filtros avanzados"
-      >
-        <mat-icon class="text-[18px]! w-4.5! h-4.5!">tune</mat-icon>
-        <span class="hidden md:inline">Filtros</span>
-        @if (activeFiltersCount() > 0) {
-          <span class="badge badge-xs" [ngClass]="activeFiltersCount() > 0 ? 'badge-neutral' : 'badge-primary'">{{ activeFiltersCount() }}</span>
-        }
-      </button>
-
-      <!-- Selector de Vista (Grid / List) - Solo visible en Desktop/Tablet -->
-      <div class="hidden sm:inline-flex join border border-base-300 bg-base-100 shadow-2xs shrink-0">
+        <!-- Botón Filtros (Abre drawer en mobile, toggle sidebar en desktop) -->
         <button
           type="button"
-          class="join-item btn btn-sm btn-ghost hover:bg-base-200 px-2.5"
-          [ngClass]="{
-            'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
-              viewMode() === 'grid',
-          }"
-          (click)="viewMode.set('grid')"
-          matTooltip="Vista de mosaico"
+          class="btn btn-sm shrink-0 transition-all duration-200 px-2 sm:px-3"
+          [ngClass]="activeFiltersCount() > 0 ? 'btn-primary shadow-xs' : (showFiltersSidebar() ? 'btn-neutral shadow-xs' : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200')"
+          (click)="showFiltersDrawer.set(true); toggleFiltersSidebar()"
+          title="Filtros & Métricas"
         >
-          <mat-icon class="text-[18px]! w-4.5! h-4.5!">grid_view</mat-icon>
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">tune</mat-icon>
+          <span class="md:inline">Filtros</span>
+          @if (activeFiltersCount() > 0) {
+            <span class="badge badge-xs badge-neutral">{{ activeFiltersCount() }}</span>
+          }
         </button>
+
+        <!-- Botón Crear Masivo con IA (Desktop) -->
         <button
           type="button"
-          class="join-item btn btn-sm btn-ghost hover:bg-base-200 px-2.5"
-          [ngClass]="{
-            'bg-primary/10 text-primary hover:bg-primary/15 font-bold':
-              viewMode() === 'list',
-          }"
-          (click)="viewMode.set('list')"
-          matTooltip="Vista de lista"
+          (click)="openAiBulkModal('create')"
+          class="hidden sm:inline-flex btn btn-sm bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 shrink-0 font-bold items-center gap-1.5 shadow-xs cursor-pointer"
+          matTooltip="Crear productos masivamente con IA"
         >
-          <mat-icon class="text-[18px]! w-4.5! h-4.5!">view_list</mat-icon>
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
+          <span class="hidden xl:inline">Crear con IA</span>
+        </button>
+
+        <!-- Dropdown de IA en Pantallas Más Chicas (Mobile) -->
+        <div class="dropdown dropdown-end sm:hidden shrink-0">
+          <button
+            tabindex="0"
+            type="button"
+            class="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white font-bold px-2 sm:px-2.5 shadow-xs flex items-center gap-1"
+            title="Herramientas de IA"
+          >
+            <mat-icon class="text-[16px]! w-4! h-4!">auto_awesome</mat-icon>
+            <span class="text-xs">Crear con AI</span>
+          </button>
+          <ul tabindex="0" class="dropdown-content menu p-2 shadow-2xl bg-base-100 rounded-2xl w-60 border border-base-300 z-50 mt-1.5 space-y-1">
+            <li>
+              <button
+                (click)="openAiBulkModal('create')"
+                class="flex items-center gap-2.5 py-2.5 text-purple-600 dark:text-purple-400 font-bold active:bg-purple-50"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
+                <div class="flex flex-col text-left">
+                  <span>Crear con IA</span>
+                  <span class="text-[10px] font-normal text-base-content/60">Genera prendas con talles y costos</span>
+                </div>
+              </button>
+            </li>
+            <li class="border-t border-base-200"></li>
+            <li>
+              <button
+                (click)="copyForAi()"
+                class="flex items-center gap-2.5 py-2.5 font-semibold active:bg-base-200"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-base-content/70">content_copy</mat-icon>
+                <div class="flex flex-col text-left">
+                  <span>Copiar catálogo p/ IA</span>
+                  <span class="text-[10px] font-normal text-base-content/60">Exporta prompt para ChatGPT</span>
+                </div>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Botón Nuevo Producto -->
+        <button
+          type="button"
+          routerLink="create"
+          class="btn btn-sm btn-primary shadow-sm hover:shadow-md transition-all duration-200 shrink-0 font-bold px-3"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">add</mat-icon>
+          <span>Nuevo</span>
         </button>
       </div>
-
-      <!-- Panel de Métricas - Solo visible en Desktop/Tablet -->
-      <button
-        type="button"
-        class="hidden sm:inline-flex btn btn-sm transition-all duration-200 px-2.5 shrink-0"
-        [ngClass]="
-          showStatsSidebar()
-            ? 'btn-primary shadow-sm'
-            : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200 text-base-content/80'
-        "
-        (click)="showStatsSidebar.set(!showStatsSidebar())"
-        matTooltip="Ver Métricas"
-      >
-        <mat-icon class="text-[18px]! w-4.5! h-4.5!">analytics</mat-icon>
-      </button>
-
-      <!-- Botón Copiar Contexto para IA -->
-      <button
-        type="button"
-        class="btn btn-sm transition-all duration-200 px-2.5 shrink-0"
-        [ngClass]="
-          isCopyingForAi()
-            ? 'btn-success text-white'
-            : 'btn-outline border-base-300 bg-base-100 hover:bg-purple-50 text-purple-600 dark:text-purple-400 hover:border-purple-400'
-        "
-        (click)="copyForAi()"
-        matTooltip="Copiar listado estructurado para ChatGPT, Claude o Gemini"
-      >
-        <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
-        <span class="hidden xl:inline text-xs font-bold">Copiar p/ IA</span>
-      </button>
-
-      <!-- Botón Crear Masivo con IA -->
-      <button
-        type="button"
-        (click)="openAiBulkModal('create')"
-        class="btn btn-sm btn-outline border-purple-300 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all duration-200 shrink-0 font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer"
-        matTooltip="Crear productos masivamente con IA"
-      >
-        <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
-        <span class="hidden md:inline">Crear con IA</span>
-      </button>
-
-      <!-- Botón Nuevo Producto -->
-      <button
-        type="button"
-        routerLink="create"
-        class="btn btn-sm btn-primary shadow-sm hover:shadow-md transition-all duration-200 shrink-0 font-bold"
-      >
-        <mat-icon class="mr-0.5 sm:mr-1 -ml-0.5 sm:-ml-1 text-[18px]! w-4.5! h-4.5!">add</mat-icon>
-        <span>Nuevo</span>
-      </button>
-    </div>
-
-    <!-- Barra de Píldoras de Categorías en Sub-Menu -->
-    <div sub-menu class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 overflow-x-auto w-full max-w-full flex-nowrap shrink-0 no-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <button
-        class="btn btn-xs sm:btn-sm rounded-full transition-all shrink-0 font-medium"
-        [ngClass]="
-          ProductState.currentCategoryFilter() === ''
-            ? 'btn-primary shadow-sm'
-            : 'btn-ghost border border-base-300 hover:border-primary/50 bg-base-100'
-        "
-        (click)="ProductState.setCategoryFilter('')"
-      >
-        Todas
-      </button>
-
-      @for (cat of Categories(); track cat) {
-        <button
-          class="btn btn-xs sm:btn-sm rounded-full transition-all shrink-0 font-medium"
-          [ngClass]="
-            ProductState.currentCategoryFilter() === cat
-              ? 'btn-primary shadow-sm'
-              : 'btn-ghost border border-base-300 hover:border-primary/50 bg-base-100'
-          "
-          (click)="ProductState.setCategoryFilter(cat)"
-        >
-          {{ cat }}
-        </button>
-      }
     </div>
   </app-page-header>
 
-  <!-- Barra de Pestañas de Ciclo de Vida (Tabs: Todos | Publicados | Borradores / IA | Pausados | Archivados) -->
-  <div class="px-3 sm:px-6 pt-1 pb-2 border-b border-base-200/80 shrink-0">
-    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <!-- Tab Todos -->
-      <button
-        type="button"
-        (click)="setStatusTab('all')"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-        [ngClass]="activeStatusTab() === 'all' ? 'bg-primary text-primary-content shadow-xs' : 'bg-base-200/60 hover:bg-base-200 text-base-content/70 hover:text-base-content'"
-      >
-        <span>Todos</span>
-        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'all' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
-          {{ statusCounts().all }}
-        </span>
-      </button>
-
-      <!-- Tab Publicados -->
-      <button
-        type="button"
-        (click)="setStatusTab('published')"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-        [ngClass]="activeStatusTab() === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800'"
-      >
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Publicados</span>
-        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'published' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
-          {{ statusCounts().published }}
-        </span>
-      </button>
-
-      <!-- Tab Borradores / IA -->
-      <button
-        type="button"
-        (click)="setStatusTab('draft')"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-        [ngClass]="activeStatusTab() === 'draft' ? 'bg-amber-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:text-amber-800'"
-      >
-        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-        <span>Borradores / IA</span>
-        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'draft' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
-          {{ statusCounts().draft }}
-        </span>
-      </button>
-
-      <!-- Tab Pausados -->
-      <button
-        type="button"
-        (click)="setStatusTab('paused')"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-        [ngClass]="activeStatusTab() === 'paused' ? 'bg-blue-600 text-white shadow-xs' : 'bg-base-200/60 hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:text-blue-800'"
-      >
-        <mat-icon class="text-[14px]! w-3.5! h-3.5!">pause_circle</mat-icon>
-        <span>Pausados</span>
-        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'paused' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
-          {{ statusCounts().paused }}
-        </span>
-      </button>
-
-      <!-- Tab Archivados -->
-      <button
-        type="button"
-        (click)="setStatusTab('archived')"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-        [ngClass]="activeStatusTab() === 'archived' ? 'bg-neutral text-neutral-content shadow-xs' : 'bg-base-200/60 hover:bg-base-300 text-base-content/60 hover:text-base-content'"
-      >
-        <mat-icon class="text-[14px]! w-3.5! h-3.5!">archive</mat-icon>
-        <span>Archivados</span>
-        <span class="badge badge-xs" [ngClass]="activeStatusTab() === 'archived' ? 'badge-neutral bg-white/20 text-white border-none' : 'badge-ghost opacity-80'">
-          {{ statusCounts().archived }}
-        </span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Badges de Filtros Activos (Barra redondeada moderna) -->
-  @if (
-    ProductState.currentSearchQuery() ||
-    ProductState.currentCategoryFilter() ||
-    ProductState.currentProviderFilter() ||
-    (ProductState.currentStatusFilter() && ProductState.currentStatusFilter() !== 'all') ||
-    ProductState.currentNoSeoOnlyFilter() ||
-    ProductState.currentHasSeoImageFilter() !== undefined ||
-    ProductState.currentHasSizeGuideFilter() !== undefined ||
-    ProductState.currentHasLinkProviderFilter() !== undefined ||
-    ProductState.currentIsFeaturedFilter() !== undefined ||
-    (ProductState.currentSortBy() && ProductState.currentSortBy() !== 'newest')
-  ) {
-    <div class="mx-3 sm:mx-6 my-2 px-3.5 py-2 rounded-2xl bg-base-100/90 border border-base-200/80 shadow-2xs backdrop-blur-xs flex flex-wrap items-center gap-2 text-xs shrink-0">
-      <div class="flex items-center gap-1.5 text-base-content/60 font-semibold text-[11px] mr-0.5">
-        <mat-icon class="text-[15px]! w-4! h-4! text-primary">filter_alt</mat-icon>
-        <span>Filtros:</span>
-      </div>
-
-      @if (ProductState.currentSortBy() && ProductState.currentSortBy() !== 'newest') {
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          ↕️ {{ getSortLabel(ProductState.currentSortBy()) }}
-          <button (click)="ProductState.setSortBy('newest')" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentIsFeaturedFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          ⭐ {{ ProductState.currentIsFeaturedFilter() ? 'Solo Destacados' : 'No Destacados' }}
-          <button (click)="ProductState.setIsFeaturedFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentHasSeoImageFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          SEO: {{ ProductState.currentHasSeoImageFilter() ? 'Con Foto' : 'Sin Foto' }}
-          <button (click)="ProductState.setHasSeoImageFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentHasSizeGuideFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          Guía: {{ ProductState.currentHasSizeGuideFilter() ? 'Con Guía' : 'Sin Guía' }}
-          <button (click)="ProductState.setHasSizeGuideFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentHasLinkProviderFilter() !== undefined) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          Link: {{ ProductState.currentHasLinkProviderFilter() ? 'Con Link' : 'Sin Link' }}
-          <button (click)="ProductState.setHasLinkProviderFilter(undefined)" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentProviderFilter()) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs">
-          Prov: {{ getProviderName(ProductState.currentProviderFilter()) }}
-          <button (click)="clearProvider()" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      @if (ProductState.currentStatusFilter() && ProductState.currentStatusFilter() !== 'all') {
-        @let badge = getStatusBadge(ProductState.currentStatusFilter());
-        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs border" [ngClass]="badge.class">
-          {{ badge.label }}
-          <button (click)="clearStatus()" class="hover:opacity-75 cursor-pointer ml-0.5">
-            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-          </button>
-        </span>
-      }
-
-      <button
-        (click)="clearAllFilters()"
-        class="text-[11px] font-bold text-primary hover:underline ml-auto sm:ml-2 cursor-pointer"
-      >
-        Limpiar todos
-      </button>
-    </div>
-  }
-
-  <!-- MODAL / DRAWER LATERAL DE FILTROS (Slide-over de Derecha a Izquierda) -->
-  @if (showFiltersDrawer()) {
-    <div class="fixed inset-0 z-[999] overflow-hidden">
-      <!-- Backdrop -->
-      <div
-        class="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
-        (click)="showFiltersDrawer.set(false)"
-      ></div>
-
-      <!-- Panel Lateral -->
-      <div class="fixed inset-y-0 right-0 max-w-sm sm:max-w-md w-full bg-base-100 shadow-2xl border-l border-base-300 flex flex-col z-[1000] animate-slide-in-right">
-        
-        <!-- Header del Drawer -->
-        <div class="p-4 sm:p-5 border-b border-base-300 flex items-center justify-between bg-base-200/40">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <mat-icon class="text-[20px]! w-5! h-5!">tune</mat-icon>
-            </div>
-            <div>
-              <h3 class="font-bold text-base text-base-content">Filtros de Productos</h3>
-              <p class="text-xs text-base-content/60">Aplica filtros para segmentar tu catálogo</p>
-            </div>
-          </div>
-          <button
-            (click)="showFiltersDrawer.set(false)"
-            class="btn btn-sm btn-ghost btn-circle text-base-content/60 hover:text-base-content"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-
-        <!-- Contenido de Filtros -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar">
-          
-          <!-- Modo de Visualización (Mosaico / Lista) -->
-          <div class="space-y-1.5 bg-base-200/50 p-3 rounded-xl border border-base-300">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Vista del Catálogo
-            </label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                class="btn btn-sm"
-                [ngClass]="viewMode() === 'grid' ? 'btn-primary shadow-xs font-bold' : 'btn-outline border-base-300 bg-base-100'"
-                (click)="viewMode.set('grid')"
-              >
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!">grid_view</mat-icon>
-                <span>Mosaico</span>
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [ngClass]="viewMode() === 'list' ? 'btn-primary shadow-xs font-bold' : 'btn-outline border-base-300 bg-base-100'"
-                (click)="viewMode.set('list')"
-              >
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!">view_list</mat-icon>
-                <span>Lista</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Ordenamiento del Catálogo -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              ↕️ Ordenar Catálogo Por
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentSortBy()"
-              (change)="ProductState.setSortBy($any($event.target).value)"
-            >
-              <option value="newest">Más Nuevos (Por defecto)</option>
-              <option value="oldest">Más Antiguos</option>
-              <option value="price_asc">💰 Menor Precio (Efectivo / Transferencia)</option>
-              <option value="price_desc">💰 Mayor Precio (Efectivo / Transferencia)</option>
-              <option value="name_asc">🔤 Nombre / Modelo (A - Z)</option>
-              <option value="name_desc">🔤 Nombre / Modelo (Z - A)</option>
-              <option value="featured">⭐ Destacados Primero</option>
-            </select>
-          </div>
-
-          <!-- Filtro por Proveedor -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Proveedor / Fabricante
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentProviderFilter()"
-              (change)="onProviderChange($event)"
-            >
-              <option value="">Todos los proveedores</option>
-              @for (prov of ProviderState().data; track prov._id) {
-                <option [value]="prov._id">{{ prov.name }}</option>
-              }
-            </select>
-          </div>
-
-          <!-- Filtro por Estado -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Estado de Publicación
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentStatusFilter()"
-              (change)="onStatusChange($event)"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="published">🟢 Publicados (Visibles en tienda)</option>
-              <option value="draft">🟡 Borradores / IA</option>
-              <option value="paused">⏸️ Pausados</option>
-              <option value="archived">⚪ Archivados</option>
-            </select>
-          </div>
-
-          <!-- Filtro Productos Destacados -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-                ⭐ Productos Destacados
-              </label>
-              @if (ProductState.featuredCount() > 0) {
-                <span class="badge badge-xs badge-warning font-bold">{{ ProductState.featuredCount() }} destacados</span>
-              }
-            </div>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')"
-              (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todos los productos</option>
-              <option value="true">⭐ Solo Productos Destacados ({{ ProductState.featuredCount() }})</option>
-              <option value="false">⚪ No Destacados ({{ ProductState.nonFeaturedCount() }})</option>
-            </select>
-          </div>
-
-          <!-- Filtro Imagen SEO -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Imagen Social & SEO
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todas las imágenes</option>
-              <option value="true">Con Imagen SEO ({{ ProductState.hasSeoImageCount() }})</option>
-              <option value="false">Sin Imagen SEO ({{ ProductState.noSeoImageCount() }})</option>
-            </select>
-          </div>
-
-          <!-- Filtro Guía de Talles -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Guía de Talles / Medidas
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todas</option>
-              <option value="true">Con Guía de Talles ({{ ProductState.hasSizeGuideCount() }})</option>
-              <option value="false">Sin Guía de Talles ({{ ProductState.noSizeGuideCount() }})</option>
-            </select>
-          </div>
-
-          <!-- Filtro Link de Proveedor -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-base-content uppercase tracking-wider block">
-              Enlace de Proveedor
-            </label>
-            <select
-              class="select select-bordered w-full text-sm"
-              [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todos</option>
-              <option value="true">Con Link de Proveedor ({{ ProductState.hasLinkProviderCount() }})</option>
-              <option value="false">Sin Link de Proveedor ({{ ProductState.noLinkProviderCount() }})</option>
-            </select>
-          </div>
-
-          <!-- Botón Exportar para IA en Drawer -->
-          <div class="pt-2 border-t border-base-300">
-            <button
-              type="button"
-              class="btn btn-outline border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 w-full text-xs font-bold gap-2"
-              (click)="copyForAi()"
-            >
-              <mat-icon class="text-[18px]! w-4.5! h-4.5!">auto_awesome</mat-icon>
-              <span>Copiar listado para ChatGPT / IA</span>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Footer del Drawer -->
-        <div class="p-4 border-t border-base-300 bg-base-200/40 flex items-center gap-3">
-          <button
-            type="button"
-            class="btn btn-outline border-base-300 flex-1 text-xs"
-            (click)="clearAllFilters()"
-          >
-            Restablecer
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary flex-1 text-xs font-bold"
-            (click)="showFiltersDrawer.set(false)"
-          >
-            Ver Resultados
-          </button>
-        </div>
-
-      </div>
-    </div>
-  }
-
   <ng-container content>
-    <div
-      class="flex-1 flex flex-row min-h-0 w-full gap-4 bg-transparent"
-    >
-      <!-- Panel de Contenido Principal (Lista/Mosaico de Productos) -->
+    <div class="flex-1 flex flex-row min-h-0 w-full gap-3 bg-transparent">
+      
+      <!-- Panel de Contenido Principal (Lista / Mosaico) -->
       <div class="flex-1 flex flex-col min-h-0 min-w-0 w-full">
         @if (Products.hasError) {
           <div role="alert" class="alert alert-error mb-4">
@@ -574,1380 +177,566 @@
         }
 
         @if (Products.itemsCount === 0 && !Products.isLoading) {
-          <div class="flex items-center justify-center w-full h-full">
-            <span class="text-base-content/40">No hay productos</span>
+          <div class="flex flex-col items-center justify-center w-full h-full py-12 text-center bg-base-100 rounded-2xl border border-base-300">
+            <mat-icon class="text-4xl! w-12! h-12! text-base-content/30 mb-2">inventory_2</mat-icon>
+            <p class="text-sm font-bold text-base-content/70">No se encontraron productos</p>
+            <p class="text-xs text-base-content/40 mt-1">Probá cambiando los filtros o la búsqueda.</p>
+            @if (activeFiltersCount() > 0 || activeStatusTab() !== 'all') {
+              <button (click)="clearAllFilters()" class="btn btn-xs btn-outline btn-primary mt-3">Restablecer filtros</button>
+            }
           </div>
         }
 
         <!-- CONTENEDOR PRINCIPAL DE PRODUCTOS -->
-        @let showTable =
-          Products.hasData && Products.itemsCount > 0 && !Products.hasError;
+        @let showTable = Products.hasData && Products.itemsCount > 0 && !Products.hasError;
         @if (showTable) {
-          <div
-            class="products-container flex-1 flex flex-col relative min-h-0 w-full"
-          >
+          <div class="products-container flex-1 flex flex-col relative min-h-0 w-full">
             @if (Products.isLoading) {
-              <div
-                class="absolute inset-0 bg-base-100/60 z-20 flex items-center justify-center backdrop-blur-xs rounded-xl"
-              >
-                <span
-                  class="loading loading-ring loading-md text-primary"
-                ></span>
+              <div class="absolute inset-0 bg-base-100/60 z-20 flex items-center justify-center backdrop-blur-xs rounded-xl">
+                <span class="loading loading-ring loading-md text-primary"></span>
               </div>
             }
 
-            <!-- Batch Actions Toolbar (Aparece sólo cuando hay seleccionados) -->
+            <!-- Batch Actions Toolbar -->
             @if (selectedProducts().length > 0) {
-              <div
-                class="mb-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 z-10 animate-fade-in"
-              >
-              <div class="flex items-center gap-2">
-                <label
-                  class="cursor-pointer flex items-center gap-2 select-none hover:opacity-90 transition-opacity"
-                  (click)="$event.stopPropagation()"
-                  title="Marcar / Desmarcar todos los productos de esta página"
-                >
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-xs sm:checkbox-sm checkbox-primary rounded-md"
-                    [checked]="isAllSelected() && Products.data.length > 0"
-                    (change)="toggleAll($event)"
-                  />
-                  <span
-                    class="rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[10px] sm:text-xs font-black transition-colors bg-primary text-primary-content shrink-0"
-                  >
-                    {{ selectedProducts().length }}
-                  </span>
-                  <span class="text-xs sm:text-sm font-bold text-primary truncate">
-                    {{ isAllSelected() ? 'Todos seleccionados (' + selectedProducts().length + ')' : selectedProducts().length + ' seleccionado(s)' }}
-                  </span>
-                </label>
-              </div>
-              <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                <button
-                  class="btn btn-xs sm:btn-sm bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-2xs cursor-pointer flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="openAiBulkModal('update')"
-                  title="Actualizar masivamente estos productos con IA"
-                >
-                  <mat-icon class="text-xs sm:text-sm">auto_awesome</mat-icon>
-                  <span class="hidden md:inline">Actualizar con IA</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-emerald-600 hover:bg-emerald-500/10 font-bold flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="publishSelected()"
-                  title="Publicar productos seleccionados (visibles en tienda)"
-                >
-                  <mat-icon class="text-xs sm:text-sm">check_circle</mat-icon>
-                  <span>Publicar</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-blue-600 hover:bg-blue-500/10 font-bold flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="pauseSelected()"
-                  title="Pausar productos seleccionados"
-                >
-                  <mat-icon class="text-xs sm:text-sm">pause_circle</mat-icon>
-                  <span>Pausar</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-amber-600 hover:bg-amber-500/10 font-bold flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="draftSelected()"
-                  title="Mover seleccionados a Borrador"
-                >
-                  <mat-icon class="text-xs sm:text-sm">edit_note</mat-icon>
-                  <span class="hidden sm:inline">Borrador</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-base-content/70 hover:bg-base-300 font-bold flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="archiveSelected()"
-                  title="Archivar productos seleccionados"
-                >
-                  <mat-icon class="text-xs sm:text-sm">archive</mat-icon>
-                  <span class="hidden sm:inline">Archivar</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost text-error hover:bg-error/10 font-bold flex items-center gap-1"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="deleteSelected()"
-                  title="Eliminar seleccionados permanentemente"
-                >
-                  <mat-icon class="text-xs sm:text-sm">delete</mat-icon>
-                  <span class="hidden sm:inline">Eliminar</span>
-                </button>
-
-                <button
-                  class="btn btn-xs sm:btn-sm btn-ghost"
-                  [disabled]="selectedProducts().length === 0"
-                  (click)="clearSelection()"
-                  title="Cancelar selección"
-                >
-                  <span class="text-xs">Cancelar</span>
-                </button>
-              </div>
-            </div>
-          }
-
-            <!-- ====== MODO VISTA CUADRÍCULA (GRID VIEW) ====== -->
-            @if (viewMode() === "grid") {
-              <div
-                class="flex-1 overflow-y-auto custom-scrollbar min-h-0 w-full px-3 sm:px-6 pt-1 pb-8"
-              >
-                <!-- Sub-Barra de Selección en Modo Cuadrícula -->
-                <div class="flex items-center justify-between pb-2.5 pt-1 px-1 text-xs">
-                  <label class="cursor-pointer flex items-center gap-2 text-base-content/70 hover:text-primary transition-colors select-none">
+              <div class="mb-2 px-3.5 py-1.5 bg-primary/10 border border-primary/20 rounded-xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 z-10 shrink-0">
+                <div class="flex items-center gap-2">
+                  <label class="cursor-pointer flex items-center gap-2 select-none hover:opacity-90" (click)="$event.stopPropagation()">
                     <input
                       type="checkbox"
                       class="checkbox checkbox-xs checkbox-primary rounded"
                       [checked]="isAllSelected() && Products.data.length > 0"
                       (change)="toggleAll($event)"
                     />
-                    <span class="font-bold text-[12px]">
-                      {{ isAllSelected() && Products.data.length > 0 ? 'Deseleccionar todos (' + Products.data.length + ')' : 'Seleccionar todos (' + Products.data.length + ')' }}
+                    <span class="rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black bg-primary text-primary-content shrink-0">
+                      {{ selectedProducts().length }}
+                    </span>
+                    <span class="text-xs font-bold text-primary truncate">
+                      {{ isAllSelected() ? 'Todos (' + selectedProducts().length + ')' : selectedProducts().length + ' marcados' }}
                     </span>
                   </label>
-
-                  @if (selectedProducts().length > 0) {
-                    <span class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                      {{ selectedProducts().length }} de {{ Products.data.length }} marcados
-                    </span>
-                  }
                 </div>
-
-                <div
-                  class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5"
-                >
-                  @for (p of Products.data; track p._id) {
-                    @let imageURL =
-                      p.images.length <= 0 ? "/no-image.jpg" : p.images[0].url;
-                    @let stock = getTotalStock(p);
-
-                    <div
-                      class="product-card rounded-2xl border shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer"
-                      [ngClass]="
-                        selectedProducts().includes(p._id)
-                          ? 'border-primary ring-2 ring-primary/40 bg-primary/[0.04] shadow-md'
-                          : 'bg-base-100 border-base-300 hover:border-primary/30'
-                      "
-                      (click)="viewProduct(p)"
-                    >
-                      <!-- Top Floating Actions & Checkbox -->
-                      <div
-                        class="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center transition-opacity duration-200"
-                        [ngClass]="
-                          selectedProducts().includes(p._id)
-                            ? 'opacity-100'
-                            : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
-                        "
-                        (click)="$event.stopPropagation()"
-                      >
-                        <!-- Checkbox selection -->
-                        <label
-                          class="cursor-pointer p-1.5 rounded-lg border shadow-sm flex items-center justify-center transition-all select-none"
-                          [ngClass]="
-                            selectedProducts().includes(p._id)
-                              ? 'bg-primary text-primary-content border-primary shadow-md ring-2 ring-primary/30'
-                              : 'bg-base-100/90 hover:bg-base-100 border-base-300'
-                          "
-                        >
-                          <input
-                            type="checkbox"
-                            class="checkbox checkbox-xs checkbox-primary rounded"
-                            [checked]="selectedProducts().includes(p._id)"
-                            (change)="toggleSelection(p._id, $event)"
-                          />
-                        </label>
-
-                        <!-- Actions Menu -->
-                        <button
-                          [matMenuTriggerFor]="cardMenu"
-                          class="btn btn-xs btn-circle btn-ghost bg-base-100/90 border border-base-300 shadow-sm hover:bg-base-100 transition-all text-base-content/70 hover:text-primary"
-                        >
-                          <mat-icon class="text-[14px]! w-3.5! h-3.5!"
-                            >more_vert</mat-icon
-                          >
-                        </button>
-                        <mat-menu #cardMenu="matMenu" class="premium-menu">
-                          <button mat-menu-item (click)="viewProduct(p)">
-                            <mat-icon
-                              class="text-primary text-[18px]! w-4.5! h-4.5!"
-                              >edit</mat-icon
-                            >
-                            <span>Ver / Editar</span>
-                          </button>
-                          <button mat-menu-item (click)="copyLink(p)">
-                            <mat-icon
-                              class="text-info text-[18px]! w-4.5! h-4.5!"
-                              >link</mat-icon
-                            >
-                            <span>Copiar enlace</span>
-                          </button>
-                          <!-- Quick status transitions -->
-                          @if (p.status !== 'published') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'published')">
-                              <mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
-                              <span>Publicar</span>
-                            </button>
-                          }
-                          @if (p.status !== 'paused') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'paused')">
-                              <mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon>
-                              <span>Pausar</span>
-                            </button>
-                          }
-                          @if (p.status !== 'draft') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'draft')">
-                              <mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon>
-                              <span>Mover a Borrador</span>
-                            </button>
-                          }
-                          @if (p.status !== 'archived') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'archived')">
-                              <mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon>
-                              <span>Archivar</span>
-                            </button>
-                          }
-                          <mat-divider></mat-divider>
-                          <button mat-menu-item (click)="deleteProduct(p)">
-                            <mat-icon
-                              class="text-error text-[18px]! w-4.5! h-4.5!"
-                              >delete</mat-icon
-                            >
-                            <span class="text-error font-semibold"
-                              >Eliminar</span
-                            >
-                          </button>
-                        </mat-menu>
-                      </div>
-
-                      <!-- Image Section -->
-                      <div
-                        class="aspect-square w-full relative overflow-hidden bg-base-200/50 flex items-center justify-center border-b border-base-200"
-                      >
-                        <img
-                          [src]="imageURL"
-                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }"
-                        />
-
-                        <!-- Floating State Badges -->
-                        <div
-                          class="absolute bottom-2 left-2 flex flex-wrap gap-1 pointer-events-none"
-                        >
-                          @let statusInfo = getStatusBadge(p.status);
-                          <span
-                            class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm border"
-                            [ngClass]="statusInfo.class"
-                          >
-                            {{ statusInfo.label }}
-                          </span>
-                          @if (p.isFeatured) {
-                            <span
-                              class="bg-primary text-primary-content text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm"
-                              >Destacado</span
-                            >
-                          }
-                          @if (!p.seo.metaTitle || !p.seo.metaDescription) {
-                            <span
-                              class="bg-amber-500 text-amber-950 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm"
-                              >Falta SEO</span
-                            >
-                          }
-                          @if (p.linkProductProvider) {
-                            <a
-                              [href]="p.linkProductProvider"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              (click)="$event.stopPropagation()"
-                              class="bg-indigo-600 text-white text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shadow-sm inline-flex items-center gap-0.5 hover:bg-indigo-700 pointer-events-auto transition-colors"
-                              title="Abrir enlace directo del proveedor"
-                            >
-                              <span>Link Prov 🔗</span>
-                            </a>
-                          }
-                        </div>
-
-                        <!-- SEO Warning Indicator -->
-                        @if (!p.seo.metaTitle || !p.seo.metaDescription) {
-                          <div
-                            class="absolute top-2.5 right-2.5 z-5 pointer-events-none"
-                            [matTooltip]="'SEO no configurado'"
-                            matTooltipPosition="left"
-                          >
-                            <span
-                              class="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-500/25 animate-pulse block"
-                            ></span>
-                          </div>
-                        }
-                      </div>
-
-                      <!-- Card Info -->
-                      <div
-                        class="p-3.5 flex-1 flex flex-col justify-between min-w-0"
-                      >
-                        <div class="min-w-0">
-                          <!-- Brand, Category, and Provider -->
-                          <div
-                            class="flex flex-wrap items-center gap-1 mb-1.5 text-[9px] font-bold text-base-content/40 tracking-wider uppercase"
-                          >
-                            <span class="text-primary font-black">{{
-                              p.brand || "Sin Marca"
-                            }}</span>
-                            <span>·</span>
-                            <span>{{ p.category }}</span>
-                            <span>·</span>
-                            <span class="text-amber-600 font-extrabold flex items-center gap-1">
-                              <span>{{ p.provider ? p.provider.name : "Sin Proveedor" }}</span>
-                              @if (p.linkProductProvider) {
-                                <a [href]="p.linkProductProvider" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 transition-colors" title="Abrir enlace del proveedor">
-                                  <mat-icon class="text-[11px]! w-3! h-3!">open_in_new</mat-icon>
-                                </a>
-                              }
-                            </span>
-                          </div>
-
-                          <!-- Model Name -->
-                          <h3
-                            class="text-sm font-extrabold text-base-content tracking-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors"
-                            [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
-                          >
-                            {{ p.model }}
-                          </h3>
-
-                          <!-- Color Swatches & Variants Summary -->
-                          @let colors = getProductColors(p);
-                          @if (colors.length > 0) {
-                            <div class="flex items-center gap-1.5 mb-3 flex-wrap" (click)="$event.stopPropagation()">
-                              <div class="flex items-center -space-x-1">
-                                @for (c of colors.slice(0, 5); track c.name) {
-                                  <span
-                                    class="w-3.5 h-3.5 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block transition-transform hover:scale-125 hover:z-10 cursor-pointer"
-                                    [style.backgroundColor]="c.hex || '#000000'"
-                                    [matTooltip]="c.name"
-                                  ></span>
-                                }
-                              </div>
-                              <span class="text-[9px] font-bold text-base-content/60">
-                                {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
-                              </span>
-                            </div>
-                          }
-                        </div>
-
-                        <div>
-                          <!-- Stock Level Bar -->
-                          <div class="mb-3.5">
-                            <div
-                              class="flex justify-between items-center text-[10px] mb-1"
-                            >
-                              <span
-                                class="text-base-content/50 font-bold uppercase"
-                                >Stock:</span
-                              >
-                              <span
-                                class="font-extrabold px-1.5 py-0.5 rounded text-[9px]"
-                                [ngClass]="{
-                                  'bg-error/10 text-error border border-error/15':
-                                    stock === 0,
-                                  'bg-warning/10 text-warning border border-warning/15':
-                                    stock > 0 &&
-                                    stock <= (p.lowStockThreshold || 5),
-                                  'bg-success/10 text-success border border-success/15':
-                                    stock > (p.lowStockThreshold || 5),
-                                }"
-                              >
-                                {{
-                                  stock === 0 ? "Sin stock" : stock + " uds."
-                                }}
-                              </span>
-                            </div>
-                            <!-- Mini progress bar of stock -->
-                            <div
-                              class="w-full bg-base-300 h-1.5 rounded-full overflow-hidden"
-                            >
-                              <div
-                                class="h-full rounded-full transition-all duration-500"
-                                [ngClass]="{
-                                  'bg-error': stock === 0,
-                                  'bg-warning':
-                                    stock > 0 &&
-                                    stock <= (p.lowStockThreshold || 5),
-                                  'bg-success':
-                                    stock > (p.lowStockThreshold || 5),
-                                }"
-                                [style.width.%]="
-                                  stock === 0
-                                    ? 0
-                                    : stock > 20
-                                      ? 100
-                                      : (stock / 20) * 100
-                                "
-                              ></div>
-                            </div>
-                          </div>
-
-                          <!-- Prices Section -->
-                          <div
-                            class="bg-base-200/50 rounded-xl p-2.5 flex flex-col gap-1.5 border border-base-200"
-                          >
-                            <div class="flex justify-between items-center">
-                              <span
-                                class="text-[9px] font-bold text-base-content/40 uppercase"
-                                >Efectivo:</span
-                              >
-                              <span
-                                class="text-xs font-black text-base-content"
-                              >
-                                {{
-                                  p.price.cashTransferPrice
-                                    | currency
-                                      : "ARS"
-                                      : "symbol-narrow"
-                                      : "1.0-0"
-                                }}
-                              </span>
-                            </div>
-                            <div
-                              class="flex justify-between items-center border-t border-base-300/30 pt-1.5"
-                            >
-                              <span
-                                class="text-[9px] font-bold text-base-content/40 uppercase"
-                                >Lista:</span
-                              >
-                              <span class="text-[11px] font-bold text-success">
-                                {{
-                                  p.price.listPrice
-                                    | currency
-                                      : "ARS"
-                                      : "symbol-narrow"
-                                      : "1.0-0"
-                                }}
-                              </span>
-                            </div>
-
-                            <!-- Última actualización de precio -->
-                            @let priceAge = formatPriceAge(p.price.updatedAt || p.updatedAt);
-                            <div
-                              class="flex items-center justify-between border-t border-base-300/40 pt-1 text-[9px]"
-                              [matTooltip]="'Precio fijado: ' + priceAge.fullDate"
-                              matTooltipPosition="above"
-                            >
-                              <span class="text-base-content/40 font-medium flex items-center gap-0.5">
-                                <mat-icon class="text-[10px]! w-2.5! h-2.5!">history</mat-icon>
-                                <span>Act.:</span>
-                              </span>
-                              <span
-                                class="font-bold flex items-center gap-1"
-                                [ngClass]="{
-                                  'text-error': priceAge.isVeryOld,
-                                  'text-warning font-black': priceAge.isOld && !priceAge.isVeryOld,
-                                  'text-base-content/60': !priceAge.isOld
-                                }"
-                              >
-                                @if (priceAge.isVeryOld) {
-                                  <span class="w-1.5 h-1.5 rounded-full bg-error inline-block animate-pulse"></span>
-                                } @else if (priceAge.isOld) {
-                                  <span class="w-1.5 h-1.5 rounded-full bg-warning inline-block"></span>
-                                } @else {
-                                  <span class="w-1 h-1 rounded-full bg-success/80 inline-block"></span>
-                                }
-                                <span>{{ priceAge.text }}</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button class="btn btn-xs bg-purple-600 hover:bg-purple-700 text-white font-bold cursor-pointer flex items-center gap-1" (click)="openAiBulkModal('update')">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">auto_awesome</mat-icon>
+                    <span>IA</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost text-emerald-600 hover:bg-emerald-500/10 font-bold flex items-center gap-1" (click)="publishSelected()">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon>
+                    <span>Publicar</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost text-blue-600 hover:bg-blue-500/10 font-bold flex items-center gap-1" (click)="pauseSelected()">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">pause_circle</mat-icon>
+                    <span>Pausar</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost text-amber-600 hover:bg-amber-500/10 font-bold flex items-center gap-1" (click)="draftSelected()">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit_note</mat-icon>
+                    <span>Borrador</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost text-base-content/70 hover:bg-base-300 font-bold flex items-center gap-1" (click)="archiveSelected()">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">archive</mat-icon>
+                    <span>Archivar</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost text-error hover:bg-error/10 font-bold flex items-center gap-1" (click)="deleteSelected()">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                    <span>Eliminar</span>
+                  </button>
+                  <button class="btn btn-xs btn-ghost" (click)="clearSelection()">
+                    <span class="text-[11px]">Cancelar</span>
+                  </button>
                 </div>
               </div>
             }
 
-            <!-- ====== MODO VISTA TABLA (LIST VIEW) ====== -->
-            @if (viewMode() === "list") {
-              <!-- Desktop Table (md+) -->
-              <div class="hidden md:flex flex-col flex-1 min-h-0">
-                <div class="overflow-y-auto flex-1 custom-scrollbar">
-                  <table mat-table [dataSource]="Products.data" class="w-full">
-                    <!-- Checkbox Column -->
-                    <ng-container matColumnDef="select">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="w-12 px-4 py-3 border-b border-base-300 bg-base-100!"
+            <!-- ====== MODO VISTA CUADRÍCULA (GRID VIEW) ====== -->
+            @if (viewMode() === "grid") {
+              <div class="flex-1 flex flex-col min-h-0 w-full">
+                <!-- Scrollable Cards Grid -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0 pr-1 pb-1">
+                  <!-- Sub-Barra de Selección en Modo Cuadrícula -->
+                  <div class="flex items-center justify-between pb-2 px-0 text-xs">
+                    <label class="cursor-pointer flex items-center gap-2 text-base-content/70 hover:text-primary transition-colors select-none">
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-xs checkbox-primary rounded"
+                        [checked]="isAllSelected() && Products.data.length > 0"
+                        (change)="toggleAll($event)"
+                      />
+                      <span class="font-bold text-[11px]">
+                        {{ isAllSelected() && Products.data.length > 0 ? 'Deseleccionar todos (' + Products.data.length + ')' : 'Seleccionar página (' + Products.data.length + ')' }}
+                      </span>
+                    </label>
+
+                    @if (selectedProducts().length > 0) {
+                      <span class="text-[10.5px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        {{ selectedProducts().length }} de {{ Products.data.length }} marcados
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Responsive Grid -->
+                  <div
+                    class="grid gap-3 sm:gap-3.5"
+                    [ngClass]="showFiltersSidebar() ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5'"
+                  >
+                    @for (p of Products.data; track p._id) {
+                      @let imageURL = p.images.length <= 0 ? "/no-image.jpg" : p.images[0].url;
+                      @let stock = getTotalStock(p);
+
+                      <div
+                        class="product-card rounded-2xl border shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col relative overflow-hidden group cursor-pointer bg-base-100 border-base-300 text-base-content"
+                        [ngClass]="
+                          selectedProducts().includes(p._id)
+                            ? 'border-primary ring-2 ring-primary/40 bg-primary/[0.03] shadow-md'
+                            : 'border-base-300 hover:border-primary/40'
+                        "
+                        (click)="openQuickOverview(p, $event)"
                       >
-                        <label class="cursor-pointer">
-                          <input
-                            type="checkbox"
-                            class="checkbox checkbox-sm checkbox-primary rounded-md"
-                            [checked]="
-                              isAllSelected() && Products.data.length > 0
-                            "
-                            (change)="toggleAll($event)"
-                          />
-                        </label>
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="w-12 px-4 py-2 border-b border-base-300"
-                      >
-                        <label
-                          class="cursor-pointer"
+                        <!-- Top Floating Actions & Checkbox -->
+                        <div
+                          class="absolute top-2 left-2 right-2 z-10 flex justify-between items-center transition-opacity duration-200"
+                          [ngClass]="
+                            selectedProducts().includes(p._id)
+                              ? 'opacity-100'
+                              : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                          "
                           (click)="$event.stopPropagation()"
                         >
-                          <input
-                            type="checkbox"
-                            class="checkbox checkbox-sm checkbox-primary rounded-md"
-                            [checked]="selectedProducts().includes(p._id)"
-                            (change)="toggleSelection(p._id, $event)"
-                          />
-                        </label>
-                      </td>
-                    </ng-container>
-
-                    <!-- Producto Column (Consolidated: Image + Name + Brand + Category + Type) -->
-                    <ng-container matColumnDef="product">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100!"
-                      >
-                        Producto
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-3 border-b border-base-300"
-                      >
-                        <div class="flex items-center gap-4 py-1">
-                          @let imageURL =
-                            p.images.length <= 0
-                              ? "/no-image.jpg"
-                              : p.images[0].url;
-                          <div
-                            class="relative group shrink-0"
-                            (click)="viewProduct(p); $event.stopPropagation()"
+                          <!-- Checkbox selection -->
+                          <label
+                            class="cursor-pointer p-1.5 rounded-lg border shadow-xs flex items-center justify-center transition-all select-none"
+                            [ngClass]="
+                              selectedProducts().includes(p._id)
+                                ? 'bg-primary text-primary-content border-primary shadow-sm'
+                                : 'bg-base-100/90 hover:bg-base-100 border-base-300 backdrop-blur-xs'
+                            "
                           >
-                            <img
-                              [src]="imageURL"
-                              class="w-12 h-12 object-cover rounded-xl shadow-sm border border-base-content/10 transition-transform duration-300 group-hover:scale-105"
-                              [ngClass]="{
-                                'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused',
-                              }"
+                            <input
+                              type="checkbox"
+                              class="checkbox checkbox-xs checkbox-primary rounded"
+                              [checked]="selectedProducts().includes(p._id)"
+                              (change)="toggleSelection(p._id, $event)"
                             />
-                            @if (p.status === 'paused') {
-                              <div
-                                class="absolute inset-0 bg-base-200/40 rounded-xl flex items-center justify-center"
-                              >
-                                <mat-icon
-                                  class="text-blue-500 text-xs w-4 h-4 text-[16px]!"
-                                  >pause_circle</mat-icon
-                                >
-                              </div>
-                            } @else if (p.status === 'archived') {
-                              <div
-                                class="absolute inset-0 bg-base-200/40 rounded-xl flex items-center justify-center"
-                              >
-                                <mat-icon
-                                  class="text-base-content/50 text-xs w-4 h-4 text-[16px]!"
-                                  >archive</mat-icon
-                                >
-                              </div>
+                          </label>
+
+                          <!-- Actions Menu -->
+                          <button
+                            [matMenuTriggerFor]="cardMenu"
+                            class="btn btn-xs btn-circle btn-ghost bg-base-100/90 border border-base-300 shadow-xs hover:bg-base-100 transition-all text-base-content/70 hover:text-primary backdrop-blur-xs"
+                          >
+                            <mat-icon class="text-[14px]! w-3.5! h-3.5!">more_vert</mat-icon>
+                          </button>
+                          <mat-menu #cardMenu="matMenu" class="premium-menu">
+                            <button mat-menu-item (click)="openQuickOverview(p)">
+                              <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">visibility</mat-icon>
+                              <span>Vista Rápida</span>
+                            </button>
+                            <button mat-menu-item (click)="viewProduct(p)">
+                              <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">edit</mat-icon>
+                              <span>Edición Completa</span>
+                            </button>
+                            <button mat-menu-item (click)="copyLink(p)">
+                              <mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">link</mat-icon>
+                              <span>Copiar enlace</span>
+                            </button>
+                            @if (p.status !== 'published') {
+                              <button mat-menu-item (click)="setProductStatus(p, 'published')">
+                                <mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
+                                <span>Publicar</span>
+                              </button>
+                            }
+                            @if (p.status !== 'paused') {
+                              <button mat-menu-item (click)="setProductStatus(p, 'paused')">
+                                <mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon>
+                                <span>Pausar</span>
+                              </button>
+                            }
+                            @if (p.status !== 'draft') {
+                              <button mat-menu-item (click)="setProductStatus(p, 'draft')">
+                                <mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon>
+                                <span>Mover a Borrador</span>
+                              </button>
+                            }
+                            @if (p.status !== 'archived') {
+                              <button mat-menu-item (click)="setProductStatus(p, 'archived')">
+                                <mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon>
+                                <span>Archivar</span>
+                              </button>
+                            }
+                            <mat-divider></mat-divider>
+                            <button mat-menu-item (click)="deleteProduct(p)">
+                              <mat-icon class="text-error text-[18px]! w-4.5! h-4.5!">delete</mat-icon>
+                              <span class="text-error font-semibold">Eliminar</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+
+                        <!-- Image Section (Aspect 4:3) -->
+                        <div class="aspect-[4/3] w-full relative overflow-hidden bg-base-200/50 flex items-center justify-center border-b border-base-300/40">
+                          <img
+                            [src]="imageURL"
+                            class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                            [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }"
+                          />
+
+                          <!-- Floating Status Badge -->
+                          <div class="absolute bottom-2 left-2 flex items-center gap-1 pointer-events-none z-10">
+                            @let statusInfo = getStatusBadge(p.status);
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-xs border backdrop-blur-md" [ngClass]="statusInfo.class">
+                              {{ statusInfo.label }}
+                            </span>
+                            @if (p.isFeatured) {
+                              <span class="bg-amber-400 text-amber-950 text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs border border-amber-300">
+                                ⭐
+                              </span>
                             }
                           </div>
-                          <div class="flex flex-col min-w-0">
-                            <div
-                              class="flex items-center gap-1.5 mb-1 flex-wrap"
-                            >
-                              <span
-                                class="text-[10px] font-black text-primary uppercase tracking-wider"
-                                >{{ p.brand || "Sin Marca" }}</span
-                              >
-                              <span class="text-base-content/20 text-xs"
-                                >·</span
-                              >
-                              <span
-                                class="bg-base-200 text-base-content/60 text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border border-base-300"
-                              >
-                                {{ p.category }}
-                              </span>
-                              <span
-                                class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                [ngClass]="
-                                  p.productType === 'TechProduct'
-                                    ? 'bg-blue-500/10 text-blue-600 border border-blue-500/15'
-                                    : p.productType === 'BeautyProduct'
-                                    ? 'bg-rose-500/10 text-rose-600 border border-rose-500/15'
-                                    : p.productType === 'GeneralProduct'
-                                    ? 'bg-amber-500/10 text-amber-600 border border-amber-500/15'
-                                    : 'bg-success/10 text-success border border-success/15'
-                                "
-                              >
-                                {{
-                                  p.productType === 'TechProduct'
-                                    ? 'Tech'
-                                    : p.productType === 'BeautyProduct'
-                                    ? 'Belleza'
-                                    : p.productType === 'GeneralProduct'
-                                    ? 'General'
-                                    : 'Ropa'
-                                }}
-                              </span>
-                              @if (!p.seo.metaTitle || !p.seo.metaDescription) {
-                                <span
-                                  class="bg-amber-500/10 text-amber-600 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/15"
-                                  [matTooltip]="'SEO sin configurar'"
-                                  matTooltipPosition="above"
-                                >
-                                  Falta SEO
-                                </span>
-                              }
-                              @if (p.linkProductProvider) {
-                                <a
-                                  [href]="p.linkProductProvider"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  (click)="$event.stopPropagation()"
-                                  class="bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-indigo-500/20 inline-flex items-center gap-1 transition-colors"
-                                  title="Abrir enlace del proveedor"
-                                >
-                                  <mat-icon class="text-[11px]! w-3! h-3!">open_in_new</mat-icon>
-                                  <span>Link Prov.</span>
-                                </a>
-                              } @else {
-                                <span
-                                  class="bg-base-200 text-base-content/40 text-[9px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded border border-base-300"
-                                  title="Sin link de proveedor configurado"
-                                >
-                                  Sin Link
-                                </span>
-                              }
-                            </div>
-                            <div class="flex items-center gap-2">
-                              <button
-                                class="text-left text-sm font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer truncate max-w-70 lg:max-w-100"
-                                (click)="viewProduct(p)"
-                                [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
-                              >
-                                {{ p.model }}
-                              </button>
-                              @let statusBadge = getStatusBadge(p.status);
-                              <span
-                                class="badge badge-xs text-[9px] font-bold uppercase rounded px-1.5 py-0.5 border"
-                                [ngClass]="statusBadge.class"
-                                >{{ statusBadge.label }}</span
-                              >
+
+                          <!-- Quick Overview Button -->
+                          <button
+                            type="button"
+                            (click)="openQuickOverview(p, $event)"
+                            class="absolute bottom-2 right-2 w-6.5 h-6.5 rounded-full glass-action-btn flex items-center justify-center text-base-content/80 hover:text-primary shadow-xs pointer-events-auto transition-transform hover:scale-110"
+                            title="Vista Rápida"
+                          >
+                            <mat-icon class="text-[13px]! w-3.5! h-3.5!">visibility</mat-icon>
+                          </button>
+                        </div>
+
+                        <!-- Card Info -->
+                        <div class="p-2.5 sm:p-3 flex-1 flex flex-col justify-between min-w-0 gap-1.5">
+                          <div class="min-w-0">
+                            <!-- Brand & Category Tag -->
+                            <div class="flex items-center gap-1 text-[9px] font-bold text-base-content/50 uppercase tracking-wider truncate mb-0.5">
+                              <span class="text-primary font-black truncate">{{ p.brand || "Sin Marca" }}</span>
+                              <span>·</span>
+                              <span class="truncate">{{ p.category }}</span>
                             </div>
 
-                            <!-- Color Swatches & Variants Summary in Table -->
+                            <!-- Model Name -->
+                            <h3
+                              class="text-xs sm:text-sm font-bold text-base-content tracking-tight truncate line-clamp-1 group-hover:text-primary transition-colors"
+                              [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
+                              [title]="p.model"
+                            >
+                              {{ p.model }}
+                            </h3>
+                          </div>
+
+                          <!-- Variants & Stock (Single Row) -->
+                          <div class="flex items-center justify-between gap-1 text-xs">
+                            <!-- Colors -->
                             @let colors = getProductColors(p);
-                            @if (colors.length > 0) {
-                              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <div class="flex items-center -space-x-1">
-                                  @for (c of colors.slice(0, 5); track c.name) {
+                            <div class="flex items-center gap-1 min-w-0" (click)="$event.stopPropagation()">
+                              @if (colors.length > 0) {
+                                <div class="flex items-center -space-x-1 shrink-0">
+                                  @for (c of colors.slice(0, 3); track c.name) {
                                     <span
-                                      class="w-3 h-3 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block transition-transform hover:scale-125 hover:z-10"
+                                      class="w-3 h-3 rounded-full border border-base-100 ring-1 ring-base-content/20 shadow-2xs inline-block"
                                       [style.backgroundColor]="c.hex || '#000000'"
-                                      [matTooltip]="c.name"
+                                      [title]="c.name"
                                     ></span>
                                   }
                                 </div>
-                                <span class="text-[9px] font-bold text-base-content/50">
-                                  {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
+                                <span class="text-[9.5px] font-bold text-base-content/50 truncate">
+                                  {{ colors.length }} {{ colors.length === 1 ? 'col.' : 'cols.' }}
                                 </span>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                      </td>
-                    </ng-container>
+                              } @else {
+                                <span class="text-[9.5px] text-base-content/40 font-medium">Talle único</span>
+                              }
+                            </div>
 
-                    <!-- Proveedor Column -->
-                    <ng-container matColumnDef="provider">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100!"
-                      >
-                        Proveedor
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-2 text-sm border-b border-base-300"
-                      >
-                        <span
-                          class="inline-flex items-center bg-amber-500/10 text-amber-700 dark:text-amber-500 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-amber-500/15"
-                        >
-                          {{ p.provider ? p.provider.name : "Sin Proveedor" }}
-                        </span>
-                      </td>
-                    </ng-container>
-
-                    <!-- Stock Column -->
-                    <ng-container matColumnDef="stock">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100!"
-                      >
-                        Stock
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-2 border-b border-base-300"
-                      >
-                        @let stock = getTotalStock(p);
-                        <div class="flex flex-col gap-1 w-24">
-                          <div
-                            class="flex justify-between items-center text-[10px]"
-                          >
+                            <!-- Stock Badge -->
                             <span
-                              class="font-extrabold text-xs"
+                              class="font-extrabold text-[9px] px-1.5 py-0.5 rounded-md shrink-0"
                               [ngClass]="{
-                                'text-error': stock === 0,
-                                'text-warning':
-                                  stock > 0 &&
-                                  stock <= (p.lowStockThreshold || 5),
-                                'text-success':
-                                  stock > (p.lowStockThreshold || 5),
+                                'bg-error/15 text-error border border-error/30': stock === 0,
+                                'bg-warning/15 text-warning border border-warning/30': stock > 0 && stock <= (p.lowStockThreshold || 5),
+                                'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30': stock > (p.lowStockThreshold || 5)
                               }"
                             >
                               {{ stock === 0 ? "Sin stock" : stock + " uds." }}
                             </span>
                           </div>
-                          <div
-                            class="w-full bg-base-300 h-1.5 rounded-full overflow-hidden"
-                          >
-                            <div
-                              class="h-full rounded-full transition-all duration-500"
-                              [ngClass]="{
-                                'bg-error': stock === 0,
-                                'bg-warning':
-                                  stock > 0 &&
-                                  stock <= (p.lowStockThreshold || 5),
-                                'bg-success':
-                                  stock > (p.lowStockThreshold || 5),
-                              }"
-                              [style.width.%]="
-                                stock === 0
-                                  ? 0
-                                  : stock > 20
-                                    ? 100
-                                    : (stock / 20) * 100
-                              "
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
-                    </ng-container>
-                    <ng-container matColumnDef="price_cost">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100!"
-                      >
-                        Costo
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-2 border-b border-base-300"
-                      >
-                        <div class="flex flex-col gap-0.5">
-                          <div
-                            class="flex items-center gap-1.5 text-xs text-base-content/75"
-                          >
-                            <span
-                              class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest"
-                              >ARS</span
-                            >
-                            <span class="font-bold">{{
-                              (p.finance?.providerCost?.inARS || 0)
-                                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex items-center gap-1.5 text-xs text-base-content/75"
-                          >
-                            <span
-                              class="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-widest"
-                              >USD</span
-                            >
-                            <span class="font-bold"
-                              >${{ p.finance?.providerCost?.inUSD || 0 }}</span
-                            >
-                          </div>
-                        </div>
-                      </td>
-                    </ng-container>
- 
-                    <!-- Sale Price Column -->
-                    <ng-container matColumnDef="price_sale">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100!"
-                      >
-                        Precios (Venta)
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-2 border-b border-base-300"
-                      >
-                        <div class="flex flex-col gap-0.5">
-                          <div class="flex items-center gap-1.5 text-xs">
-                            <span
-                              class="text-[9px] font-bold text-base-content/40 uppercase"
-                              >Efectivo:</span
-                            >
-                            <span class="font-extrabold text-base-content">{{
-                              p.price.cashTransferPrice
-                                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                            }}</span>
-                          </div>
-                          <div class="flex items-center gap-1.5 text-xs">
-                            <span
-                              class="text-[9px] font-bold text-base-content/40 uppercase"
-                              >Tarjeta:</span
-                            >
-                            <span class="font-bold text-success">{{
-                              p.price.card_ticket1PayPrice
-                                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                            }}</span>
-                          </div>
-                          @let priceAge = formatPriceAge(p.price.updatedAt || p.updatedAt);
-                          <div
-                            class="text-[9px] flex items-center gap-1 text-base-content/40 mt-0.5"
-                            [matTooltip]="'Precio fijado el ' + priceAge.fullDate"
-                          >
-                            <mat-icon class="text-[10px]! w-2.5! h-2.5!">history</mat-icon>
-                            <span
-                              class="font-medium"
-                              [ngClass]="{
-                                'text-error font-bold': priceAge.isVeryOld,
-                                'text-warning font-bold': priceAge.isOld && !priceAge.isVeryOld
-                              }"
-                            >
-                              {{ priceAge.text }}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                    </ng-container>
 
-                    <!-- Actions Column -->
-                    <ng-container matColumnDef="actions">
-                      <th
-                        mat-header-cell
-                        *matHeaderCellDef
-                        class="px-4 py-3 border-b border-base-300 bg-base-100! w-16"
-                      ></th>
-                      <td
-                        mat-cell
-                        *matCellDef="let p"
-                        class="px-4 py-2 border-b border-base-300 text-right w-16"
-                      >
-                        <button
-                          [matMenuTriggerFor]="tableMenu"
-                          class="btn btn-xs btn-ghost btn-circle"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <mat-icon
-                            class="text-base-content/60 hover:text-primary"
-                            >more_vert</mat-icon
-                          >
-                        </button>
-                        <mat-menu #tableMenu="matMenu" class="premium-menu">
-                          <button mat-menu-item (click)="viewProduct(p)">
-                            <mat-icon
-                              class="text-primary text-[18px]! w-4.5! h-4.5!"
-                              >edit</mat-icon
-                            >
-                            <span>Ver / Editar</span>
-                          </button>
-                          <button mat-menu-item (click)="copyLink(p)">
-                            <mat-icon
-                              class="text-info text-[18px]! w-4.5! h-4.5!"
-                              >link</mat-icon
-                            >
-                            <span>Copiar enlace</span>
-                          </button>
-                          <!-- Quick status transitions in Table Menu -->
-                          @if (p.status !== 'published') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'published')">
-                              <mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
-                              <span>Publicar</span>
-                            </button>
-                          }
-                          @if (p.status !== 'paused') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'paused')">
-                              <mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon>
-                              <span>Pausar</span>
-                            </button>
-                          }
-                          @if (p.status !== 'draft') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'draft')">
-                              <mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon>
-                              <span>Mover a Borrador</span>
-                            </button>
-                          }
-                          @if (p.status !== 'archived') {
-                            <button mat-menu-item (click)="setProductStatus(p, 'archived')">
-                              <mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon>
-                              <span>Archivar</span>
-                            </button>
-                          }
-                          <mat-divider></mat-divider>
-                          <button mat-menu-item (click)="deleteProduct(p)">
-                            <mat-icon
-                              class="text-error text-[18px]! w-4.5! h-4.5!"
-                              >delete</mat-icon
-                            >
-                            <span class="text-error font-semibold"
-                              >Eliminar</span
-                            >
-                          </button>
-                        </mat-menu>
-                      </td>
-                    </ng-container>
-
-                    <tr
-                      mat-header-row
-                      *matHeaderRowDef="displayedColumns; sticky: true"
-                      class="bg-base-100! h-10! border-b border-base-300"
-                    ></tr>
-                    <tr
-                      mat-row
-                      *matRowDef="let element; columns: displayedColumns"
-                      class="border-b border-base-300 hover:bg-base-200/50 transition-colors"
-                    ></tr>
-                  </table>
-                </div>
-              </div>
-
-              <!-- Mobile Cards Fallback (< md) -->
-              <div
-                class="flex md:hidden flex-col flex-1 min-h-0 bg-base-200/40"
-              >
-                <div class="overflow-y-auto flex-1 min-h-0 p-2">
-                  <div class="grid grid-cols-1 gap-2">
-                    @for (p of Products.data; track p._id) {
-                      @let imageURL =
-                        p.images.length <= 0
-                          ? "/no-image.jpg"
-                          : p.images[0].url;
-                      @let stock = getTotalStock(p);
-                      <div
-                        class="flex items-center gap-3 p-3 rounded-xl border border-base-300 bg-base-100 shadow-xs hover:border-primary/30 transition-colors cursor-pointer"
-                        (click)="viewProduct(p)"
-                      >
-                        <img
-                          [src]="imageURL"
-                          class="w-14 h-14 object-cover rounded-lg shrink-0 border border-base-content/10"
-                          [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }"
-                        />
-                        <div class="flex-1 min-w-0">
-                          <div
-                            class="flex flex-wrap items-center gap-1.5 mb-0.5"
-                          >
-                            <span
-                              class="text-[10px] font-bold text-primary uppercase tracking-widest"
-                              >{{ p.brand || "Sin Marca" }}</span
-                            >
-                            <span class="text-[10px] text-base-content/30"
-                              >·</span
-                            >
-                            <span
-                              class="text-[10px] text-base-content/40 uppercase"
-                              >{{ p.category }}</span
-                            >
-                            <span class="text-[10px] text-base-content/30"
-                              >·</span
-                            >
-                            <span
-                              class="text-[10px] text-amber-600 font-extrabold uppercase"
-                              >{{
-                                p.provider ? p.provider.name : "Sin Proveedor"
-                              }}</span
-                            >
-                            @if (!p.seo.metaTitle || !p.seo.metaDescription) {
-                              <span
-                                class="text-[9px] text-red-500 font-black uppercase ml-1 animate-pulse"
-                                >Falta SEO</span
-                              >
-                            }
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <p
-                              class="text-sm font-semibold text-base-content truncate"
-                              [ngClass]="{ 'opacity-60': p.status === 'archived' || p.status === 'paused' }"
-                            >
-                              {{ p.model }}
-                            </p>
-                            @let mobileStatusBadge = getStatusBadge(p.status);
-                            <span
-                              class="badge badge-xs text-[9px] font-bold uppercase rounded-md px-1.5 py-0.5 border"
-                              [ngClass]="mobileStatusBadge.class"
-                              >{{ mobileStatusBadge.label }}</span
-                            >
-                          </div>
-
-                          <!-- Color Swatches Mobile -->
-                          @let colors = getProductColors(p);
-                          @if (colors.length > 0) {
-                            <div class="flex items-center gap-1 my-1 flex-wrap">
-                              <div class="flex items-center -space-x-1">
-                                @for (c of colors.slice(0, 4); track c.name) {
-                                  <span
-                                    class="w-2.5 h-2.5 rounded-full border border-base-100 ring-1 ring-base-content/15 shadow-2xs inline-block"
-                                    [style.backgroundColor]="c.hex || '#000000'"
-                                    [title]="c.name"
-                                  ></span>
-                                }
-                              </div>
-                              <span class="text-[8.5px] font-bold text-base-content/50">
-                                {{ colors.length }} {{ colors.length === 1 ? 'color' : 'colores' }}
+                          <!-- Prices Container -->
+                          <div class="bg-base-200/60 dark:bg-base-200/40 rounded-xl px-2.5 py-1.5 flex items-center justify-between border border-base-300/50">
+                            <div class="flex items-baseline gap-1">
+                              <span class="text-[8.5px] font-bold text-base-content/40 uppercase">Efvo:</span>
+                              <span class="text-xs sm:text-sm font-black text-base-content">
+                                {{ p.price.cashTransferPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
                               </span>
                             </div>
-                          }
+                            <span class="text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
+                              {{ p.price.listPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                            </span>
+                          </div>
 
-                          <p class="text-xs text-success font-bold mt-0.5">
-                            {{
-                              p.price.cashTransferPrice
-                                | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                            }}
-                          </p>
-                        </div>
-                        <div class="flex flex-col items-end gap-2 shrink-0">
-                          <span
-                            class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md border border-primary/20"
-                          >
-                            {{ stock }} uds
-                          </span>
-                          <mat-icon
-                            class="text-[16px] w-4 h-4 text-base-content/30"
-                            >chevron_right</mat-icon
-                          >
                         </div>
                       </div>
                     }
                   </div>
                 </div>
+
+                <!-- Grid Pagination Footer -->
+                <div class="pt-2 shrink-0 w-full">
+                  @let p = ProductState.pagination();
+                  @let startItem = (p.currentPage - 1) * p.itemsPerPage + 1;
+                  @let endItem = p.totalItems === 0 ? 0 : (p.currentPage * p.itemsPerPage > p.totalItems ? p.totalItems : p.currentPage * p.itemsPerPage);
+
+                  <div class="flex flex-wrap items-center justify-between gap-2 bg-base-100 border border-base-300 rounded-xl px-3.5 py-1.5 shadow-2xs text-xs">
+                    <div class="flex items-center gap-1.5 text-base-content/60 font-medium">
+                      <span>Mostrando</span>
+                      <span class="font-bold text-base-content">{{ startItem }} - {{ endItem }}</span>
+                      <span>de</span>
+                      <span class="font-bold text-base-content">{{ p.totalItems }}</span>
+                      <span class="hidden sm:inline">productos</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 sm:gap-3">
+                      <div class="flex items-center gap-1">
+                        <span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span>
+                        <select
+                          [value]="p.itemsPerPage"
+                          (change)="onPageSizeChange($any($event.target).value)"
+                          class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"
+                        >
+                          <option [value]="10">10</option>
+                          <option [value]="20">20</option>
+                          <option [value]="50">50</option>
+                        </select>
+                      </div>
+
+                      <div class="join border border-base-300 rounded-xl overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
+                          [disabled]="p.currentPage <= 1"
+                          (click)="onPageChange({ pageIndex: p.currentPage - 2, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
+                          title="Página anterior"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
+                          <span class="hidden sm:inline text-xs font-semibold">Anterior</span>
+                        </button>
+
+                        <div class="join-item px-2.5 flex items-center bg-base-200/50 text-xs font-bold text-base-content/80 border-x border-base-300">
+                          {{ p.currentPage }} / {{ p.totalPages || 1 }}
+                        </div>
+
+                        <button
+                          type="button"
+                          class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
+                          [disabled]="p.currentPage >= p.totalPages"
+                          (click)="onPageChange({ pageIndex: p.currentPage, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
+                          title="Página siguiente"
+                        >
+                          <span class="hidden sm:inline text-xs font-semibold">Siguiente</span>
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             }
 
-            <!-- ====== CONTROL DE PAGINACIÓN COMPARTIDO (100% ESPAÑOL & COMPACTO) ====== -->
-            <div class="mt-auto pt-2.5 shrink-0 w-full">
-              @let p = ProductState.pagination();
-              @let startItem = (p.currentPage - 1) * p.itemsPerPage + 1;
-              @let endItem = p.totalItems === 0 ? 0 : (p.currentPage * p.itemsPerPage > p.totalItems ? p.totalItems : p.currentPage * p.itemsPerPage);
+            <!-- ====== MODO VISTA TABLA (LIST VIEW) ====== -->
+            @if (viewMode() === "list") {
+              <div class="flex-1 flex flex-col min-h-0 bg-base-100 border border-base-300 rounded-2xl shadow-xs overflow-hidden">
+                <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                  <table mat-table [dataSource]="Products.data" class="w-full">
+                    <ng-container matColumnDef="select">
+                      <th mat-header-cell *matHeaderCellDef class="w-12 px-4 py-3 border-b border-base-300 bg-base-100!">
+                        <label class="cursor-pointer">
+                          <input type="checkbox" class="checkbox checkbox-xs checkbox-primary rounded" [checked]="isAllSelected() && Products.data.length > 0" (change)="toggleAll($event)" />
+                        </label>
+                      </th>
+                      <td mat-cell *matCellDef="let p" class="w-12 px-4 py-2 border-b border-base-300">
+                        <label class="cursor-pointer" (click)="$event.stopPropagation()">
+                          <input type="checkbox" class="checkbox checkbox-xs checkbox-primary rounded" [checked]="selectedProducts().includes(p._id)" (change)="toggleSelection(p._id, $event)" />
+                        </label>
+                      </td>
+                    </ng-container>
 
-              <div class="flex flex-wrap items-center justify-between gap-2 bg-base-100 border border-base-200 rounded-2xl px-3.5 py-1.5 shadow-2xs text-xs">
-                <!-- Info de Items -->
-                <div class="flex items-center gap-1.5 text-base-content/60 font-medium">
-                  <span>Mostrando</span>
-                  <span class="font-bold text-base-content">{{ startItem }} - {{ endItem }}</span>
-                  <span>de</span>
-                  <span class="font-bold text-base-content">{{ p.totalItems }}</span>
-                  <span class="hidden sm:inline">productos</span>
+                    <ng-container matColumnDef="product">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">Producto</th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2.5 border-b border-base-300">
+                        <div class="flex items-center gap-3.5 py-0.5">
+                          @let imageURL = p.images.length <= 0 ? "/no-image.jpg" : p.images[0].url;
+                          <div class="relative group shrink-0" (click)="openQuickOverview(p); $event.stopPropagation()">
+                            <img [src]="imageURL" class="w-11 h-11 object-cover rounded-xl shadow-2xs border border-base-content/10 transition-transform duration-300 group-hover:scale-105" [ngClass]="{ 'opacity-60 grayscale': p.status === 'archived' || p.status === 'paused' }" />
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span class="text-[10px] font-black text-primary uppercase tracking-wider">{{ p.brand || "Sin Marca" }}</span>
+                              <span class="text-base-content/20 text-xs">·</span>
+                              <span class="bg-base-200 text-base-content/70 text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border border-base-300">{{ p.category }}</span>
+                              @if (!p.seo.metaTitle || !p.seo.metaDescription) {
+                                <span class="bg-amber-500/10 text-amber-600 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/15">Falta SEO</span>
+                              }
+                            </div>
+                            <div class="flex items-center gap-2">
+                              <button class="text-left text-xs sm:text-sm font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer truncate max-w-64 lg:max-w-96" (click)="openQuickOverview(p)">{{ p.model }}</button>
+                              @let statusBadge = getStatusBadge(p.status);
+                              <span class="badge badge-xs text-[9px] font-bold uppercase rounded px-1.5 py-0.5 border" [ngClass]="statusBadge.class">{{ statusBadge.label }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="provider">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">Proveedor</th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                        <span class="inline-flex items-center bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-500/15">{{ p.provider ? p.provider.name : "Sin Proveedor" }}</span>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="stock">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">Stock</th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                        @let stock = getTotalStock(p);
+                        <div class="flex flex-col gap-1 w-20">
+                          <span class="font-extrabold text-xs" [ngClass]="{'text-error': stock === 0, 'text-warning': stock > 0 && stock <= (p.lowStockThreshold || 5), 'text-success': stock > (p.lowStockThreshold || 5)}">{{ stock === 0 ? "Sin stock" : stock + " uds." }}</span>
+                          <div class="w-full bg-base-300 h-1 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" [ngClass]="{'bg-error': stock === 0, 'bg-warning': stock > 0 && stock <= (p.lowStockThreshold || 5), 'bg-success': stock > (p.lowStockThreshold || 5)}" [style.width.%]="stock === 0 ? 0 : stock > 20 ? 100 : (stock / 20) * 100"></div>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="price_cost">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">Costo</th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                        <div class="flex flex-col gap-0.5 text-xs">
+                          <span class="font-bold text-base-content/80">{{ (p.finance?.providerCost?.inARS || 0) | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span>
+                          <span class="text-[10px] text-emerald-600 font-semibold">USD {{ (p.finance?.providerCost?.inUSD || 0) | currency: "USD" : "symbol" : "1.2-2" }}</span>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="price_sale">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">Precios (Venta)</th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                        <div class="flex flex-col gap-0.5 text-xs">
+                          <div class="flex items-center gap-1"><span class="text-[9px] font-bold text-base-content/40 uppercase">Efvo:</span><span class="font-extrabold text-base-content">{{ p.price.cashTransferPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span></div>
+                          <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Lista: {{ p.price.listPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100! w-16"></th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300 text-right w-16">
+                        <button [matMenuTriggerFor]="tableMenu" class="btn btn-xs btn-ghost btn-circle" (click)="$event.stopPropagation()">
+                          <mat-icon class="text-base-content/60 hover:text-primary text-[18px]! w-4.5! h-4.5!">more_vert</mat-icon>
+                        </button>
+                        <mat-menu #tableMenu="matMenu" class="premium-menu">
+                          <button mat-menu-item (click)="openQuickOverview(p)"><mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">visibility</mat-icon><span>Vista Rápida</span></button>
+                          <button mat-menu-item (click)="viewProduct(p)"><mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">edit</mat-icon><span>Edición Completa</span></button>
+                          <button mat-menu-item (click)="copyLink(p)"><mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">link</mat-icon><span>Copiar enlace</span></button>
+                          @if (p.status !== 'published') { <button mat-menu-item (click)="setProductStatus(p, 'published')"><mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon><span>Publicar</span></button> }
+                          @if (p.status !== 'paused') { <button mat-menu-item (click)="setProductStatus(p, 'paused')"><mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon><span>Pausar</span></button> }
+                          @if (p.status !== 'draft') { <button mat-menu-item (click)="setProductStatus(p, 'draft')"><mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon><span>Mover a Borrador</span></button> }
+                          @if (p.status !== 'archived') { <button mat-menu-item (click)="setProductStatus(p, 'archived')"><mat-icon class="text-base-content/60 text-[18px]! w-4.5! h-4.5!">archive</mat-icon><span>Archivar</span></button> }
+                          <mat-divider></mat-divider>
+                          <button mat-menu-item (click)="deleteProduct(p)"><mat-icon class="text-error text-[18px]! w-4.5! h-4.5!">delete</mat-icon><span class="text-error font-semibold">Eliminar</span></button>
+                        </mat-menu>
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-base-200/50 cursor-pointer transition-colors" (click)="openQuickOverview(row)"></tr>
+                  </table>
                 </div>
 
-                <!-- Selector de Tamaño de Página & Botones de Navegación -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                  <!-- Dropdown Items por página -->
-                  <div class="flex items-center gap-1">
-                    <span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span>
-                    <select
-                      [value]="p.itemsPerPage"
-                      (change)="onPageSizeChange($any($event.target).value)"
-                      class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"
-                    >
-                      <option [value]="10">10</option>
-                      <option [value]="20">20</option>
-                      <option [value]="50">50</option>
-                    </select>
-                  </div>
-
-                  <!-- Botones Anterior / Siguiente -->
-                  <div class="join border border-base-200 rounded-xl overflow-hidden shadow-2xs">
-                    <button
-                      type="button"
-                      class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
-                      [disabled]="p.currentPage <= 1"
-                      (click)="onPageChange({ pageIndex: p.currentPage - 2, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
-                      title="Página anterior"
-                    >
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
-                      <span class="hidden sm:inline text-xs font-semibold">Anterior</span>
-                    </button>
-
-                    <div class="join-item px-2.5 flex items-center bg-base-200/40 text-xs font-bold text-base-content/80 border-x border-base-200">
-                      {{ p.currentPage }} / {{ p.totalPages || 1 }}
+                <div class="border-t border-base-300 bg-base-100 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+                  @let p = ProductState.pagination();
+                  @let startItem = (p.currentPage - 1) * p.itemsPerPage + 1;
+                  @let endItem = p.totalItems === 0 ? 0 : (p.currentPage * p.itemsPerPage > p.totalItems ? p.totalItems : p.currentPage * p.itemsPerPage);
+                  <div class="flex items-center gap-1.5 text-base-content/60 font-medium"><span>Mostrando</span><span class="font-bold text-base-content">{{ startItem }} - {{ endItem }}</span><span>de</span><span class="font-bold text-base-content">{{ p.totalItems }}</span><span>productos</span></div>
+                  <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="flex items-center gap-1"><span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span><select [value]="p.itemsPerPage" (change)="onPageSizeChange($any($event.target).value)" class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"><option [value]="10">10</option><option [value]="20">20</option><option [value]="50">50</option></select></div>
+                    <div class="join border border-base-300 rounded-xl overflow-hidden shadow-2xs">
+                      <button type="button" class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5" [disabled]="p.currentPage <= 1" (click)="onPageChange({ pageIndex: p.currentPage - 2, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })" title="Página anterior"><mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon><span class="hidden sm:inline text-xs font-semibold">Anterior</span></button>
+                      <div class="join-item px-2.5 flex items-center bg-base-200/50 text-xs font-bold text-base-content/80 border-x border-base-300">{{ p.currentPage }} / {{ p.totalPages || 1 }}</div>
+                      <button type="button" class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5" [disabled]="p.currentPage >= p.totalPages" (click)="onPageChange({ pageIndex: p.currentPage, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })" title="Página siguiente"><span class="hidden sm:inline text-xs font-semibold">Siguiente</span><mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon></button>
                     </div>
-
-                    <button
-                      type="button"
-                      class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5"
-                      [disabled]="p.currentPage >= p.totalPages"
-                      (click)="onPageChange({ pageIndex: p.currentPage, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })"
-                      title="Página siguiente"
-                    >
-                      <span class="hidden sm:inline text-xs font-semibold">Siguiente</span>
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
-                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+            }
+
           </div>
         }
       </div>
-      <!-- Fin Panel Contenido Principal -->
 
-      <!-- PANEL LATERAL DE ESTADÍSTICAS (COLLAPSIBLE) -->
-      @if (showStatsSidebar()) {
-        <div
-          class="w-80 shrink-0 bg-base-100 border border-base-300 rounded-2xl shadow-sm flex flex-col p-4 overflow-y-auto custom-scrollbar animate-slide-in-right z-10"
-        >
-          <!-- Sidebar Header -->
-          <div
-            class="flex items-center justify-between mb-4 pb-2 border-b border-base-200"
-          >
-            <h3
-              class="text-xs font-black text-base-content/60 uppercase tracking-wider flex items-center gap-2"
-            >
-              <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!"
-                >analytics</mat-icon
-              >
-              Estadísticas
-            </h3>
-            <button
-              class="btn btn-xs btn-ghost btn-circle"
-              (click)="showStatsSidebar.set(false)"
-              matTooltip="Ocultar panel"
-            >
-              <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
-            </button>
-          </div>
-
-          <!-- Sidebar Content: stacked stats cards -->
-          <div class="flex flex-col gap-3.5">
-            <!-- Card 1: Total Productos -->
-            <div
-              class="bg-base-200/35 border border-base-300/80 rounded-xl p-4 flex items-center gap-4 hover:border-primary/20 transition-all duration-300"
-            >
-              <div
-                class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 border border-blue-500/15"
-              >
-                <mat-icon class="text-[20px]! w-5! h-5!">inventory_2</mat-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p
-                  class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5"
-                >
-                  Total Productos
-                </p>
-                @if (ProductState.statsLoading()) {
-                  <div
-                    class="h-6 w-16 bg-base-300 animate-pulse rounded-md mt-1"
-                  ></div>
-                } @else {
-                  <p
-                    class="text-xl font-black text-base-content tracking-tight"
-                  >
-                    {{ ProductState.totalProductsCount() }}
-                  </p>
-                  <p
-                    class="text-[10px] text-base-content/50 truncate font-semibold"
-                  >
-                    {{ ProductState.activeProductsCount() }} activos /
-                    {{ ProductState.inactiveProductsCount() }} inactivos
-                  </p>
-                }
-              </div>
+      <!-- ====== BARRA LATERAL DERECHA DE FILTROS & MÉTRICAS (PERSISTENTE / FIJA EN DESKTOP) ====== -->
+      @if (showFiltersSidebar()) {
+        <aside class="hidden lg:flex w-72 xl:w-80 shrink-0 bg-base-100 border border-base-300 rounded-2xl shadow-xs flex-col min-h-0 overflow-hidden animate-slide-in-right">
+          <div class="p-3.5 border-b border-base-300 flex items-center justify-between bg-base-200/40 shrink-0">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><mat-icon class="text-[16px]! w-4! h-4!">tune</mat-icon></div>
+              <span class="font-bold text-xs uppercase tracking-wider text-base-content">Filtros & Métricas</span>
+              @if (activeFiltersCount() > 0) { <span class="badge badge-xs badge-primary font-bold">{{ activeFiltersCount() }}</span> }
             </div>
-
-            <!-- Card 2: SEO Configurado -->
-            <div
-              (click)="toggleNoSeoFilter()"
-              class="border shadow-xs rounded-xl p-4 flex items-center gap-4 cursor-pointer select-none transition-all duration-300"
-              [ngClass]="
-                ProductState.currentNoSeoOnlyFilter()
-                  ? 'border-amber-500 bg-amber-500/10'
-                  : 'bg-base-200/35 border-base-300/80 hover:border-primary/20'
-              "
-            >
-              @let hasMissingSeo = ProductState.noSeoCount() > 0;
-              <div
-                class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border transition-colors duration-300"
-                [ngClass]="
-                  hasMissingSeo
-                    ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                    : 'bg-success/10 text-success border-success/20'
-                "
-              >
-                <mat-icon class="text-[20px]! w-5! h-5!"
-                  >travel_explore</mat-icon
-                >
-              </div>
-              <div class="flex-1 min-w-0">
-                <p
-                  class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5"
-                >
-                  SEO Sin Configurar
-                </p>
-                @if (ProductState.statsLoading()) {
-                  <div
-                    class="h-6 w-16 bg-base-300 animate-pulse rounded-md mt-1"
-                  ></div>
-                } @else {
-                  <div class="flex items-baseline gap-1.5">
-                    <p
-                      class="text-xl font-black tracking-tight transition-colors duration-300"
-                      [ngClass]="
-                        hasMissingSeo ? 'text-amber-600' : 'text-success'
-                      "
-                    >
-                      {{ ProductState.noSeoCount() }}
-                    </p>
-                    @if (!hasMissingSeo) {
-                      <span
-                        class="badge badge-success badge-xs text-[9px] font-bold uppercase rounded px-1.5"
-                        >¡Al día!</span
-                      >
-                    }
-                  </div>
-                  <p
-                    class="text-[10px] text-base-content/50 truncate font-semibold"
-                  >
-                    {{
-                      hasMissingSeo
-                        ? "Falta meta título/desc."
-                        : "100% optimizados"
-                    }}
-                  </p>
-                }
-              </div>
-            </div>
-
-            <!-- Card 3: Ganancia Estimada -->
-            <div
-              class="bg-base-200/35 border border-base-300/80 rounded-xl p-4 flex items-center gap-4 hover:border-primary/20 transition-all duration-300 cursor-help"
-              [matTooltip]="
-                'Desglose de ganancia estimada (' +
-                simulateUnits() +
-                ' ud' +
-                (simulateUnits() > 1 ? 's' : '') +
-                '. c/u):\n• Efectivo: ' +
-                (ProductState.estimatedEarningsCash() * simulateUnits()
-                  | currency: 'ARS' : 'symbol-narrow' : '1.0-0') +
-                '\n• Tarjeta: ' +
-                (ProductState.estimatedEarningsCard1() * simulateUnits()
-                  | currency: 'ARS' : 'symbol-narrow' : '1.0-0') +
-                '\n• 3 Cuotas: ' +
-                (ProductState.estimatedEarningsCard3() * simulateUnits()
-                  | currency: 'ARS' : 'symbol-narrow' : '1.0-0') +
-                '\n• 6 Cuotas: ' +
-                (ProductState.estimatedEarningsCard6() * simulateUnits()
-                  | currency: 'ARS' : 'symbol-narrow' : '1.0-0')
-              "
-              matTooltipPosition="left"
-            >
-              <div
-                class="w-10 h-10 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0 border border-success/15"
-              >
-                <mat-icon class="text-[20px]! w-5! h-5!">trending_up</mat-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p
-                  class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5"
-                >
-                  Ganancia Estimada
-                </p>
-                @if (ProductState.statsLoading()) {
-                  <div
-                    class="h-6 w-20 bg-base-300 animate-pulse rounded-md mt-1"
-                  ></div>
-                } @else {
-                  <p class="text-xl font-black text-success tracking-tight">
-                    {{
-                      ProductState.estimatedEarningsCash() * simulateUnits()
-                        | currency: "ARS" : "symbol-narrow" : "1.0-0"
-                    }}
-                  </p>
-                  <div class="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      class="text-[9px] text-base-content/40 font-bold uppercase tracking-wider"
-                      >Simular:</span
-                    >
-                    <select
-                      [value]="simulateUnits()"
-                      (change)="onSimulateUnitsChange($event)"
-                      (click)="$event.stopPropagation()"
-                      class="select select-ghost select-xs text-[9px] font-extrabold text-success bg-success/5 border border-success/15 rounded focus:outline-none h-4.5 min-h-4.5 py-0 px-1"
-                    >
-                      <option value="1">1 ud.</option>
-                      <option value="2">2 uds.</option>
-                      <option value="3">3 uds.</option>
-                      <option value="5">5 uds.</option>
-                      <option value="10">10 uds.</option>
-                    </select>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Card 4: Stock Total -->
-            <div
-              class="bg-base-200/35 border border-base-300/80 rounded-xl p-4 flex items-center gap-4 hover:border-primary/20 transition-all duration-300"
-            >
-              <div
-                class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 border border-purple-500/15"
-              >
-                <mat-icon class="text-[20px]! w-5! h-5!">warehouse</mat-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p
-                  class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-0.5"
-                >
-                  Inventario Físico
-                </p>
-                @if (ProductState.statsLoading()) {
-                  <div
-                    class="h-6 w-16 bg-base-300 animate-pulse rounded-md mt-1"
-                  ></div>
-                } @else {
-                  <p
-                    class="text-xl font-black text-base-content tracking-tight"
-                  >
-                    {{ ProductState.totalStockCount() }}
-                  </p>
-                  <p
-                    class="text-[10px] text-base-content/50 truncate font-semibold"
-                  >
-                    Unidades activas totales
-                  </p>
-                }
-              </div>
+            <div class="flex items-center gap-1">
+              @if (activeFiltersCount() > 0) { <button (click)="clearAllFilters()" class="btn btn-ghost btn-xs text-[10px] text-primary hover:underline">Limpiar</button> }
+              <button (click)="toggleFiltersSidebar()" class="btn btn-ghost btn-xs btn-circle" title="Ocultar barra lateral"><mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon></button>
             </div>
           </div>
-        </div>
 
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-3.5">
+            <div class="grid grid-cols-2 gap-1.5">
+              <div (click)="setStatusTab('published')" class="p-2 rounded-xl border transition-all cursor-pointer select-none" [ngClass]="activeStatusTab() === 'published' ? 'border-emerald-500 bg-emerald-500/10' : 'border-base-300 bg-base-200/30 hover:bg-base-200/70'"><span class="text-[9px] font-bold text-emerald-600 block uppercase">Publicados</span><span class="text-base font-black text-emerald-600">{{ statusCounts().published }}</span></div>
+              <div (click)="setStatusTab('draft')" class="p-2 rounded-xl border transition-all cursor-pointer select-none" [ngClass]="activeStatusTab() === 'draft' ? 'border-amber-500 bg-amber-500/10' : 'border-base-300 bg-base-200/30 hover:bg-base-200/70'"><span class="text-[9px] font-bold text-amber-600 block uppercase">Borradores</span><span class="text-base font-black text-amber-600">{{ statusCounts().draft }}</span></div>
+              <div (click)="setStatusTab('paused')" class="p-2 rounded-xl border transition-all cursor-pointer select-none" [ngClass]="activeStatusTab() === 'paused' ? 'border-blue-500 bg-blue-500/10' : 'border-base-300 bg-base-200/30 hover:bg-base-200/70'"><span class="text-[9px] font-bold text-blue-600 block uppercase">Pausados</span><span class="text-base font-black text-blue-600">{{ statusCounts().paused }}</span></div>
+              <div (click)="setStatusTab('archived')" class="p-2 rounded-xl border transition-all cursor-pointer select-none" [ngClass]="activeStatusTab() === 'archived' ? 'border-neutral bg-neutral/10' : 'border-base-300 bg-base-200/30 hover:bg-base-200/70'"><span class="text-[9px] font-bold text-base-content/60 block uppercase">Archivados</span><span class="text-base font-black text-base-content/80">{{ statusCounts().archived }}</span></div>
+            </div>
+
+            <div class="space-y-2.5 pt-2 border-t border-base-200">
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Proveedor</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentProviderFilter()" (change)="onProviderChange($event)"><option value="">Todos los proveedores</option>@for (p of ProviderState().data; track p._id) { <option [value]="p._id">{{ p.name }}</option> }</select></div>
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Ordenar Por</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentSortBy()" (change)="ProductState.setSortBy($any($event.target).value)"><option value="newest">Más recientes</option><option value="price_asc">Menor precio</option><option value="price_desc">Mayor precio</option><option value="oldest">Más antiguos</option><option value="name_asc">Nombre: A - Z</option><option value="name_desc">Nombre: Z - A</option></select></div>
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Destacados</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')" (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todos los productos</option><option value="true">⭐ Solo Destacados ({{ ProductState.featuredCount() }})</option><option value="false">⚪ No Destacados ({{ ProductState.nonFeaturedCount() }})</option></select></div>
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Imagen Social & SEO</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')" (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todas las imágenes</option><option value="true">Con Imagen SEO ({{ ProductState.hasSeoImageCount() }})</option><option value="false">Sin Imagen SEO ({{ ProductState.noSeoImageCount() }})</option></select></div>
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Guía de Talles</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')" (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todas</option><option value="true">Con Guía ({{ ProductState.hasSizeGuideCount() }})</option><option value="false">Sin Guía ({{ ProductState.noSizeGuideCount() }})</option></select></div>
+              <div class="space-y-1"><label class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider block">Link Proveedor</label><select class="select select-bordered select-xs w-full text-xs rounded-xl bg-base-100" [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')" (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todos</option><option value="true">Con Link ({{ ProductState.hasLinkProviderCount() }})</option><option value="false">Sin Link ({{ ProductState.noLinkProviderCount() }})</option></select></div>
+            </div>
+          </div>
+
+          <div class="p-3 border-t border-base-300 bg-base-200/40 shrink-0">
+            <button (click)="copyForAi()" type="button" class="btn btn-outline border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 w-full btn-xs text-[11px] font-bold gap-1.5 rounded-xl"><mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon><span>Copiar p/ ChatGPT</span></button>
+          </div>
+        </aside>
       }
 
+    </div>
+  </ng-container>
 </div>
+
+<!-- ====== DRAWER LATERAL DE FILTROS PARA PANTALLAS CHICAS / MOBILE ====== -->
+@if (showFiltersDrawer()) {
+  <div class="fixed inset-0 z-[999] overflow-hidden lg:hidden">
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300" (click)="showFiltersDrawer.set(false)"></div>
+    <div class="fixed inset-y-0 right-0 max-w-xs sm:max-w-sm w-full bg-base-100 shadow-2xl border-l border-base-300 flex flex-col z-[1000] animate-slide-in-right">
+      <div class="p-4 border-b border-base-300 flex items-center justify-between bg-base-200/40">
+        <div class="flex items-center gap-2"><mat-icon class="text-primary text-[20px]! w-5! h-5!">tune</mat-icon><h3 class="font-bold text-sm text-base-content">Filtros de Productos</h3></div>
+        <button type="button" class="btn btn-sm btn-ghost btn-circle" (click)="showFiltersDrawer.set(false)"><mat-icon class="text-[18px]! w-4.5! h-4.5!">close</mat-icon></button>
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-4 text-xs">
+        <div class="space-y-1.5"><label class="font-bold text-base-content uppercase tracking-wider block text-[10px]">Categoría</label><select class="select select-bordered select-sm w-full text-xs rounded-xl" [value]="ProductState.currentCategoryFilter()" (change)="onCategoryChange($event)"><option value="">Todas las categorías</option>@for (cat of Categories(); track cat) { <option [value]="cat">{{ cat }}</option> }</select></div>
+        <div class="space-y-1.5"><label class="font-bold text-base-content uppercase tracking-wider block text-[10px]">Proveedor</label><select class="select select-bordered select-sm w-full text-xs rounded-xl" [value]="ProductState.currentProviderFilter()" (change)="onProviderChange($event)"><option value="">Todos los proveedores</option>@for (p of ProviderState().data; track p._id) { <option [value]="p._id">{{ p.name }}</option> }</select></div>
+        <div class="space-y-1.5"><label class="font-bold text-base-content uppercase tracking-wider block text-[10px]">Ordenar por</label><select class="select select-bordered select-sm w-full text-xs rounded-xl" [value]="ProductState.currentSortBy()" (change)="ProductState.setSortBy($any($event.target).value)"><option value="newest">Más nuevos</option><option value="price_asc">Menor precio</option><option value="price_desc">Mayor precio</option><option value="oldest">Más antiguos</option><option value="name_asc">Nombre: A - Z</option><option value="name_desc">Nombre: Z - A</option></select></div>
+        <div class="space-y-1.5"><label class="font-bold text-base-content uppercase tracking-wider block text-[10px]">Destacados</label><select class="select select-bordered select-sm w-full text-xs rounded-xl" [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')" (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todos los productos</option><option value="true">⭐ Solo Destacados</option><option value="false">⚪ No Destacados</option></select></div>
+        <div class="space-y-1.5"><label class="font-bold text-base-content uppercase tracking-wider block text-[10px]">Imagen SEO</label><select class="select select-bordered select-sm w-full text-xs rounded-xl" [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')" (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"><option value="">Todas</option><option value="true">Con Imagen SEO</option><option value="false">Sin Imagen SEO</option></select></div>
+      </div>
+
+      <div class="p-4 border-t border-base-300 bg-base-200/40 flex items-center gap-2"><button type="button" class="btn btn-outline border-base-300 flex-1 text-xs btn-sm" (click)="clearAllFilters()">Restablecer</button><button type="button" class="btn btn-primary flex-1 text-xs font-bold btn-sm" (click)="showFiltersDrawer.set(false)">Ver Resultados</button></div>
+    </div>
+  </div>
+}
 
 <!-- ============================================================== -->
 <!-- 🤖 MODAL DE ASISTENTE IA PARA CATÁLOGO (CREACIÓN Y ACTUALIZACIÓN) -->
@@ -2399,6 +1188,261 @@
             </button>
           }
         </div>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ====== DRAWER LATERAL DE VISTA RÁPIDA / OVERVIEW (Inspiración Img 3) ====== -->
+@if (quickOverviewProduct(); as p) {
+  <div class="fixed inset-0 z-[1000] overflow-hidden">
+    <!-- Backdrop Blur -->
+    <div
+      class="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
+      (click)="closeQuickOverview()"
+    ></div>
+
+    <!-- Slide-over Panel -->
+    <div class="fixed inset-y-0 right-0 max-w-lg sm:max-w-xl w-full bg-base-100 shadow-2xl border-l border-base-300 flex flex-col z-[1001] animate-slide-in-right">
+      
+      <!-- Header del Drawer -->
+      <div class="p-4 sm:p-5 border-b border-base-300 flex items-center justify-between bg-base-200/40">
+        <div class="flex items-center gap-3 min-w-0">
+          @let badge = getStatusBadge(p.status);
+          <div class="w-10 h-10 rounded-xl overflow-hidden bg-base-200 shrink-0 border border-base-300">
+            <img [src]="p.images.length > 0 ? p.images[0].url : '/no-image.jpg'" class="w-full h-full object-cover" />
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm sm:text-base font-black text-base-content truncate">{{ p.model }}</h2>
+              <span class="badge badge-xs text-[9.5px] font-extrabold uppercase py-0.5 px-2 rounded-md" [ngClass]="badge.class">
+                {{ badge.label }}
+              </span>
+            </div>
+            <p class="text-xs text-base-content/50 truncate">
+              {{ p.brand || 'Sin Marca' }} · {{ p.category }} @if (p.provider) { · {{ p.provider.name }} }
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            (click)="viewProduct(p)"
+            class="btn btn-xs btn-outline border-base-300 gap-1 text-xs font-bold"
+            title="Abrir edición completa en nueva página"
+          >
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">open_in_new</mat-icon>
+            <span class="hidden sm:inline">Edición completa</span>
+          </button>
+          <button
+            type="button"
+            (click)="closeQuickOverview()"
+            class="btn btn-xs btn-circle btn-ghost"
+            title="Cerrar"
+          >
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido con Scroll -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-5">
+        
+        <!-- Galería de Imágenes -->
+        <div>
+          <div class="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-base-200/60 border border-base-300 relative mb-2.5 flex items-center justify-center">
+            @let currentImg = p.images.length > 0 ? (p.images[selectedOverviewImageIndex()] || p.images[0]).url : '/no-image.jpg';
+            <img [src]="currentImg" class="w-full h-full object-contain" />
+            @if (p.linkProductProvider) {
+              <a
+                [href]="p.linkProductProvider"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="absolute bottom-3 right-3 btn btn-xs btn-primary gap-1 shadow-md"
+              >
+                <mat-icon class="text-[13px]! w-3.5! h-3.5!">launch</mat-icon>
+                <span>Ver en Proveedor</span>
+              </a>
+            }
+          </div>
+
+          <!-- Miniaturas -->
+          @if (p.images.length > 1) {
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              @for (img of p.images; track img.url; let i = $index) {
+                <button
+                  type="button"
+                  (click)="selectOverviewImage(i)"
+                  class="w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer"
+                  [ngClass]="selectedOverviewImageIndex() === i ? 'border-primary ring-2 ring-primary/30' : 'border-base-300 opacity-70 hover:opacity-100'"
+                >
+                  <img [src]="img.url" class="w-full h-full object-cover" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Cambio Rápido de Estado -->
+        <div class="p-3 bg-base-200/50 rounded-2xl border border-base-300/80">
+          <label class="text-[11px] font-bold text-base-content/60 uppercase tracking-wider block mb-2">
+            Cambiar Estado del Producto
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button
+              type="button"
+              (click)="setProductStatus(p, 'published')"
+              class="btn btn-xs rounded-xl font-bold gap-1"
+              [ngClass]="p.status === 'published' ? 'btn-success text-white shadow-xs' : 'btn-outline border-base-300'"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon>
+              <span>Publicado</span>
+            </button>
+            <button
+              type="button"
+              (click)="setProductStatus(p, 'draft')"
+              class="btn btn-xs rounded-xl font-bold gap-1"
+              [ngClass]="p.status === 'draft' ? 'btn-warning text-white shadow-xs' : 'btn-outline border-base-300'"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit_note</mat-icon>
+              <span>Borrador</span>
+            </button>
+            <button
+              type="button"
+              (click)="setProductStatus(p, 'paused')"
+              class="btn btn-xs rounded-xl font-bold gap-1"
+              [ngClass]="p.status === 'paused' ? 'btn-info text-white shadow-xs' : 'btn-outline border-base-300'"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">pause_circle</mat-icon>
+              <span>Pausado</span>
+            </button>
+            <button
+              type="button"
+              (click)="setProductStatus(p, 'archived')"
+              class="btn btn-xs rounded-xl font-bold gap-1"
+              [ngClass]="p.status === 'archived' ? 'btn-neutral text-white shadow-xs' : 'btn-outline border-base-300'"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">archive</mat-icon>
+              <span>Archivado</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Precios y Finanzas -->
+        <div class="p-3.5 bg-base-100 rounded-2xl border border-base-300 shadow-2xs space-y-2.5">
+          <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center justify-between">
+            <span>Precios & Finanzas</span>
+            <span class="text-[10px] text-base-content/40 font-normal">Actualizado: {{ (p.price.updatedAt || p.updatedAt) | date:'shortDate' }}</span>
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            <div class="p-2 rounded-xl bg-base-200/50">
+              <span class="text-[10px] text-base-content/50 font-bold uppercase block">Costo USD</span>
+              <span class="text-xs font-black">{{ p.finance?.providerCost?.inUSD | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="p-2 rounded-xl bg-base-200/50">
+              <span class="text-[10px] text-base-content/50 font-bold uppercase block">Costo ARS</span>
+              <span class="text-xs font-black">{{ p.finance?.providerCost?.inARS | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60">
+              <span class="text-[10px] text-emerald-800 dark:text-emerald-300 font-bold uppercase block">Efectivo / Transf.</span>
+              <span class="text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-400">
+                {{ p.price.cashTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+            <div class="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60">
+              <span class="text-[10px] text-blue-800 dark:text-blue-300 font-bold uppercase block">Precio de Lista</span>
+              <span class="text-xs sm:text-sm font-black text-blue-700 dark:text-blue-400">
+                {{ p.price.listPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Variantes (Talles / Colores / Stock) -->
+        <div class="p-3.5 bg-base-100 rounded-2xl border border-base-300 shadow-2xs space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">
+              Variantes & Stock ({{ getTotalStock(p) }} uds. totales)
+            </h3>
+            <span class="badge badge-xs badge-ghost font-bold">{{ p.variants.length }} opciones</span>
+          </div>
+
+          <div class="divide-y divide-base-200 max-h-48 overflow-y-auto custom-scrollbar">
+            @for (v of p.variants; track $index) {
+              <div class="py-1.5 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  @let col = v.color;
+                  @if (col && col.hex) {
+                    <span class="w-3.5 h-3.5 rounded-full border border-base-300 ring-1 ring-base-content/10 shadow-2xs" [style.backgroundColor]="col.hex"></span>
+                  }
+                  <span class="font-bold text-base-content">{{ col?.name || 'Único' }}</span>
+                  <span class="text-base-content/40">·</span>
+                  <span class="badge badge-xs badge-neutral font-mono font-bold">{{ getVariantSize(v) }}</span>
+                  @if (v.sku) {
+                    <span class="text-[10px] text-base-content/40 font-mono hidden sm:inline">({{ v.sku }})</span>
+                  }
+                </div>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="px-2 py-0.5 rounded-md font-bold text-[11px]"
+                    [ngClass]="v.stock === 0 ? 'bg-error/10 text-error' : 'bg-success/10 text-success'"
+                  >
+                    {{ v.stock }} uds
+                  </span>
+                  <span class="text-[10px] font-bold" [ngClass]="v.isActive !== false ? 'text-emerald-600' : 'text-base-content/30'">
+                    {{ v.isActive !== false ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Descripción / SEO -->
+        @if (p.shortDescription || p.seo.metaDescription) {
+          <div class="p-3.5 bg-base-100 rounded-2xl border border-base-300 shadow-2xs space-y-1.5">
+            <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">Descripción</h3>
+            <p class="text-xs text-base-content/70 leading-relaxed line-clamp-4">
+              {{ p.seo.metaDescription || p.shortDescription }}
+            </p>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer con Acciones -->
+      <div class="p-4 border-t border-base-300 bg-base-200/40 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="copyLink(p)"
+            class="btn btn-sm btn-ghost gap-1 text-xs"
+            title="Copiar enlace a tienda"
+          >
+            <mat-icon class="text-[16px]! w-4! h-4!">link</mat-icon>
+            <span>Copiar Enlace</span>
+          </button>
+          <button
+            type="button"
+            (click)="deleteProduct(p); closeQuickOverview()"
+            class="btn btn-sm btn-ghost text-error gap-1 text-xs"
+            title="Eliminar producto"
+          >
+            <mat-icon class="text-[16px]! w-4! h-4!">delete</mat-icon>
+            <span>Eliminar</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          (click)="viewProduct(p)"
+          class="btn btn-sm btn-primary font-bold gap-1.5 px-4 shadow-sm"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
+          <span>Editar Completo</span>
+        </button>
       </div>
 
     </div>

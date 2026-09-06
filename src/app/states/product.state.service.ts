@@ -1,5 +1,5 @@
 import { httpResource, HttpResourceRef } from '@angular/common/http';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import {
   IProduct,
@@ -24,13 +24,23 @@ export class ProductStoreService {
   private searchQuery = signal('');
   private categoryFilter = signal('');
   private providerFilter = signal('');
-  private statusFilter = signal<string>('all');
+  private statusFilter = signal<string>('published');
   private noSeoOnly = signal(false);
   private hasSizeGuideFilter = signal<boolean | undefined>(undefined);
   private hasSeoImageFilter = signal<boolean | undefined>(undefined);
   private hasLinkProviderFilter = signal<boolean | undefined>(undefined);
   private isFeaturedFilter = signal<boolean | undefined>(undefined);
   private sortBy = signal<string>('newest');
+
+  // Cache last known values to prevent UI flash/flicker during transitions
+  private lastKnownProducts = signal<IPaginatedResult<IProduct> | undefined>(undefined);
+  private lastKnownStatusCounts = signal<IStatusCounts>({
+    all: 0,
+    published: 0,
+    draft: 0,
+    paused: 0,
+    archived: 0,
+  });
 
   // httpResource that auto-fetches when page/size signals change
   #fetchedProducts: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
@@ -39,40 +49,59 @@ export class ProductStoreService {
   #allProductsForStats: HttpResourceRef<IPaginatedResult<IProduct> | undefined>;
 
   constructor() {
-    this.#fetchedProducts = httpResource<IPaginatedResult<IProduct>>(() => ({
-      url: `${environment.apiUrl}/products/admin/list`,
-      params: {
-        page: this.pageNumber(),
-        limit: this.pageSize(),
-        ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
-        ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
-        ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
-        ...(this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
-        ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
-        ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
-        ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
-        ...(this.isFeaturedFilter() !== undefined ? { isFeatured: this.isFeaturedFilter() } : {}),
-        ...(this.sortBy() && this.sortBy() !== 'newest' ? { sortBy: this.sortBy() } : {}),
-      },
-    }));
+    this.#fetchedProducts = httpResource<IPaginatedResult<IProduct>>(() => {
+      const q = this.searchQuery().trim();
+      const isSearching = !!q;
 
-    this.#allProductsForStats = httpResource<IPaginatedResult<IProduct>>(
-      () => ({
+      return {
+        url: `${environment.apiUrl}/products/admin/list`,
+        params: {
+          page: this.pageNumber(),
+          limit: this.pageSize(),
+          ...(isSearching ? { q } : {}),
+          ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
+          ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
+          ...(!isSearching && this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
+          ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
+          ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
+          ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
+          ...(this.isFeaturedFilter() !== undefined ? { isFeatured: this.isFeaturedFilter() } : {}),
+          ...(this.sortBy() && this.sortBy() !== 'newest' ? { sortBy: this.sortBy() } : {}),
+        },
+      };
+    });
+
+    this.#allProductsForStats = httpResource<IPaginatedResult<IProduct>>(() => {
+      const q = this.searchQuery().trim();
+      const isSearching = !!q;
+
+      return {
         url: `${environment.apiUrl}/products/admin/list`,
         params: {
           page: 1,
           limit: 1000,
-          ...(this.searchQuery() ? { q: this.searchQuery() } : {}),
+          ...(isSearching ? { q } : {}),
           ...(this.categoryFilter() ? { category: this.categoryFilter() } : {}),
           ...(this.providerFilter() ? { provider: this.providerFilter() } : {}),
-          ...(this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
+          ...(!isSearching && this.statusFilter() && this.statusFilter() !== 'all' ? { status: this.statusFilter() } : {}),
           ...(this.hasSizeGuideFilter() !== undefined ? { hasSizeGuide: this.hasSizeGuideFilter() } : {}),
           ...(this.hasSeoImageFilter() !== undefined ? { hasSeoImage: this.hasSeoImageFilter() } : {}),
           ...(this.hasLinkProviderFilter() !== undefined ? { hasLinkProvider: this.hasLinkProviderFilter() } : {}),
           ...(this.isFeaturedFilter() !== undefined ? { isFeatured: this.isFeaturedFilter() } : {}),
         },
-      }),
-    );
+      };
+    });
+
+    // Synchronize last known products and counts without triggering extra re-renders
+    effect(() => {
+      const val = this.#fetchedProducts.value();
+      if (val) {
+        this.lastKnownProducts.set(val);
+        if (val.statusCounts) {
+          this.lastKnownStatusCounts.set(val.statusCounts);
+        }
+      }
+    });
   }
 
   // Public computed state (maintains same shape for backward compatibility)
@@ -97,11 +126,12 @@ export class ProductStoreService {
       };
     }
 
-    const result = this.#fetchedProducts.value();
+    const result = this.#fetchedProducts.value() || this.lastKnownProducts();
     const data = (result?.data || []).map(mapProductPrices);
+    const hasData = !!result && (this.#fetchedProducts.hasValue() || !!this.lastKnownProducts());
     return {
       data,
-      hasData: this.#fetchedProducts.hasValue(),
+      hasData,
       hasError: !!this.#fetchedProducts.error(),
       isLoading: this.#fetchedProducts.isLoading(),
       itemsCount: result?.pagination?.totalItems ?? 0,
@@ -125,8 +155,13 @@ export class ProductStoreService {
       };
     }
 
-    const result = this.#fetchedProducts.value();
-    return result!.pagination;
+    const result = this.#fetchedProducts.value() || this.lastKnownProducts();
+    return result?.pagination || {
+      currentPage: this.pageNumber(),
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: this.pageSize(),
+    };
   });
 
   readonly techProducts = computed(() =>
@@ -154,13 +189,7 @@ export class ProductStoreService {
   readonly currentSortBy = computed(() => this.sortBy());
 
   readonly statusCounts = computed<IStatusCounts>(() => {
-    return this.#fetchedProducts.value()?.statusCounts || {
-      all: 0,
-      published: 0,
-      draft: 0,
-      paused: 0,
-      archived: 0,
-    };
+    return this.#fetchedProducts.value()?.statusCounts || this.lastKnownStatusCounts();
   });
 
   // Statistics signals
@@ -295,65 +324,78 @@ export class ProductStoreService {
 
   // Pagination methods — just update the signals, httpResource handles the rest
   setPage(page: number) {
+    if (this.pageNumber() === page) return;
     this.pageNumber.set(page);
   }
 
   setPageSize(size: number) {
+    if (this.pageSize() === size) return;
     this.pageSize.set(size);
     this.pageNumber.set(1); // Reset to first page when changing size
   }
 
   setSearchQuery(query: string) {
+    if (this.searchQuery() === query) return;
     this.searchQuery.set(query);
     this.pageNumber.set(1); // Reset page when searching
   }
 
   setCategoryFilter(category: string) {
+    if (this.categoryFilter() === category) return;
     this.categoryFilter.set(category);
     this.pageNumber.set(1); // Reset page when filtering
   }
 
   setProviderFilter(provider: string) {
+    if (this.providerFilter() === provider) return;
     this.providerFilter.set(provider);
     this.pageNumber.set(1);
   }
 
   setStatusFilter(status: string) {
+    if (this.statusFilter() === status) return;
     this.statusFilter.set(status);
     this.pageNumber.set(1);
   }
 
   setNoSeoOnlyFilter(value: boolean) {
+    if (this.noSeoOnly() === value) return;
     this.noSeoOnly.set(value);
     this.pageNumber.set(1);
   }
 
   setHasSizeGuideFilter(value: boolean | undefined) {
+    if (this.hasSizeGuideFilter() === value) return;
     this.hasSizeGuideFilter.set(value);
     this.pageNumber.set(1);
   }
 
   setHasSeoImageFilter(value: boolean | undefined) {
+    if (this.hasSeoImageFilter() === value) return;
     this.hasSeoImageFilter.set(value);
     this.pageNumber.set(1);
   }
 
   setHasLinkProviderFilter(value: boolean | undefined) {
+    if (this.hasLinkProviderFilter() === value) return;
     this.hasLinkProviderFilter.set(value);
     this.pageNumber.set(1);
   }
 
   setIsFeaturedFilter(value: boolean | undefined) {
+    if (this.isFeaturedFilter() === value) return;
     this.isFeaturedFilter.set(value);
     this.pageNumber.set(1);
   }
 
   setSortBy(value: string) {
+    if (this.sortBy() === value) return;
     this.sortBy.set(value);
     this.pageNumber.set(1);
   }
 
   changePage(page: number, size: number) {
+    if (this.pageNumber() === page && this.pageSize() === size) return;
     this.pageSize.set(size);
     this.pageNumber.set(page);
   }
