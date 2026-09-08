@@ -935,6 +935,25 @@
             </div>
           </div>
 
+          <!-- Vocabulario Oficial de la Tienda (Calces Registrados) -->
+          <div class="bg-base-100 p-3 rounded-xl border border-base-300/80 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                <mat-icon class="text-[15px]! w-4! h-4! text-primary">straighten</mat-icon>
+                <span>Cortes / Fits registrados en tu tienda:</span>
+              </span>
+              <span class="text-[10px] text-base-content/50 font-semibold">Configurados en tu catálogo</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+              @for (fit of storeClothingFits(); track fit) {
+                <span class="badge badge-sm badge-outline border-primary/40 text-primary font-bold text-[11px] px-2 py-0.5">{{ fit }}</span>
+              }
+            </div>
+            <p class="text-[10px] text-base-content/60 leading-relaxed">
+              💡 La IA recibe esta lista oficial para normalizar términos del proveedor (ej: <em>"corte holgado"</em> → <strong>Oversized</strong>). Si una prenda requiere un calce nuevo no contemplado, la IA te lo indicará para que puedas darlo de alta en tu configuración.
+            </p>
+          </div>
+
           <!-- Guía Visual de Tipos Aceptados en Modo Crear -->
           @if (aiBulkMode() === 'create') {
             <div class="text-[11px] bg-base-100 p-3 rounded-lg border border-base-300/80 text-base-content/70 space-y-1.5">
@@ -1076,7 +1095,9 @@
                         <span class="badge badge-xs badge-ghost text-[9px]">{{ item.season }}</span>
                       }
                       @if (item.fit) {
-                        <span class="badge badge-xs badge-ghost text-[9px]">{{ item.fit }}</span>
+                        <span class="badge badge-xs text-[9px]" [ngClass]="isKnownFit(item.fit) ? 'badge-ghost' : 'badge-info font-bold'">
+                          {{ item.fit }}{{ isKnownFit(item.fit) ? '' : ' (✨ Nuevo)' }}
+                        </span>
                       }
                       @if (item.material) {
                         <span class="badge badge-xs badge-ghost text-[9px] truncate max-w-28">{{ item.material }}</span>

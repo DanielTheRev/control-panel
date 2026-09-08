@@ -653,6 +653,8 @@ export class ProductList {
         if (config.social) {
           content += `• Redes Sociales: IG: ${config.social.instagram || 'N/A'} | TikTok: ${config.social.tiktok || 'N/A'} | FB: ${config.social.facebook || 'N/A'}\n`;
         }
+        content += `• Calces / Cortes Oficiales de la Tienda: ${this.storeClothingFits().join(', ')}\n`;
+        content += `• Géneros Registrados: Hombre, Mujer, Unisex, Niños\n`;
       } else {
         content += `• Configuración global: En proceso de carga / Predeterminada\n`;
       }
@@ -994,141 +996,144 @@ export class ProductList {
   aiPromptCopied = signal<boolean>(false);
   aiProcessing = signal<boolean>(false);
 
-  // Propiedades seleccionables para alcance de actualización
-  availableScopeProperties = [
-    {
-      key: 'variants_matrix',
-      payloadKey: 'variants',
-      label: '🧩 Matriz Completa (Talles + Colores + Stock)',
-      type: 'Array<{ colorName, colorHex, size, stock }>',
-      explanation: 'Reconstruir todas las combinaciones con colores reales (#HEX), talles y stock (ideal para relevar desde la web del proveedor).',
-      example: [
-        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 15 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 12 },
-        { colorName: 'Blanco', colorHex: '#FFFFFF', size: 'S', stock: 8 }
-      ]
-    },
-    {
-      key: 'variants_stock',
-      payloadKey: 'variants',
-      label: '📦 Solo Stock (Mantener Talles y Colores)',
-      type: 'Array<{ colorName, colorHex, size, stock }>',
-      explanation: 'Mantener las combinaciones actuales de color y talle de cada prenda, modificando ÚNICAMENTE las cantidades de stock.',
-      example: [
-        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 12 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 20 }
-      ]
-    },
-    {
-      key: 'variants_colors',
-      payloadKey: 'variants',
-      label: '🎨 Solo Colores y Códigos HEX',
-      type: 'Array<{ colorName, colorHex, size, stock }>',
-      explanation: 'Reemplazar "Único" o colores genéricos por los nombres y códigos HEX reales de la prenda (ej: Verde Militar #4B5320, Beige #F5F5DC).',
-      example: [
-        { colorName: 'Verde Militar', colorHex: '#4B5320', size: 'S', stock: 10 },
-        { colorName: 'Crudo', colorHex: '#F5F5DC', size: 'M', stock: 15 }
-      ]
-    },
-    {
-      key: 'variants_sizes',
-      payloadKey: 'variants',
-      label: '📏 Curva de Talles',
-      type: 'Array<{ colorName, colorHex, size, stock }>',
-      explanation: 'Normalizar o definir la curva de talles disponibles (ej: S, M, L, XL, XXL o 38, 40, 42, 44).',
-      example: [
-        { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 10 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 10 },
-        { colorName: 'Negro', colorHex: '#000000', size: 'XL', stock: 10 }
-      ]
-    },
-    {
-      key: 'costPriceARS',
-      payloadKey: 'costPriceARS',
-      label: '💵 Costo Proveedor ($ ARS)',
-      type: 'number',
-      explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta y cuotas automáticamente.',
-      example: 14500
-    },
-    {
-      key: 'sizeGuide',
-      payloadKey: 'sizeGuide',
-      label: '📐 Guía de Medidas (Tabla)',
-      type: 'Object { headers, rows, tolerance }',
-      explanation: 'Tabla de medidas en cm por talle.',
-      example: {
-        headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo (cm)'],
-        rows: [{ size: 'S', values: ['52', '68'] }, { size: 'M', values: ['54', '70'] }],
-        tolerance: '* Medidas tomadas en plano (+/- 1 cm).'
+  storeClothingFits = computed(() => {
+    const config = this.#StoreConfigState.StoreConfig().config;
+    const raw = (config?.clothingFits || []).map((f: string) => f?.trim()).filter(Boolean);
+    return raw.length > 0 ? raw : ['Regular', 'Slim', 'Oversized', 'Relaxed', 'Boxy', 'Straight', 'Tapered', 'Baggy'];
+  });
+
+  isKnownFit(fit: string | undefined): boolean {
+    if (!fit || !fit.trim()) return true;
+    const known = this.storeClothingFits().map((f) => f.toLowerCase().trim());
+    return known.includes(fit.toLowerCase().trim());
+  }
+
+  get availableScopeProperties() {
+    const fitsList = this.storeClothingFits().join(', ');
+    return [
+      {
+        key: 'variants_matrix',
+        payloadKey: 'variants',
+        label: '🎨 Variantes Completas (Talles & Colores)',
+        type: 'Array<{ colorName, colorHex, size, stock }>',
+        explanation: 'Estructura completa de matriz de variantes con color, código HEX, talle y stock.',
+        example: [
+          { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
+          { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 15 },
+          { colorName: 'Blanco', colorHex: '#FFFFFF', size: 'S', stock: 8 }
+        ]
+      },
+      {
+        key: 'variants_colors',
+        payloadKey: 'variants',
+        label: '🎨 Paleta de Colores',
+        type: 'Array<{ colorName, colorHex, size, stock }>',
+        explanation: 'Actualizar colores oficiales y códigos HEX exactos de cada variante.',
+        example: [
+          { colorName: 'Azul Marino', colorHex: '#000080', size: 'M', stock: 10 },
+          { colorName: 'Verde Militar', colorHex: '#4B5320', size: 'S', stock: 10 },
+          { colorName: 'Crudo', colorHex: '#F5F5DC', size: 'M', stock: 15 }
+        ]
+      },
+      {
+        key: 'variants_sizes',
+        payloadKey: 'variants',
+        label: '📏 Curva de Talles',
+        type: 'Array<{ colorName, colorHex, size, stock }>',
+        explanation: 'Normalizar o definir la curva de talles disponibles (ej: S, M, L, XL, XXL o 38, 40, 42, 44).',
+        example: [
+          { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
+          { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 10 },
+          { colorName: 'Negro', colorHex: '#000000', size: 'L', stock: 10 },
+          { colorName: 'Negro', colorHex: '#000000', size: 'XL', stock: 10 }
+        ]
+      },
+      {
+        key: 'costPriceARS',
+        payloadKey: 'costPriceARS',
+        label: '💵 Costo Proveedor ($ ARS)',
+        type: 'number',
+        explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta y cuotas automáticamente.',
+        example: 14500
+      },
+      {
+        key: 'sizeGuide',
+        payloadKey: 'sizeGuide',
+        label: '📐 Guía de Medidas (Tabla)',
+        type: 'Object { headers, rows, tolerance }',
+        explanation: 'Tabla de medidas en cm por talle.',
+        example: {
+          headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo (cm)'],
+          rows: [{ size: 'S', values: ['52', '68'] }, { size: 'M', values: ['54', '70'] }],
+          tolerance: '* Medidas tomadas en plano (+/- 1 cm).'
+        }
+      },
+      {
+        key: 'shortDescription',
+        payloadKey: 'shortDescription',
+        label: '📝 Descripción Corta',
+        type: 'string',
+        explanation: 'Resumen vendedor de 1-2 líneas para la tarjeta de producto.',
+        example: 'Remera oversize 100% algodón peinado 24/1.'
+      },
+      {
+        key: 'largeDescription',
+        payloadKey: 'largeDescription',
+        label: '📄 Descripción Detallada (HTML)',
+        type: 'string HTML',
+        explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>).',
+        example: '<p>Remera con calce holgado y costuras reforzadas.</p>'
+      },
+      {
+        key: 'material',
+        payloadKey: 'material',
+        label: '🧵 Composición / Tela',
+        type: 'string',
+        explanation: 'Composición de la tela o material principal.',
+        example: '100% Algodón Peinado 24/1'
+      },
+      {
+        key: 'fit',
+        payloadKey: 'fit',
+        label: '👔 Calce / Fit',
+        type: 'string',
+        explanation: `Calce o corte de la prenda. Cortes registrados en la tienda: [ ${fitsList} ]. Prioriza estrictamente estos cortes oficiales o sugiere uno nuevo indicándoselo al usuario si la prenda lo requiere.`,
+        example: this.storeClothingFits()[0] || 'Oversized'
+      },
+      {
+        key: 'gender',
+        payloadKey: 'gender',
+        label: '👥 Género',
+        type: 'string',
+        explanation: '"Hombre" | "Mujer" | "Unisex" | "Niños".',
+        example: 'Unisex'
+      },
+      {
+        key: 'tags',
+        payloadKey: 'tags',
+        label: '🏷️ Etiquetas / Tags',
+        type: 'string[]',
+        explanation: 'Array de palabras clave para búsqueda interna.',
+        example: ['verano', 'algodon', 'novedad']
+      },
+      {
+        key: 'model',
+        payloadKey: 'model',
+        label: '🏷️ Nombre del Producto',
+        type: 'string',
+        explanation: 'Nombre o modelo comercial.',
+        example: 'Remera Oversize Vesper'
+      },
+      {
+        key: 'subtitle',
+        payloadKey: 'subtitle',
+        label: '📌 Subtítulo / Frase Comercial',
+        type: 'string',
+        explanation: 'Subtítulo breve o bajada del producto (ej: "100% Algodón Peinado 24/1").',
+        example: '100% Algodón Peinado 24/1'
       }
-    },
-    {
-      key: 'shortDescription',
-      payloadKey: 'shortDescription',
-      label: '📝 Descripción Corta',
-      type: 'string',
-      explanation: 'Resumen vendedor de 1-2 líneas para la tarjeta de producto.',
-      example: 'Remera oversize 100% algodón peinado 24/1.'
-    },
-    {
-      key: 'largeDescription',
-      payloadKey: 'largeDescription',
-      label: '📄 Descripción Detallada (HTML)',
-      type: 'string HTML',
-      explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>).',
-      example: '<p>Remera con calce holgado y costuras reforzadas.</p>'
-    },
-    {
-      key: 'material',
-      payloadKey: 'material',
-      label: '🧵 Composición / Tela',
-      type: 'string',
-      explanation: 'Composición de la tela o material principal.',
-      example: '100% Algodón Peinado 24/1'
-    },
-    {
-      key: 'fit',
-      payloadKey: 'fit',
-      label: '👔 Calce / Fit',
-      type: 'string',
-      explanation: 'Calce: "Regular" | "Slim" | "Oversized" | "Relaxed" | "Boxy" | "Straight" | "Tapered" | "Baggy".',
-      example: 'Oversized'
-    },
-    {
-      key: 'gender',
-      payloadKey: 'gender',
-      label: '👥 Género',
-      type: 'string',
-      explanation: '"Hombre" | "Mujer" | "Unisex" | "Niños".',
-      example: 'Unisex'
-    },
-    {
-      key: 'tags',
-      payloadKey: 'tags',
-      label: '🏷️ Etiquetas / Tags',
-      type: 'string[]',
-      explanation: 'Array de palabras clave para búsqueda interna.',
-      example: ['verano', 'algodon', 'novedad']
-    },
-    {
-      key: 'model',
-      payloadKey: 'model',
-      label: '🏷️ Nombre del Producto',
-      type: 'string',
-      explanation: 'Nombre o modelo comercial.',
-      example: 'Remera Oversize Vesper'
-    },
-    {
-      key: 'subtitle',
-      payloadKey: 'subtitle',
-      label: '📌 Subtítulo / Frase Comercial',
-      type: 'string',
-      explanation: 'Subtítulo breve o bajada del producto (ej: "100% Algodón Peinado 24/1").',
-      example: '100% Algodón Peinado 24/1'
-    }
-  ];
+    ];
+  }
 
   aiTargetProductType = signal<ProductType>(ProductType.CLOTHING);
 
@@ -1311,7 +1316,7 @@ export class ProductList {
     const config = this.#StoreConfigState.StoreConfig().config;
     const defaultBrand = config?.brands?.[0] || 'Vura';
     const providersList = (this.ProviderState().data || []).map((p: any) => p.name).filter(Boolean).join(', ') || 'Vura, Krencia';
-    const fitsList = (config?.clothingFits && config.clothingFits.length > 0 ? config.clothingFits : ['Regular', 'Slim', 'Oversized', 'Relaxed', 'Boxy', 'Straight', 'Tapered', 'Baggy']).join(', ');
+    const fitsList = this.storeClothingFits().join(', ');
 
     let dictionary = '';
     let exampleData: any[] = [];
@@ -1517,7 +1522,7 @@ export class ProductList {
 - gender (string, opcional): Género. Opciones: "Hombre" | "Mujer" | "Unisex" | "Niños".
 - fit (string, opcional): Calce o corte de la prenda.
   ⚡ Cortes registrados en la tienda: [ ${fitsList} ].
-  (Selecciona uno de estos cortes o sugiere uno nuevo si la prenda lo requiere).
+  (Elige prioritariamente uno de estos calces oficiales de la tienda. Si la descripción del proveedor usa sinónimos como "corte holgado", "al cuerpo" o "recto", mapealo a su equivalente oficial [ ${fitsList} ]. Si la prenda verdaderamente requiere un calce nuevo no contemplado, indícaselo claramente al usuario en tu respuesta o sugiérelo en 'fit' para que lo dé de alta en la configuración de la tienda).
 - material (string, opcional): Composición general textil (ej: "100% Algodón Peinado 24/1").
 - composition (Array de objetos, opcional): Detalle porcentual de materiales:
     [ { "material": "Algodón", "percentage": 100 } ]
@@ -1716,6 +1721,9 @@ REGLAS CRÍTICAS:
       return item;
     });
 
+    const config = this.#StoreConfigState.StoreConfig().config;
+    const defaultBrand = config?.brands?.[0] || 'Vura';
+    const fitsList = this.storeClothingFits().join(', ');
     const activeProps = this.availableScopeProperties.filter((p) => scopeKeys.includes(p.key));
     const dictionaryLines = activeProps.map((p) => `- ${p.payloadKey} (${p.type}, OBLIGATORIO): [Objetivo: ${p.label}] ${p.explanation}`).join('\n');
     const exampleObj: any = { _id: productsToExport[0]?._id || '66ce301f92a1...' };
@@ -1737,6 +1745,13 @@ ${JSON.stringify(compactProducts, null, 2)}
 DICCIONARIO DE PROPIEDADES QUE DEBES DEVOLVER:
 - _id (string, OBLIGATORIO): Mantén el _id original del producto para identificarlo en la base de datos.
 ${dictionaryLines}
+
+🎯 VOCABULARIO Y REGLAS OFICIALES DE LA TIENDA:
+- Marca Principal de la Tienda: "${defaultBrand}"
+- Cortes / Calces (Fits) Registrados en la Tienda: [ ${fitsList} ]
+  ⚠️ REGLA DE CALCES (FITS): Si actualizas el campo 'fit', debes elegir prioritariamente uno de los cortes oficiales registrados en la tienda. Si la descripción del proveedor usa sinónimos ('corte holgado', 'al cuerpo', 'recto', 'ancho'), mapealo al calce oficial equivalente de esta lista. Si la prenda verdaderamente requiere un corte nuevo no contemplado, indícaselo claramente al usuario en tu respuesta o sugiérelo en 'fit' para que lo dé de alta en la configuración de su tienda.
+- Géneros Estándar: [ "Hombre", "Mujer", "Unisex", "Niños" ]
+- Tipos de Talles: [ "Ropa" (S..XXL), "Calzado" (35..45), "Numérico", "Talle Único" ]
 
 🎯 ADAPTACIÓN SEGÚN EL 'productType' DE CADA PRODUCTO:
 - Para ClothingProduct (Indumentaria): Usa talles (S, M, L o 38, 40), colores con código #HEX y guías de medidas en cm.
@@ -1837,6 +1852,20 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
           const metaTitle = item.seo?.metaTitle || item.metaTitle || `${item.model} | ${brand}`;
           const metaDescription = item.seo?.metaDescription || item.metaDescription || item.shortDescription || '';
 
+          // Normalizar fit con respecto a los cortes oficiales de la tienda
+          const knownFits = this.storeClothingFits();
+          let rawFit = item.fit ? String(item.fit).trim() : '';
+          let normalizedFit = rawFit;
+          if (rawFit) {
+            const matched = knownFits.find(
+              (kf: string) => kf.toLowerCase() === rawFit.toLowerCase() ||
+                      kf.toLowerCase().replace(/[-_\s]/g, '') === rawFit.toLowerCase().replace(/[-_\s]/g, '')
+            );
+            if (matched) {
+              normalizedFit = matched;
+            }
+          }
+
           return {
             provider: item.provider ? String(item.provider).trim() : '',
             linkProductProvider: item.linkProductProvider ? String(item.linkProductProvider).trim() : '',
@@ -1855,7 +1884,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             material: item.material || '',
             composition: Array.isArray(item.composition) ? item.composition : [],
             careInstructions: Array.isArray(item.careInstructions) ? item.careInstructions : [],
-            fit: item.fit || '',
+            fit: normalizedFit,
             specifications,
             tags,
             seo: { metaTitle, metaDescription },
@@ -1871,6 +1900,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
       } else {
         // Update mode with granular diffing
         const allProducts = this.ProductState.products().data || [];
+        const knownFits = this.storeClothingFits();
         const diffs: any[] = [];
 
         const validated = parsed.map((item: any, idx: number) => {
@@ -1878,7 +1908,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             throw new Error(`Ítem #${idx + 1} (${item.model || 'sin nombre'}) no tiene la propiedad _id.`);
           }
 
-          const orig = allProducts.find((p) => p._id === item._id);
+          const orig = allProducts.find((p: any) => p._id === item._id);
           const changes: Array<{ label: string; text: string; icon: string }> = [];
 
           if (item.costPriceARS !== undefined) {
@@ -1924,10 +1954,18 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             });
           }
 
-          if (item.fit) {
+          if (item.fit !== undefined) {
+            const rawFit = String(item.fit).trim();
+            const matched = knownFits.find(
+              (kf: string) => kf.toLowerCase() === rawFit.toLowerCase() ||
+                      kf.toLowerCase().replace(/[-_\s]/g, '') === rawFit.toLowerCase().replace(/[-_\s]/g, '')
+            );
+            const normalizedFit = matched || rawFit;
+            const isNew = !matched && !!rawFit;
+            item.fit = normalizedFit;
             changes.push({
-              label: 'Calce',
-              text: item.fit,
+              label: 'Calce / Fit',
+              text: isNew ? `${normalizedFit} (✨ Nuevo Calce)` : normalizedFit,
               icon: 'style'
             });
           }

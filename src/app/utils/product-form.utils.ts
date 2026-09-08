@@ -223,7 +223,7 @@ export class ProductFormUtils {
         });
       }
 
-      const originalImageUrls = (originalProduct.images || []).map((img: any) => img.url);
+      const originalImageUrls = (originalProduct.images || []).map((img: any) => img.url || img.secure_url || img);
       const currentImageUrls = productData.images.map((img: any) => img.link);
 
       if (JSON.stringify(originalImageUrls) !== JSON.stringify(currentImageUrls)) {
@@ -231,12 +231,36 @@ export class ProductFormUtils {
         changes.hasChanges = true;
         changes.formData.append('imagesOrder', JSON.stringify(currentImageUrls));
       }
-    }
 
-    if (deletedImages.length > 0) {
-      debugWarn(`[DEBUG] Change detected in deletedImages.`);
-      changes.hasChanges = true;
-      changes.formData.append('deletedImages', JSON.stringify(deletedImages));
+      // Auto-detect deleted images from originalProduct
+      const remainingLinks = new Set(currentImageUrls);
+      const autoDeletedPublicIds: string[] = [];
+      (originalProduct.images || []).forEach((img: any) => {
+        const url = img?.url || img?.secure_url || img;
+        const secUrl = img?.secure_url;
+        const isPresent = remainingLinks.has(url) || (secUrl && remainingLinks.has(secUrl));
+        const pubId = img?.public_id;
+        if (!isPresent && pubId && typeof pubId === 'string' && pubId.trim().length > 0) {
+          autoDeletedPublicIds.push(pubId.trim());
+        }
+      });
+
+      const allDeleted = Array.from(new Set([
+        ...(deletedImages || []).filter(id => typeof id === 'string' && id.trim().length > 0),
+        ...autoDeletedPublicIds
+      ]));
+
+      if (allDeleted.length > 0) {
+        debugWarn(`[DEBUG] Change detected in deletedImages:`, allDeleted);
+        changes.hasChanges = true;
+        changes.formData.append('deletedImages', JSON.stringify(allDeleted));
+      }
+    } else if (deletedImages && deletedImages.length > 0) {
+      const validDeleted = Array.from(new Set(deletedImages.filter(id => typeof id === 'string' && id.trim().length > 0)));
+      if (validDeleted.length > 0) {
+        changes.hasChanges = true;
+        changes.formData.append('deletedImages', JSON.stringify(validDeleted));
+      }
     }
 
     // --- 8. SEO ---

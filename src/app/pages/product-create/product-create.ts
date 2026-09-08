@@ -1425,7 +1425,9 @@ XXL: 58, 76, 52
   });
 
   onImageDeleted(publicId: string) {
-    this.#deletedImages.update((imgs) => [...imgs, publicId]);
+    if (publicId && typeof publicId === 'string' && publicId.trim().length > 0) {
+      this.#deletedImages.update((imgs) => [...imgs, publicId.trim()]);
+    }
     // Clamp color group imageIndex values since the images array shrank
     this.#clampColorGroupImageIndices();
   }

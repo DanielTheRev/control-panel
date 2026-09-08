@@ -63,16 +63,21 @@ export class ImageUploadComponent {
 
   removeImage(index: number) {
     const control = this.imagesControls().at(index);
-    const blobURL = control.value.link;
-    const isBlob = blobURL.startsWith('blob:');
+    const blobURL = control?.value?.link;
+    const isBlob = typeof blobURL === 'string' && blobURL.startsWith('blob:');
 
     if (isBlob) {
       window.URL.revokeObjectURL(blobURL);
-    } else {
+    } else if (blobURL) {
       // It's an existing image from DB
-      const img = this.originalImages().find((img: any) => img.url === blobURL);
-      if (img) {
-        this.imageDeleted.emit(img.public_id);
+      const origs = this.originalImages() || [];
+      const img = origs.find((img: any) =>
+        (img?.url && img.url === blobURL) ||
+        (img?.secure_url && img.secure_url === blobURL) ||
+        img === blobURL
+      );
+      if (img?.public_id && typeof img.public_id === 'string' && img.public_id.trim().length > 0) {
+        this.imageDeleted.emit(img.public_id.trim());
       }
     }
     this.imagesControls().removeAt(index);
