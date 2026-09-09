@@ -332,11 +332,15 @@
                               <span>Vista Rápida</span>
                             </button>
                             <button mat-menu-item (click)="viewProduct(p)">
+                              <mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">description</mat-icon>
+                              <span>Ver Ficha Completa</span>
+                            </button>
+                            <button mat-menu-item (click)="editProduct(p)">
                               <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">edit</mat-icon>
-                              <span>Edición Completa</span>
+                              <span>Editar Completo</span>
                             </button>
                             <button mat-menu-item (click)="copyLink(p)">
-                              <mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">link</mat-icon>
+                              <mat-icon class="text-secondary text-[18px]! w-4.5! h-4.5!">link</mat-icon>
                               <span>Copiar enlace</span>
                             </button>
                             @if (p.status !== 'published') {
@@ -634,8 +638,9 @@
                         </button>
                         <mat-menu #tableMenu="matMenu" class="premium-menu">
                           <button mat-menu-item (click)="openQuickOverview(p)"><mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">visibility</mat-icon><span>Vista Rápida</span></button>
-                          <button mat-menu-item (click)="viewProduct(p)"><mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">edit</mat-icon><span>Edición Completa</span></button>
-                          <button mat-menu-item (click)="copyLink(p)"><mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">link</mat-icon><span>Copiar enlace</span></button>
+                          <button mat-menu-item (click)="viewProduct(p)"><mat-icon class="text-info text-[18px]! w-4.5! h-4.5!">description</mat-icon><span>Ver Ficha Completa</span></button>
+                          <button mat-menu-item (click)="editProduct(p)"><mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">edit</mat-icon><span>Editar Completo</span></button>
+                          <button mat-menu-item (click)="copyLink(p)"><mat-icon class="text-secondary text-[18px]! w-4.5! h-4.5!">link</mat-icon><span>Copiar enlace</span></button>
                           @if (p.status !== 'published') { <button mat-menu-item (click)="setProductStatus(p, 'published')"><mat-icon class="text-emerald-600 text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon><span>Publicar</span></button> }
                           @if (p.status !== 'paused') { <button mat-menu-item (click)="setProductStatus(p, 'paused')"><mat-icon class="text-blue-500 text-[18px]! w-4.5! h-4.5!">pause_circle</mat-icon><span>Pausar</span></button> }
                           @if (p.status !== 'draft') { <button mat-menu-item (click)="setProductStatus(p, 'draft')"><mat-icon class="text-amber-500 text-[18px]! w-4.5! h-4.5!">edit_note</mat-icon><span>Mover a Borrador</span></button> }
@@ -1252,10 +1257,10 @@
             type="button"
             (click)="viewProduct(p)"
             class="btn btn-xs btn-outline border-base-300 gap-1 text-xs font-bold"
-            title="Abrir edición completa en nueva página"
+            title="Ver ficha completa del producto"
           >
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">open_in_new</mat-icon>
-            <span class="hidden sm:inline">Edición completa</span>
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">visibility</mat-icon>
+            <span class="hidden sm:inline">Ver ficha completa</span>
           </button>
           <button
             type="button"
@@ -1458,11 +1463,12 @@
 
         <button
           type="button"
-          (click)="viewProduct(p)"
+          (click)="editProduct(p)"
           class="btn btn-sm btn-primary font-bold gap-1.5 px-4 shadow-sm"
+          title="Editar información y variantes del producto"
         >
           <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
-          <span>Editar Completo</span>
+          <span>Editar completo</span>
         </button>
       </div>
 

@@ -303,6 +303,10 @@ export class ProductList {
     this.#router.navigate(['/home/products', product._id]);
   }
 
+  editProduct(product: IProduct) {
+    this.#router.navigate(['/home/products/edit', product._id]);
+  }
+
   openQuickOverview(product: IProduct, event?: Event) {
     if (event) {
       event.stopPropagation();
