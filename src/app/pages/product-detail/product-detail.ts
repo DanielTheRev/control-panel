@@ -1,5 +1,5 @@
-import { CurrencyPipe, DecimalPipe, NgClass } from '@angular/common';
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { CurrencyPipe, NgClass } from '@angular/common';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -40,6 +40,11 @@ export class ProductDetail implements OnInit {
   #SidebarService = inject(SidebarService);
 
   readonly storeConfig = this.#storeConfigState.StoreConfig;
+
+  readonly isCard1PayDiscount = computed(() => {
+    const config = this.storeConfig()?.config;
+    return Boolean(config?.pricingStrategy?.card1PayDiscount);
+  });
 
   product = signal<IProduct | null>(null);
   isLoading = signal(true);
