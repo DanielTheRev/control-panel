@@ -185,6 +185,12 @@
             <mat-icon>store</mat-icon>
             @if (isExpanded) { <span class="menu-text font-semibold">Ajustes de Tienda</span> }
           </a>
+          <a routerLink="/home/staff" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Equipo & Empleados' : ''" matTooltipPosition="right">
+            <mat-icon>badge</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Equipo & Empleados</span> }
+          </a>
           <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
             [matTooltip]="isCollapsed ? 'Cobros & Pagos' : ''" matTooltipPosition="right">
@@ -364,6 +370,10 @@
             <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item text-primary">
               <mat-icon>store</mat-icon>
               <span class="menu-text font-semibold">Ajustes de Tienda</span>
+            </a>
+            <a routerLink="/home/staff" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>badge</mat-icon>
+              <span class="menu-text">Equipo & Empleados</span>
             </a>
             <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
               <mat-icon>payments</mat-icon>

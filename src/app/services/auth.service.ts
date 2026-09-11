@@ -185,7 +185,11 @@ export class AuthService {
           this.#debug.warn(
             '⚠️ Acceso denegado: Se requieren permisos de administrador',
           );
-          this.router.navigate(['/login']);
+          if (canActivate) {
+            this.router.navigate(['/home/pos']);
+          } else {
+            this.router.navigate(['/login']);
+          }
           return false;
         }
       }),

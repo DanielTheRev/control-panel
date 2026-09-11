@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { redirectLoggedUserGuard } from './guards/redirect-logged-user.guard';
 import { redirectToLoginGuard } from './guards/redirect-to-login.guard';
+import { AuthGuard } from './guards/auth.guard';
 import { ClientOrders } from './pages/client-orders/client-orders';
 import { Login } from './pages/login/login';
 import { MainPage } from './pages/main-page/main-page';
@@ -207,6 +208,12 @@ export const routes: Routes = [
       {
         path: 'settings',
         loadComponent: () => import('./pages/store-settings/store-settings').then(c => c.StoreSettings)
+      },
+      {
+        path: 'staff',
+        title: 'Equipo & Empleados',
+        canActivate: [AuthGuard],
+        loadComponent: () => import('./pages/staff/staff').then(c => c.StaffComponent)
       },
       {
         path: 'cash-register',

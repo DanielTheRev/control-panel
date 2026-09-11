@@ -95,6 +95,41 @@ export class SoundService {
     }
   }
 
+  /**
+   * Reproduce el clásico "bip" de mostrador / pistola láser (~1760 Hz, tono A6 corto y nítido de 70ms).
+   */
+  playScannerBeep(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      this.initAudio();
+      if (!this.audioCtx) return;
+
+      const now = this.audioCtx.currentTime;
+      const osc = this.audioCtx.createOscillator();
+      const gainNode = this.audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1760, now); // Tono agudo y limpio de lector de mostrador
+
+      // Envolvente rápida para evitar clics de audio
+      gainNode.gain.setValueAtTime(0.2, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+
+      osc.connect(gainNode);
+      gainNode.connect(this.audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch (e) {
+      this.#debug.warn('Failed to play scanner beep:', e);
+    }
+  }
+
+  /** Alias amigable para compatibilidad */
+  playSuccessSound(): void {
+    this.playScannerBeep();
+  }
+
   private playChime() {
     try {
       this.initAudio();

@@ -1,0 +1,623 @@
+<app-page-layout>
+  <!-- Encabezado de Página -->
+  <app-page-header
+    header
+    title="Equipo & Empleados"
+    [subtitle]="isLoading() ? 'Cargando equipo...' : totalStaff() + ' miembros registrados en este comercio'"
+  >
+    <div actions class="flex items-center gap-2 flex-wrap">
+      <!-- Buscador -->
+      <label class="input input-sm input-bordered flex items-center gap-2 focus-within:outline-none w-48 sm:w-60">
+        <mat-icon class="text-[15px]! w-4! h-4! text-base-content/40">search</mat-icon>
+        <input
+          type="text"
+          class="grow text-xs"
+          placeholder="Buscar por nombre, email o puesto..."
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+        />
+        @if (searchQuery()) {
+          <button class="btn btn-ghost btn-xs btn-circle" (click)="searchQuery.set('')">
+            <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+          </button>
+        }
+      </label>
+
+      <!-- Botón Refrescar -->
+      <button
+        (click)="loadStaff()"
+        [disabled]="isLoading()"
+        class="btn btn-sm btn-ghost btn-square"
+        title="Actualizar lista"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
+      </button>
+
+      <!-- Botón Crear Nuevo Empleado -->
+      <button (click)="openCreateModal()" class="btn btn-primary btn-sm gap-1.5 font-bold shadow-xs">
+        <mat-icon class="text-[16px]! w-4! h-4!">person_add</mat-icon>
+        <span>Nuevo Empleado</span>
+      </button>
+    </div>
+
+    <!-- Pestañas de Filtro (Submenú) -->
+    <div sub-menu class="flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs overflow-x-auto max-w-full">
+      <button
+        type="button"
+        (click)="filterStatus.set('all')"
+        class="btn btn-xs rounded-xl font-bold transition-all gap-1.5"
+        [class.btn-primary]="filterStatus() === 'all'"
+        [class.btn-ghost]="filterStatus() !== 'all'"
+      >
+        <span>Todos</span>
+        <span class="badge badge-xs font-mono font-bold" [class.badge-primary-content]="filterStatus() === 'all'">{{ totalStaff() }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="filterStatus.set('active')"
+        class="btn btn-xs rounded-xl font-bold transition-all gap-1.5"
+        [class.btn-primary]="filterStatus() === 'active'"
+        [class.btn-ghost]="filterStatus() !== 'active'"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span>Activos</span>
+        <span class="badge badge-xs font-mono font-bold">{{ activeStaff() }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="filterStatus.set('suspended')"
+        class="btn btn-xs rounded-xl font-bold transition-all gap-1.5"
+        [class.btn-primary]="filterStatus() === 'suspended'"
+        [class.btn-ghost]="filterStatus() !== 'suspended'"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+        <span>Suspendidos</span>
+        <span class="badge badge-xs font-mono font-bold">{{ totalStaff() - activeStaff() }}</span>
+      </button>
+    </div>
+  </app-page-header>
+
+  <ng-container content>
+    <div class="space-y-4">
+      <!-- Mini Strip de Métricas (Sobrio, Tidy, Minimalista) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-base-100 p-3 rounded-xl border border-base-200/80 shadow-2xs flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-base-200 text-base-content/70 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">badge</mat-icon>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Total Equipo</span>
+            <span class="text-base font-bold font-mono text-base-content">{{ totalStaff() }}</span>
+          </div>
+        </div>
+
+        <div class="bg-base-100 p-3 rounded-xl border border-base-200/80 shadow-2xs flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Accesos Activos</span>
+            <span class="text-base font-bold font-mono text-emerald-600">{{ activeStaff() }}</span>
+          </div>
+        </div>
+
+        <div class="bg-base-100 p-3 rounded-xl border border-base-200/80 shadow-2xs flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">point_of_sale</mat-icon>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Cajeros / Mostrador</span>
+            <span class="text-base font-bold font-mono text-base-content">{{ cashiersCount() }}</span>
+          </div>
+        </div>
+
+        <div class="bg-base-100 p-3 rounded-xl border border-base-200/80 shadow-2xs flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">pin</mat-icon>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Con PIN de Caja</span>
+            <span class="text-base font-bold font-mono text-indigo-600">{{ withPinCount() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado: Cargando Skeletons -->
+      @if (isLoading()) {
+        <div class="bg-base-100 rounded-xl border border-base-200 p-4 space-y-3">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="skeleton w-full h-12 rounded-lg"></div>
+          }
+        </div>
+      } @else if (filteredStaff().length === 0) {
+        <!-- Estado: Vacío / Sin resultados -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 p-12 text-center flex flex-col items-center justify-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-base-200/60 flex items-center justify-center text-base-content/40">
+            <mat-icon class="text-[28px]! w-7! h-7!">group_off</mat-icon>
+          </div>
+          <h3 class="text-sm font-bold text-base-content">
+            @if (searchQuery()) {
+              No se encontraron empleados con "{{ searchQuery() }}"
+            } @else {
+              Aún no diste de alta a ningún empleado
+            }
+          </h3>
+          <p class="text-xs text-base-content/60 max-w-sm">
+            @if (searchQuery()) {
+              Probá ajustando los términos de búsqueda o limpiá el filtro.
+            } @else {
+              Agregá a los cajeros o encargados de tu negocio para que puedan operar el punto de venta de forma segura.
+            }
+          </p>
+          @if (searchQuery()) {
+            <button class="btn btn-sm btn-ghost gap-1.5 text-xs" (click)="searchQuery.set('')">
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">filter_alt_off</mat-icon> Limpiar búsqueda
+            </button>
+          } @else {
+            <button class="btn btn-primary btn-sm gap-1.5 font-bold" (click)="openCreateModal()">
+              <mat-icon class="text-[16px]! w-4! h-4!">person_add</mat-icon> Crear Primer Empleado
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- Tabla Desktop (md+) -->
+        <div class="hidden md:block bg-base-100 rounded-xl border border-base-200/80 shadow-2xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="table table-sm w-full">
+              <thead>
+                <tr class="bg-base-200/40 border-b border-base-200">
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider pl-4 py-3">Empleado</th>
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider py-3">Contacto</th>
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider py-3">Puesto & Rol</th>
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider py-3">PIN Mostrador</th>
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider py-3">Estado</th>
+                  <th class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider py-3 text-right pr-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (staff of filteredStaff(); track staff._id) {
+                  <tr class="hover:bg-base-200/30 transition-colors border-b border-base-200/60 last:border-none">
+                    <!-- Empleado / Nombre -->
+                    <td class="pl-4 py-3">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                          {{ getInitials(staff.name, staff.lastName) }}
+                        </div>
+                        <div class="min-w-0">
+                          <span class="font-bold text-xs text-base-content block truncate">
+                            {{ staff.name }} {{ staff.lastName }}
+                          </span>
+                          <span class="text-[11px] text-base-content/50 font-mono block truncate">
+                            {{ staff.email }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Contacto / Tel / DNI -->
+                    <td class="py-3">
+                      <div class="flex flex-col text-[11px]">
+                        @if (staff.phone) {
+                          <span class="text-base-content/80 font-mono">{{ staff.phone }}</span>
+                        } @else {
+                          <span class="text-base-content/30 italic">Sin teléfono</span>
+                        }
+                        @if (staff.dni) {
+                          <span class="text-base-content/40 font-mono text-[10px]">DNI: {{ staff.dni }}</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Puesto y Rol -->
+                    <td class="py-3">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="badge badge-sm badge-ghost font-medium text-[11px]">
+                          {{ staff.position || 'Cajero' }}
+                        </span>
+                        @if (staff.role === 'admin') {
+                          <span class="badge badge-sm badge-neutral font-bold text-[9px] uppercase tracking-wider">
+                            Admin
+                          </span>
+                        } @else {
+                          <span class="badge badge-sm bg-base-200 text-base-content/70 font-semibold text-[9px] uppercase tracking-wider border-base-300">
+                            Empleado
+                          </span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- PIN Mostrador -->
+                    <td class="py-3">
+                      @if (staff.hasPin) {
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-mono font-semibold" title="PIN de 4 dígitos configurado para acceso rápido">
+                          <mat-icon class="text-[12px]! w-3! h-3!">lock</mat-icon>
+                          <span>PIN Activo</span>
+                        </div>
+                      } @else {
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-base-200 text-base-content/40 border border-base-300 text-[10px] font-mono" title="Este empleado aún no tiene PIN configurado">
+                          <mat-icon class="text-[12px]! w-3! h-3!">lock_open</mat-icon>
+                          <span>Sin PIN</span>
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Estado (Activo / Suspendido) -->
+                    <td class="py-3">
+                      <button
+                        type="button"
+                        (click)="toggleStatus(staff, $event)"
+                        class="btn btn-xs rounded-full gap-1.5 font-bold transition-all"
+                        [class.btn-success]="staff.isActive"
+                        [class.btn-soft]="staff.isActive"
+                        [class.btn-error]="!staff.isActive"
+                        [class.btn-outline]="!staff.isActive"
+                        [matTooltip]="staff.isActive ? 'Clic para revocar acceso' : 'Clic para reactivar acceso'"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full" [class.bg-success]="staff.isActive" [class.bg-error]="!staff.isActive"></span>
+                        <span>{{ staff.isActive ? 'Activo' : 'Suspendido' }}</span>
+                      </button>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td class="py-3 text-right pr-4">
+                      <div class="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-base-content"
+                          (click)="openEditModal(staff)"
+                          matTooltip="Editar datos o resetear clave/PIN"
+                        >
+                          <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs btn-square text-rose-500 hover:bg-rose-500/10"
+                          (click)="confirmDelete(staff, $event)"
+                          matTooltip="Eliminar empleado"
+                        >
+                          <mat-icon class="text-[16px]! w-4! h-4!">delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tarjetas Mobile (pantallas chicas) -->
+        <div class="grid grid-cols-1 gap-2.5 md:hidden">
+          @for (staff of filteredStaff(); track staff._id) {
+            <div class="bg-base-100 p-3.5 rounded-xl border border-base-200/80 shadow-2xs flex flex-col gap-2.5">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-full bg-primary/10 text-primary font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                    {{ getInitials(staff.name, staff.lastName) }}
+                  </div>
+                  <div class="min-w-0">
+                    <span class="font-bold text-xs text-base-content block truncate">
+                      {{ staff.name }} {{ staff.lastName }}
+                    </span>
+                    <span class="text-[11px] text-base-content/50 font-mono block truncate">
+                      {{ staff.email }}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="toggleStatus(staff, $event)"
+                  class="btn btn-xs rounded-full gap-1 font-bold shrink-0"
+                  [class.btn-success]="staff.isActive"
+                  [class.btn-soft]="staff.isActive"
+                  [class.btn-error]="!staff.isActive"
+                  [class.btn-outline]="!staff.isActive"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [class.bg-success]="staff.isActive" [class.bg-error]="!staff.isActive"></span>
+                  <span>{{ staff.isActive ? 'Activo' : 'Suspendido' }}</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-base-200/60">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="badge badge-sm badge-ghost text-[10px] font-medium">
+                    {{ staff.position || 'Cajero' }}
+                  </span>
+                  @if (staff.hasPin) {
+                    <span class="badge badge-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-mono text-[9px]">
+                      🔒 PIN OK
+                    </span>
+                  }
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square"
+                    (click)="openEditModal(staff)"
+                  >
+                    <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square text-rose-500"
+                    (click)="confirmDelete(staff, $event)"
+                  >
+                    <mat-icon class="text-[16px]! w-4! h-4!">delete_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </ng-container>
+</app-page-layout>
+
+<!-- ========================================================== -->
+<!-- MODAL: CREAR / EDITAR EMPLEADO                            -->
+<!-- ========================================================== -->
+@if (showModal()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-xl bg-base-100 border border-base-200 shadow-xl p-5">
+      <div class="flex items-center justify-between pb-3 border-b border-base-200 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">
+              {{ editingStaff() ? 'manage_accounts' : 'person_add' }}
+            </mat-icon>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-base-content">
+              {{ editingStaff() ? 'Editar Empleado' : 'Dar de Alta Empleado' }}
+            </h3>
+            <p class="text-[11px] text-base-content/50">
+              {{ editingStaff() ? 'Actualizá los datos de acceso o el PIN del mostrador' : 'Creá una cuenta para tu personal de mostrador o caja' }}
+            </p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="closeModal()" [disabled]="isSaving()">
+          <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="staffForm" (ngSubmit)="onSubmit()" class="space-y-3.5">
+        <!-- Fila 1: Nombre y Apellido -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Nombre *</span>
+            </label>
+            <input
+              type="text"
+              formControlName="name"
+              placeholder="Ej: Lucas"
+              class="input input-sm input-bordered w-full text-xs"
+              [class.input-error]="staffForm.get('name')?.invalid && staffForm.get('name')?.touched"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Apellido</span>
+            </label>
+            <input
+              type="text"
+              formControlName="lastName"
+              placeholder="Ej: Gómez"
+              class="input input-sm input-bordered w-full text-xs"
+            />
+          </div>
+        </div>
+
+        <!-- Fila 2: Email & Teléfono -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Email de Acceso *</span>
+            </label>
+            <input
+              type="email"
+              formControlName="email"
+              placeholder="lucas@tutienda.com"
+              class="input input-sm input-bordered w-full text-xs font-mono"
+              [class.input-error]="staffForm.get('email')?.invalid && staffForm.get('email')?.touched"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Teléfono / WhatsApp</span>
+            </label>
+            <input
+              type="tel"
+              formControlName="phone"
+              placeholder="Ej: +54 9 11 2345-6789"
+              class="input input-sm input-bordered w-full text-xs font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Fila 3: Puesto y Rol -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Puesto en el Negocio *</span>
+            </label>
+            <select formControlName="position" class="select select-sm select-bordered w-full text-xs font-medium">
+              <option value="Cajero Mostrador">Cajero Mostrador</option>
+              <option value="Vendedor de Salón">Vendedor de Salón</option>
+              <option value="Encargado / Supervisor">Encargado / Supervisor</option>
+              <option value="Repositor / Depósito">Repositor / Depósito</option>
+              <option value="Atención al Cliente">Atención al Cliente</option>
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Nivel de Rol *</span>
+            </label>
+            <select formControlName="role" class="select select-sm select-bordered w-full text-xs font-medium">
+              <option value="employee">Empleado (Solo POS & Caja)</option>
+              <option value="admin">Administrador (Acceso Total)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 4: Contraseña de Login -->
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">
+              {{ editingStaff() ? 'Nueva Contraseña (opcional)' : 'Contraseña de Acceso *' }}
+            </span>
+            <span class="label-text-alt text-[10px] text-base-content/40">Mínimo 6 caracteres</span>
+          </label>
+          <div class="relative">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="{{ editingStaff() ? 'Dejar en blanco para conservar la actual' : '••••••••' }}"
+              class="input input-sm input-bordered w-full text-xs font-mono pr-8"
+              [class.input-error]="staffForm.get('password')?.invalid && staffForm.get('password')?.touched"
+            />
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2"
+              (click)="showPassword.set(!showPassword())"
+            >
+              <mat-icon class="text-[15px]! w-4! h-4! text-base-content/40">
+                {{ showPassword() ? 'visibility_off' : 'visibility' }}
+              </mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Fila 5: PIN de Mostrador (4 a 6 dígitos) -->
+        <div class="bg-base-200/40 p-3 rounded-xl border border-base-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-primary">pin</mat-icon>
+                PIN Rápido de Mostrador (POS)
+              </span>
+              <p class="text-[10px] text-base-content/50">
+                4 a 6 números para desbloquear o cambiar de cajero en la compu del local sin escribir clave larga.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-xs btn-ghost gap-1 text-[11px] font-bold text-primary"
+              (click)="generateRandomPin()"
+              title="Generar PIN aleatorio"
+            >
+              <mat-icon class="text-[13px]! w-3.5! h-3.5!">casino</mat-icon>
+              <span>Generar</span>
+            </button>
+          </div>
+
+          <div class="relative max-w-xs">
+            <input
+              [type]="showPin() ? 'text' : 'password'"
+              formControlName="pinCode"
+              placeholder="Ej: 4821"
+              maxlength="6"
+              class="input input-sm input-bordered w-full text-center font-mono font-bold tracking-widest text-sm"
+              [class.input-error]="staffForm.get('pinCode')?.invalid && staffForm.get('pinCode')?.touched"
+            />
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2"
+              (click)="showPin.set(!showPin())"
+            >
+              <mat-icon class="text-[15px]! w-4! h-4! text-base-content/40">
+                {{ showPin() ? 'visibility_off' : 'visibility' }}
+              </mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Fila 6: Estado Activo -->
+        @if (editingStaff()) {
+          <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-200/30 border border-base-200">
+            <div>
+              <span class="text-xs font-bold text-base-content block">Acceso Habilitado</span>
+              <span class="text-[10px] text-base-content/50">Si lo desactivás, el empleado no podrá iniciar sesión en la web ni en la app.</span>
+            </div>
+            <input type="checkbox" formControlName="isActive" class="toggle toggle-sm toggle-success" />
+          </div>
+        }
+
+        <!-- Botones de Acción del Modal -->
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost text-xs"
+            (click)="closeModal()"
+            [disabled]="isSaving()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-sm btn-primary gap-1.5 text-xs font-bold shadow-xs"
+            [disabled]="isSaving() || staffForm.invalid"
+          >
+            @if (isSaving()) {
+              <span class="loading loading-spinner loading-xs"></span>
+              <span>Guardando...</span>
+            } @else {
+              <mat-icon class="text-[15px]! w-4! h-4!">save</mat-icon>
+              <span>{{ editingStaff() ? 'Guardar Cambios' : 'Dar de Alta' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ========================================================== -->
+<!-- MODAL: CONFIRMAR ELIMINACIÓN                              -->
+<!-- ========================================================== -->
+@if (showDeleteModal()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-sm bg-base-100 border border-base-200 shadow-xl p-5 text-center">
+      <div class="w-11 h-11 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center mx-auto mb-3">
+        <mat-icon class="text-[22px]! w-5.5! h-5.5!">delete_forever</mat-icon>
+      </div>
+      <h3 class="font-bold text-sm text-base-content">¿Eliminar empleado?</h3>
+      <p class="text-xs text-base-content/60 mt-1 mb-4">
+        Estás por eliminar a <strong class="text-base-content">{{ staffToDelete()?.name }} {{ staffToDelete()?.lastName }}</strong> ({{ staffToDelete()?.email }}). Esta acción no se puede deshacer.
+      </p>
+
+      <div class="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost text-xs"
+          (click)="cancelDelete()"
+          [disabled]="isSaving()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-error text-xs font-bold gap-1 shadow-xs"
+          (click)="executeDelete()"
+          [disabled]="isSaving()"
+        >
+          @if (isSaving()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Eliminando...</span>
+          } @else {
+            <mat-icon class="text-[15px]! w-4! h-4!">delete</mat-icon>
+            <span>Eliminar</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

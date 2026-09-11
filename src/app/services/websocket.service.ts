@@ -40,6 +40,12 @@ export class WebSocketService {
     (this._wsState().notifications as INotification[]).slice(0, 50)
   );
 
+  // Scanner status para terminales POS
+  public activeScannersCount = signal<number>(0);
+  public activeScanners = signal<any[]>([]);
+  public isScannerConnected = computed(() => this.activeScannersCount() > 0);
+  private currentTerminalId: string | null = null;
+
   constructor(private authService: AuthService) {
     this.#debug.log('🔌 Inicializando WebSocketService');
     effect(() => {
@@ -86,10 +92,15 @@ export class WebSocketService {
 
     this.socket.on('connect', () => {
       this.updateConnectionState(true);
+      if (this.currentTerminalId) {
+        this.joinPosTerminal(this.currentTerminalId);
+      }
     });
 
     this.socket.on('disconnect', () => {
       this.updateConnectionState(false);
+      this.activeScannersCount.set(0);
+      this.activeScanners.set([]);
     });
 
     // Unificada: Notificación de Admin
@@ -109,6 +120,13 @@ export class WebSocketService {
     this.socket.on('pos:barcode_scanned', (data: { barcode: string; deviceId?: string }) => {
       this.#debug.log('📷 Código de barras escaneado remotamente:', data);
       this.barcodeScanned$.next(data);
+    });
+
+    // Evento de estado de escáneres móviles conectados
+    this.socket.on('pos:scanner_status', (data: { connected: boolean; scannersCount: number; scanners: any[]; terminalId?: string }) => {
+      this.#debug.log('📱 Estado de escáneres remotos:', data);
+      this.activeScannersCount.set(data?.scannersCount || 0);
+      this.activeScanners.set(data?.scanners || []);
     });
   }
 
@@ -184,6 +202,14 @@ export class WebSocketService {
 
   onBarcodeScanned(): Observable<{ barcode: string; deviceId?: string }> {
     return this.barcodeScanned$.asObservable();
+  }
+
+  joinPosTerminal(terminalId: string): void {
+    this.currentTerminalId = terminalId;
+    if (this.socket?.connected) {
+      const tenantId = getTenantSlug();
+      this.socket.emit('pos:join_terminal', { terminalId, tenantSlug: tenantId });
+    }
   }
 
   markAsRead(notificationId?: string): void {

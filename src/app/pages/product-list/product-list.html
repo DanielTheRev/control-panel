@@ -859,12 +859,12 @@
 
           <!-- Selector de Propiedades Específicas para Actualizar (Scope Selector) -->
           @if (aiBulkMode() === 'update') {
-            <div class="space-y-2 bg-base-100 p-3 rounded-xl border border-base-300/80">
+            <div class="space-y-2.5 bg-base-100 p-3 rounded-xl border border-base-300/80">
               <div class="flex items-center justify-between flex-wrap gap-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
                     <mat-icon class="text-[15px]! w-4! h-4! text-primary">checklist</mat-icon>
-                    <span>Propiedades a modificar:</span>
+                    <span>Propiedades a modificar ({{ selectedScopeProperties().length }} activas):</span>
                   </span>
                   <span
                     class="badge badge-xs font-semibold"
@@ -873,18 +873,67 @@
                     {{ selectedProductsTypesSummary().isMixed ? '🌈 ' + selectedProductsTypesSummary().breakdown : '📦 ' + selectedProductsTypesSummary().breakdown }}
                   </span>
                 </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    (click)="toggleAllScopeProperties()"
+                    class="btn btn-xs btn-ghost text-primary font-bold hover:bg-primary/10"
+                  >
+                    {{ isAllScopePropertiesSelected() ? 'Deseleccionar Todos' : 'Seleccionar Todos (' + availableScopeProperties.length + ')' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Atajos de Selección Rápida por Rubro -->
+              <div class="flex items-center gap-1 flex-wrap text-[10px] pb-1 border-b border-base-200">
+                <span class="font-bold text-base-content/50 uppercase tracking-wider mr-1">Recomendados:</span>
                 <button
                   type="button"
-                  (click)="toggleAllScopeProperties()"
-                  class="btn btn-xs btn-ghost text-primary font-bold hover:bg-primary/10"
+                  (click)="selectRecommendedPropertiesForRubro('clothing')"
+                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
                 >
-                  {{ isAllScopePropertiesSelected() ? 'Deseleccionar Todos' : 'Seleccionar Todos (' + availableScopeProperties.length + ')' }}
+                  👕 Indumentaria
                 </button>
+                <button
+                  type="button"
+                  (click)="selectRecommendedPropertiesForRubro('tech')"
+                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                >
+                  💻 Tecnología
+                </button>
+                <button
+                  type="button"
+                  (click)="selectRecommendedPropertiesForRubro('beauty')"
+                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                >
+                  🌸 Belleza
+                </button>
+                <button
+                  type="button"
+                  (click)="selectRecommendedPropertiesForRubro('general')"
+                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                >
+                  📦 Bazar / General
+                </button>
+              </div>
+
+              <!-- Filtro de Categorías de Propiedades -->
+              <div class="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar">
+                @for (cat of scopeCategories; track cat.id) {
+                  <button
+                    type="button"
+                    (click)="selectedScopeCategory.set(cat.id)"
+                    class="btn btn-xs rounded-lg transition-all text-[11px] font-semibold cursor-pointer shrink-0"
+                    [ngClass]="selectedScopeCategory() === cat.id ? 'btn-neutral shadow-2xs font-bold' : 'btn-ghost text-base-content/60 hover:bg-base-200'"
+                  >
+                    <span>{{ cat.label }}</span>
+                  </button>
+                }
               </div>
 
               <!-- Chips de propiedades seleccionables -->
               <div class="flex flex-wrap gap-1.5 pt-0.5">
-                @for (prop of availableScopeProperties; track prop.key) {
+                @for (prop of filteredScopeProperties(); track prop.key) {
                   <button
                     type="button"
                     (click)="toggleScopeProperty(prop.key)"
@@ -940,6 +989,34 @@
             </div>
           </div>
 
+          <!-- Switch de Modo de Respuesta: Estricto vs Conversacional -->
+          <div class="flex items-center justify-between p-3 bg-base-100 rounded-xl border border-base-300/80 transition-all">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 border border-purple-500/20">
+                <mat-icon class="text-[17px]! w-4.5! h-4.5!">chat</mat-icon>
+              </div>
+              <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-base-content">Permitir conversación fluida con la IA</span>
+                  <span class="badge badge-xs" [ngClass]="aiConversationalMode() ? 'badge-primary' : 'badge-ghost text-base-content/50'">
+                    {{ aiConversationalMode() ? 'Conversacional' : 'Solo JSON' }}
+                  </span>
+                </div>
+                <span class="text-[11px] text-base-content/60">
+                  {{ aiConversationalMode() 
+                    ? 'La IA puede responderte con saludos, consejos y sugerencias incluyendo el bloque JSON.' 
+                    : 'La IA responderá estrictamente el bloque JSON puro sin explicaciones ni saludos.' }}
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              [checked]="aiConversationalMode()"
+              (change)="aiConversationalMode.set($any($event.target).checked)"
+              class="toggle toggle-sm toggle-primary cursor-pointer shrink-0 ml-3"
+            />
+          </div>
+
           <!-- Vocabulario Oficial de la Tienda (Calces Registrados) -->
           <div class="bg-base-100 p-3 rounded-xl border border-base-300/80 space-y-2">
             <div class="flex items-center justify-between">
@@ -987,7 +1064,19 @@
                 <span class="badge badge-xs badge-neutral font-mono">fit (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">material (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">composition: [ {{ '{' }} material, percentage {{ '}' }} ]</span>
-                <span class="badge badge-xs badge-neutral font-mono">careInstructions (string[])</span>
+                <span class="badge badge-xs badge-neutral font-mono">processor (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">ram (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">storage (string[])</span>
+                <span class="badge badge-xs badge-neutral font-mono">screenSize (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">os (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">connectivity (string[])</span>
+                <span class="badge badge-xs badge-neutral font-mono">volume (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">concentration (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">fragranceFamily (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">applicationArea (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">barcode (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">weight (string)</span>
+                <span class="badge badge-xs badge-neutral font-mono">unit (string)</span>
                 <span class="badge badge-xs badge-neutral font-mono">linkProductProvider (string URL)</span>
                 <span class="badge badge-xs badge-ghost font-mono">status: "draft" (Borrador)</span>
               </div>
@@ -997,12 +1086,17 @@
 
         <!-- PASO 2: Pegar Respuesta de la IA -->
         <div class="space-y-2">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <span class="w-6 h-6 rounded-full bg-primary text-primary-content text-xs font-black flex items-center justify-center">2</span>
-              <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
-                Pegá la respuesta JSON de la IA
-              </h4>
+              <div>
+                <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
+                  Pegá el bloque JSON devuelto por la IA
+                </h4>
+                <p class="text-[11px] text-base-content/60">
+                  Tocá el botón <strong>"Copiar código"</strong> en ChatGPT / Gemini y pegalo acá (no copies saludos ni texto de la conversación).
+                </p>
+              </div>
             </div>
             <button
               type="button"
@@ -1019,7 +1113,7 @@
             (ngModelChange)="aiRawInput.set($event)"
             rows="6"
             class="textarea textarea-bordered w-full font-mono text-xs rounded-xl bg-base-200/30"
-            placeholder="Pegá acá el JSON que te devolvió ChatGPT [ { &quot;model&quot;: &quot;...&quot;, &quot;variants&quot;: [...] } ]..."
+            placeholder="Pegá acá únicamente el bloque de código JSON [ { &quot;model&quot;: &quot;...&quot; } ]..."
           ></textarea>
 
           @if (aiParseError()) {

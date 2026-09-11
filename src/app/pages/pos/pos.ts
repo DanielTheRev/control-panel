@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal, computed, DestroyRef, HostListener } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { ProductService } from '../../services/product.service';
@@ -8,10 +9,12 @@ import { OrdersService } from '../../services/orders.service';
 import { CashRegisterStoreService } from '../../states/cash-register.state.service';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { WebSocketService } from '../../services/websocket.service';
+import { SoundService } from '../../services/sound.service';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationsService } from '../../services/notifications.service';
+import { environment } from '../../../environments/environment';
 
 export interface CartItem {
   cartItemId: string;
@@ -33,10 +36,23 @@ export class PosComponent implements OnInit {
   private productService = inject(ProductService);
   private ordersService = inject(OrdersService);
   private notifications = inject(NotificationsService);
-  private wsService = inject(WebSocketService);
+  public wsService = inject(WebSocketService);
+  private soundService = inject(SoundService);
+  private http = inject(HttpClient);
   private destroyRef = inject(DestroyRef);
   public cashStore = inject(CashRegisterStoreService);
   public storeConfigStore = inject(StoreConfigStateService);
+
+  // Terminal & Scanner Remoto
+  terminalId = signal<string>('CAJA-01');
+  showPairingModal = signal<boolean>(false);
+  pairingLoading = signal<boolean>(false);
+  pairingData = signal<any>(null);
+  pairingQrImageUrl = computed(() => {
+    const data = this.pairingData()?.qrPayload || '';
+    if (!data) return '';
+    return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(data)}`;
+  });
 
   // Barcode scanner buffer & state
   private barcodeBuffer = '';
@@ -148,15 +164,56 @@ export class PosComponent implements OnInit {
   }
 
   setupBarcodeScanner(): void {
+    // Sincronizar terminal de mostrador en la sala de WebSocket
+    this.wsService.joinPosTerminal(this.terminalId());
+
     this.wsService
       .onBarcodeScanned()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ barcode }) => {
         if (barcode) {
+          // Bip acústico de mostrador / pistola láser en parlantes de la PC
+          this.soundService.playScannerBeep();
           this.notifications.info(`📷 Escaneado desde móvil: ${barcode}`);
           this.handleScannedBarcode(barcode.trim());
         }
       });
+  }
+
+  openPairingModal(): void {
+    this.showPairingModal.set(true);
+    this.pairingLoading.set(true);
+
+    this.http
+      .get<any>(`${environment.apiUrl}/pos/pairing?terminalId=${this.terminalId()}`)
+      .subscribe({
+        next: (res) => {
+          this.pairingData.set(res.data);
+          this.pairingLoading.set(false);
+        },
+        error: () => {
+          // Fallback offline con carga local
+          const fallbackData = {
+            tenantSlug: 'vura',
+            terminalId: this.terminalId(),
+            pairingCode: `VURA-${this.terminalId()}`,
+            qrPayload: JSON.stringify({
+              type: 'NEXO_POS_TERMINAL',
+              version: '1.0',
+              action: 'pos_pair',
+              tenant: 'vura',
+              terminalId: this.terminalId(),
+              timestamp: Date.now(),
+            }),
+          };
+          this.pairingData.set(fallbackData);
+          this.pairingLoading.set(false);
+        },
+      });
+  }
+
+  closePairingModal(): void {
+    this.showPairingModal.set(false);
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -205,6 +262,7 @@ export class PosComponent implements OnInit {
     });
 
     if (localProduct) {
+      this.soundService.playScannerBeep();
       const matchedVariant = localProduct.variants?.find(
         (v: any) => v.barcode === barcode,
       );
@@ -219,6 +277,7 @@ export class PosComponent implements OnInit {
     this.productService.getProductByBarcode(barcode).subscribe({
       next: ({ product, matchedVariant }) => {
         if (product) {
+          this.soundService.playScannerBeep();
           this.addVariantToCart(product, matchedVariant || null);
         } else {
           this.notifications.error(

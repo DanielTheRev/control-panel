@@ -52,14 +52,32 @@
         </div>
       }
 
-      <!-- Indicador Escáner Remoto / Pistola -->
-      <div
-        class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-xl border border-primary/20 text-xs font-bold shadow-2xs"
-        title="Lector de código de barras USB y escáner móvil inalámbrico activos"
-      >
-        <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">qr_code_scanner</mat-icon>
-        <span>Lector Listo</span>
-      </div>
+      <!-- Indicador / Botón Escáner Móvil (QR Pairing) -->
+      @if (wsService.isScannerConnected()) {
+        <button
+          type="button"
+          (click)="openPairingModal()"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/20 text-xs font-bold shadow-2xs hover:bg-emerald-500/20 transition-colors cursor-pointer"
+          title="Celular emparejado como pistola escáner. Clic para ver detalles o vincular otro."
+        >
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">smartphone</mat-icon>
+          <span>{{ wsService.activeScannersCount() }} Móvil Activo</span>
+        </button>
+      } @else {
+        <button
+          type="button"
+          (click)="openPairingModal()"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-base-200 text-base-content/70 hover:text-base-content hover:bg-base-300 rounded-xl border border-base-300/80 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+          title="Clic para mostrar código QR y vincular celular como lector de código de barras"
+        >
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
+          <span>Vincular Celular</span>
+        </button>
+      }
 
       <button
         type="button"
@@ -781,6 +799,91 @@
             </button>
           </div>
 
+        </div>
+      </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: VINCULAR CELULAR / ESCÁNER REMOTO (QR)                             -->
+    <!-- ========================================================================= -->
+    @if (showPairingModal()) {
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-scale-up relative">
+          <!-- Botón Cerrar -->
+          <button
+            type="button"
+            (click)="closePairingModal()"
+            class="btn btn-ghost btn-xs btn-circle absolute right-3 top-3 text-base-content/50 hover:text-base-content"
+          >
+            <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+          </button>
+
+          <!-- Encabezado Modal -->
+          <div class="text-center space-y-1">
+            <div class="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
+              <mat-icon class="text-[24px]! w-6! h-6!">smartphone</mat-icon>
+            </div>
+            <h3 class="text-base font-bold text-base-content">Vincular Celular (Pistola)</h3>
+            <p class="text-xs text-base-content/60">
+              Abrí la app en el celular y escaneá este QR para sincronizarlo con esta caja.
+            </p>
+          </div>
+
+          <!-- Contenedor QR -->
+          <div class="p-3 bg-white rounded-2xl border border-base-300 shadow-inner flex flex-col items-center justify-center min-h-[220px]">
+            @if (pairingLoading()) {
+              <div class="flex flex-col items-center gap-2 py-8">
+                <span class="loading loading-spinner loading-md text-primary"></span>
+                <span class="text-xs text-base-content/60 font-medium">Generando QR...</span>
+              </div>
+            } @else if (pairingQrImageUrl()) {
+              <img
+                [src]="pairingQrImageUrl()"
+                alt="Código QR de Vinculación"
+                class="w-52 h-52 object-contain rounded-lg select-none"
+              />
+            } @else {
+              <div class="text-center py-8 text-xs text-base-content/50">
+                <span>No se pudo generar el código QR</span>
+              </div>
+            }
+          </div>
+
+          <!-- Información de Terminal -->
+          <div class="flex items-center justify-between px-3 py-2 bg-base-200/50 rounded-xl border border-base-200 text-xs">
+            <span class="text-base-content/60 font-medium">Terminal activa:</span>
+            <span class="font-mono font-bold text-primary">{{ terminalId() }}</span>
+          </div>
+
+          <!-- Estado de Conexión en Tiempo Real -->
+          @if (wsService.isScannerConnected()) {
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs flex items-center gap-2.5 animate-fade-in">
+              <span class="relative flex h-2.5 w-2.5 shrink-0">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <div class="min-w-0">
+                <span class="font-bold block">¡Celular Conectado!</span>
+                <span class="text-[11px] opacity-80 block truncate">
+                  {{ wsService.activeScanners()[0]?.deviceName || 'Lector Android activo y listo' }}
+                </span>
+              </div>
+            </div>
+          } @else {
+            <div class="p-2.5 rounded-xl bg-base-200/40 border border-base-200 text-base-content/60 text-xs flex items-center justify-center gap-2 text-center">
+              <span class="w-2 h-2 rounded-full bg-base-content/30 animate-pulse"></span>
+              <span>Esperando que el celular escanee el QR...</span>
+            </div>
+          }
+
+          <!-- Botón Finalizar -->
+          <button
+            type="button"
+            (click)="closePairingModal()"
+            class="btn btn-primary btn-sm w-full rounded-xl font-bold text-xs"
+          >
+            Listo / Continuar en Mostrador
+          </button>
         </div>
       </div>
     }

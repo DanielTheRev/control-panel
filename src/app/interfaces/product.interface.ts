@@ -88,6 +88,7 @@ export interface IProduct {
   features: string[];
   specifications: { key: string; value: string }[];
   variants: IVariant[];
+  tags?: string[];
   lowStockThreshold?: number;
   status: ProductStatus;
   isFeatured?: boolean;
@@ -251,6 +252,7 @@ export interface IProductCreateDTO {
   productType: ProductType;
   brand: string;
   model: string;
+  subtitle?: string;
   shortDescription: string;
   largeDescription: string;
   price: number;
@@ -264,6 +266,7 @@ export interface IProductCreateDTO {
   features: string[];
   specifications: { key: string; value: string }[];
   variants: IVariant[];
+  tags?: string[];
   // Tech
   storage?: string[];
   ram?: string;
@@ -277,12 +280,20 @@ export interface IProductCreateDTO {
   material?: string;
   composition?: { material: string; percentage: number }[];
   sizeType?: string;
+  season?: string;
+  sizeGuide?: ISizeGuide;
   careInstructions?: string[];
   seo?: IProductSeo;
+  // Beauty
+  volume?: string;
+  concentration?: string;
+  fragranceFamily?: string;
+  applicationArea?: string;
   // General / Kiosco
   barcode?: string;
   isSoldByWeight?: boolean;
   unit?: string;
+  weight?: string;
   stock?: number;
   // Nuevos campos
   additionalCosts?: string;

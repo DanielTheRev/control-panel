@@ -999,6 +999,7 @@ export class ProductList {
   aiParseError = signal<string | null>(null);
   aiPromptCopied = signal<boolean>(false);
   aiProcessing = signal<boolean>(false);
+  aiConversationalMode = signal<boolean>(false);
 
   storeClothingFits = computed(() => {
     const config = this.#StoreConfigState.StoreConfig().config;
@@ -1015,12 +1016,41 @@ export class ProductList {
   get availableScopeProperties() {
     const fitsList = this.storeClothingFits().join(', ');
     return [
+      // 🌐 GENERALES & COMERCIALES
+      {
+        key: 'model',
+        payloadKey: 'model',
+        label: '🏷️ Nombre / Modelo',
+        category: 'general',
+        type: 'string',
+        explanation: 'Nombre o modelo comercial.',
+        example: 'Remera Oversize Vesper'
+      },
+      {
+        key: 'subtitle',
+        payloadKey: 'subtitle',
+        label: '📌 Subtítulo / Frase Comercial',
+        category: 'general',
+        type: 'string',
+        explanation: 'Subtítulo breve o bajada comercial del producto.',
+        example: 'Edición Limitada 2026'
+      },
+      {
+        key: 'costPriceARS',
+        payloadKey: 'costPriceARS',
+        label: '💵 Costo Proveedor ($ ARS)',
+        category: 'general',
+        type: 'number',
+        explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta, cuotas y transferencias automáticamente.',
+        example: 14500
+      },
       {
         key: 'variants_matrix',
         payloadKey: 'variants',
         label: '🎨 Variantes Completas (Talles & Colores)',
+        category: 'general',
         type: 'Array<{ colorName, colorHex, size, stock }>',
-        explanation: 'Estructura completa de matriz de variantes con color, código HEX, talle y stock.',
+        explanation: 'Estructura completa de matriz de variantes con color, código HEX, talle/capacidad y stock.',
         example: [
           { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
           { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 15 },
@@ -1031,6 +1061,7 @@ export class ProductList {
         key: 'variants_colors',
         payloadKey: 'variants',
         label: '🎨 Paleta de Colores',
+        category: 'general',
         type: 'Array<{ colorName, colorHex, size, stock }>',
         explanation: 'Actualizar colores oficiales y códigos HEX exactos de cada variante.',
         example: [
@@ -1042,9 +1073,10 @@ export class ProductList {
       {
         key: 'variants_sizes',
         payloadKey: 'variants',
-        label: '📏 Curva de Talles',
+        label: '📏 Curva de Talles / Capacidades',
+        category: 'general',
         type: 'Array<{ colorName, colorHex, size, stock }>',
-        explanation: 'Normalizar o definir la curva de talles disponibles (ej: S, M, L, XL, XXL o 38, 40, 42, 44).',
+        explanation: 'Normalizar o definir la curva de talles/capacidades disponibles (ej: S, M, L, XL, XXL o 128GB, 256GB).',
         example: [
           { colorName: 'Negro', colorHex: '#000000', size: 'S', stock: 10 },
           { colorName: 'Negro', colorHex: '#000000', size: 'M', stock: 10 },
@@ -1053,53 +1085,84 @@ export class ProductList {
         ]
       },
       {
-        key: 'costPriceARS',
-        payloadKey: 'costPriceARS',
-        label: '💵 Costo Proveedor ($ ARS)',
-        type: 'number',
-        explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta y cuotas automáticamente.',
-        example: 14500
-      },
-      {
-        key: 'sizeGuide',
-        payloadKey: 'sizeGuide',
-        label: '📐 Guía de Medidas (Tabla)',
-        type: 'Object { headers, rows, tolerance }',
-        explanation: 'Tabla de medidas en cm por talle.',
-        example: {
-          headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo (cm)'],
-          rows: [{ size: 'S', values: ['52', '68'] }, { size: 'M', values: ['54', '70'] }],
-          tolerance: '* Medidas tomadas en plano (+/- 1 cm).'
-        }
-      },
-      {
         key: 'shortDescription',
         payloadKey: 'shortDescription',
         label: '📝 Descripción Corta',
+        category: 'general',
         type: 'string',
         explanation: 'Resumen vendedor de 1-2 líneas para la tarjeta de producto.',
-        example: 'Remera oversize 100% algodón peinado 24/1.'
+        example: 'Remera oversize de calce amplio confeccionada en algodón peinado.'
       },
       {
         key: 'largeDescription',
         payloadKey: 'largeDescription',
         label: '📄 Descripción Detallada (HTML)',
+        category: 'general',
         type: 'string HTML',
-        explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>).',
-        example: '<p>Remera con calce holgado y costuras reforzadas.</p>'
+        explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>, <strong>).',
+        example: '<p>Prenda versátil diseñada para uso diario con terminaciones de alta calidad.</p>'
       },
+      {
+        key: 'tags',
+        payloadKey: 'tags',
+        label: '🏷️ Etiquetas / Tags',
+        category: 'general',
+        type: 'string[]',
+        explanation: 'Array de palabras clave para búsqueda interna y filtros.',
+        example: ['verano', 'algodon', 'novedad', 'urbano']
+      },
+      {
+        key: 'specifications',
+        payloadKey: 'specifications',
+        label: '⚙️ Ficha Técnica / Especificaciones',
+        category: 'general',
+        type: 'Array<{ key: string, value: string }>',
+        explanation: 'Ficha técnica en pares clave y valor estructurados.',
+        example: [
+          { key: 'Gramaje', value: '180 g/m²' },
+          { key: 'Costura', value: 'Reforzada de 4 hilos' }
+        ]
+      },
+      {
+        key: 'seo',
+        payloadKey: 'seo',
+        label: '🌐 SEO (Meta Título & Meta Descripción)',
+        category: 'general',
+        type: 'Object { metaTitle, metaDescription }',
+        explanation: 'Optimización para buscadores (Google): metaTitle (máx 60 caracteres) y metaDescription (máx 150 caracteres).',
+        example: {
+          metaTitle: 'Remera Oversize Vura | Tienda Oficial',
+          metaDescription: 'Comprá la remera oversize Vura en cuotas sin interés y envíos a todo el país.'
+        }
+      },
+
+      // 👕 INDUMENTARIA & CALZADO (ClothingProduct)
       {
         key: 'material',
         payloadKey: 'material',
-        label: '🧵 Composición / Tela',
+        label: '🧵 Tela / Material Principal',
+        category: 'clothing',
         type: 'string',
-        explanation: 'Composición de la tela o material principal.',
-        example: '100% Algodón Peinado 24/1'
+        explanation: 'Tipo de tejido o material principal de confección (ej: "Algodón peinado 24/1", "Denim rígido 12oz", "Lino rústico").',
+        example: 'Algodón Peinado 24/1'
+      },
+      {
+        key: 'composition',
+        payloadKey: 'composition',
+        label: '🧪 Composición Textil (% Porcentajes)',
+        category: 'clothing',
+        type: 'Array<{ material: string, percentage: number }>',
+        explanation: 'Desglose porcentual exacto de la composición (ej: 95% Algodón, 5% Elastano).',
+        example: [
+          { material: 'Algodón', percentage: 95 },
+          { material: 'Elastano', percentage: 5 }
+        ]
       },
       {
         key: 'fit',
         payloadKey: 'fit',
         label: '👔 Calce / Fit',
+        category: 'clothing',
         type: 'string',
         explanation: `Calce o corte de la prenda. Cortes registrados en la tienda: [ ${fitsList} ]. Prioriza estrictamente estos cortes oficiales o sugiere uno nuevo indicándoselo al usuario si la prenda lo requiere.`,
         example: this.storeClothingFits()[0] || 'Oversized'
@@ -1108,35 +1171,254 @@ export class ProductList {
         key: 'gender',
         payloadKey: 'gender',
         label: '👥 Género',
+        category: 'clothing',
         type: 'string',
         explanation: '"Hombre" | "Mujer" | "Unisex" | "Niños".',
         example: 'Unisex'
       },
       {
-        key: 'tags',
-        payloadKey: 'tags',
-        label: '🏷️ Etiquetas / Tags',
+        key: 'sizeType',
+        payloadKey: 'sizeType',
+        label: '📐 Tipo de Talle / Curva',
+        category: 'clothing',
+        type: '"Ropa" | "Calzado" | "Numérico" | "Talle Único"',
+        explanation: 'Sistema de curva de talles: "Ropa" (S..XXL), "Calzado" (35..45), "Numérico" (38..52), o "Talle Único".',
+        example: 'Ropa'
+      },
+      {
+        key: 'season',
+        payloadKey: 'season',
+        label: '🍂 Temporada / Colección',
+        category: 'clothing',
+        type: 'string',
+        explanation: 'Temporada o estación del año (ej: "Primavera / Verano 2026", "Otoño / Invierno", "Atemporal").',
+        example: 'Primavera / Verano 2026'
+      },
+      {
+        key: 'careInstructions',
+        payloadKey: 'careInstructions',
+        label: '🧺 Cuidados & Lavado',
+        category: 'clothing',
         type: 'string[]',
-        explanation: 'Array de palabras clave para búsqueda interna.',
-        example: ['verano', 'algodon', 'novedad']
+        explanation: 'Instrucciones de conservación y lavado de la prenda.',
+        example: ['Lavar con agua fría', 'No retorcer', 'Secar a la sombra']
       },
       {
-        key: 'model',
-        payloadKey: 'model',
-        label: '🏷️ Nombre del Producto',
+        key: 'sizeGuide',
+        payloadKey: 'sizeGuide',
+        label: '📐 Guía de Medidas (Tabla)',
+        category: 'clothing',
+        type: 'Object { headers, rows, tolerance }',
+        explanation: 'Tabla de medidas en cm por talle.',
+        example: {
+          headers: ['Talle', 'Ancho de Pecho (cm)', 'Largo (cm)'],
+          rows: [
+            { size: 'S', values: ['52', '68'] },
+            { size: 'M', values: ['54', '70'] }
+          ],
+          tolerance: '* Medidas tomadas en plano (+/- 1 cm).'
+        }
+      },
+
+      // 💻 TECNOLOGÍA & GADGETS (TechProduct)
+      {
+        key: 'processor',
+        payloadKey: 'processor',
+        label: '💻 Procesador / CPU',
+        category: 'tech',
         type: 'string',
-        explanation: 'Nombre o modelo comercial.',
-        example: 'Remera Oversize Vesper'
+        explanation: 'Modelo de chip o procesador (ej: "Apple M3", "Snapdragon 8 Gen 3").',
+        example: 'Apple M3'
       },
       {
-        key: 'subtitle',
-        payloadKey: 'subtitle',
-        label: '📌 Subtítulo / Frase Comercial',
+        key: 'ram',
+        payloadKey: 'ram',
+        label: '🧠 Memoria RAM',
+        category: 'tech',
         type: 'string',
-        explanation: 'Subtítulo breve o bajada del producto (ej: "100% Algodón Peinado 24/1").',
-        example: '100% Algodón Peinado 24/1'
+        explanation: 'Cantidad y tipo de memoria RAM (ej: "8GB", "16GB LPDDR5X").',
+        example: '16GB'
+      },
+      {
+        key: 'storage',
+        payloadKey: 'storage',
+        label: '💾 Almacenamiento',
+        category: 'tech',
+        type: 'string[]',
+        explanation: 'Capacidades de almacenamiento disponibles (ej: ["128GB", "256GB", "512GB"]).',
+        example: ['128GB', '256GB']
+      },
+      {
+        key: 'screenSize',
+        payloadKey: 'screenSize',
+        label: '📱 Pantalla / Display',
+        category: 'tech',
+        type: 'string',
+        explanation: 'Tamaño y tecnología del display (ej: "6.7\\" Super Retina XDR OLED 120Hz").',
+        example: '6.7" OLED 120Hz'
+      },
+      {
+        key: 'os',
+        payloadKey: 'os',
+        label: '⚙️ Sistema Operativo',
+        category: 'tech',
+        type: 'string',
+        explanation: 'Sistema operativo de fábrica (ej: "iOS 18", "Android 15").',
+        example: 'Android 15'
+      },
+      {
+        key: 'connectivity',
+        payloadKey: 'connectivity',
+        label: '📡 Conectividad',
+        category: 'tech',
+        type: 'string[]',
+        explanation: 'Conexiones inalámbricas y puertos (ej: ["5G", "Wi-Fi 6E", "Bluetooth 5.3", "NFC"]).',
+        example: ['5G', 'Wi-Fi 6E', 'Bluetooth 5.3', 'NFC']
+      },
+
+      // 🌸 BELLEZA & COSMÉTICA (BeautyProduct)
+      {
+        key: 'volume',
+        payloadKey: 'volume',
+        label: '🧴 Volumen / Capacidad (ml)',
+        category: 'beauty',
+        type: 'string',
+        explanation: 'Contenido neto o volumen (ej: "50ml", "100ml").',
+        example: '100ml'
+      },
+      {
+        key: 'concentration',
+        payloadKey: 'concentration',
+        label: '💎 Concentración',
+        category: 'beauty',
+        type: 'string',
+        explanation: 'Concentración de fragancia o fórmula (ej: "Eau de Parfum", "Serum Concentrado").',
+        example: 'Eau de Parfum'
+      },
+      {
+        key: 'fragranceFamily',
+        payloadKey: 'fragranceFamily',
+        label: '🌸 Familia Olfativa / Tipo',
+        category: 'beauty',
+        type: 'string',
+        explanation: 'Familia olfativa o línea dermatológica (ej: "Amaderada Especiada", "Ácido Hialurónico").',
+        example: 'Amaderada Oriental'
+      },
+      {
+        key: 'applicationArea',
+        payloadKey: 'applicationArea',
+        label: '✨ Zona de Aplicación',
+        category: 'beauty',
+        type: 'string',
+        explanation: 'Zona de aplicación recomendada (ej: "Rostro & Cuello", "Cuerpo").',
+        example: 'Rostro & Cuello'
+      },
+
+      // 📦 BAZAR & GENERAL (GeneralProduct)
+      {
+        key: 'barcode',
+        payloadKey: 'barcode',
+        label: '🔢 Código de Barras (EAN / UPC)',
+        category: 'bazar',
+        type: 'string',
+        explanation: 'Código de barras principal o EAN-13 del producto.',
+        example: '7791234567890'
+      },
+      {
+        key: 'weight',
+        payloadKey: 'weight',
+        label: '⚖️ Peso / Dimensiones',
+        category: 'bazar',
+        type: 'string',
+        explanation: 'Peso neto o medidas físicas (ej: "450g", "25 x 15 x 10 cm").',
+        example: '450g'
+      },
+      {
+        key: 'unit',
+        payloadKey: 'unit',
+        label: '📦 Unidad de Medida',
+        category: 'bazar',
+        type: 'string',
+        explanation: 'Unidad de comercialización (ej: "Unidad", "Pack x6", "Kg").',
+        example: 'Unidad'
       }
     ];
+  }
+
+  selectedScopeCategory = signal<string>('all');
+
+  scopeCategories = [
+    { id: 'all', label: 'Todas', icon: 'apps' },
+    { id: 'general', label: '🌐 Generales', icon: 'payments' },
+    { id: 'clothing', label: '👕 Indumentaria', icon: 'checkroom' },
+    { id: 'tech', label: '💻 Tecnología', icon: 'devices' },
+    { id: 'beauty', label: '🌸 Belleza', icon: 'spa' },
+    { id: 'bazar', label: '📦 Bazar', icon: 'inventory_2' }
+  ];
+
+  filteredScopeProperties = computed(() => {
+    const cat = this.selectedScopeCategory();
+    if (cat === 'all') return this.availableScopeProperties;
+    return this.availableScopeProperties.filter((p) => p.category === cat);
+  });
+
+  selectRecommendedPropertiesForRubro(rubro: 'clothing' | 'tech' | 'beauty' | 'general' | 'all') {
+    switch (rubro) {
+      case 'clothing':
+        this.selectedScopeProperties.set([
+          'variants_matrix',
+          'costPriceARS',
+          'material',
+          'composition',
+          'fit',
+          'sizeType',
+          'season',
+          'shortDescription',
+          'tags',
+          'seo'
+        ]);
+        break;
+      case 'tech':
+        this.selectedScopeProperties.set([
+          'variants_sizes',
+          'costPriceARS',
+          'specifications',
+          'processor',
+          'ram',
+          'storage',
+          'screenSize',
+          'tags',
+          'seo'
+        ]);
+        break;
+      case 'beauty':
+        this.selectedScopeProperties.set([
+          'variants_sizes',
+          'costPriceARS',
+          'volume',
+          'concentration',
+          'fragranceFamily',
+          'shortDescription',
+          'tags',
+          'seo'
+        ]);
+        break;
+      case 'general':
+        this.selectedScopeProperties.set([
+          'variants_matrix',
+          'costPriceARS',
+          'barcode',
+          'weight',
+          'unit',
+          'shortDescription',
+          'tags',
+          'seo'
+        ]);
+        break;
+      case 'all':
+        this.selectedScopeProperties.set(this.availableScopeProperties.map((p) => p.key));
+        break;
+    }
   }
 
   aiTargetProductType = signal<ProductType>(ProductType.CLOTHING);
@@ -1642,10 +1924,20 @@ EJEMPLO COMPLETO QUE DEBES DEVOLVER:
 ${JSON.stringify(exampleData, null, 2)}
 \`\`\`
 
-REGLAS CRÍTICAS:
+${this.aiConversationalMode() ? `REGLAS DE FORMATO Y CONVERSACIÓN:
+1. Puedes dialogar con el usuario, fundamentar tus elecciones, aconsejarlo o continuar la conversación con total fluidez.
+2. OBLIGATORIO: Justo antes del bloque de código JSON, escribe textualmente la siguiente indicación para el usuario:
+   "👉 Copiá únicamente el siguiente bloque de código JSON y pegalo en tu sistema:"
+3. Entrega el array de productos dentro de un bloque de código Markdown aislado:
+\`\`\`json
+[ { ... } ]
+\`\`\`
+El usuario usará el botón de "Copiar código" de este bloque para pegarlo directamente en el panel de control.
+4. Asegúrate de que todos los valores numéricos sean números reales (sin símbolos $ ni comas).
+5. Por defecto, asigna 'status: "draft"' a cada producto.` : `REGLAS CRÍTICAS:
 1. Responde ÚNICAMENTE con el bloque JSON (un array de objetos [ { ... } ]). No agregues texto introductorio ni explicaciones fuera del JSON.
 2. Todos los valores numéricos deben ser números reales (sin símbolos $ ni comas).
-3. Por defecto, asigna 'status: "draft"' a cada producto para que se cree como borrador seguro.`;
+3. Por defecto, asigna 'status: "draft"' a cada producto para que se cree como borrador seguro.`}`;
 
     try {
       await navigator.clipboard.writeText(prompt);
@@ -1689,6 +1981,14 @@ REGLAS CRÍTICAS:
         item.linkProductProvider = p.linkProductProvider;
       }
 
+      if (scopeKeys.includes('model') && p.model) {
+        item.currentModel = p.model;
+      }
+
+      if (scopeKeys.includes('subtitle') && p.subtitle) {
+        item.currentSubtitle = p.subtitle;
+      }
+
       if (scopeKeys.includes('costPriceARS')) {
         item.currentCostPriceARS = (p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0);
       }
@@ -1706,8 +2006,32 @@ REGLAS CRÍTICAS:
         item.currentShortDescription = p.shortDescription;
       }
 
+      if (scopeKeys.includes('largeDescription') && p.largeDescription) {
+        item.currentLargeDescription = p.largeDescription;
+      }
+
+      if (scopeKeys.includes('tags') && p.tags && p.tags.length > 0) {
+        item.currentTags = p.tags;
+      }
+
+      if (scopeKeys.includes('specifications') && p.specifications && p.specifications.length > 0) {
+        item.currentSpecifications = p.specifications;
+      }
+
+      if (scopeKeys.includes('seo') && p.seo) {
+        item.currentSeo = {
+          metaTitle: p.seo.metaTitle || '',
+          metaDescription: p.seo.metaDescription || ''
+        };
+      }
+
+      // Clothing fields
       if (scopeKeys.includes('material') && (p as any).material) {
         item.currentMaterial = (p as any).material;
+      }
+
+      if (scopeKeys.includes('composition') && (p as any).composition && (p as any).composition.length > 0) {
+        item.currentComposition = (p as any).composition;
       }
 
       if (scopeKeys.includes('fit') && (p as any).fit) {
@@ -1718,8 +2042,65 @@ REGLAS CRÍTICAS:
         item.currentGender = (p as any).gender;
       }
 
-      if (scopeKeys.includes('subtitle') && p.subtitle) {
-        item.currentSubtitle = p.subtitle;
+      if (scopeKeys.includes('sizeType') && (p as any).sizeType) {
+        item.currentSizeType = (p as any).sizeType;
+      }
+
+      if (scopeKeys.includes('season') && (p as any).season) {
+        item.currentSeason = (p as any).season;
+      }
+
+      if (scopeKeys.includes('careInstructions') && (p as any).careInstructions && (p as any).careInstructions.length > 0) {
+        item.currentCareInstructions = (p as any).careInstructions;
+      }
+
+      if (scopeKeys.includes('sizeGuide') && (p as any).sizeGuide) {
+        item.currentSizeGuide = (p as any).sizeGuide;
+      }
+
+      // Tech fields
+      if (scopeKeys.includes('processor') && (p as any).processor) {
+        item.currentProcessor = (p as any).processor;
+      }
+      if (scopeKeys.includes('ram') && (p as any).ram) {
+        item.currentRam = (p as any).ram;
+      }
+      if (scopeKeys.includes('storage') && (p as any).storage) {
+        item.currentStorage = (p as any).storage;
+      }
+      if (scopeKeys.includes('screenSize') && (p as any).screenSize) {
+        item.currentScreenSize = (p as any).screenSize;
+      }
+      if (scopeKeys.includes('os') && (p as any).os) {
+        item.currentOs = (p as any).os;
+      }
+      if (scopeKeys.includes('connectivity') && (p as any).connectivity) {
+        item.currentConnectivity = (p as any).connectivity;
+      }
+
+      // Beauty fields
+      if (scopeKeys.includes('volume') && (p as any).volume) {
+        item.currentVolume = (p as any).volume;
+      }
+      if (scopeKeys.includes('concentration') && (p as any).concentration) {
+        item.currentConcentration = (p as any).concentration;
+      }
+      if (scopeKeys.includes('fragranceFamily') && (p as any).fragranceFamily) {
+        item.currentFragranceFamily = (p as any).fragranceFamily;
+      }
+      if (scopeKeys.includes('applicationArea') && (p as any).applicationArea) {
+        item.currentApplicationArea = (p as any).applicationArea;
+      }
+
+      // General fields
+      if (scopeKeys.includes('barcode') && (p as any).barcode) {
+        item.currentBarcode = (p as any).barcode;
+      }
+      if (scopeKeys.includes('weight') && (p as any).weight) {
+        item.currentWeight = (p as any).weight;
+      }
+      if (scopeKeys.includes('unit') && (p as any).unit) {
+        item.currentUnit = (p as any).unit;
       }
 
       return item;
@@ -1739,29 +2120,36 @@ REGLAS CRÍTICAS:
     const customInstruction = this.aiCustomInstruction().trim();
     const typeSummary = this.selectedProductsTypesSummary();
 
-    const prompt = `Actúa como especialista de catálogo para NexoCommerce. Necesito actualizar EXCLUSIVAMENTE las siguientes propiedades de estos ${compactProducts.length} productos (${typeSummary.breakdown}): [${activeProps.map((p) => p.label).join(', ')}].
+    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Necesito actualizar EXCLUSIVAMENTE las siguientes propiedades de estos ${compactProducts.length} productos (${typeSummary.breakdown}): [${activeProps.map((p) => p.label).join(', ')}].
 
-LISTA ACTUAL DE PRODUCTOS CON SUS IDs Y TIPOS:
+LISTA ACTUAL DE PRODUCTOS CON SUS IDs, TIPOS Y DATOS EXISTENTES:
 \`\`\`json
 ${JSON.stringify(compactProducts, null, 2)}
 \`\`\`
 
-DICCIONARIO DE PROPIEDADES QUE DEBES DEVOLVER:
+DICCIONARIO DE PROPIEDADES QUE DEBES DEVOLVER EN CADA PRODUCTO:
 - _id (string, OBLIGATORIO): Mantén el _id original del producto para identificarlo en la base de datos.
 ${dictionaryLines}
 
 🎯 VOCABULARIO Y REGLAS OFICIALES DE LA TIENDA:
-- Marca Principal de la Tienda: "${defaultBrand}"
-- Cortes / Calces (Fits) Registrados en la Tienda: [ ${fitsList} ]
-  ⚠️ REGLA DE CALCES (FITS): Si actualizas el campo 'fit', debes elegir prioritariamente uno de los cortes oficiales registrados en la tienda. Si la descripción del proveedor usa sinónimos ('corte holgado', 'al cuerpo', 'recto', 'ancho'), mapealo al calce oficial equivalente de esta lista. Si la prenda verdaderamente requiere un corte nuevo no contemplado, indícaselo claramente al usuario en tu respuesta o sugiérelo en 'fit' para que lo dé de alta en la configuración de su tienda.
+- Marca Principal: "${defaultBrand}"
+- Cortes / Fits Registrados: [ ${fitsList} ]
+  ⚠️ REGLA DE FITS: Si actualizas el campo 'fit', debes priorizar estrictamente estos cortes oficiales. Si la prenda requiere un calce nuevo no contemplado, indícaselo claramente al usuario.
 - Géneros Estándar: [ "Hombre", "Mujer", "Unisex", "Niños" ]
-- Tipos de Talles: [ "Ropa" (S..XXL), "Calzado" (35..45), "Numérico", "Talle Único" ]
+- Tipos de Talles (sizeType): [ "Ropa" (S..XXL), "Calzado" (35..45), "Numérico" (38..52), "Talle Único" ]
+- Temporadas (season): Ejemplos: "Primavera / Verano 2026", "Otoño / Invierno", "Atemporal".
+- Diferenciación 'material' vs 'composition':
+  * 'material' (string): Nombre de la tela o tejido principal (ej: "Algodón peinado 24/1", "Denim 12oz").
+  * 'composition' (array de { material, percentage }): Desglose técnico de porcentajes (ej: [ { "material": "Algodón", "percentage": 100 } ] o [ { "material": "Algodón", "percentage": 95 }, { "material": "Elastano", "percentage": 5 } ]).
+- SEO: 'seo' debe ser un objeto { "metaTitle": "Título vendedor máx 60 caracteres", "metaDescription": "Resumen atractivo de hasta 150 caracteres para Google" }.
+- Ficha Técnica ('specifications'): Array de pares clave-valor [ { "key": "...", "value": "..." } ].
 
 🎯 ADAPTACIÓN SEGÚN EL 'productType' DE CADA PRODUCTO:
-- Para ClothingProduct (Indumentaria): Usa talles (S, M, L o 38, 40), colores con código #HEX y guías de medidas en cm.
-- Para TechProduct (Tecnología): Usa capacidades/especificaciones en 'size' (ej: "128GB", "256GB") y colores.
-- Para BeautyProduct (Belleza): Usa volúmenes en 'size' (ej: "30ml", "50ml", "100ml") o tonos cosméticos.
-- Para GeneralProduct (General): Usa medidas, capacidades o packs estándar.
+- Si el lote contiene productos de distintos rubros, respeta la naturaleza de cada uno:
+  * Para ClothingProduct (Indumentaria): Talles de ropa o calzado, colores con HEX, calce (fit), material, composición textil, temporada y guía de medidas.
+  * Para TechProduct (Tecnología): Capacidades en variantes, ficha técnica en 'specifications', processor, ram, storage, screenSize, os, connectivity.
+  * Para BeautyProduct (Belleza): Volúmenes (30ml, 50ml, etc.) o tonos en variantes, volume, concentration, fragranceFamily, applicationArea.
+  * Para GeneralProduct (General/Bazar): Código de barras (barcode), peso (weight), unidad de medida (unit) y variantes libres.
 
 EJEMPLO DEL FORMATO EXACTO QUE DEBES GENERAR:
 \`\`\`json
@@ -1773,10 +2161,20 @@ ${JSON.stringify(exampleObj, null, 2)}
 ${customInstruction ? `🎯 DIRECTIVA ESPECÍFICA DEL USUARIO:
 "${customInstruction}"
 Asegúrate de respetar prioritariamente esta indicación al generar las variantes y valores del JSON.\n\n` : ''}${hasAnyLink ? `🌐 NAVEGACIÓN WEB CON IA:
-Si los productos tienen 'linkProductProvider' con una URL válida, podés acceder y navegar por dicha página web para extraer la información oficial de la prenda/producto, su composición, tabla de medidas y fotos de alta resolución para volcarlas en las propiedades correspondientes.\n\n` : ''}REGLAS CRÍTICAS DE SEGURIDAD:
+Si los productos tienen 'linkProductProvider' con una URL válida, puedes acceder y navegar por dicha página web para extraer la información oficial de la prenda/producto, su composición, tabla de medidas y fotos de alta resolución para volcarlas en las propiedades correspondientes.\n\n` : ''}${this.aiConversationalMode() ? `REGLAS DE FORMATO Y CONVERSACIÓN:
+1. Puedes responder amablemente, fundamentar los cambios, sugerir mejoras o continuar la conversación con el usuario con total fluidez.
+2. OBLIGATORIO: Justo antes del bloque de código JSON, escribe textualmente la siguiente indicación para el usuario:
+   "👉 Copiá únicamente el siguiente bloque de código JSON y pegalo en tu sistema:"
+3. Entrega el array de productos modificados dentro de un bloque de código Markdown aislado:
+\`\`\`json
+[ { ... } ]
+\`\`\`
+El usuario tocará el botón de "Copiar código" de este bloque para pegarlo directamente en su panel de administración.
+4. Modifica e incluye EXCLUSIVAMENTE el '_id' y las propiedades solicitadas dentro del JSON. NO inventes ni agregues otras propiedades que no fueron solicitadas.
+5. Asegúrate de que todos los valores numéricos sean números reales (sin símbolos $ ni comas).` : `REGLAS CRÍTICAS DE SEGURIDAD:
 1. Tu respuesta debe ser ÚNICAMENTE el bloque JSON (un array de objetos [ { ... } ]). Sin texto de saludo ni explicaciones.
 2. Modifica e incluye EXCLUSIVAMENTE el '_id' y las propiedades solicitadas. NO inventes ni agregues otras propiedades que no fueron solicitadas.
-3. Asegúrate de que todos los valores numéricos sean números reales (sin símbolos $ ni comas).`;
+3. Asegúrate de que todos los valores numéricos sean números reales (sin símbolos $ ni comas).`}`;
 
     try {
       await navigator.clipboard.writeText(prompt);
@@ -1796,13 +2194,13 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
       return;
     }
 
-    // Strip markdown code fences if present
+    // Quitar bloque de código markdown si el usuario copió con ```json ... ```
     raw = raw.replace(/^```(json)?/i, '').replace(/```$/i, '').trim();
 
     try {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) {
-        this.aiParseError.set('El JSON debe ser un array de objetos [ { ... } ].');
+        this.aiParseError.set('El contenido ingresado no es válido. Debe ser un array JSON [ { ... } ]. Asegúrate de copiar únicamente el bloque de código JSON sin texto de conversación.');
         return;
       }
 
@@ -1810,6 +2208,74 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
         this.aiParseError.set('El array JSON no contiene ningún producto.');
         return;
       }
+
+      // Helper to normalize specifications
+      const normalizeSpecs = (input: any): Array<{ key: string; value: string }> => {
+        if (Array.isArray(input)) {
+          return input
+            .map((s: any) => ({
+              key: String(s.key || s.nombre || s.name || '').trim(),
+              value: String(s.value || s.valor || '').trim()
+            }))
+            .filter((s: any) => s.key && s.value);
+        } else if (typeof input === 'object' && input !== null) {
+          return Object.entries(input)
+            .map(([k, v]) => ({ key: String(k).trim(), value: String(v).trim() }))
+            .filter((s: any) => s.key && s.value);
+        } else if (typeof input === 'string' && input.trim()) {
+          return input.split(/[,;\n]+/).map((part: string) => {
+            const [k, ...v] = part.split(/[:=]/);
+            return { key: (k || '').trim(), value: (v.join(':') || '').trim() };
+          }).filter((s: any) => s.key && s.value);
+        }
+        return [];
+      };
+
+      // Helper to normalize composition
+      const normalizeComposition = (input: any): Array<{ material: string; percentage: number }> => {
+        if (Array.isArray(input)) {
+          return input
+            .map((c: any) => ({
+              material: String(c.material || '').trim(),
+              percentage: Number(c.percentage || 0)
+            }))
+            .filter((c: any) => c.material && !isNaN(c.percentage));
+        } else if (typeof input === 'string' && input.trim()) {
+          const parts = input.split(/[,;\n/]+/);
+          const list: Array<{ material: string; percentage: number }> = [];
+          for (const part of parts) {
+            const m1 = part.match(/(\d+(?:\.\d+)?)\s*%\s*(.*)/);
+            const m2 = part.match(/(.*?)\s*(\d+(?:\.\d+)?)\s*%/);
+            if (m1 && m1[2].trim()) {
+              list.push({ percentage: Number(m1[1]), material: m1[2].trim() });
+            } else if (m2 && m2[1].trim()) {
+              list.push({ percentage: Number(m2[2]), material: m2[1].trim() });
+            }
+          }
+          return list;
+        }
+        return [];
+      };
+
+      // Helper to normalize tags
+      const normalizeTags = (input: any): string[] => {
+        if (Array.isArray(input)) {
+          return input.map((t: any) => String(t).trim()).filter(Boolean);
+        } else if (typeof input === 'string' && input.trim()) {
+          return input.split(/[,;\n]+/).map((t: string) => t.trim()).filter(Boolean);
+        }
+        return [];
+      };
+
+      // Helper to normalize string arrays
+      const normalizeStringArray = (input: any): string[] => {
+        if (Array.isArray(input)) {
+          return input.map((ci: any) => String(ci).trim()).filter(Boolean);
+        } else if (typeof input === 'string' && input.trim()) {
+          return input.split(/[,;\n]+/).map((ci: string) => ci.trim()).filter(Boolean);
+        }
+        return [];
+      };
 
       if (this.aiBulkMode() === 'create') {
         const storeCategories = (this.Categories() || []).map((c: string) => c.toLowerCase().trim());
@@ -1824,29 +2290,11 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
           const cat = String(item.category).trim();
           const isNewCategory = storeCategories.length > 0 && !storeCategories.includes(cat.toLowerCase());
 
-          // Normalize specifications / attributes
-          let specifications: any[] = [];
-          if (Array.isArray(item.specifications)) {
-            specifications = item.specifications.map((s: any) => ({
-              key: String(s.key || s.nombre || s.name || '').trim(),
-              value: String(s.value || s.valor || '').trim()
-            })).filter((s: any) => s.key && s.value);
-          } else if (typeof item.specifications === 'object' && item.specifications !== null) {
-            specifications = Object.entries(item.specifications).map(([key, value]) => ({
-              key: String(key).trim(),
-              value: String(value).trim()
-            })).filter((s: any) => s.key && s.value);
-          }
+          const specifications = normalizeSpecs(item.specifications);
+          const tags = normalizeTags(item.tags);
+          const composition = normalizeComposition(item.composition);
+          const careInstructions = normalizeStringArray(item.careInstructions);
 
-          // Normalize tags
-          let tags: string[] = [];
-          if (Array.isArray(item.tags)) {
-            tags = item.tags.map((t: any) => String(t).trim()).filter(Boolean);
-          } else if (typeof item.tags === 'string' && item.tags.trim()) {
-            tags = item.tags.split(/[,;\n]+/).map((t: string) => t.trim()).filter(Boolean);
-          }
-
-          // Normalize images
           let images: string[] = [];
           if (Array.isArray(item.images)) {
             images = item.images.map((img: any) => typeof img === 'string' ? img.trim() : (img?.url || '')).filter(Boolean);
@@ -1856,7 +2304,6 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
           const metaTitle = item.seo?.metaTitle || item.metaTitle || `${item.model} | ${brand}`;
           const metaDescription = item.seo?.metaDescription || item.metaDescription || item.shortDescription || '';
 
-          // Normalizar fit con respecto a los cortes oficiales de la tienda
           const knownFits = this.storeClothingFits();
           let rawFit = item.fit ? String(item.fit).trim() : '';
           let normalizedFit = rawFit;
@@ -1865,9 +2312,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
               (kf: string) => kf.toLowerCase() === rawFit.toLowerCase() ||
                       kf.toLowerCase().replace(/[-_\s]/g, '') === rawFit.toLowerCase().replace(/[-_\s]/g, '')
             );
-            if (matched) {
-              normalizedFit = matched;
-            }
+            if (matched) normalizedFit = matched;
           }
 
           return {
@@ -1886,8 +2331,8 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             largeDescription: item.largeDescription || item.description || '',
             gender: item.gender || 'Unisex',
             material: item.material || '',
-            composition: Array.isArray(item.composition) ? item.composition : [],
-            careInstructions: Array.isArray(item.careInstructions) ? item.careInstructions : [],
+            composition,
+            careInstructions,
             fit: normalizedFit,
             specifications,
             tags,
@@ -1895,9 +2340,25 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             variants: Array.isArray(item.variants) ? item.variants : [],
             sizeGuide: item.sizeGuide && typeof item.sizeGuide === 'object' && Array.isArray(item.sizeGuide.headers) && item.sizeGuide.headers.length > 0 ? item.sizeGuide : null,
             images,
-            status: item.status || 'draft'
+            status: item.status || 'draft',
+            // Discriminators
+            processor: item.processor ? String(item.processor).trim() : undefined,
+            ram: item.ram ? String(item.ram).trim() : undefined,
+            storage: normalizeStringArray(item.storage),
+            screenSize: item.screenSize ? String(item.screenSize).trim() : undefined,
+            os: item.os ? String(item.os).trim() : undefined,
+            connectivity: normalizeStringArray(item.connectivity),
+            volume: item.volume ? String(item.volume).trim() : undefined,
+            concentration: item.concentration ? String(item.concentration).trim() : undefined,
+            fragranceFamily: item.fragranceFamily ? String(item.fragranceFamily).trim() : undefined,
+            applicationArea: item.applicationArea ? String(item.applicationArea).trim() : undefined,
+            barcode: item.barcode ? String(item.barcode).trim() : undefined,
+            weight: item.weight ? String(item.weight).trim() : undefined,
+            unit: item.unit ? String(item.unit).trim() : undefined,
+            isSoldByWeight: item.isSoldByWeight !== undefined ? Boolean(item.isSoldByWeight) : undefined
           };
         });
+
         this.aiParsedCreateItems.set(validated);
         this.aiParsedUpdateItems.set([]);
         this.aiParsedUpdateDiffs.set([]);
@@ -1915,6 +2376,7 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
           const orig = allProducts.find((p: any) => p._id === item._id);
           const changes: Array<{ label: string; text: string; icon: string }> = [];
 
+          // 1. Costo
           if (item.costPriceARS !== undefined) {
             const oldCost = orig?.finance?.providerCost?.inARS || (orig?.price as any)?.costPrice?.inARS || 0;
             changes.push({
@@ -1922,42 +2384,70 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
               text: `$${Number(item.costPriceARS).toLocaleString('es-AR')} (Antes: $${Number(oldCost).toLocaleString('es-AR')})`,
               icon: 'payments'
             });
+            item.costPriceARS = Number(item.costPriceARS);
           }
 
+          // 2. Variantes
           if (Array.isArray(item.variants) && item.variants.length > 0) {
             const sizesList = item.variants.map((v: any) => `${v.size || 'Único'} (x${v.stock ?? 0})`).join(', ');
             changes.push({
-              label: 'Talles',
+              label: 'Variantes',
               text: `${item.variants.length} variantes [${sizesList}]`,
               icon: 'straighten'
             });
           }
 
+          // 3. Guía de medidas
           if (item.sizeGuide) {
             const rowCount = item.sizeGuide.rows?.length || 0;
             changes.push({
-              label: 'Guía de Medidas',
+              label: 'Guía Medidas',
               text: `Tabla con ${rowCount} talles configurados`,
               icon: 'table_chart'
             });
           }
 
+          // 4. Descripciones
           if (item.shortDescription) {
             changes.push({
               label: 'Desc. Corta',
-              text: item.shortDescription.length > 40 ? item.shortDescription.slice(0, 40) + '...' : item.shortDescription,
+              text: item.shortDescription.length > 35 ? item.shortDescription.slice(0, 35) + '...' : item.shortDescription,
               icon: 'description'
             });
           }
-
-          if (item.material) {
+          if (item.largeDescription) {
             changes.push({
-              label: 'Material',
-              text: item.material,
-              icon: 'checkroom'
+              label: 'Desc. HTML',
+              text: 'Ficha detallada enriquecida',
+              icon: 'article'
             });
           }
 
+          // 5. Tela / Material
+          if (item.material) {
+            changes.push({
+              label: 'Tela / Material',
+              text: String(item.material).trim(),
+              icon: 'checkroom'
+            });
+            item.material = String(item.material).trim();
+          }
+
+          // 6. Composición textil
+          if (item.composition !== undefined) {
+            const compList = normalizeComposition(item.composition);
+            item.composition = compList;
+            if (compList.length > 0) {
+              const compText = compList.map((c) => `${c.percentage}% ${c.material}`).join(', ');
+              changes.push({
+                label: 'Composición',
+                text: compText,
+                icon: 'science'
+              });
+            }
+          }
+
+          // 7. Calce / Fit
           if (item.fit !== undefined) {
             const rawFit = String(item.fit).trim();
             const matched = knownFits.find(
@@ -1974,6 +2464,27 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             });
           }
 
+          // 8. Tipo de Talle
+          if (item.sizeType) {
+            changes.push({
+              label: 'Tipo Talle',
+              text: String(item.sizeType).trim(),
+              icon: 'straighten'
+            });
+            item.sizeType = String(item.sizeType).trim();
+          }
+
+          // 9. Temporada
+          if (item.season) {
+            changes.push({
+              label: 'Temporada',
+              text: String(item.season).trim(),
+              icon: 'wb_sunny'
+            });
+            item.season = String(item.season).trim();
+          }
+
+          // 10. Género
           if (item.gender) {
             changes.push({
               label: 'Género',
@@ -1982,14 +2493,72 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             });
           }
 
-          if (item.tags && Array.isArray(item.tags)) {
+          // 11. Cuidados
+          if (item.careInstructions !== undefined) {
+            const careArr = normalizeStringArray(item.careInstructions);
+            item.careInstructions = careArr;
+            if (careArr.length > 0) {
+              changes.push({
+                label: 'Cuidados',
+                text: `${careArr.length} instrucciones`,
+                icon: 'local_laundry_service'
+              });
+            }
+          }
+
+          // 12. Especificaciones / Ficha Técnica
+          if (item.specifications !== undefined) {
+            const specs = normalizeSpecs(item.specifications);
+            item.specifications = specs;
+            if (specs.length > 0) {
+              changes.push({
+                label: 'Ficha Técnica',
+                text: `${specs.length} atributos (${specs.map(s => s.key).slice(0, 2).join(', ')}${specs.length > 2 ? '...' : ''})`,
+                icon: 'tune'
+              });
+            }
+          }
+
+          // 13. Tags
+          if (item.tags !== undefined) {
+            const tagsArr = normalizeTags(item.tags);
+            item.tags = tagsArr;
+            if (tagsArr.length > 0) {
+              changes.push({
+                label: 'Tags',
+                text: tagsArr.join(', '),
+                icon: 'label'
+              });
+            }
+          }
+
+          // 14. SEO
+          if (item.seo || item.seoTitle || item.seoMetaTitle || item.seoDescription || item.seoMetaDescription) {
+            const metaTitle = item.seo?.metaTitle || item.seoTitle || item.seoMetaTitle || '';
+            const metaDescription = item.seo?.metaDescription || item.seoDescription || item.seoMetaDescription || '';
+            item.seo = {
+              ...(item.seo || {}),
+              ...(metaTitle ? { metaTitle: String(metaTitle).trim() } : {}),
+              ...(metaDescription ? { metaDescription: String(metaDescription).trim() } : {})
+            };
             changes.push({
-              label: 'Tags',
-              text: item.tags.join(', '),
-              icon: 'label'
+              label: 'SEO',
+              text: metaTitle ? `"${metaTitle}"` : 'Meta tags configurados',
+              icon: 'travel_explore'
             });
           }
 
+          // 15. Subtítulo
+          if (item.subtitle !== undefined) {
+            changes.push({
+              label: 'Subtítulo',
+              text: item.subtitle ? String(item.subtitle) : '(vacío)',
+              icon: 'subtitles'
+            });
+            item.subtitle = item.subtitle ? String(item.subtitle).trim() : '';
+          }
+
+          // 16. Modelo / Nombre
           if (item.model && orig && item.model !== orig.model) {
             changes.push({
               label: 'Nombre',
@@ -1998,13 +2567,24 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
             });
           }
 
-          if (item.subtitle !== undefined) {
-            changes.push({
-              label: 'Subtítulo',
-              text: item.subtitle ? String(item.subtitle) : '(vacío)',
-              icon: 'subtitles'
-            });
-          }
+          // 17. Tech discriminators
+          if (item.processor) changes.push({ label: 'CPU', text: item.processor, icon: 'memory' });
+          if (item.ram) changes.push({ label: 'RAM', text: item.ram, icon: 'storage' });
+          if (item.screenSize) changes.push({ label: 'Pantalla', text: item.screenSize, icon: 'tv' });
+          if (item.storage) changes.push({ label: 'Storage', text: Array.isArray(item.storage) ? item.storage.join(', ') : item.storage, icon: 'save' });
+          if (item.os) changes.push({ label: 'OS', text: item.os, icon: 'settings' });
+          if (item.connectivity) changes.push({ label: 'Conectividad', text: Array.isArray(item.connectivity) ? item.connectivity.join(', ') : item.connectivity, icon: 'wifi' });
+
+          // 18. Beauty discriminators
+          if (item.volume) changes.push({ label: 'Volumen', text: item.volume, icon: 'water_drop' });
+          if (item.concentration) changes.push({ label: 'Concentración', text: item.concentration, icon: 'diamond' });
+          if (item.fragranceFamily) changes.push({ label: 'Familia Olfativa', text: item.fragranceFamily, icon: 'filter_vintage' });
+          if (item.applicationArea) changes.push({ label: 'Área', text: item.applicationArea, icon: 'face' });
+
+          // 19. General discriminators
+          if (item.barcode) changes.push({ label: 'Código Barras', text: item.barcode, icon: 'qr_code' });
+          if (item.weight) changes.push({ label: 'Peso', text: item.weight, icon: 'scale' });
+          if (item.unit) changes.push({ label: 'Unidad', text: item.unit, icon: 'inventory_2' });
 
           diffs.push({
             _id: item._id,
@@ -2024,7 +2604,12 @@ Si los productos tienen 'linkProductProvider' con una URL válida, podés accede
         this.aiParsedCreateItems.set([]);
       }
     } catch (err: any) {
-      this.aiParseError.set(err.message || 'JSON inválido. Verifica la sintaxis devuelta por la IA.');
+      const isSyntax = err instanceof SyntaxError || (err.message && err.message.toLowerCase().includes('json'));
+      this.aiParseError.set(
+        isSyntax
+          ? 'Formato no válido. Asegúrate de copiar y pegar ÚNICAMENTE el bloque de código JSON devuelto por la IA (usando el botón "Copiar código" en ChatGPT o Gemini) sin incluir saludos ni texto de la conversación.'
+          : (err.message || 'JSON no válido. Verifica el contenido devuelto por la IA.')
+      );
     }
   }
 
