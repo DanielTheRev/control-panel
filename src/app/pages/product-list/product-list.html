@@ -859,12 +859,15 @@
 
           <!-- Selector de Propiedades Específicas para Actualizar (Scope Selector) -->
           @if (aiBulkMode() === 'update') {
-            <div class="space-y-2.5 bg-base-100 p-3 rounded-xl border border-base-300/80">
-              <div class="flex items-center justify-between flex-wrap gap-1">
+            <div class="space-y-2.5 bg-base-100 p-3.5 rounded-xl border border-base-300/80">
+              <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
-                    <mat-icon class="text-[15px]! w-4! h-4! text-primary">checklist</mat-icon>
-                    <span>Propiedades a modificar ({{ selectedScopeProperties().length }} activas):</span>
+                    <mat-icon class="text-[16px]! w-4! h-4! text-primary">checklist</mat-icon>
+                    <span>Propiedades a modificar:</span>
+                  </span>
+                  <span class="badge badge-sm font-bold" [ngClass]="selectedScopeProperties().length > 0 ? 'badge-primary' : 'badge-ghost text-base-content/50'">
+                    {{ selectedScopeProperties().length }} seleccionadas
                   </span>
                   <span
                     class="badge badge-xs font-semibold"
@@ -873,51 +876,74 @@
                     {{ selectedProductsTypesSummary().isMixed ? '🌈 ' + selectedProductsTypesSummary().breakdown : '📦 ' + selectedProductsTypesSummary().breakdown }}
                   </span>
                 </div>
-                <div class="flex items-center gap-1">
+
+                <!-- Botones de Acción Rápida: Seleccionar de pestaña actual y Limpiar todo -->
+                <div class="flex items-center gap-1.5">
                   <button
                     type="button"
-                    (click)="toggleAllScopeProperties()"
-                    class="btn btn-xs btn-ghost text-primary font-bold hover:bg-primary/10"
+                    (click)="toggleAllVisibleScopeProperties()"
+                    class="btn btn-xs btn-ghost text-primary font-bold hover:bg-primary/10 cursor-pointer flex items-center gap-1"
                   >
-                    {{ isAllScopePropertiesSelected() ? 'Deseleccionar Todos' : 'Seleccionar Todos (' + availableScopeProperties.length + ')' }}
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">
+                      {{ isAllVisibleScopePropertiesSelected() ? 'remove_done' : 'done_all' }}
+                    </mat-icon>
+                    <span>
+                      {{ isAllVisibleScopePropertiesSelected() ? 'Deseleccionar ' + currentTabLabel() : 'Seleccionar ' + currentTabLabel() + ' (' + filteredScopeProperties().length + ')' }}
+                    </span>
                   </button>
+
+                  @if (selectedScopeProperties().length > 0) {
+                    <button
+                      type="button"
+                      (click)="clearAllScopeProperties()"
+                      class="btn btn-xs btn-ghost text-error font-bold hover:bg-error/10 cursor-pointer flex items-center gap-1"
+                      title="Deseleccionar todas las propiedades"
+                    >
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">close</mat-icon>
+                      <span>Limpiar Todo</span>
+                    </button>
+                  }
                 </div>
               </div>
 
               <!-- Atajos de Selección Rápida por Rubro -->
-              <div class="flex items-center gap-1 flex-wrap text-[10px] pb-1 border-b border-base-200">
-                <span class="font-bold text-base-content/50 uppercase tracking-wider mr-1">Recomendados:</span>
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px] pb-1.5 border-b border-base-200">
+                <span class="font-bold text-base-content/50 uppercase tracking-wider mr-1">Atajos Recomendados:</span>
                 <button
                   type="button"
                   (click)="selectRecommendedPropertiesForRubro('clothing')"
-                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                  class="btn btn-xs rounded-md text-[10px] font-medium transition-all cursor-pointer py-0.5 px-2.5 h-auto min-h-6"
+                  [ngClass]="isRecommendedActive('clothing') ? 'btn-primary shadow-xs font-bold' : 'btn-ghost border border-base-300/80 hover:border-primary hover:text-primary'"
                 >
                   👕 Indumentaria
                 </button>
                 <button
                   type="button"
                   (click)="selectRecommendedPropertiesForRubro('tech')"
-                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                  class="btn btn-xs rounded-md text-[10px] font-medium transition-all cursor-pointer py-0.5 px-2.5 h-auto min-h-6"
+                  [ngClass]="isRecommendedActive('tech') ? 'btn-primary shadow-xs font-bold' : 'btn-ghost border border-base-300/80 hover:border-primary hover:text-primary'"
                 >
                   💻 Tecnología
                 </button>
                 <button
                   type="button"
                   (click)="selectRecommendedPropertiesForRubro('beauty')"
-                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                  class="btn btn-xs rounded-md text-[10px] font-medium transition-all cursor-pointer py-0.5 px-2.5 h-auto min-h-6"
+                  [ngClass]="isRecommendedActive('beauty') ? 'btn-primary shadow-xs font-bold' : 'btn-ghost border border-base-300/80 hover:border-primary hover:text-primary'"
                 >
                   🌸 Belleza
                 </button>
                 <button
                   type="button"
                   (click)="selectRecommendedPropertiesForRubro('general')"
-                  class="btn btn-xs btn-ghost border border-base-300/80 rounded-md text-[10px] font-medium hover:border-primary hover:text-primary transition-all cursor-pointer py-0.5 px-2 h-auto min-h-6"
+                  class="btn btn-xs rounded-md text-[10px] font-medium transition-all cursor-pointer py-0.5 px-2.5 h-auto min-h-6"
+                  [ngClass]="isRecommendedActive('general') ? 'btn-primary shadow-xs font-bold' : 'btn-ghost border border-base-300/80 hover:border-primary hover:text-primary'"
                 >
-                  📦 Bazar / General
+                  📦 General
                 </button>
               </div>
 
-              <!-- Filtro de Categorías de Propiedades -->
+              <!-- Filtro de Categorías / Rubros -->
               <div class="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar">
                 @for (cat of scopeCategories; track cat.id) {
                   <button
@@ -931,7 +957,7 @@
                 }
               </div>
 
-              <!-- Chips de propiedades seleccionables -->
+              <!-- Chips de propiedades seleccionables del rubro -->
               <div class="flex flex-wrap gap-1.5 pt-0.5">
                 @for (prop of filteredScopeProperties(); track prop.key) {
                   <button

@@ -1016,12 +1016,12 @@ export class ProductList {
   get availableScopeProperties() {
     const fitsList = this.storeClothingFits().join(', ');
     return [
-      // 🌐 GENERALES & COMERCIALES
+      // 🌐 PROPIEDADES BASE (COMUNES A TODOS LOS PRODUCTOS)
       {
         key: 'model',
         payloadKey: 'model',
         label: '🏷️ Nombre / Modelo',
-        category: 'general',
+        category: 'base',
         type: 'string',
         explanation: 'Nombre o modelo comercial.',
         example: 'Remera Oversize Vesper'
@@ -1030,7 +1030,7 @@ export class ProductList {
         key: 'subtitle',
         payloadKey: 'subtitle',
         label: '📌 Subtítulo / Frase Comercial',
-        category: 'general',
+        category: 'base',
         type: 'string',
         explanation: 'Subtítulo breve o bajada comercial del producto.',
         example: 'Edición Limitada 2026'
@@ -1039,7 +1039,7 @@ export class ProductList {
         key: 'costPriceARS',
         payloadKey: 'costPriceARS',
         label: '💵 Costo Proveedor ($ ARS)',
-        category: 'general',
+        category: 'base',
         type: 'number',
         explanation: 'Costo de compra al proveedor en pesos sin IVA (ej: 14500). El sistema calcula precios de venta, cuotas y transferencias automáticamente.',
         example: 14500
@@ -1048,7 +1048,7 @@ export class ProductList {
         key: 'variants_matrix',
         payloadKey: 'variants',
         label: '🎨 Variantes Completas (Talles & Colores)',
-        category: 'general',
+        category: 'base',
         type: 'Array<{ colorName, colorHex, size, stock }>',
         explanation: 'Estructura completa de matriz de variantes con color, código HEX, talle/capacidad y stock.',
         example: [
@@ -1061,7 +1061,7 @@ export class ProductList {
         key: 'variants_colors',
         payloadKey: 'variants',
         label: '🎨 Paleta de Colores',
-        category: 'general',
+        category: 'base',
         type: 'Array<{ colorName, colorHex, size, stock }>',
         explanation: 'Actualizar colores oficiales y códigos HEX exactos de cada variante.',
         example: [
@@ -1074,7 +1074,7 @@ export class ProductList {
         key: 'variants_sizes',
         payloadKey: 'variants',
         label: '📏 Curva de Talles / Capacidades',
-        category: 'general',
+        category: 'base',
         type: 'Array<{ colorName, colorHex, size, stock }>',
         explanation: 'Normalizar o definir la curva de talles/capacidades disponibles (ej: S, M, L, XL, XXL o 128GB, 256GB).',
         example: [
@@ -1088,7 +1088,7 @@ export class ProductList {
         key: 'shortDescription',
         payloadKey: 'shortDescription',
         label: '📝 Descripción Corta',
-        category: 'general',
+        category: 'base',
         type: 'string',
         explanation: 'Resumen vendedor de 1-2 líneas para la tarjeta de producto.',
         example: 'Remera oversize de calce amplio confeccionada en algodón peinado.'
@@ -1097,7 +1097,7 @@ export class ProductList {
         key: 'largeDescription',
         payloadKey: 'largeDescription',
         label: '📄 Descripción Detallada (HTML)',
-        category: 'general',
+        category: 'base',
         type: 'string HTML',
         explanation: 'Descripción estructurada en HTML limpio (<p>, <ul>, <li>, <strong>).',
         example: '<p>Prenda versátil diseñada para uso diario con terminaciones de alta calidad.</p>'
@@ -1106,7 +1106,7 @@ export class ProductList {
         key: 'tags',
         payloadKey: 'tags',
         label: '🏷️ Etiquetas / Tags',
-        category: 'general',
+        category: 'base',
         type: 'string[]',
         explanation: 'Array de palabras clave para búsqueda interna y filtros.',
         example: ['verano', 'algodon', 'novedad', 'urbano']
@@ -1115,7 +1115,7 @@ export class ProductList {
         key: 'specifications',
         payloadKey: 'specifications',
         label: '⚙️ Ficha Técnica / Especificaciones',
-        category: 'general',
+        category: 'base',
         type: 'Array<{ key: string, value: string }>',
         explanation: 'Ficha técnica en pares clave y valor estructurados.',
         example: [
@@ -1127,7 +1127,7 @@ export class ProductList {
         key: 'seo',
         payloadKey: 'seo',
         label: '🌐 SEO (Meta Título & Meta Descripción)',
-        category: 'general',
+        category: 'base',
         type: 'Object { metaTitle, metaDescription }',
         explanation: 'Optimización para buscadores (Google): metaTitle (máx 60 caracteres) y metaDescription (máx 150 caracteres).',
         example: {
@@ -1314,12 +1314,12 @@ export class ProductList {
         example: 'Rostro & Cuello'
       },
 
-      // 📦 BAZAR & GENERAL (GeneralProduct)
+      // 📦 GENERAL (GeneralProduct)
       {
         key: 'barcode',
         payloadKey: 'barcode',
         label: '🔢 Código de Barras (EAN / UPC)',
-        category: 'bazar',
+        category: 'general',
         type: 'string',
         explanation: 'Código de barras principal o EAN-13 del producto.',
         example: '7791234567890'
@@ -1328,7 +1328,7 @@ export class ProductList {
         key: 'weight',
         payloadKey: 'weight',
         label: '⚖️ Peso / Dimensiones',
-        category: 'bazar',
+        category: 'general',
         type: 'string',
         explanation: 'Peso neto o medidas físicas (ej: "450g", "25 x 15 x 10 cm").',
         example: '450g'
@@ -1337,7 +1337,7 @@ export class ProductList {
         key: 'unit',
         payloadKey: 'unit',
         label: '📦 Unidad de Medida',
-        category: 'bazar',
+        category: 'general',
         type: 'string',
         explanation: 'Unidad de comercialización (ej: "Unidad", "Pack x6", "Kg").',
         example: 'Unidad'
@@ -1345,29 +1345,64 @@ export class ProductList {
     ];
   }
 
-  selectedScopeCategory = signal<string>('all');
+  selectedScopeCategory = signal<string>('clothing');
 
   scopeCategories = [
-    { id: 'all', label: 'Todas', icon: 'apps' },
-    { id: 'general', label: '🌐 Generales', icon: 'payments' },
     { id: 'clothing', label: '👕 Indumentaria', icon: 'checkroom' },
     { id: 'tech', label: '💻 Tecnología', icon: 'devices' },
     { id: 'beauty', label: '🌸 Belleza', icon: 'spa' },
-    { id: 'bazar', label: '📦 Bazar', icon: 'inventory_2' }
+    { id: 'general', label: '📦 General', icon: 'inventory_2' },
+    { id: 'base', label: '🌐 Solo Base', icon: 'layers' },
+    { id: 'all', label: '🗂️ Todas (32)', icon: 'apps' }
   ];
 
   filteredScopeProperties = computed(() => {
     const cat = this.selectedScopeCategory();
     if (cat === 'all') return this.availableScopeProperties;
-    return this.availableScopeProperties.filter((p) => p.category === cat);
+    if (cat === 'base') return this.availableScopeProperties.filter((p) => p.category === 'base');
+    // Para cada rubro específico, incluir las propiedades BASE del producto + las específicas de su rubro
+    return this.availableScopeProperties.filter((p) => p.category === 'base' || p.category === cat);
   });
 
-  selectRecommendedPropertiesForRubro(rubro: 'clothing' | 'tech' | 'beauty' | 'general' | 'all') {
+  currentTabLabel = computed(() => {
+    const cat = this.selectedScopeCategory();
+    const found = this.scopeCategories.find((c) => c.id === cat);
+    return found ? found.label : 'Propiedades';
+  });
+
+  isAllVisibleScopePropertiesSelected = computed(() => {
+    const visibleKeys = this.filteredScopeProperties().map((p) => p.key);
+    if (visibleKeys.length === 0) return false;
+    const selected = new Set(this.selectedScopeProperties());
+    return visibleKeys.every((k) => selected.has(k));
+  });
+
+  toggleAllVisibleScopeProperties() {
+    const visibleKeys = this.filteredScopeProperties().map((p) => p.key);
+    const selected = new Set(this.selectedScopeProperties());
+    const allSelected = visibleKeys.length > 0 && visibleKeys.every((k) => selected.has(k));
+
+    if (allSelected) {
+      this.selectedScopeProperties.set(
+        this.selectedScopeProperties().filter((k) => !visibleKeys.includes(k))
+      );
+    } else {
+      visibleKeys.forEach((k) => selected.add(k));
+      this.selectedScopeProperties.set(Array.from(selected));
+    }
+  }
+
+  clearAllScopeProperties() {
+    this.selectedScopeProperties.set([]);
+  }
+
+  getRecommendedKeys(rubro: 'clothing' | 'tech' | 'beauty' | 'general' | 'all'): string[] {
     switch (rubro) {
       case 'clothing':
-        this.selectedScopeProperties.set([
-          'variants_matrix',
+        return [
+          'model',
           'costPriceARS',
+          'variants_matrix',
           'material',
           'composition',
           'fit',
@@ -1376,12 +1411,12 @@ export class ProductList {
           'shortDescription',
           'tags',
           'seo'
-        ]);
-        break;
+        ];
       case 'tech':
-        this.selectedScopeProperties.set([
-          'variants_sizes',
+        return [
+          'model',
           'costPriceARS',
+          'variants_sizes',
           'specifications',
           'processor',
           'ram',
@@ -1389,36 +1424,53 @@ export class ProductList {
           'screenSize',
           'tags',
           'seo'
-        ]);
-        break;
+        ];
       case 'beauty':
-        this.selectedScopeProperties.set([
-          'variants_sizes',
+        return [
+          'model',
           'costPriceARS',
+          'variants_sizes',
           'volume',
           'concentration',
           'fragranceFamily',
           'shortDescription',
           'tags',
           'seo'
-        ]);
-        break;
+        ];
       case 'general':
-        this.selectedScopeProperties.set([
-          'variants_matrix',
+        return [
+          'model',
           'costPriceARS',
+          'variants_matrix',
           'barcode',
           'weight',
           'unit',
           'shortDescription',
           'tags',
           'seo'
-        ]);
-        break;
+        ];
       case 'all':
-        this.selectedScopeProperties.set(this.availableScopeProperties.map((p) => p.key));
-        break;
+        return this.availableScopeProperties.map((p) => p.key);
     }
+  }
+
+  applyRecommendedProperties(rubro: 'clothing' | 'tech' | 'beauty' | 'general' | 'all') {
+    this.selectedScopeCategory.set(rubro === 'all' ? 'all' : rubro);
+    this.selectedScopeProperties.set(this.getRecommendedKeys(rubro));
+  }
+
+  selectRecommendedPropertiesForRubro(rubro: 'clothing' | 'tech' | 'beauty' | 'general' | 'all') {
+    if (this.isRecommendedActive(rubro)) {
+      this.clearAllScopeProperties();
+    } else {
+      this.applyRecommendedProperties(rubro);
+    }
+  }
+
+  isRecommendedActive(rubro: string): boolean {
+    const target = this.getRecommendedKeys(rubro as any);
+    const current = this.selectedScopeProperties();
+    return target.length > 0 && target.length === current.length && target.every((k) => current.includes(k));
   }
 
   aiTargetProductType = signal<ProductType>(ProductType.CLOTHING);
@@ -1585,6 +1637,17 @@ export class ProductList {
     this.aiParsedCreateItems.set([]);
     this.aiParsedUpdateItems.set([]);
     this.aiParsedUpdateDiffs.set([]);
+
+    if (mode === 'update') {
+      const summary = this.selectedProductsTypesSummary();
+      let rubro: 'clothing' | 'tech' | 'beauty' | 'general' = 'clothing';
+      if (summary.dominantType === ProductType.TECH) rubro = 'tech';
+      else if (summary.dominantType === ProductType.BEAUTY) rubro = 'beauty';
+      else if (summary.dominantType === ProductType.GENERAL) rubro = 'general';
+
+      this.applyRecommendedProperties(rubro);
+    }
+
     this.showAiBulkModal.set(true);
   }
 
