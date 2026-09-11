@@ -1,0 +1,388 @@
+<app-page-layout>
+  <!-- TOP HEADER -->
+  <app-page-header
+    header
+    [title]="isEditMode() ? 'Editar Producto de Kiosco' : 'Nuevo Producto (Kiosco & Almacén)'"
+    subtitle="Carga express para mostrador, almacén y venta directa"
+  >
+    <div actions class="flex items-center gap-2">
+      <a routerLink="/home/products" class="btn btn-sm btn-ghost font-bold text-xs">
+        Cancelar
+      </a>
+
+      @if (!isEditMode()) {
+        <button
+          type="button"
+          class="btn btn-sm btn-outline btn-primary px-4 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+          (click)="saveProduct(true)"
+          [disabled]="kioscoForm.invalid || isLoading()"
+        >
+          <mat-icon class="text-base">queue</mat-icon>
+          <span>Guardar y Cargar Siguiente</span>
+        </button>
+      }
+
+      <button
+        type="button"
+        class="btn btn-sm btn-primary px-5 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+        (click)="saveProduct(false)"
+        [disabled]="kioscoForm.invalid || isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <mat-icon class="text-base">save</mat-icon>
+          <span>{{ isEditMode() ? 'Actualizar' : 'Guardar Producto' }}</span>
+        }
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- CONTENIDO 100% EXPRESS EN UNA SOLA PANTALLA -->
+  <div content class="max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-6 space-y-6">
+    <form [formGroup]="kioscoForm" class="space-y-5">
+      <!-- ========================================================================= -->
+      <!-- 1. BARCODE HERO SCANNER CARD                                              -->
+      <!-- ========================================================================= -->
+      <div class="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-2 border-primary/30 rounded-2xl p-5 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-primary font-bold text-sm">
+            <mat-icon class="text-lg">barcode_reader</mat-icon>
+            <span>Código de Barras (EAN-13 / UPC)</span>
+          </div>
+          <span class="text-2xs font-semibold text-primary/80 bg-primary/10 px-2.5 py-1 rounded-full">
+            Pistoleá con el lector o celular
+          </span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+              <mat-icon class="text-lg">qr_code_scanner</mat-icon>
+            </div>
+            <input
+              #barcodeInput
+              type="text"
+              formControlName="barcode"
+              (keydown)="onBarcodeKeydown($event)"
+              placeholder="Pistoleá el código aquí (ej: 7790310984189)"
+              class="w-full pl-10 pr-4 py-3 bg-base-100 border border-input rounded-xl text-foreground font-mono text-base font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+            />
+          </div>
+
+          <button
+            type="button"
+            (click)="searchBarcodeData()"
+            [disabled]="isSearchingBarcode() || !kioscoForm.get('barcode')?.value"
+            class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary text-primary-content hover:bg-primary/90 rounded-xl text-sm font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+          >
+            <mat-icon class="text-lg" [class.animate-spin]="isSearchingBarcode()">
+              {{ isSearchingBarcode() ? 'sync' : 'auto_fix_high' }}
+            </mat-icon>
+            <span>{{ isSearchingBarcode() ? 'Buscando...' : 'Autocompletar Datos' }}</span>
+          </button>
+        </div>
+
+        <p class="text-2xs text-muted-foreground flex items-center gap-1.5">
+          <mat-icon class="text-xs text-amber-500">lightbulb</mat-icon>
+          Al pistolear o presionar Enter, se consultará la base para auto-completar el nombre y la marca del producto.
+        </p>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 2. DATOS PRINCIPALES DEL PRODUCTO                                         -->
+      <!-- ========================================================================= -->
+      <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Nombre del Producto -->
+          <div class="sm:col-span-2 space-y-1.5">
+            <label class="text-xs font-bold text-base-content/80 block">
+              Nombre / Descripción del Producto *
+            </label>
+            <input
+              type="text"
+              formControlName="model"
+              placeholder="Ej: Alfajor Havanna 70% Cacao 50g / Coca Cola 500ml / Mayonesa Natura"
+              class="input input-bordered w-full text-sm font-semibold"
+            />
+          </div>
+
+          <!-- Categoría -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-base-content/80">Categoría *</label>
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-primary font-bold p-0 h-auto min-h-0"
+                (click)="addBrandCategory('category')"
+              >
+                + Nueva Categoría
+              </button>
+            </div>
+            <select formControlName="category" class="select select-bordered w-full text-xs font-medium">
+              <option value="" disabled>Seleccionar categoría...</option>
+              @for (c of categories(); track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Marca -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-base-content/80">Marca (Opcional)</label>
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-primary font-bold p-0 h-auto min-h-0"
+                (click)="addBrandCategory('brand')"
+              >
+                + Nueva Marca
+              </button>
+            </div>
+            <select formControlName="brand" class="select select-bordered w-full text-xs font-medium">
+              <option value="Genérico">Genérico / Sin marca</option>
+              @for (b of brands(); track b) {
+                <option [value]="b">{{ b }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 3. PRECIOS, COSTO Y GANANCIA RÁPIDA                                      -->
+      <!-- ========================================================================= -->
+      <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 space-y-4">
+        <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+          <mat-icon class="text-base">payments</mat-icon>
+          <span>Precios & Margen de Ganancia</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Precio Costo -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-base-content/80 block">
+              Precio de Costo ($)
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground font-bold text-sm">$</span>
+              <input
+                type="number"
+                min="0"
+                formControlName="costPrice"
+                placeholder="0"
+                class="input input-bordered w-full pl-8 text-sm font-semibold"
+              />
+            </div>
+            <span class="text-2xs text-muted-foreground block">Lo que te cobra el proveedor</span>
+          </div>
+
+          <!-- Margen Ganancia -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-base-content/80 block">
+              Margen de Ganancia (%)
+            </label>
+            <div class="relative">
+              <input
+                type="number"
+                min="0"
+                formControlName="profitMargin"
+                placeholder="40"
+                class="input input-bordered w-full pr-8 text-sm font-semibold text-primary"
+              />
+              <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground font-bold text-xs">%</span>
+            </div>
+            <span class="text-2xs text-muted-foreground block">Porcentaje sobre el costo</span>
+          </div>
+
+          <!-- Precio de Venta Final -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-emerald-600 block">
+              Precio Final de Venta ($) *
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-emerald-600 font-bold text-sm">$</span>
+              <input
+                type="number"
+                min="1"
+                formControlName="salePrice"
+                (ngModelChange)="onSalePriceManualChange($event)"
+                placeholder="0"
+                class="input input-bordered border-emerald-500/50 w-full pl-8 text-base font-black text-emerald-600 bg-emerald-500/5"
+              />
+            </div>
+            <span class="text-2xs text-emerald-600/80 block">Lo que cobra el mostrador</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 4. CONTROL DE STOCK & BALANZA                                             -->
+      <!-- ========================================================================= -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Stock Inicial -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 space-y-3">
+          <label class="text-xs font-bold text-base-content/80 block">
+            Stock Físico Inicial *
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <mat-icon class="text-base">inventory_2</mat-icon>
+            </div>
+            <input
+              type="number"
+              min="0"
+              formControlName="stock"
+              placeholder="10"
+              class="input input-bordered w-full pl-9 text-sm font-semibold"
+            />
+          </div>
+          <span class="text-2xs text-muted-foreground block">Cantidad disponible para venta</span>
+        </div>
+
+        <!-- Unidad de Medida -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 space-y-3">
+          <label class="text-xs font-bold text-base-content/80 block">
+            Unidad de Medida
+          </label>
+          <select formControlName="unit" class="select select-bordered w-full text-xs font-medium">
+            @for (opt of unitOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <span class="text-2xs text-muted-foreground block">Cómo se contabiliza el producto</span>
+        </div>
+      </div>
+
+      <!-- Switch Venta al Peso -->
+      <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex items-center justify-between">
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-base-content">Venta al peso / Balanza</span>
+            @if (kioscoForm.get('isSoldByWeight')?.value) {
+              <span class="badge badge-sm badge-success text-2xs font-bold">PESABLE</span>
+            }
+          </div>
+          <p class="text-2xs text-muted-foreground">
+            Activá si este producto se pesa en gramos/kilos al momento de cobrar en el POS (fiambres, quesos, pan).
+          </p>
+        </div>
+
+        <input type="checkbox" formControlName="isSoldByWeight" class="toggle toggle-primary toggle-sm" />
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 5. OPCIONES ADICIONALES (ACORDEÓN COLAPSADO)                              -->
+      <!-- ========================================================================= -->
+      <details class="collapse collapse-arrow bg-base-100 rounded-2xl border border-base-200 shadow-sm">
+        <summary class="collapse-title text-xs font-bold text-base-content/70 cursor-pointer py-3.5 px-5 select-none">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-base text-primary">add_circle_outline</mat-icon>
+            <span>Detalles adicionales (Foto opcional, Proveedor, SKU)</span>
+          </div>
+        </summary>
+
+        <div class="collapse-content px-5 pb-5 pt-2 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Proveedor Mayorista -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-base-content/80">Proveedor Mayorista</label>
+                <button type="button" class="btn btn-ghost btn-xs text-primary font-bold p-0 h-auto min-h-0" (click)="addProvider()">
+                  + Nuevo
+                </button>
+              </div>
+              <select formControlName="provider" class="select select-bordered w-full text-xs">
+                <option value="">Sin proveedor asignado</option>
+                @for (p of providers().data; track p._id) {
+                  <option [value]="p._id">{{ p.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Código interno / SKU -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-base-content/80 block">Código Interno / SKU (Opcional)</label>
+              <input
+                type="text"
+                formControlName="sku"
+                placeholder="Se generará automático si lo dejás vacío"
+                class="input input-bordered w-full text-xs"
+              />
+            </div>
+          </div>
+
+          <!-- Foto Opcional -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-base-content/80 block">Foto del Producto (Opcional)</label>
+            <div class="flex items-center gap-4">
+              @if (imagePreviewUrl()) {
+                <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-base-300">
+                  <img [src]="imagePreviewUrl()" alt="Preview" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    (click)="removeSelectedImage()"
+                    class="absolute top-1 right-1 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center shadow-xs"
+                  >
+                    <mat-icon class="text-xs">close</mat-icon>
+                  </button>
+                </div>
+              }
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event)"
+                class="file-input file-input-bordered file-input-sm w-full max-w-xs text-xs"
+              />
+            </div>
+          </div>
+
+          <!-- Nota o descripción corta -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-base-content/80 block">Breve descripción / Nota (Opcional)</label>
+            <textarea
+              formControlName="shortDescription"
+              placeholder="Nota sobre sabor, tamaño o detalles..."
+              class="textarea textarea-bordered w-full text-xs h-16"
+            ></textarea>
+          </div>
+        </div>
+      </details>
+
+      <!-- BOTONES INFERIORES -->
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-base-200">
+        <a routerLink="/home/products" class="btn btn-sm btn-ghost font-bold text-xs">
+          Cancelar
+        </a>
+
+        @if (!isEditMode()) {
+          <button
+            type="button"
+            class="btn btn-sm btn-outline btn-primary px-4 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+            (click)="saveProduct(true)"
+            [disabled]="kioscoForm.invalid || isLoading()"
+          >
+            <mat-icon class="text-base">queue</mat-icon>
+            <span>Guardar y Cargar Siguiente</span>
+          </button>
+        }
+
+        <button
+          type="button"
+          class="btn btn-sm btn-primary px-6 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+          (click)="saveProduct(false)"
+          [disabled]="kioscoForm.invalid || isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Guardando...</span>
+          } @else {
+            <mat-icon class="text-base">save</mat-icon>
+            <span>{{ isEditMode() ? 'Actualizar Producto' : 'Guardar Producto' }}</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</app-page-layout>

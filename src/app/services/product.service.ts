@@ -205,6 +205,19 @@ export class ProductService {
       );
   }
 
+  getProductByBarcode(barcode: string): Observable<{ product: any; matchedVariant?: any }> {
+    return this.#http
+      .get<{ product: any; matchedVariant?: any }>(`${this.#apiUrl}/by-barcode/${barcode}`)
+      .pipe(
+        map((res) => {
+          if (res?.product) {
+            res.product = mapProductPrices(res.product);
+          }
+          return res;
+        }),
+      );
+  }
+
   getSuggestions(query: string): Observable<any[]> {
     return this.#http
       .get<any[]>(`${this.#apiUrl}/search`, {

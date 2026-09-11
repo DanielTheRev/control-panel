@@ -126,9 +126,19 @@ export interface IProduct {
   // General fields (opcionales, presentes si productType === GENERAL)
   unit?: string;
   weight?: string;
+  barcode?: string;
+  isSoldByWeight?: boolean;
   seo: IProductSeo;
   createdAt?: string | Date;
   updatedAt?: string | Date;
+}
+
+export interface IGeneralProduct extends IProduct {
+  productType: ProductType.GENERAL;
+  unit?: string;
+  weight?: string;
+  barcode?: string;
+  isSoldByWeight?: boolean;
 }
 
 export interface ITechProduct extends IProduct {
@@ -269,6 +279,11 @@ export interface IProductCreateDTO {
   sizeType?: string;
   careInstructions?: string[];
   seo?: IProductSeo;
+  // General / Kiosco
+  barcode?: string;
+  isSoldByWeight?: boolean;
+  unit?: string;
+  stock?: number;
   // Nuevos campos
   additionalCosts?: string;
   discountPercentageTransfer?: number;

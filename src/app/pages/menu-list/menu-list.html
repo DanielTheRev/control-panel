@@ -4,7 +4,17 @@
     title="Menús de Navegación"
     subtitle="Gestioná los menús y categorías de tu tienda (Home Showcase, Sidebar, Header, etc.)"
   >
-    <div actions>
+    <div actions class="flex items-center gap-2">
+      <button
+        type="button"
+        (click)="loadMenus()"
+        class="btn btn-sm btn-ghost border border-base-300 rounded-xl font-bold gap-1.5 shadow-xs px-3"
+        [disabled]="isLoading()"
+        title="Recargar menús"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
+        <span class="hidden sm:inline">Recargar</span>
+      </button>
       <a
         routerLink="create"
         class="btn btn-sm btn-primary rounded-xl font-bold gap-1.5 shadow-sm px-4 text-white"

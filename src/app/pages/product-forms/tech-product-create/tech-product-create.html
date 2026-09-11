@@ -1,0 +1,615 @@
+<app-page-layout>
+  @let title = isEditMode() ? "Editar Producto de Tecnología" : "Nuevo Producto de Tecnología";
+  @let subtitle = isEditMode()
+    ? (techForm.get('brand')?.value || '') + ' ' + (techForm.get('model')?.value || 'Detalles del dispositivo')
+    : "Smartphones, computación, audio, TVs y electrónica de consumo";
+
+  <!-- HEADER -->
+  <app-page-header header [title]="title" [subtitle]="subtitle">
+    <div actions class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+      @if (techForm.invalid) {
+        <div class="text-[11px] text-error font-medium bg-error/10 px-3 py-1.5 border border-error/20 rounded-xl flex items-center justify-center gap-1.5 leading-tight shadow-xs">
+          <mat-icon class="text-[16px]! w-4! h-4! shrink-0">error_outline</mat-icon>
+          <span class="truncate">
+            Faltan campos: <span class="font-bold">{{ invalidControls().join(", ") }}</span>
+          </span>
+        </div>
+      } @else if (isEditMode() && !hasChanges()) {
+        <div class="text-[11px] text-base-content/60 font-medium bg-base-200/60 px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border border-base-300">
+          <mat-icon class="text-[16px]! w-4! h-4!">info</mat-icon>
+          <span>Sin cambios</span>
+        </div>
+      } @else {
+        <div class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 shadow-xs">
+          <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+          <span>Listo p/guardar</span>
+        </div>
+      }
+
+      <a
+        [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
+        class="btn btn-sm btn-ghost text-base-content/60 hover:text-base-content"
+      >
+        Cancelar
+      </a>
+
+      <button
+        class="btn btn-sm btn-primary px-5 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+        (click)="saveProduct()"
+        [disabled]="techForm.invalid || (isEditMode() && !hasChanges()) || isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">save</mat-icon>
+          <span>{{ isEditMode() ? "Actualizar" : "Guardar" }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Stepper Móvil Sticky (Visible en < lg) -->
+    <div
+      sub-menu
+      class="lg:hidden w-full px-3 py-3.5 bg-base-100 border-b border-base-200 shadow-2xs mb-2 mt-1"
+    >
+      <div class="flex items-center justify-between relative max-w-sm mx-auto">
+        <div class="absolute left-6 right-6 top-3.5 h-0.5 bg-base-200 -z-0"></div>
+        <div
+          class="absolute left-6 top-3.5 h-0.5 bg-primary transition-all duration-300 -z-0"
+          [style.width]="(currentStep() / (sections.length - 1)) * 100 + '%'"
+        ></div>
+
+        @for (sec of sections; track sec.id; let i = $index) {
+          <button
+            type="button"
+            (click)="scrollToSection(sec.id)"
+            class="flex flex-col items-center gap-1 relative z-10 cursor-pointer group"
+          >
+            <div
+              class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-200 border-2"
+              [ngClass]="
+                activeSection() === sec.id
+                  ? 'bg-primary text-primary-content border-primary shadow-sm scale-110'
+                  : 'bg-base-100 text-base-content/40 border-base-300'
+              "
+            >
+              @if (!isSectionInvalid(sec.id)) {
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">check</mat-icon>
+              } @else {
+                <span>{{ i + 1 }}</span>
+              }
+            </div>
+            <span class="text-[10px] font-bold" [ngClass]="activeSection() === sec.id ? 'text-primary font-black' : 'text-base-content/50'">
+              {{ sec.title.split(' ')[1] || sec.title }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  </app-page-header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <ng-container content>
+    <form [formGroup]="techForm" class="w-full pb-28 lg:pb-12 pt-2 sm:pt-4 px-1 sm:px-0">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
+
+        <!-- ========================================================================= -->
+        <!-- ÍNDICE LATERAL STICKY (Solo Desktop lg+)                                  -->
+        <!-- ========================================================================= -->
+        <div class="hidden lg:flex lg:flex-col lg:col-span-3 gap-3 sticky top-4 self-start">
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex flex-col gap-2">
+            <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest px-2">
+              Secciones del Producto
+            </span>
+
+            <nav class="flex flex-col gap-1.5 mt-1">
+              @for (sec of sections; track sec.id) {
+                <button
+                  type="button"
+                  class="flex items-center justify-between p-2.5 rounded-xl transition-all text-left text-xs font-semibold cursor-pointer"
+                  [ngClass]="
+                    activeSection() === sec.id
+                      ? 'bg-primary/10 text-primary font-bold border border-primary/20 shadow-2xs'
+                      : 'hover:bg-base-200/60 text-base-content/70 border border-transparent'
+                  "
+                  (click)="scrollToSection(sec.id)"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5! shrink-0" [ngClass]="activeSection() === sec.id ? 'text-primary' : 'text-base-content/50'">
+                      {{ sec.icon }}
+                    </mat-icon>
+                    <div class="flex flex-col min-w-0">
+                      <span class="truncate">{{ sec.title }}</span>
+                      <span class="text-[10px] font-normal text-base-content/40 truncate">{{ sec.desc }}</span>
+                    </div>
+                  </div>
+
+                  @if (isSectionInvalid(sec.id)) {
+                    <span class="badge badge-xs badge-error gap-1 shrink-0 font-bold">Falta dato</span>
+                  } @else {
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! text-success shrink-0">check_circle</mat-icon>
+                  }
+                </button>
+              }
+            </nav>
+          </div>
+
+          <!-- Tips / Guía de Finanzas -->
+          <div class="bg-base-200/40 rounded-2xl p-4 border border-base-200 text-xs text-base-content/60 space-y-2">
+            <div class="flex items-center gap-2 font-bold text-base-content/80 text-[11px] uppercase tracking-wider">
+              <mat-icon class="text-info text-[16px]! w-4! h-4!">lightbulb</mat-icon>
+              <span>Flujo de Tecnología</span>
+            </div>
+            <p class="text-[11px] leading-relaxed">
+              El <strong>Precio de Lista</strong> absorbe las comisiones y financiamiento de cuotas sin interés. El <strong>Descuento %</strong> se aplica directamente para compras en <strong>Transferencia o Efectivo</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- STREAM PRINCIPAL DE FORMULARIOS (lg:col-span-9)                            -->
+        <!-- ========================================================================= -->
+        <div class="lg:col-span-9 flex flex-col gap-6">
+
+          <!-- ===================================================================== -->
+          <!-- 1. IDENTIFICACIÓN & HARDWARE / SPECS                                  -->
+          <!-- ===================================================================== -->
+          <section id="section-info" class="flex flex-col gap-4 scroll-mt-6 pt-2 sm:pt-0">
+            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
+              <mat-icon class="text-primary text-[20px]! w-5! h-5!">devices</mat-icon>
+              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                1. Identificación & Hardware
+              </h2>
+            </div>
+
+            <!-- Datos Principales -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Modelo -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">
+                    Modelo del Equipo / Dispositivo *
+                  </legend>
+                  <input
+                    type="text"
+                    formControlName="model"
+                    placeholder="Ej: iPhone 15 Pro Max / Galaxy S24 Ultra / Smart TV 55 4K"
+                    class="input input-bordered w-full text-xs font-semibold"
+                  />
+                </fieldset>
+
+                <!-- Subtítulo -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">
+                    Subtítulo / Versión destacada
+                  </legend>
+                  <input
+                    type="text"
+                    formControlName="subtitle"
+                    placeholder="Ej: 256GB Titanio Natural / 120Hz OLED"
+                    class="input input-bordered w-full text-xs"
+                  />
+                </fieldset>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Marca -->
+                <fieldset class="fieldset">
+                  <div class="flex items-center justify-between">
+                    <legend class="fieldset-legend font-bold text-xs text-base-content/70">Marca *</legend>
+                    <button type="button" (click)="openAddBrandDialog()" class="text-primary text-xs font-bold hover:underline flex items-center gap-0.5">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Nueva Marca
+                    </button>
+                  </div>
+                  <select formControlName="brand" class="select select-bordered w-full text-xs">
+                    <option value="">Seleccionar marca...</option>
+                    @for (b of brands(); track b) {
+                      <option [value]="b">{{ b }}</option>
+                    }
+                  </select>
+                </fieldset>
+
+                <!-- Categoría -->
+                <fieldset class="fieldset">
+                  <div class="flex items-center justify-between">
+                    <legend class="fieldset-legend font-bold text-xs text-base-content/70">Categoría *</legend>
+                    <button type="button" (click)="openAddCategoryDialog()" class="text-primary text-xs font-bold hover:underline flex items-center gap-0.5">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Nueva Categoría
+                    </button>
+                  </div>
+                  <select formControlName="category" class="select select-bordered w-full text-xs">
+                    <option value="">Seleccionar categoría...</option>
+                    @for (c of categories(); track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                </fieldset>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Proveedor -->
+                <fieldset class="fieldset">
+                  <div class="flex items-center justify-between">
+                    <legend class="fieldset-legend font-bold text-xs text-base-content/70">Proveedor / Importador *</legend>
+                    <button type="button" (click)="openAddProviderDialog()" class="text-primary text-xs font-bold hover:underline flex items-center gap-0.5">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Nuevo Proveedor
+                    </button>
+                  </div>
+                  <select formControlName="provider" class="select select-bordered w-full text-xs">
+                    <option value="">Seleccionar proveedor...</option>
+                    @for (p of providers().data; track p._id) {
+                      <option [value]="p._id">{{ p.name }}</option>
+                    }
+                  </select>
+                </fieldset>
+
+                <!-- Link Proveedor -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">Enlace del Producto en Proveedor (Opcional)</legend>
+                  <input
+                    type="url"
+                    formControlName="linkProductProvider"
+                    placeholder="https://importador.com/producto/123"
+                    class="input input-bordered w-full text-xs"
+                  />
+                </fieldset>
+              </div>
+            </div>
+
+            <!-- Ficha de Hardware Especifica -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">memory</mat-icon>
+                <span>Especificaciones de Hardware</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Procesador -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">Procesador / Chipset</legend>
+                  <input type="text" formControlName="processor" placeholder="Ej: Apple A17 Pro / Snapdragon 8 Gen 3 / Intel Core i7" class="input input-bordered w-full text-xs" />
+                </fieldset>
+
+                <!-- RAM -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">Memoria RAM</legend>
+                  <input type="text" formControlName="ram" placeholder="Ej: 8GB LPDDR5X / 16GB DDR5" class="input input-bordered w-full text-xs" />
+                </fieldset>
+
+                <!-- Pantalla -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">Pantalla / Display</legend>
+                  <input type="text" formControlName="screenSize" placeholder="Ej: 6.7 OLED 120Hz ProMotion / 55 4K UHD" class="input input-bordered w-full text-xs" />
+                </fieldset>
+
+                <!-- Sistema Operativo -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">Sistema Operativo</legend>
+                  <input type="text" formControlName="os" placeholder="Ej: iOS 17 / Android 14 / Windows 11 Pro" class="input input-bordered w-full text-xs" />
+                </fieldset>
+              </div>
+
+              <!-- Opciones de Almacenamiento -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/70 block">
+                  Opciones de Almacenamiento Disponibles (Tags)
+                </label>
+                <app-tag-input
+                  [formArray]="storageControls"
+                  placeholder="Escribí una capacidad (ej: 128GB, 256GB, 512GB) y presioná Enter"
+                />
+              </div>
+
+              <!-- Conectividad -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-base-content/70 block">
+                  Conectividad & Redes (Tags)
+                </label>
+                <app-tag-input
+                  [formArray]="connectivityControls"
+                  placeholder="Ej: 5G, Wi-Fi 6E, Bluetooth 5.3, NFC, USB-C"
+                />
+              </div>
+            </div>
+          </section>
+
+          <!-- ===================================================================== -->
+          <!-- 2. PRECIOS, MARGEN & FINANZAS                                         -->
+          <!-- ===================================================================== -->
+          <section id="section-pricing" class="flex flex-col gap-4 scroll-mt-6">
+            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
+              <mat-icon class="text-primary text-[20px]! w-5! h-5!">payments</mat-icon>
+              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                2. Precios, Cuotas & Finanzas
+              </h2>
+            </div>
+
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Precio Costo -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">
+                    Costo Proveedor (USD / ARS) *
+                  </legend>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-base-content/40">$</span>
+                    <input
+                      type="number"
+                      formControlName="price"
+                      min="1"
+                      placeholder="0.00"
+                      class="input input-bordered w-full pl-7 text-xs font-bold"
+                    />
+                  </div>
+                </fieldset>
+
+                <!-- Descuento Transferencia -->
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-bold text-xs text-base-content/70">
+                    Descuento Transferencia / Efectivo (%) *
+                  </legend>
+                  <div class="relative">
+                    <input
+                      type="number"
+                      formControlName="discountPercentageTransfer"
+                      min="0"
+                      max="100"
+                      placeholder="0"
+                      class="input input-bordered w-full pr-8 text-xs font-bold"
+                    />
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-base-content/40">%</span>
+                  </div>
+                </fieldset>
+              </div>
+
+              <!-- Margen Personalizado -->
+              <div class="p-4 bg-base-200/40 rounded-2xl border border-base-200 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="space-y-0.5">
+                    <span class="text-xs font-bold text-base-content block">Margen de Ganancia Personalizado</span>
+                    <span class="text-2xs text-muted-foreground block">Por defecto usa el margen global de la tienda ({{ storeConfig().config.profit }}%)</span>
+                  </div>
+                  <input type="checkbox" formControlName="useCustomProfit" class="toggle toggle-primary toggle-sm" />
+                </div>
+
+                @if (techForm.get('useCustomProfit')?.value) {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-base-200">
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Método de Rentabilidad</legend>
+                      <select formControlName="pricingMethodChoice" class="select select-bordered select-sm w-full text-xs">
+                        <option value="markup">Markup (Sobre costo)</option>
+                        <option value="margin">Margen (Sobre venta)</option>
+                      </select>
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Porcentaje (%)</legend>
+                      <input type="number" formControlName="customProfitMargin" class="input input-bordered input-sm w-full text-xs font-bold" />
+                    </fieldset>
+                  </div>
+                }
+              </div>
+
+              <!-- Gastos Adicionales -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-base-content/70">Gastos Operativos / Importación / Embalaje</span>
+                  <button type="button" (click)="addAdditionalCost()" class="btn btn-ghost btn-xs text-primary font-bold gap-1">
+                    <mat-icon class="text-sm">add</mat-icon> Agregar Gasto
+                  </button>
+                </div>
+
+                @if (additionalCostsControls.length > 0) {
+                  <div class="space-y-2">
+                    @for (cost of additionalCostsControls.controls; track $index; let idx = $index) {
+                      <div class="flex items-center gap-2 bg-base-200/30 p-2 rounded-xl border border-base-200">
+                        <input type="text" [formControl]="getCostControl(idx, 'concept')" placeholder="Concepto (ej: Envío, Seguro)" class="input input-bordered input-sm flex-1 text-xs" />
+                        <input type="number" [formControl]="getCostControl(idx, 'amount')" placeholder="Monto ($)" class="input input-bordered input-sm w-28 text-xs font-bold" />
+                        <button type="button" (click)="removeAdditionalCost(idx)" class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10">
+                          <mat-icon class="text-base">delete</mat-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- PREVIEW EN VIVO -->
+              @if (calculatedListPrice(); as lp) {
+                <div class="p-4 bg-primary/5 rounded-2xl border border-primary/20 space-y-2">
+                  <div class="flex items-center justify-between text-xs font-bold text-primary">
+                    <span>Precios de Venta Calculados Automáticamente</span>
+                    @if (isCalculatingListPrice()) {
+                      <span class="loading loading-spinner loading-xs"></span>
+                    }
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div class="bg-base-100 p-3 rounded-xl border border-base-200 shadow-2xs">
+                      <span class="text-2xs text-muted-foreground block uppercase font-bold">Precio Lista (Tarjetas / Cuotas)</span>
+                      <span class="text-lg font-black text-foreground">${{ lp.listPrice | number }}</span>
+                    </div>
+                    <div class="bg-base-100 p-3 rounded-xl border border-base-200 shadow-2xs">
+                      <span class="text-2xs text-emerald-600 block uppercase font-bold">Efectivo / Transferencia</span>
+                      <span class="text-lg font-black text-emerald-600">${{ transferPrice() | number }}</span>
+                    </div>
+                    <div class="bg-base-100 p-3 rounded-xl border border-base-200 shadow-2xs">
+                      <span class="text-2xs text-indigo-600 block uppercase font-bold">Ganancia Neta Estimada</span>
+                      <span class="text-lg font-black text-indigo-600">${{ (lp.profits.six_installments || lp.profits.three_installments || 0) | number }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- ===================================================================== -->
+          <!-- 3. VERSIONES, COLORES & STOCK POR VARIANTE                            -->
+          <!-- ===================================================================== -->
+          <section id="section-variants" class="flex flex-col gap-4 scroll-mt-6">
+            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
+              <mat-icon class="text-primary text-[20px]! w-5! h-5!">memory</mat-icon>
+              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                3. Versiones, Colores & Control de Stock
+              </h2>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-muted-foreground">
+                  Configurá las variantes tecnológicas combinando versión/almacenamiento, color y stock individual.
+                </p>
+                <button type="button" (click)="addColorGroup()" class="btn btn-sm btn-primary gap-1 font-bold shadow-xs">
+                  <mat-icon class="text-base">add</mat-icon> Agregar Variante
+                </button>
+              </div>
+
+              @if (colorGroupsControls.length === 0) {
+                <div class="p-8 text-center bg-base-100 rounded-2xl border border-dashed border-base-300">
+                  <mat-icon class="text-3xl text-muted-foreground">devices</mat-icon>
+                  <p class="text-xs text-muted-foreground font-semibold mt-2">No agregaste variantes de hardware aún.</p>
+                  <button type="button" (click)="addColorGroup()" class="btn btn-xs btn-outline btn-primary mt-3">Crear primera versión</button>
+                </div>
+              }
+
+              @for (group of colorGroupsControls.controls; track $index; let gIdx = $index) {
+                <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                    <div class="flex items-center gap-2 font-bold text-xs text-base-content">
+                      <span class="w-2.5 h-2.5 rounded-full" [style.backgroundColor]="getColorGroupControl(gIdx, 'hex').value || '#111'"></span>
+                      <span>Variante {{ gIdx + 1 }}: {{ getColorGroupControl(gIdx, 'versionName').value || 'Sin Versión' }} - {{ getColorGroupControl(gIdx, 'colorName').value || 'Sin Color' }}</span>
+                    </div>
+                    <button type="button" (click)="removeColorGroup(gIdx)" class="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10">
+                      <mat-icon class="text-base">close</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Versión / Capacidad (ej: 256GB / 16GB RAM) *</legend>
+                      <input type="text" [formControl]="getColorGroupControl(gIdx, 'versionName')" placeholder="256GB" class="input input-bordered input-sm w-full text-xs font-semibold" />
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Nombre del Color *</legend>
+                      <input type="text" [formControl]="getColorGroupControl(gIdx, 'colorName')" placeholder="Titanio Negro" class="input input-bordered input-sm w-full text-xs font-semibold" />
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Código Hex Color</legend>
+                      <div class="flex items-center gap-2">
+                        <input type="color" [formControl]="getColorGroupControl(gIdx, 'hex')" class="w-8 h-8 rounded-lg border border-base-300 cursor-pointer p-0.5" />
+                        <input type="text" [formControl]="getColorGroupControl(gIdx, 'hex')" class="input input-bordered input-sm flex-1 text-xs font-mono" />
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Stock Disponible *</legend>
+                      <input type="number" min="0" [formControl]="getColorGroupControl(gIdx, 'stock')" class="input input-bordered input-sm w-full text-xs font-bold" />
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">Código de Barras / EAN *</legend>
+                      <input type="text" [formControl]="getColorGroupControl(gIdx, 'barcode')" placeholder="7791234567890" class="input input-bordered input-sm w-full text-xs font-mono" />
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend text-2xs font-bold">SKU Interno</legend>
+                      <input type="text" [formControl]="getColorGroupControl(gIdx, 'sku')" placeholder="IP15PM-256-BLK" class="input input-bordered input-sm w-full text-xs font-mono uppercase" />
+                    </fieldset>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- ===================================================================== -->
+          <!-- 4. MULTIMEDIA, FICHA TÉCNICA & SEO                                    -->
+          <!-- ===================================================================== -->
+          <section id="section-details" class="flex flex-col gap-4 scroll-mt-6">
+            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
+              <mat-icon class="text-primary text-[20px]! w-5! h-5!">tune</mat-icon>
+              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                4. Multimedia, Ficha Técnica & SEO
+              </h2>
+            </div>
+
+            <!-- Galería Multimedia -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-3">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">photo_library</mat-icon>
+                <span>Galería de Fotos del Dispositivo</span>
+              </div>
+              <app-image-upload
+                [imagesControls]="imagesControls"
+                [originalImages]="originalImages()"
+                (imageDeleted)="onImageDeleted($event)"
+              />
+            </div>
+
+            <!-- Ficha Técnica (Key-Value) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-3">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">tune</mat-icon>
+                <span>Ficha Técnica Detallada (Clave - Valor)</span>
+              </div>
+              <app-key-value-list
+                [formArray]="specificationsControls"
+                entityName="Especificación"
+                keyPlaceholder="Característica (ej: Batería, Cámara, Peso)"
+                valuePlaceholder="Detalle (ej: 5000 mAh, 108MP, 180g)"
+              />
+            </div>
+
+            <!-- Características Destacadas (Bullet points) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-3">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">format_list_bulleted</mat-icon>
+                <span>Puntos Destacados para la Tienda</span>
+              </div>
+              <app-tag-input
+                [formArray]="featuresControls"
+                placeholder="Ej: Pantalla 120Hz fluida, Carga rápida 65W, Resistencia al agua IP68"
+              />
+            </div>
+
+            <!-- Descripciones -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">description</mat-icon>
+                <span>Descripciones & Textos de Venta</span>
+              </div>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs text-base-content/70">Descripción Breve (Extracto para tarjetas)</legend>
+                <textarea formControlName="shortDescription" class="textarea textarea-bordered w-full text-xs h-20" placeholder="Resumen del equipo..."></textarea>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs text-base-content/70">Descripción Completa (Ficha y detalles)</legend>
+                <quill-editor formControlName="largeDescription" placeholder="Detalles técnicos, contenido de la caja y garantía..." class="bg-base-100 rounded-xl overflow-hidden block"></quill-editor>
+              </fieldset>
+            </div>
+
+            <!-- Optimización SEO & Redes -->
+            <div formGroupName="seo" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-base-200 text-primary font-bold text-xs uppercase tracking-wider">
+                <mat-icon class="text-base">travel_explore</mat-icon>
+                <span>Optimización en Buscadores (SEO & Social)</span>
+              </div>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs text-base-content/70">Título SEO (Meta Title)</legend>
+                <input type="text" formControlName="metaTitle" placeholder="Título que se verá en Google..." class="input input-bordered w-full text-xs" />
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs text-base-content/70">Descripción SEO (Meta Description)</legend>
+                <textarea formControlName="metaDescription" placeholder="Descripción resumida para buscadores y links de WhatsApp..." class="textarea textarea-bordered w-full text-xs h-20"></textarea>
+              </fieldset>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </form>
+  </ng-container>
+</app-page-layout>

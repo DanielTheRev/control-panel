@@ -1,0 +1,121 @@
+<div [formGroup]="generalForm" class="space-y-6">
+  <!-- Tarjeta de Código de Barras & Identificación Rápida -->
+  <div class="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-primary font-semibold text-sm">
+        <mat-icon class="text-base">qr_code_scanner</mat-icon>
+        <span>Código de Barras (EAN-13 / UPC)</span>
+      </div>
+      <span class="text-xs text-muted-foreground">Pistoleá directamente o tipea el código</span>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+          <mat-icon class="text-lg">barcode_reader</mat-icon>
+        </div>
+        <input
+          type="text"
+          formControlName="barcode"
+          (keydown)="onBarcodeKeydown($event)"
+          placeholder="Ej: 7790310984189 (Escaneá aquí)"
+          class="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        />
+      </div>
+
+      <button
+        type="button"
+        (click)="searchBarcodeData()"
+        [disabled]="isSearchingBarcode() || !generalForm.get('barcode')?.value"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+      >
+        <mat-icon class="text-lg" [class.animate-spin]="isSearchingBarcode()">
+          {{ isSearchingBarcode() ? 'sync' : 'auto_fix_high' }}
+        </mat-icon>
+        <span>{{ isSearchingBarcode() ? 'Buscando...' : 'Completar datos' }}</span>
+      </button>
+    </div>
+
+    <p class="text-xs text-muted-foreground flex items-center gap-1.5">
+      <mat-icon class="text-xs text-amber-500">lightbulb</mat-icon>
+      Al pistolear o presionar Enter, se consultará la base para auto-completar el nombre y la marca del producto.
+    </p>
+  </div>
+
+  <!-- Control de Stock & Unidad de Medida -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Stock Físico -->
+    <div class="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-3">
+      <label class="block text-sm font-medium text-foreground">
+        Stock Inicial Disponible
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+          <mat-icon class="text-lg">inventory_2</mat-icon>
+        </div>
+        <input
+          type="number"
+          min="0"
+          formControlName="stock"
+          placeholder="0"
+          class="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        />
+      </div>
+      <span class="text-xs text-muted-foreground block">
+        Cantidad de unidades o paquetes disponibles para venta.
+      </span>
+    </div>
+
+    <!-- Unidad de Medida -->
+    <div class="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-3">
+      <label class="block text-sm font-medium text-foreground">
+        Unidad de Medida
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+          <mat-icon class="text-lg">scale</mat-icon>
+        </div>
+        <select
+          formControlName="unit"
+          class="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none cursor-pointer"
+        >
+          @for (opt of unitOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-muted-foreground">
+          <mat-icon class="text-lg">expand_more</mat-icon>
+        </div>
+      </div>
+      <span class="text-xs text-muted-foreground block">
+        Cómo se fracciona o contabiliza este producto.
+      </span>
+    </div>
+  </div>
+
+  <!-- Switch Venta al Peso / Balanza -->
+  <div class="bg-card border border-border/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+    <div class="space-y-0.5">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium text-foreground">Venta al peso / Balanza</span>
+        @if (generalForm.get('isSoldByWeight')?.value) {
+          <span class="px-2 py-0.5 text-2xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+            PESABLE
+          </span>
+        }
+      </div>
+      <p class="text-xs text-muted-foreground">
+        Habilita el ingreso de peso (gramos/kg) al momento de cobrar en el Punto de Venta.
+      </p>
+    </div>
+
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        formControlName="isSoldByWeight"
+        class="sr-only peer"
+      />
+      <div class="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+    </label>
+  </div>
+</div>

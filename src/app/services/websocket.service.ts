@@ -1,4 +1,5 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import {
   IAdminNotification,
@@ -21,6 +22,7 @@ export class WebSocketService {
   private orderState = inject(OrdersStateService);
   private soundService = inject(SoundService);
   #debug = inject(DebugService);
+  private barcodeScanned$ = new Subject<{ barcode: string; deviceId?: string }>();
 
   // Signals para el estado de WebSocket
   private _wsState = signal<WebSocketState>({
@@ -102,6 +104,12 @@ export class WebSocketService {
         this.showNotification(notification.title, notification.message, notification.id);
       }
     });
+
+    // Evento de escaneo remoto de código de barras (desde app móvil)
+    this.socket.on('pos:barcode_scanned', (data: { barcode: string; deviceId?: string }) => {
+      this.#debug.log('📷 Código de barras escaneado remotamente:', data);
+      this.barcodeScanned$.next(data);
+    });
   }
 
   private handleSideEffects(notification: IAdminNotification) {
@@ -172,6 +180,10 @@ export class WebSocketService {
     if (this.socket?.connected) {
       this.socket.emit('leave-room', room);
     }
+  }
+
+  onBarcodeScanned(): Observable<{ barcode: string; deviceId?: string }> {
+    return this.barcodeScanned$.asObservable();
   }
 
   markAsRead(notificationId?: string): void {

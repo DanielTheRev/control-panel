@@ -54,6 +54,11 @@ import {
   BeautyFormValue,
   BeautyProductForm,
 } from '../../shared/components/beauty-product-form/beauty-product-form';
+import {
+  GeneralFormValue,
+  GeneralProductForm,
+  AutoFillProductData,
+} from '../../shared/components/general-product-form/general-product-form';
 import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 import { KeyValueListComponent } from '../../shared/components/key-value-list/key-value-list.component';
 import { PageHeader } from '../../shared/components/page-header/page-header';
@@ -100,6 +105,7 @@ interface SizeGuideState {
     TechProductForm,
     ClothingProductForm,
     BeautyProductForm,
+    GeneralProductForm,
     SingleImageUpload,
   ],
   templateUrl: './product-create.html',
@@ -231,6 +237,8 @@ export class ProductCreate {
         typeSpecific = this.clothingInitialValue();
       } else if (this.selectedType() === ProductType.BEAUTY) {
         typeSpecific = this.beautyInitialValue();
+      } else if (this.selectedType() === ProductType.GENERAL) {
+        typeSpecific = this.generalInitialValue();
       } else {
         typeSpecific = {};
       }
@@ -271,6 +279,8 @@ export class ProductCreate {
         typeSpecific = this.clothingInitialValue();
       } else if (this.selectedType() === ProductType.BEAUTY) {
         typeSpecific = this.beautyInitialValue();
+      } else if (this.selectedType() === ProductType.GENERAL) {
+        typeSpecific = this.generalInitialValue();
       } else {
         typeSpecific = {};
       }
@@ -494,17 +504,23 @@ export class ProductCreate {
   });
 
   isSectionInvalid(sectionId: string): boolean {
+    const isGeneral = this.selectedType() === ProductType.GENERAL;
     const c = this.productForm.controls;
     if (sectionId === 'info') {
+      if (isGeneral) {
+        return !!(c['model']?.invalid || c['category']?.invalid);
+      }
       return !!(c['model']?.invalid || c['brand']?.invalid || c['category']?.invalid || c['provider']?.invalid || c['images']?.invalid);
     }
     if (sectionId === 'pricing') {
       return !!(c['price']?.invalid || c['discountPercentageTransfer']?.invalid || (c['useCustomProfit']?.value && c['customProfitMargin']?.invalid));
     }
     if (sectionId === 'variants') {
+      if (isGeneral) return false;
       return !!c['colorGroups']?.invalid;
     }
     if (sectionId === 'details') {
+      if (isGeneral) return false;
       return !!(c['shortDescription']?.invalid || c['largeDescription']?.invalid || !this.isSizeGuideValid());
     }
     return false;
@@ -863,13 +879,31 @@ XXL: 58, 76, 52
     );
   }
 
-  /** Values from the active child form (tech, clothing or beauty) */
-  #typeSpecificValues = signal<TechFormValue | ClothingFormValue | BeautyFormValue | null>(null);
+  /** Values from the active child form (tech, clothing, beauty or general) */
+  #typeSpecificValues = signal<TechFormValue | ClothingFormValue | BeautyFormValue | GeneralFormValue | null>(null);
 
   /** Pre-load value passed down to child form in edit mode */
   techInitialValue = signal<TechFormValue | null>(null);
   clothingInitialValue = signal<ClothingFormValue | null>(null);
   beautyInitialValue = signal<BeautyFormValue | null>(null);
+  generalInitialValue = signal<GeneralFormValue | null>(null);
+
+  onGeneralFormChange(val: GeneralFormValue) {
+    this.#typeSpecificValues.set(val);
+  }
+
+  onGeneralAutoFill(data: AutoFillProductData) {
+    const patch: any = {};
+    if (data.model && !this.productForm.get('model')?.value) {
+      patch.model = data.model;
+    }
+    if (data.brand && !this.productForm.get('brand')?.value) {
+      patch.brand = data.brand;
+    }
+    if (Object.keys(patch).length > 0) {
+      this.productForm.patchValue(patch);
+    }
+  }
 
   ProductType = ProductType;
 
@@ -914,9 +948,10 @@ XXL: 58, 76, 52
   }
 
   get invalidControls(): string[] {
+    const isGeneral = this.selectedType() === ProductType.GENERAL;
     const translations: Record<string, string> = {
       productType: 'Tipo',
-      model: 'Modelo',
+      model: isGeneral ? 'Nombre del producto' : 'Modelo',
       brand: 'Marca',
       category: 'Categoría',
       price: 'Precio de costo',
@@ -935,11 +970,17 @@ XXL: 58, 76, 52
     const invalid: string[] = [];
     const controls = this.productForm.controls;
     for (const name in controls) {
+      if (
+        isGeneral &&
+        ['shortDescription', 'largeDescription', 'images', 'provider', 'colorGroups', 'brand'].includes(name)
+      ) {
+        continue;
+      }
       if (controls[name].invalid) {
         invalid.push(translations[name] || name);
       }
     }
-    if (!this.isSizeGuideValid()) {
+    if (!isGeneral && !this.isSizeGuideValid()) {
       invalid.push('Guía de Talles');
     }
     return invalid;
@@ -1062,11 +1103,37 @@ XXL: 58, 76, 52
       });
   }
 
+  updateValidatorsForType(type: string) {
+    const isGeneral = type === ProductType.GENERAL;
+    const c = this.productForm.controls;
+
+    if (isGeneral) {
+      c['provider']?.clearValidators();
+      c['shortDescription']?.clearValidators();
+      c['largeDescription']?.clearValidators();
+      c['images']?.clearValidators();
+      c['brand']?.clearValidators();
+    } else {
+      c['provider']?.setValidators(Validators.required);
+      c['shortDescription']?.setValidators(Validators.required);
+      c['largeDescription']?.setValidators(Validators.required);
+      c['images']?.setValidators([Validators.required, Validators.minLength(1)]);
+      c['brand']?.setValidators(Validators.required);
+    }
+
+    c['provider']?.updateValueAndValidity({ emitEvent: false });
+    c['shortDescription']?.updateValueAndValidity({ emitEvent: false });
+    c['largeDescription']?.updateValueAndValidity({ emitEvent: false });
+    c['images']?.updateValueAndValidity({ emitEvent: false });
+    c['brand']?.updateValueAndValidity({ emitEvent: false });
+  }
+
   #initCreateMode(profit: number) {
     const type = this.typeParam();
     if (type) {
       this.selectedType.set(type);
       this.productForm.patchValue({ productType: type });
+      this.updateValidatorsForType(type);
     }
 
     this.isUsingGlobalMargin.set(true);
@@ -1093,6 +1160,7 @@ XXL: 58, 76, 52
 
       const type = product.productType;
       this.selectedType.set(type);
+      this.updateValidatorsForType(type);
 
       // Patch child form values for edit mode
       if (type === ProductType.TECH) {
@@ -1119,6 +1187,13 @@ XXL: 58, 76, 52
           gender: typeof product.gender === 'string' ? product.gender : 'Unisex',
           applicationArea: product.applicationArea || '',
           scentNotes: product.scentNotes,
+        });
+      } else if (type === ProductType.GENERAL) {
+        this.generalInitialValue.set({
+          barcode: (product as any).barcode || product.variants?.[0]?.barcode || '',
+          stock: product.variants?.[0]?.stock ?? product.totalStock ?? 0,
+          unit: (product as any).unit || 'un',
+          isSoldByWeight: (product as any).isSoldByWeight ?? false,
         });
       }
 
@@ -1697,6 +1772,7 @@ XXL: 58, 76, 52
   }
 
   async saveProduct() {
+    this.updateValidatorsForType(this.selectedType());
     if (this.productForm.invalid || !this.isSizeGuideValid()) {
       this.productForm.markAllAsTouched();
       return;
@@ -1753,14 +1829,66 @@ XXL: 58, 76, 52
     }
   }
 
+  async saveAndCreateNext() {
+    this.updateValidatorsForType(this.selectedType());
+    if (this.productForm.invalid || !this.isSizeGuideValid()) {
+      this.productForm.markAllAsTouched();
+      return;
+    }
+
+    const fullProductData = this.#getFullProductData();
+    const formData = new FormData();
+    this.buildCreateFormData(formData, fullProductData);
+
+    this.isLoading.set(true);
+    try {
+      this.#debug.log('=== DATOS POST BATCH (GUARDAR Y CARGAR OTRO) ===');
+      formData.forEach((value, key) => this.#debug.log(`${key}:`, value));
+
+      await this.#productState.createProduct(formData);
+      this.revokeBlobUrls();
+
+      const lastCategory = this.productForm.get('category')?.value;
+
+      this.productForm.patchValue({
+        model: '',
+        subtitle: '',
+        brand: '',
+        category: lastCategory || '',
+        price: 0,
+        shortDescription: '',
+        largeDescription: '',
+      });
+      this.#typeSpecificValues.set({
+        barcode: '',
+        stock: 0,
+        unit: 'un',
+        isSoldByWeight: false,
+      });
+      this.generalInitialValue.set({
+        barcode: '',
+        stock: 0,
+        unit: 'un',
+        isSoldByWeight: false,
+      });
+      this.#debug.log('✅ Producto guardado. Formulario listo para el siguiente.');
+    } catch (error) {
+      this.#debug.error('Error creating product in batch mode', error);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
   private buildCreateFormData(formData: FormData, data: any) {
     formData.append('productType', data.productType);
-    formData.append('provider', data.provider);
+    if (data.provider) {
+      formData.append('provider', data.provider);
+    }
     if (data.linkProductProvider !== undefined && data.linkProductProvider !== null) {
       formData.append('linkProductProvider', data.linkProductProvider);
     }
     formData.append('model', data.model);
-    formData.append('brand', data.brand);
+    formData.append('brand', data.brand || (data.productType === ProductType.GENERAL ? 'Genérico' : ''));
     formData.append('category', data.category);
     formData.append('price', data.price);
 
@@ -1791,14 +1919,33 @@ XXL: 58, 76, 52
     }
 
     formData.append('status', String(data.status || 'published'));
-    formData.append('isFeatured', String(data.isFeatured));
+    formData.append('isFeatured', String(data.isFeatured || false));
 
-    formData.append('shortDescription', data.shortDescription);
-    formData.append('largeDescription', data.largeDescription);
+    formData.append('shortDescription', data.shortDescription || '');
+    formData.append('largeDescription', data.largeDescription || '');
 
-    formData.append('features', JSON.stringify(data.features));
-    formData.append('specifications', JSON.stringify(data.specifications));
-    formData.append('variants', JSON.stringify(this.parseVariants()));
+    formData.append('features', JSON.stringify(data.features || []));
+    formData.append('specifications', JSON.stringify(data.specifications || []));
+
+    // Variants handling:
+    let variants = this.parseVariants();
+    if (data.productType === ProductType.GENERAL && (!variants || variants.length === 0)) {
+      const cleanModel = (data.model || 'GEN').replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toUpperCase();
+      const sku = `${cleanModel}-${Date.now().toString().slice(-4)}`;
+      const genVals = this.#typeSpecificValues() as GeneralFormValue;
+      const generalStock = Number(data.stock ?? genVals?.stock ?? 0);
+      const barcode = data.barcode || genVals?.barcode || '';
+      variants = [
+        {
+          sku,
+          stock: generalStock,
+          barcode,
+          isActive: true,
+          imageReference: { url: '', public_id: '' },
+        },
+      ];
+    }
+    formData.append('variants', JSON.stringify(variants));
 
     // Append type-specific fields from child form
     if (this.#typeSpecificValues()) {
@@ -1824,12 +1971,26 @@ XXL: 58, 76, 52
           formData.append('sizeType', clothingVals.sizeType);
         if (clothingVals.season) formData.append('season', clothingVals.season);
       }
+
+      if (data.productType === ProductType.GENERAL) {
+        const genVals = this.#typeSpecificValues() as GeneralFormValue;
+        const barcode = data.barcode || genVals?.barcode;
+        const isSoldByWeight = data.isSoldByWeight !== undefined ? data.isSoldByWeight : genVals?.isSoldByWeight;
+        const unit = data.unit || genVals?.unit;
+
+        if (barcode) formData.append('barcode', barcode);
+        if (isSoldByWeight !== undefined) formData.append('isSoldByWeight', String(isSoldByWeight));
+        if (unit) formData.append('unit', unit);
+      }
     }
 
-    data.images.forEach((img: any) => {
-      if (img.file) formData.append('images', img.file);
-    });
-    if (data.seo) {
+    if (data.images && Array.isArray(data.images)) {
+      data.images.forEach((img: any) => {
+        if (img.file) formData.append('images', img.file);
+      });
+    }
+
+    if (data.seo && (data.seo.metaTitle || data.seo.metaDescription || this.seoImageControl.value)) {
       const seoImageValue = this.seoImageControl.value;
 
       // Armamos el objeto tal cual lo espera el backend

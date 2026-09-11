@@ -1,11 +1,13 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, DestroyRef, HostListener } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { ProductService } from '../../services/product.service';
 import { OrdersService } from '../../services/orders.service';
 import { CashRegisterStoreService } from '../../states/cash-register.state.service';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
+import { WebSocketService } from '../../services/websocket.service';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,8 +33,14 @@ export class PosComponent implements OnInit {
   private productService = inject(ProductService);
   private ordersService = inject(OrdersService);
   private notifications = inject(NotificationsService);
+  private wsService = inject(WebSocketService);
+  private destroyRef = inject(DestroyRef);
   public cashStore = inject(CashRegisterStoreService);
   public storeConfigStore = inject(StoreConfigStateService);
+
+  // Barcode scanner buffer & state
+  private barcodeBuffer = '';
+  private lastKeyStrokeTime = 0;
 
   // Mobile navigation tab
   activeTab = signal<'catalog' | 'cart'>('catalog');
@@ -136,6 +144,94 @@ export class PosComponent implements OnInit {
   ngOnInit(): void {
     this.setupSearch();
     this.loadInitialCatalog();
+    this.setupBarcodeScanner();
+  }
+
+  setupBarcodeScanner(): void {
+    this.wsService
+      .onBarcodeScanned()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ barcode }) => {
+        if (barcode) {
+          this.notifications.info(`📷 Escaneado desde móvil: ${barcode}`);
+          this.handleScannedBarcode(barcode.trim());
+        }
+      });
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onGlobalKeydown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const isInputElement =
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable);
+
+    const currentTime = Date.now();
+    const timeDiff = currentTime - this.lastKeyStrokeTime;
+    this.lastKeyStrokeTime = currentTime;
+
+    if (event.key === 'Enter') {
+      if (this.barcodeBuffer.length >= 6) {
+        event.preventDefault();
+        const scannedCode = this.barcodeBuffer.trim();
+        this.barcodeBuffer = '';
+        this.handleScannedBarcode(scannedCode);
+      } else {
+        this.barcodeBuffer = '';
+      }
+      return;
+    }
+
+    if (timeDiff > 80 && !isInputElement) {
+      this.barcodeBuffer = '';
+    }
+
+    if (event.key.length === 1) {
+      if (!isInputElement || timeDiff < 50) {
+        this.barcodeBuffer += event.key;
+      }
+    }
+  }
+
+  handleScannedBarcode(barcode: string): void {
+    if (!barcode) return;
+
+    // 1. Buscar en el catálogo local cargado
+    const localProduct = this.products().find((p) => {
+      if (p.barcode === barcode) return true;
+      return p.variants?.some((v: any) => v.barcode === barcode);
+    });
+
+    if (localProduct) {
+      const matchedVariant = localProduct.variants?.find(
+        (v: any) => v.barcode === barcode,
+      );
+      this.addVariantToCart(
+        localProduct,
+        matchedVariant || localProduct.variants?.[0] || null,
+      );
+      return;
+    }
+
+    // 2. Buscar en el backend mediante el endpoint dedicado
+    this.productService.getProductByBarcode(barcode).subscribe({
+      next: ({ product, matchedVariant }) => {
+        if (product) {
+          this.addVariantToCart(product, matchedVariant || null);
+        } else {
+          this.notifications.error(
+            `Producto no encontrado para el código ${barcode}`,
+          );
+        }
+      },
+      error: () => {
+        this.notifications.error(
+          `No se encontró ningún producto con código ${barcode}`,
+        );
+      },
+    });
   }
 
   setupSearch(): void {

@@ -9,6 +9,7 @@ import { ProductCreate } from './pages/product-create/product-create';
 import { ProductList } from './pages/product-list/product-list';
 import { ShippingOptions } from './pages/shipping-options/shipping-options';
 import { ProductTypeSelector } from './shared/components/product-type-selector/product-type-selector';
+import { ProductFormDispatcher } from './pages/product-forms/product-form-dispatcher';
 
 export const routes: Routes = [
   {
@@ -50,11 +51,11 @@ export const routes: Routes = [
           {
             // Step 2: fill form for a specific type
             path: 'create/:typeParam',
-            component: ProductCreate,
+            component: ProductFormDispatcher,
           },
           {
             path: 'edit/:productID',
-            component: ProductCreate,
+            component: ProductFormDispatcher,
           },
           {
             path: ':productID',

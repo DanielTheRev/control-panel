@@ -48,6 +48,18 @@
 
       @let disable =
         productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
+      @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
+        <button
+          type="button"
+          class="btn btn-sm btn-outline btn-primary px-4 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
+          (click)="saveAndCreateNext()"
+          [disabled]="productForm.invalid || isLoading()"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">queue</mat-icon>
+          <span>Guardar y Cargar Otro</span>
+        </button>
+      }
+
       <button
         class="btn btn-sm btn-primary px-5 font-bold shadow-xs hover:shadow-md transition-all"
         (click)="saveProduct()"
@@ -117,7 +129,7 @@
 
   <ng-container content>
     <form [formGroup]="productForm" class="w-full pb-28 lg:pb-12 pt-2 sm:pt-4 px-1 sm:px-0">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
 
         <!-- ========================================================================= -->
         <!-- ÍNDICE LATERAL STICKY (Solo Desktop lg+)                                  -->
@@ -198,9 +210,12 @@
                 <!-- Proveedor -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70">
-                    Proveedor / Fabricante
+                    Proveedor / Fabricante {{ selectedType() === ProductType.GENERAL ? '(Opcional)' : '' }}
                   </legend>
                   <select class="select select-bordered w-full text-xs" formControlName="provider">
+                    @if (selectedType() === ProductType.GENERAL) {
+                      <option value="">Sin proveedor asignado (Opcional)</option>
+                    }
                     @for (provider of providers().data; track provider._id) {
                       <option [value]="provider._id" id="provider-{{ provider._id }}">
                         {{ provider.name }}
@@ -228,7 +243,7 @@
                 <!-- Modelo / Nombre -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70">
-                    Modelo / Nombre de la Prenda
+                    {{ selectedType() === ProductType.GENERAL ? 'Nombre del Producto' : selectedType() === ProductType.CLOTHING ? 'Modelo / Nombre de la Prenda' : 'Modelo / Nombre' }}
                   </legend>
                   <input
                     type="text"
@@ -257,7 +272,7 @@
                 <!-- Marca -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70 flex items-center justify-between">
-                    <span>Marca</span>
+                    <span>Marca {{ selectedType() === ProductType.GENERAL ? '(Opcional)' : '' }}</span>
                     <button
                       type="button"
                       class="btn btn-ghost btn-xs text-primary gap-1 font-bold"
@@ -267,6 +282,9 @@
                     </button>
                   </legend>
                   <select class="select select-bordered w-full text-xs" formControlName="brand">
+                    @if (selectedType() === ProductType.GENERAL) {
+                      <option value="">Genérico / Sin marca (Opcional)</option>
+                    }
                     @for (b of brands(); track b) {
                       <option [value]="b" id="brand-{{ b }}">{{ b }}</option>
                     }
@@ -339,9 +357,14 @@
                 <div>
                   <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-1.5">
                     <mat-icon class="text-primary text-[16px]! w-4! h-4!">image</mat-icon>
-                    Galería de Fotos
+                    <span>Galería de Fotos</span>
+                    @if (selectedType() === ProductType.GENERAL) {
+                      <span class="badge badge-sm badge-ghost text-2xs font-normal text-muted-foreground">Opcional</span>
+                    }
                   </h3>
-                  <p class="text-[11px] text-base-content/50">La primera imagen será la foto de portada principal.</p>
+                  <p class="text-[11px] text-base-content/50">
+                    {{ selectedType() === ProductType.GENERAL ? 'Podés guardar el producto sin fotos o agregarlas si querés mostrarlas en tienda.' : 'La primera imagen será la foto de portada principal.' }}
+                  </p>
                 </div>
               </div>
 
@@ -910,6 +933,12 @@
                 <app-beauty-product-form
                   [initialValues]="beautyInitialValue()"
                   (formChange)="onTypeSpecificFormChange($event)"
+                />
+              } @else if (selectedType() === ProductType.GENERAL) {
+                <app-general-product-form
+                  [value]="generalInitialValue()"
+                  (formChange)="onGeneralFormChange($event)"
+                  (autoFill)="onGeneralAutoFill($event)"
                 />
               }
 
@@ -1653,19 +1682,32 @@
           Siguiente <mat-icon class="text-[16px]! w-4! h-4!">arrow_forward</mat-icon>
         </button>
       } @else {
-        <button
-          type="button"
-          class="btn btn-sm btn-success text-white gap-1 font-bold text-xs shadow-md"
-          (click)="saveProduct()"
-          [disabled]="productForm.invalid || (isEditMode() && !hasChanges()) || isLoading()"
-        >
-          @if (isLoading()) {
-            <span class="loading loading-spinner loading-xs"></span>
-          } @else {
-            <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+        <div class="flex items-center gap-2">
+          @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline btn-primary gap-1 font-bold text-xs"
+              (click)="saveAndCreateNext()"
+              [disabled]="productForm.invalid || isLoading()"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">queue</mat-icon>
+              <span>Guardar y Cargar Otro</span>
+            </button>
           }
-          {{ productID() ? "Actualizar" : "Guardar" }}
-        </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-success text-white gap-1 font-bold text-xs shadow-md"
+            (click)="saveProduct()"
+            [disabled]="productForm.invalid || (isEditMode() && !hasChanges()) || isLoading()"
+          >
+            @if (isLoading()) {
+              <span class="loading loading-spinner loading-xs"></span>
+            } @else {
+              <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+            }
+            {{ productID() ? "Actualizar" : "Guardar" }}
+          </button>
+        </div>
       }
     </div>
   </ng-container>
