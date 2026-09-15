@@ -190,7 +190,8 @@ export enum ClothingSizeType {
 export interface ICostConcept {
   concept: string;
   value: number;
-  type: 'fixed' | 'percent_over_provider';
+  type: 'fixed' | 'percent_over_provider' | 'percent_over_price';
+  category?: 'expense' | 'tax';
 }
 
 export interface IProductFinance {

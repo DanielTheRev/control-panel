@@ -581,11 +581,18 @@ export class BeautyProductCreate implements OnInit {
     return ctrl as FormControl;
   }
 
-  addAdditionalCost() {
+  addAdditionalCost(
+    concept: string = '',
+    value: number = 0,
+    type: 'fixed' | 'percent_over_provider' | 'percent_over_price' = 'fixed',
+    category: 'expense' | 'tax' = 'expense',
+  ) {
     this.additionalCostsControls.push(
       this.fb.group({
-        concept: ['', Validators.required],
-        amount: [0, [Validators.required, Validators.min(0)]],
+        concept: [concept, Validators.required],
+        value: [value, [Validators.required, Validators.min(0)]],
+        type: [type, Validators.required],
+        category: [category, Validators.required],
       }),
     );
   }

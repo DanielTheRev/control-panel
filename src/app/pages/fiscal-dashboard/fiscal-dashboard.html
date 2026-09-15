@@ -1,0 +1,356 @@
+<app-page-layout>
+  <app-page-header
+    header
+    title="Mi Monotributo & Finanzas Fiscales"
+    subtitle="Monitoreo en tiempo real de facturación acumulada (12 meses móviles), topes ARCA y recategorización."
+  >
+    <div actions class="flex items-center gap-2 flex-wrap">
+      <!-- Selector de Categoría Declarada -->
+      <div class="flex items-center gap-1.5 bg-base-100 p-1 rounded-2xl border border-base-200 shadow-2xs">
+        <span class="text-[11px] font-bold text-base-content/60 pl-2">Categoría Declarada:</span>
+        <select
+          [ngModel]="selectedCategory()"
+          (ngModelChange)="changeDeclaredCategory($event)"
+          [disabled]="updatingCategory() || loading()"
+          class="select select-xs select-primary font-mono font-black text-xs rounded-xl"
+        >
+          @for (cat of categoriesList; track cat) {
+            <option [value]="cat">Cat. {{ cat }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Acceso a Configuración Fiscal -->
+      <a
+        routerLink="/home/settings"
+        class="btn btn-sm btn-outline rounded-xl font-bold gap-1.5 shadow-2xs border-base-300"
+        title="Configurar CUIT, Categoría y ARCA"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!">tune</mat-icon>
+        <span class="hidden sm:inline">Ajustes Fiscales</span>
+      </a>
+
+      <!-- Botón Refrescar -->
+      <button
+        class="btn btn-sm btn-ghost btn-square rounded-xl border border-base-200 bg-base-100 shadow-2xs"
+        (click)="loadData()"
+        [disabled]="loading()"
+        title="Actualizar datos fiscales"
+      >
+        <mat-icon class="text-sm" [class.animate-spin]="loading()">refresh</mat-icon>
+      </button>
+    </div>
+  </app-page-header>
+
+  <div content class="flex flex-col gap-6 w-full pb-12 max-w-7xl mx-auto">
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex flex-col items-center justify-center py-24 space-y-3">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <p class="text-xs text-base-content/50 font-bold uppercase tracking-wider">
+          Auditando facturación de los últimos 12 meses móviles...
+        </p>
+      </div>
+    }
+
+    @if (!loading() && report(); as rep) {
+
+      <!-- ========================================================================= -->
+      <!-- 1. BANNER INTELIGENTE DE DIAGNÓSTICO & SEMÁFORO                           -->
+      <!-- ========================================================================= -->
+      <div class="rounded-2xl border p-4 sm:p-5 flex items-start sm:items-center gap-4 transition-all shadow-xs"
+        [ngClass]="rep.healthStatus === 'danger' ? 'bg-error/10 border-error/30 text-error' : (rep.healthStatus === 'warning' ? 'bg-warning/10 border-warning/30 text-warning-content' : 'bg-success/10 border-success/30 text-success')">
+        
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
+          [ngClass]="rep.healthStatus === 'danger' ? 'bg-error/20 border-error/30 text-error' : (rep.healthStatus === 'warning' ? 'bg-warning/20 border-warning/30 text-warning' : 'bg-success/20 border-success/30 text-success')">
+          <mat-icon class="text-[28px]! w-7! h-7!">
+            {{ rep.healthStatus === 'danger' ? 'crisis_alert' : (rep.healthStatus === 'warning' ? 'notification_important' : 'verified_user') }}
+          </mat-icon>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="badge badge-sm font-black uppercase text-[10px]"
+              [ngClass]="rep.healthStatus === 'danger' ? 'badge-error text-white' : (rep.healthStatus === 'warning' ? 'badge-warning text-black' : 'badge-success text-white')">
+              {{ rep.healthStatus === 'danger' ? 'Atención Requerida' : (rep.healthStatus === 'warning' ? 'Alerta de Límite' : 'Situación Óptima') }}
+            </span>
+            <span class="text-xs font-bold opacity-80">
+              Categoría Declarada: <strong>{{ rep.declaredCategory }}</strong> • Categoría Proyectada: <strong>{{ rep.calculatedCategory }}</strong>
+            </span>
+          </div>
+
+          <p class="text-xs sm:text-sm font-semibold leading-relaxed">
+            {{ rep.statusMessage }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 2. 4 TARJETAS KPI RESUMEN                                                 -->
+      <!-- ========================================================================= -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Card 1: Facturación Acumulada 12m -->
+        <div class="bg-base-100 rounded-2xl p-4 sm:p-5 border border-base-200 shadow-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider">Facturación 12 Meses</span>
+            <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">payments</mat-icon>
+            </div>
+          </div>
+          <div class="space-y-0.5">
+            <div class="text-2xl font-black text-base-content font-mono">
+              {{ rep.totalBilledRolling12Months | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </div>
+            <p class="text-[10px] text-base-content/50">
+              Con CAE oficial: <span class="font-bold text-primary">{{ rep.totalInvoicedRolling12Months | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+            </p>
+            @if (rep.previousExternalBilling && rep.previousExternalBilling > 0) {
+              <div class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 pt-0.5">
+                <mat-icon class="text-[12px]! w-3! h-3!">history_edu</mat-icon>
+                <span>Incluye {{ rep.previousExternalBilling | currency:'ARS':'symbol-narrow':'1.0-0' }} externa</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Card 2: Margen Disponible en Categoría Actual -->
+        <div class="bg-base-100 rounded-2xl p-4 sm:p-5 border border-base-200 shadow-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider">Margen Cat. {{ rep.declaredCategory }}</span>
+            <div class="w-8 h-8 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">speed</mat-icon>
+            </div>
+          </div>
+          <div class="space-y-0.5">
+            <div class="text-2xl font-black font-mono"
+              [ngClass]="rep.remainingForDeclaredCategory > 0 ? 'text-success' : 'text-error'">
+              {{ rep.remainingForDeclaredCategory | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </div>
+            <p class="text-[10px] text-base-content/50">
+              Tope anual Cat. {{ rep.declaredCategory }}: {{ rep.declaredScale.annualLimit | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 3: Cuota Mensual Estimada -->
+        <div class="bg-base-100 rounded-2xl p-4 sm:p-5 border border-base-200 shadow-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider">Cuota Mensual</span>
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">account_balance</mat-icon>
+            </div>
+          </div>
+          <div class="space-y-0.5">
+            <div class="text-2xl font-black text-base-content font-mono">
+              {{ rep.estimatedMonthlyQuota | currency:'ARS':'symbol-narrow':'1.0-0' }}
+            </div>
+            <p class="text-[10px] text-base-content/50">
+              Vence el día 20 de cada mes (Impuesto + Jub. + OS)
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 4: Próxima Recategorización -->
+        <div class="bg-base-100 rounded-2xl p-4 sm:p-5 border border-base-200 shadow-sm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider">Recategorización</span>
+            <div class="w-8 h-8 rounded-xl bg-info/10 text-info flex items-center justify-center">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">event</mat-icon>
+            </div>
+          </div>
+          <div class="space-y-0.5">
+            <div class="text-2xl font-black text-base-content flex items-baseline gap-1">
+              <span>{{ rep.nextRecategorization.daysRemaining }}</span>
+              <span class="text-xs font-bold text-base-content/50 uppercase">días</span>
+            </div>
+            <p class="text-[10px] text-base-content/50">
+              Ventana oficial ARCA: <strong class="text-info">{{ rep.nextRecategorization.window }}</strong>
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 3. TERMÓMETRO VISUAL DE ESCALAS ARCA (A hasta K)                          -->
+      <!-- ========================================================================= -->
+      <div class="bg-base-100 rounded-2xl p-5 sm:p-6 border border-base-200 shadow-sm space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+              <mat-icon class="text-[20px]! w-5! h-5!">stacked_bar_chart</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Termómetro de Escalas Monotributo (Comercio)</h3>
+              <p class="text-xs text-base-content/50">Topes de facturación bruta anual según la tabla oficial vigente de ARCA.</p>
+            </div>
+          </div>
+
+          <!-- Badge de exclusión -->
+          <div class="flex items-center gap-2 text-xs bg-base-200/60 px-3 py-1.5 rounded-xl border border-base-300">
+            <span class="text-base-content/60 font-semibold">Tope Exclusión (Cat. K):</span>
+            <span class="font-mono font-black text-error">{{ rep.exclusionLimit | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Barra General de Exclusión -->
+        <div class="space-y-2 bg-base-200/40 p-4 rounded-xl border border-base-200">
+          <div class="flex justify-between items-center text-xs font-bold">
+            <span class="text-base-content/70">Proximidad al Límite Máximo de Exclusión a Responsable Inscripto</span>
+            <span class="font-mono font-black" [ngClass]="rep.percentExclusionUsed >= 85 ? 'text-error' : (rep.percentExclusionUsed >= 70 ? 'text-warning' : 'text-success')">
+              {{ rep.percentExclusionUsed }}% consumido
+            </span>
+          </div>
+          <progress
+            class="progress w-full h-3 rounded-full"
+            [ngClass]="rep.percentExclusionUsed >= 85 ? 'progress-error' : (rep.percentExclusionUsed >= 70 ? 'progress-warning' : 'progress-success')"
+            [value]="rep.percentExclusionUsed"
+            max="100"
+          ></progress>
+          <div class="flex justify-between items-center text-[11px] text-base-content/50">
+            <span>$0</span>
+            <span>Te restan <strong>{{ rep.remainingForExclusion | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> antes de quedar fuera del régimen simplificado.</span>
+            <span>{{ rep.exclusionLimit | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Tabla interactiva de Escalas A a K -->
+        <div class="overflow-x-auto border border-base-200 rounded-xl">
+          <table class="table table-xs w-full">
+            <thead class="bg-base-200/70 font-bold text-[10px] uppercase text-base-content/70">
+              <tr>
+                <th class="w-16 text-center">Cat.</th>
+                <th>Tope Facturación Anual</th>
+                <th>Cuota Mensual Total</th>
+                <th class="text-center">Estado</th>
+                <th class="text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (scale of rep.scales; track scale.category) {
+                @let isCurrent = scale.category === rep.declaredCategory;
+                @let isCalculated = scale.category === rep.calculatedCategory;
+                @let isPassed = rep.totalBilledRolling12Months > scale.annualLimit;
+
+                <tr class="transition-colors"
+                  [ngClass]="isCurrent ? 'bg-primary/10 font-bold' : (isPassed ? 'opacity-60 bg-base-200/20' : 'hover:bg-base-200/30')">
+                  
+                  <td class="text-center">
+                    <span class="badge badge-sm font-mono font-black"
+                      [ngClass]="isCurrent ? 'badge-primary' : (isCalculated ? 'badge-secondary' : 'badge-ghost')">
+                      {{ scale.category }}
+                    </span>
+                  </td>
+
+                  <td class="font-mono text-xs">
+                    {{ scale.annualLimit | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                  </td>
+
+                  <td class="font-mono text-xs text-base-content/70">
+                    {{ scale.monthlyQuota | currency:'ARS':'symbol-narrow':'1.0-0' }} /mes
+                  </td>
+
+                  <td class="text-center">
+                    @if (isCurrent) {
+                      <span class="badge badge-xs badge-primary font-bold">Tu Categoría Actual</span>
+                    } @else if (isCalculated) {
+                      <span class="badge badge-xs badge-secondary font-bold">Proyectada Según Ventas</span>
+                    } @else if (isPassed) {
+                      <span class="text-[10px] text-error font-semibold flex items-center justify-center gap-0.5">
+                        <mat-icon class="text-[12px]! w-3! h-3!">check</mat-icon> Superada
+                      </span>
+                    } @else {
+                      <span class="text-[10px] text-base-content/40">Disponible</span>
+                    }
+                  </td>
+
+                  <td class="text-right">
+                    @if (!isCurrent) {
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs text-primary font-bold"
+                        (click)="changeDeclaredCategory(scale.category)"
+                        [disabled]="updatingCategory()"
+                      >
+                        Declarar esta
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 4. HISTOGRAMA / GRÁFICO MES A MES (12 MESES MÓVILES)                      -->
+      <!-- ========================================================================= -->
+      <div class="bg-base-100 rounded-2xl p-5 sm:p-6 border border-base-200 shadow-sm space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold">
+              <mat-icon class="text-[20px]! w-5! h-5!">calendar_month</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Historial de los 12 Meses Móviles</h3>
+              <p class="text-xs text-base-content/50">Conocé qué meses tuvieron más ventas para prever cuándo saldrán del cálculo acumulado.</p>
+            </div>
+          </div>
+
+          <span class="badge badge-sm badge-ghost font-mono text-xs">
+            12 Períodos Analizados
+          </span>
+        </div>
+
+        <!-- Visual Bar Chart -->
+        <div class="grid grid-cols-6 sm:grid-cols-12 gap-2 items-end pt-8 pb-3 min-h-[220px]">
+          @for (m of rep.monthlyBreakdown; track m.monthKey; let last = $last) {
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end group relative">
+              
+              <!-- Tooltip on Hover -->
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute -top-12 z-20 bg-neutral text-neutral-content text-[10px] py-1 px-2 rounded-lg whitespace-nowrap shadow-lg">
+                <div class="font-bold">{{ m.label }}</div>
+                <div>Ventas: {{ m.totalBilled | currency:'ARS':'symbol-narrow':'1.0-0' }}</div>
+                <div>Facturado: {{ m.totalInvoiced | currency:'ARS':'symbol-narrow':'1.0-0' }}</div>
+              </div>
+
+              <!-- Bar element -->
+              <div class="w-full max-w-[28px] rounded-t-lg transition-all duration-300 group-hover:brightness-110"
+                [ngClass]="last ? 'bg-primary' : (m.totalBilled > 0 ? 'bg-primary/40 group-hover:bg-primary/60' : 'bg-base-200')"
+                [style.height.%]="getBarHeightPercentage(m.totalBilled)">
+              </div>
+
+              <!-- Amount text -->
+              <span class="text-[9px] font-mono font-bold text-base-content/60 truncate max-w-full">
+                {{ m.totalBilled > 0 ? (m.totalBilled | currency:'ARS':'symbol-narrow':'1.0-0') : '$0' }}
+              </span>
+
+              <!-- Month label -->
+              <span class="text-[10px] font-bold truncate max-w-full"
+                [ngClass]="last ? 'text-primary font-black' : 'text-base-content/60'">
+                {{ m.label.split(' ')[0] }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <!-- Explicación pedagógica -->
+        <div class="bg-base-200/50 p-3.5 rounded-xl border border-base-200 text-xs text-base-content/70 flex items-start gap-2.5">
+          <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5! shrink-0 mt-0.5">tips_and_updates</mat-icon>
+          <div class="space-y-1">
+            <span class="font-bold text-base-content block">¿Cómo funciona el recambio mensual de facturación?</span>
+            <p class="leading-relaxed text-[11px]">
+              El Monotributo se calcula sobre los <strong>últimos 12 meses móviles</strong>. Al iniciar un nuevo mes, las ventas del mes más viejo (el primero a la izquierda) dejan de contarse y se reemplazan por las del nuevo mes. Si tuviste un mes récord hace 11 meses, cuando termine este mes tu facturación acumulada bajará significativamente, liberándote margen fiscal.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    }
+
+  </div>
+</app-page-layout>

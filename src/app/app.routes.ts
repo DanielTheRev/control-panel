@@ -264,6 +264,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/sales/sales').then(c => c.SalesComponent)
       },
       {
+        path: 'fiscal',
+        title: 'Mi Monotributo & Finanzas Fiscales',
+        loadComponent: () => import('./pages/fiscal-dashboard/fiscal-dashboard').then(c => c.FiscalDashboardComponent)
+      },
+      {
         path: 'coupons',
         title: 'Cupones de Descuento',
         loadComponent: () => import('./pages/coupons/coupons').then(c => c.CouponsComponent)

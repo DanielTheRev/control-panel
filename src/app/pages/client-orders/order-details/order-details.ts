@@ -10,6 +10,8 @@ import { OrdersStateService } from '../../../states/order.state.service';
 import { OrdersService } from '../../../services/orders.service';
 import { PaymentType } from '../../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../../interfaces/shipping.interface';
+import { ArcaService, IInvoiceResponse } from '../../../services/arca.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-order-details',
@@ -32,6 +34,7 @@ export class OrderDetails implements OnInit {
   private route = inject(ActivatedRoute);
   private orderState = inject(OrdersStateService);
   private ordersService = inject(OrdersService);
+  private arcaService = inject(ArcaService);
   private location = inject(Location);
   public paymentType = PaymentType;
   public paymentStatus = PaymentStatus;
@@ -44,12 +47,24 @@ export class OrderDetails implements OnInit {
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   updating = signal<boolean>(false);
+  issuingInvoice = signal<boolean>(false);
+  invoiceData = signal<IInvoiceResponse | null>(null);
 
   ngOnInit(): void {
     this.loading.set(true);
     this.orderState.getOrderById(this.id())
       .then(order => {
         this.order.set(order);
+        if (order.invoice) {
+          if (typeof order.invoice === 'object' && order.invoice.cae) {
+            this.invoiceData.set(order.invoice);
+          } else if (typeof order.invoice === 'string') {
+            this.arcaService.getInvoice(order.invoice).subscribe({
+              next: (inv) => this.invoiceData.set(inv),
+              error: () => {}
+            });
+          }
+        }
       }).catch(() => {
         this.error.set('Error al cargar la orden');
       })
@@ -72,8 +87,8 @@ export class OrderDetails implements OnInit {
     return this.order()?.finance?.baseCost || 0;
   });
 
-  /** Desglose de gastos adicionales desde los items */
-  additionalCostsBreakdown = computed(() => {
+  /** Desglose de Gastos Operativos (embalaje, bolsas, logística proveedor) */
+  operationalExpensesBreakdown = computed(() => {
     const o = this.order();
     if (!o) return [];
     const breakdownMap = new Map<string, number>();
@@ -85,9 +100,12 @@ export class OrderDetails implements OnInit {
       const providerCost = item.productSnapshot?.finance?.providerCost?.inARS || 0;
 
       for (const cost of additionalCosts) {
+        if (cost.category === 'tax') continue; // Ignorar impuestos aquí
         let costValue = 0;
         if (cost.type === 'percent_over_provider') {
           costValue = providerCost * (cost.value / 100);
+        } else if (cost.type === 'percent_over_price') {
+          costValue = item.price * (cost.value / 100);
         } else if (cost.type === 'fixed') {
           costValue = cost.value;
         }
@@ -101,8 +119,57 @@ export class OrderDetails implements OnInit {
     return Array.from(breakdownMap.entries()).map(([concept, value]) => ({ concept, value }));
   });
 
+  totalOperationalExpenses = computed(() => {
+    const saved = this.order()?.finance?.operationalExpenses;
+    if (typeof saved === 'number' && saved > 0) return saved;
+    return this.operationalExpensesBreakdown().reduce((sum, cost) => sum + cost.value, 0);
+  });
+
+  /** Desglose de Impuestos Aplicables (IIBB, Ley de Cheques, etc.) */
+  taxesBreakdown = computed(() => {
+    const o = this.order();
+    if (!o) return [];
+    const breakdownMap = new Map<string, number>();
+
+    for (const item of o.items) {
+      const additionalCosts = item.productSnapshot?.finance?.additionalCosts;
+      if (!additionalCosts || !Array.isArray(additionalCosts)) continue;
+
+      const providerCost = item.productSnapshot?.finance?.providerCost?.inARS || 0;
+
+      for (const cost of additionalCosts) {
+        if (cost.category !== 'tax') continue; // Solo impuestos
+        let costValue = 0;
+        if (cost.type === 'percent_over_provider') {
+          costValue = providerCost * (cost.value / 100);
+        } else if (cost.type === 'percent_over_price') {
+          costValue = item.price * (cost.value / 100);
+        } else if (cost.type === 'fixed') {
+          costValue = cost.value;
+        }
+        
+        costValue = costValue * item.quantity;
+        const current = breakdownMap.get(cost.concept) || 0;
+        breakdownMap.set(cost.concept, current + costValue);
+      }
+    }
+
+    return Array.from(breakdownMap.entries()).map(([concept, value]) => ({ concept, value }));
+  });
+
+  totalTaxes = computed(() => {
+    const saved = this.order()?.finance?.taxes;
+    if (typeof saved === 'number' && saved > 0) return saved;
+    return this.taxesBreakdown().reduce((sum, cost) => sum + cost.value, 0);
+  });
+
+  /** Desglose total de gastos + impuestos para retrocompatibilidad */
+  additionalCostsBreakdown = computed(() => {
+    return [...this.operationalExpensesBreakdown(), ...this.taxesBreakdown()];
+  });
+
   totalAdditionalCosts = computed(() => {
-    return this.additionalCostsBreakdown().reduce((sum, cost) => sum + cost.value, 0);
+    return this.totalOperationalExpenses() + this.totalTaxes();
   });
 
   /** Comisión de la pasarela de pago (MercadoPago/Tarjeta) enviada por el backend */
@@ -115,9 +182,8 @@ export class OrderDetails implements OnInit {
     const o = this.order();
     if (!o) return 0;
     
-    // Si el backend ya guardó earnings en la orden, lo usamos prioritariamente si es consistente,
-    // de lo contrario calculamos el valor neto exacto: Total Abonado - Proveedor - Adicionales - Comisión MP - Envío
-    const calculatedNet = this.orderTotal() - this.baseProviderCost() - this.totalAdditionalCosts() - this.paymentGatewayFee() - this.shippingCost();
+    // Total Abonado - Proveedor - Gastos Operativos - Impuestos - Comisión MP - Envío
+    const calculatedNet = this.orderTotal() - this.baseProviderCost() - this.totalOperationalExpenses() - this.totalTaxes() - this.paymentGatewayFee() - this.shippingCost();
     return Math.max(0, calculatedNet);
   });
 
@@ -431,4 +497,54 @@ export class OrderDetails implements OnInit {
   isCancelled(): boolean {
     return this.order()?.status === OrderStatus.CANCELLED;
   }
+
+  // ─── Facturación Electrónica ARCA ───
+
+  canIssueArcaInvoice(): boolean {
+    const o = this.order();
+    if (!o) return false;
+    // Se puede emitir si el pago está aprobado y no fue facturado aún
+    const isPaid = o.paymentInfo?.status === PaymentStatus.APPROVED;
+    const alreadyInvoiced = !!o.isFacturado || !!this.invoiceData()?.cae;
+    return isPaid && !alreadyInvoiced && !this.issuingInvoice();
+  }
+
+  async issueArcaInvoice(): Promise<void> {
+    const o = this.order();
+    if (!o) return;
+    if (!confirm(`¿Confirmás la emisión de la Factura Electrónica ARCA oficial para la Orden #${o.orderNumber}? Se solicitará el CAE legal ante los servidores de ARCA.`)) {
+      return;
+    }
+
+    this.issuingInvoice.set(true);
+    try {
+      const res = await firstValueFrom(this.arcaService.createInvoiceForOrder(o._id));
+      if (res && res.invoice) {
+        this.invoiceData.set(res.invoice);
+        this.order.set({
+          ...o,
+          isFacturado: true,
+          invoice: res.invoice
+        });
+        alert(`¡Factura Electrónica ARCA emitida con éxito!\n\nComprobante: ${res.invoice.voucherTypeName} N° ${res.invoice.ptoVta.toString().padStart(4, '0')}-${res.invoice.voucherNumber.toString().padStart(8, '0')}\nCAE: ${res.invoice.cae}\nVencimiento: ${res.invoice.caeExpiration}`);
+      }
+    } catch (err: any) {
+      const msg = err?.error?.error || err?.message || 'Error al comunicarse con ARCA / AFIP';
+      alert(`Error al emitir factura electrónica: ${msg}`);
+    } finally {
+      this.issuingInvoice.set(false);
+    }
+  }
+
+  downloadInvoicePdf(): void {
+    const inv = this.invoiceData() || (typeof this.order()?.invoice === 'object' ? this.order()?.invoice : null);
+    const invId = inv?._id || (typeof this.order()?.invoice === 'string' ? this.order()?.invoice : null);
+    if (!invId) {
+      alert('No se encontró el ID del comprobante para descargar.');
+      return;
+    }
+    const url = this.arcaService.getInvoicePdfUrl(invId);
+    window.open(url, '_blank');
+  }
 }
+

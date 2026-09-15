@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   IProduct,
   IProductPrices,
@@ -289,5 +289,11 @@ export class ProductService {
     return firstValueFrom(
       this.#http.get<any>(`${this.#apiUrl}/admin/quality-audit`)
     );
+  }
+
+  checkSupplierLink(url: string, excludeId?: string): Observable<{ exists: boolean; product?: any }> {
+    let params = new HttpParams().set('url', url);
+    if (excludeId) params = params.set('excludeId', excludeId);
+    return this.#http.get<{ exists: boolean; product?: any }>(`${this.#apiUrl}/admin/check-supplier-link`, { params });
   }
 }

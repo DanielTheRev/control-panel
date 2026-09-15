@@ -1,0 +1,80 @@
+@if (loading()) {
+  <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 animate-pulse flex items-center justify-between">
+    <div class="space-y-2 w-1/2">
+      <div class="h-4 bg-base-300 rounded-md w-3/4"></div>
+      <div class="h-3 bg-base-200 rounded-md w-1/2"></div>
+    </div>
+    <div class="h-8 bg-base-200 rounded-xl w-28"></div>
+  </div>
+} @else if (report(); as rep) {
+  <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 transition-all hover:border-base-300">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- Lado Izquierdo: Semáforo y Datos Principales -->
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border"
+          [ngClass]="rep.healthStatus === 'danger' ? 'bg-error/10 border-error/20 text-error' : (rep.healthStatus === 'warning' ? 'bg-warning/10 border-warning/20 text-warning' : 'bg-success/10 border-success/20 text-success')">
+          <mat-icon class="text-[24px]! w-6! h-6!">
+            {{ rep.healthStatus === 'danger' ? 'warning' : (rep.healthStatus === 'warning' ? 'error_outline' : 'verified_user') }}
+          </mat-icon>
+        </div>
+
+        <div class="space-y-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-black uppercase tracking-wider text-base-content flex items-center gap-1.5">
+              <span>Monotributo ARCA</span>
+              <span class="badge badge-xs font-mono font-bold bg-primary text-white px-2 py-0.5">
+                Cat. {{ rep.declaredCategory }}
+              </span>
+            </span>
+            <span class="badge badge-xs font-bold border" [ngClass]="getBadgeStatusClass(rep.healthStatus)">
+              {{ getStatusLabel(rep.healthStatus) }}
+            </span>
+          </div>
+
+          <p class="text-xs text-base-content/60 leading-tight">
+            Facturado últimos 12 meses: 
+            <strong class="text-base-content font-mono">{{ rep.totalBilledRolling12Months | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
+            <span class="text-base-content/40"> / Tope {{ rep.declaredScale.annualLimit | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Lado Central: Barra de Progreso del Tope -->
+      <div class="flex-1 max-w-xs space-y-1.5">
+        <div class="flex justify-between items-center text-[11px] font-bold">
+          <span class="text-base-content/60">Uso de Categoría</span>
+          <span class="font-mono" [ngClass]="rep.healthStatus === 'danger' ? 'text-error' : (rep.healthStatus === 'warning' ? 'text-warning' : 'text-success')">
+            {{ rep.percentDeclaredCategoryUsed }}%
+          </span>
+        </div>
+        <progress
+          class="progress w-full h-2 rounded-full"
+          [ngClass]="getProgressBarColorClass(rep.healthStatus)"
+          [value]="rep.percentDeclaredCategoryUsed"
+          max="100"
+        ></progress>
+        <div class="flex justify-between items-center text-[10px] text-base-content/40 font-medium">
+          @if (rep.remainingForDeclaredCategory > 0) {
+            <span>Margen disponible: {{ rep.remainingForDeclaredCategory | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+          } @else {
+            <span class="text-error font-bold">Tope superado</span>
+          }
+          <span>Cuota: {{ rep.estimatedMonthlyQuota | currency:'ARS':'symbol-narrow':'1.0-0' }}/mes</span>
+        </div>
+      </div>
+
+      <!-- Lado Derecho: Botón Detalle Fiscal -->
+      <div class="flex items-center gap-2 shrink-0">
+        <a
+          routerLink="/home/fiscal"
+          class="btn btn-sm btn-outline btn-primary rounded-xl font-bold gap-1.5 text-xs shadow-2xs hover:shadow-xs w-full md:w-auto"
+        >
+          <span>Termómetro Fiscal</span>
+          <mat-icon class="text-[16px]! w-4! h-4!">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+    </div>
+  </div>
+}

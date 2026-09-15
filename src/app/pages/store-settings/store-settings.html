@@ -53,6 +53,16 @@
         <span>Integraciones</span>
       </button>
 
+      <button
+        type="button"
+        (click)="activeTab.set('fiscal')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'fiscal' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">receipt_long</mat-icon>
+        <span>Fiscal & ARCA</span>
+      </button>
+
       <a
         routerLink="/home/emails"
         class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs btn-ghost text-base-content/70 hover:bg-base-200"
@@ -674,6 +684,570 @@
                 </div>
               </div>
             </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 4. FISCAL & ARCA (EX-AFIP) & PRESETS DE COSTOS E IMPUESTOS                -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'fiscal') {
+          <div class="space-y-6">
+
+            <!-- Card 1: Perfil Fiscal de la Tienda -->
+            <div formGroupName="fiscalProfile" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">account_balance</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Perfil Tributario & Facturación</h3>
+                    <p class="text-xs text-base-content/50">Configurá tu personería fiscal ante ARCA (ex-AFIP) y Rentas provinciales.</p>
+                  </div>
+                </div>
+
+                <a routerLink="/home/fiscal" class="btn btn-xs btn-outline btn-primary rounded-xl font-bold gap-1.5 shadow-2xs">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">analytics</mat-icon>
+                  <span>Ver Panel Monotributo</span>
+                </a>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- CUIT / CUIL con Botón de Búsqueda ARCA -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-base-content/80">CUIT / CUIL Titular</label>
+                    <button
+                      type="button"
+                      class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                      (click)="searchCuitInArca()"
+                      [disabled]="isSearchingCuit()"
+                      title="Consultar padrón oficial de ARCA"
+                    >
+                      @if (isSearchingCuit()) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                        <span>Buscando...</span>
+                      } @else {
+                        <mat-icon class="text-[13px]! w-3.5! h-3.5!">search</mat-icon>
+                        <span>Buscar en ARCA</span>
+                      }
+                    </button>
+                  </div>
+                  <div class="relative">
+                    <input
+                      type="text"
+                      formControlName="cuit"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs pr-9 font-semibold"
+                      placeholder="20-12345678-9"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost btn-circle absolute right-1 top-1 text-base-content/50 hover:text-primary"
+                      (click)="searchCuitInArca()"
+                      [disabled]="isSearchingCuit()"
+                      title="Buscar datos fiscales en ARCA"
+                    >
+                      <mat-icon class="text-[15px]! w-4! h-4!">search</mat-icon>
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-base-content/40">Ingresá tu CUIT y hacé clic en Buscar para autocompletar tus datos.</p>
+                </div>
+
+                <!-- Condición Fiscal / Régimen -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Condición Fiscal / Régimen</label>
+                  <select
+                    formControlName="taxRegime"
+                    class="select select-sm select-bordered w-full rounded-xl text-xs font-semibold"
+                  >
+                    <option value="monotributo">Monotributo (Factura C)</option>
+                    <option value="responsable_inscripto">Responsable Inscripto (Facturas A y B)</option>
+                    <option value="exento">Exento / No Alcanzado</option>
+                  </select>
+                </div>
+
+                <!-- Categoría de Monotributo (Solo si régimen es monotributo) -->
+                @if (configForm.get('fiscalProfile.taxRegime')?.value === 'monotributo') {
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-bold text-base-content/80">Categoría de Monotributo</label>
+                      <span class="text-[10px] text-base-content/40">Venta de cosas muebles</span>
+                    </div>
+                    <select
+                      formControlName="monotributoCategory"
+                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold font-mono"
+                    >
+                      <option value="A">Categoría A (Tope $7.800.000 / año)</option>
+                      <option value="B">Categoría B (Tope $11.500.000 / año)</option>
+                      <option value="C">Categoría C (Tope $15.500.000 / año)</option>
+                      <option value="D">Categoría D (Tope $19.500.000 / año)</option>
+                      <option value="E">Categoría E (Tope $24.500.000 / año)</option>
+                      <option value="F">Categoría F (Tope $31.000.000 / año)</option>
+                      <option value="G">Categoría G (Tope $38.000.000 / año)</option>
+                      <option value="H">Categoría H (Tope $48.000.000 / año)</option>
+                      <option value="I">Categoría I (Tope $54.000.000 / año)</option>
+                      <option value="J">Categoría J (Tope $60.500.000 / año)</option>
+                      <option value="K">Categoría K (Tope $68.000.000 / año)</option>
+                    </select>
+                  </div>
+                }
+
+                <!-- Razón Social o Nombre Legal -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Razón Social o Nombre Legal</label>
+                  <input
+                    type="text"
+                    formControlName="legalName"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-semibold"
+                    placeholder="Ej. Juan Pérez o Mi Empresa S.R.L."
+                  />
+                  <p class="text-[10px] text-base-content/40">En Monotributo figura tu nombre y apellido personal.</p>
+                </div>
+
+                <!-- N° Ingresos Brutos -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">N° de Ingresos Brutos (IIBB)</label>
+                  <input
+                    type="text"
+                    formControlName="iibbNumber"
+                    class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
+                    placeholder="Ej. 901-123456-7 o CUIT"
+                  />
+                </div>
+
+                <!-- Alícuota IIBB Estimada -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Alícuota IIBB Estimada (%)</label>
+                  <div class="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      formControlName="iibbPercentage"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs pr-8"
+                      placeholder="3.5"
+                    />
+                    <span class="absolute right-3 top-1.5 text-xs text-base-content/40 font-bold">%</span>
+                  </div>
+                  <p class="text-[10px] text-base-content/40">Tasa impositiva provincial aplicable al comercio.</p>
+                </div>
+
+                <!-- Facturación Externa Previa en los últimos 12 meses -->
+                <div class="space-y-2 sm:col-span-2 lg:col-span-3 bg-base-200/50 p-4 rounded-xl border border-base-200">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                        <mat-icon class="text-[16px]! w-4! h-4!">history_edu</mat-icon>
+                      </div>
+                      <label class="text-xs font-bold text-base-content">
+                        Facturación Externa Previa (Últimos 12 meses fuera de la plataforma)
+                      </label>
+                    </div>
+                    <span class="badge badge-xs badge-ghost text-[10px] text-base-content/60">Opcional para cálculo exacto</span>
+                  </div>
+
+                  <p class="text-xs text-base-content/60 leading-relaxed">
+                    Si emitiste facturas en el portal de AFIP (Comprobantes en Línea) antes de conectar este panel, ingresá el monto total acumulado. Este valor se sumará a tus ventas del sistema para calcular con 100% de precisión tu categoría de Monotributo y alertarte antes de que te pases.
+                  </p>
+
+                  <div class="relative max-w-xs mt-1">
+                    <span class="absolute left-3 top-2 text-xs font-bold text-base-content/40">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1000"
+                      formControlName="previousExternalBilling"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs font-bold pl-7"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Integración Oficial ARCA (ex-AFIP) -->
+            <div formGroupName="integrations" class="space-y-4">
+              <div formGroupName="arca" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+                <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-black">
+                      <mat-icon class="text-[22px]! w-5.5! h-5.5!">receipt_long</mat-icon>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Facturación Electrónica ARCA (AFIP)</h3>
+                        @if (configForm.get('integrations.arca.active')?.value) {
+                          <span class="badge badge-xs badge-success text-[9px] font-bold text-white px-1.5 py-0.5">Activo</span>
+                        } @else {
+                          <span class="badge badge-xs badge-ghost text-[9px] text-base-content/40 px-1.5 py-0.5">Apagado</span>
+                        }
+                      </div>
+                      <p class="text-xs text-base-content/50">Emisión de facturas electrónicas oficiales con CAE y QR normativo.</p>
+                    </div>
+                  </div>
+                  <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
+                </div>
+
+                <!-- Test Connection Bar -->
+                <div class="flex items-center justify-between p-3.5 bg-base-200/50 rounded-xl border border-base-200 flex-wrap gap-3">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-base-100 flex items-center justify-center border border-base-300">
+                      <mat-icon class="text-[18px]! w-4.5! h-4.5! text-base-content/60">cloud_sync</mat-icon>
+                    </div>
+                    <div>
+                      <span class="text-xs font-bold text-base-content block">Estado de los Servidores ARCA</span>
+                      <span class="text-[11px] text-base-content/50">
+                        @if (arcaStatus()?.success) {
+                          <span class="text-success font-semibold">● Servidores WSAA y WSFE operativos</span>
+                        } @else if (arcaStatus()?.error) {
+                          <span class="text-error font-semibold">● Error: {{ arcaStatus()?.error }}</span>
+                        } @else {
+                          Presioná el botón para comprobar la disponibilidad del servicio oficial.
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-outline rounded-xl font-bold gap-1 shadow-2xs"
+                    (click)="testArcaConnection()"
+                    [disabled]="isTestingArca()"
+                  >
+                    @if (isTestingArca()) {
+                      <span class="loading loading-spinner loading-xs"></span>
+                      <span>Consultando...</span>
+                    } @else {
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">speed</mat-icon>
+                      <span>Probar Conexión</span>
+                    }
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <!-- CUIT ARCA -->
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content/80">CUIT en Certificado ARCA</label>
+                    <input
+                      type="text"
+                      formControlName="cuit"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
+                      placeholder="20-12345678-9"
+                    />
+                    <p class="text-[10px] text-base-content/40">CUIT titular del certificado o delegación.</p>
+                  </div>
+
+                  <!-- Punto de Venta -->
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content/80">Punto de Venta Fiscal</label>
+                    <input
+                      type="number"
+                      min="1"
+                      formControlName="ptoVta"
+                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
+                      placeholder="1"
+                    />
+                    <p class="text-[10px] text-base-content/40">Punto de Venta tipo "Web Services" creado en AFIP.</p>
+                  </div>
+
+                  <!-- Modo Homologación vs Producción -->
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content/80">Entorno del Web Service</label>
+                    <select
+                      formControlName="isProduction"
+                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
+                    >
+                      <option [ngValue]="false">🟡 Homologación / Testing (Pruebas)</option>
+                      <option [ngValue]="true">🟢 Producción (Validez Fiscal Real)</option>
+                    </select>
+                    <p class="text-[10px] text-base-content/40">En homologación se generan facturas de prueba sin validez fiscal.</p>
+                  </div>
+                </div>
+
+                <!-- Auto-Facturar Ventas Aprobadas -->
+                <div class="p-3 bg-base-200/40 rounded-xl border border-base-200 flex items-center justify-between">
+                  <div class="space-y-0.5">
+                    <span class="text-xs font-bold text-base-content block">Facturación Automática</span>
+                    <span class="text-[11px] text-base-content/60">Emitir CAE automáticamente cuando el pedido cambia a estado "Pago Aprobado".</span>
+                  </div>
+                  <input type="checkbox" formControlName="autoInvoiceOnSuccess" class="toggle toggle-primary toggle-sm" />
+                </div>
+
+                <!-- Selector de Modo de Conexión: Piloto Automático vs Certificado Propio -->
+                <div class="pt-2 border-t border-base-200 space-y-4">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <span class="text-xs font-bold text-base-content uppercase tracking-wider block">Método de Autorización ARCA / AFIP</span>
+                      <p class="text-[11px] text-base-content/50">Elegí cómo conectar tu comercio con los servidores de facturación.</p>
+                    </div>
+
+                    <div class="join bg-base-200/70 p-0.5 rounded-xl border border-base-300">
+                      <button
+                        type="button"
+                        class="btn btn-xs join-item rounded-lg font-bold transition-all"
+                        [class.btn-primary]="arcaMode() === 'delegation'"
+                        [class.btn-ghost]="arcaMode() !== 'delegation'"
+                        (click)="arcaMode.set('delegation')"
+                      >
+                        <mat-icon class="text-[13px]! w-3.5! h-3.5!">auto_mode</mat-icon>
+                        <span>Piloto Automático (Fácil)</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-xs join-item rounded-lg font-bold transition-all"
+                        [class.btn-primary]="arcaMode() === 'custom_cert'"
+                        [class.btn-ghost]="arcaMode() !== 'custom_cert'"
+                        (click)="arcaMode.set('custom_cert')"
+                      >
+                        <mat-icon class="text-[13px]! w-3.5! h-3.5!">vpn_key</mat-icon>
+                        <span>Certificado Propio (.crt / .key)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Modo 1: Delegación / Piloto Automático (Paso a Paso) -->
+                  @if (arcaMode() === 'delegation') {
+                    <div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 sm:p-5 space-y-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <mat-icon class="text-[20px]! w-5! h-5!">verified</mat-icon>
+                        </div>
+                        <div>
+                          <h4 class="text-xs font-bold text-base-content uppercase tracking-wider">
+                            Guía Rápida: Cómo autorizar a la plataforma en AFIP (Sin certificados ni claves)
+                          </h4>
+                          <p class="text-[11px] text-base-content/60">
+                            AFIP permite delegar el servicio de facturación para que el sistema emita comprobantes en tu nombre de manera 100% legal y segura.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                        <div class="bg-base-100 p-3.5 rounded-xl border border-base-200/80 shadow-2xs space-y-1.5">
+                          <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-primary text-primary-content text-[11px] font-black flex items-center justify-center">1</span>
+                            <span class="text-xs font-bold text-base-content">Entrá a AFIP</span>
+                          </div>
+                          <p class="text-[11px] text-base-content/60 leading-relaxed">
+                            Ingresá a <a href="https://portalautenticacion.afip.gob.ar/" target="_blank" class="text-primary font-semibold underline">afip.gob.ar</a> con tu CUIT y Clave Fiscal (Nivel 3).
+                          </p>
+                        </div>
+
+                        <div class="bg-base-100 p-3.5 rounded-xl border border-base-200/80 shadow-2xs space-y-1.5">
+                          <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-primary text-primary-content text-[11px] font-black flex items-center justify-center">2</span>
+                            <span class="text-xs font-bold text-base-content">Nueva Relación</span>
+                          </div>
+                          <p class="text-[11px] text-base-content/60 leading-relaxed">
+                            Abrí <strong>Administrador de Relaciones de Clave Fiscal</strong> &gt; Nueva Relación &gt; Buscar Servicio &gt; AFIP &gt; Web Services &gt; <strong>Facturación Electrónica</strong>.
+                          </p>
+                        </div>
+
+                        <div class="bg-base-100 p-3.5 rounded-xl border border-base-200/80 shadow-2xs space-y-1.5">
+                          <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-primary text-primary-content text-[11px] font-black flex items-center justify-center">3</span>
+                            <span class="text-xs font-bold text-base-content">Delegar Representante</span>
+                          </div>
+                          <p class="text-[11px] text-base-content/60 leading-relaxed">
+                            En <em>Representante</em> ingresá el CUIT del administrador de la plataforma y confirmá. ¡Listo! Ya podés emitir facturas oficiales.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 text-[11px] text-base-content/60 bg-base-100/70 p-2.5 rounded-xl border border-base-200">
+                        <mat-icon class="text-[15px]! w-4! h-4! text-primary shrink-0">info</mat-icon>
+                        <span>
+                          <strong>Recordatorio importante:</strong> Necesitás tener creado un <strong>Punto de Venta</strong> habilitado para "Facturación Electrónica - Web Services" desde el servicio "Comprobantes en Línea" de AFIP.
+                        </span>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Modo 2: Certificados Digitales (X.509 CRT y Private Key) -->
+                  @if (arcaMode() === 'custom_cert') {
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-base-content/80">Certificado Digital (.crt / .pem)</label>
+                        <textarea
+                          formControlName="cert"
+                          rows="3"
+                          class="textarea textarea-bordered w-full rounded-xl font-mono text-[10px] resize-none"
+                          placeholder="-----BEGIN CERTIFICATE-----&#10;MIIE...&#10;-----END CERTIFICATE-----"
+                        ></textarea>
+                        <p class="text-[10px] text-base-content/40">Contenido del certificado emitido por ARCA para WSFE.</p>
+                      </div>
+
+                      <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-base-content/80">Clave Privada (.key / .pem)</label>
+                        <textarea
+                          formControlName="key"
+                          rows="3"
+                          class="textarea textarea-bordered w-full rounded-xl font-mono text-[10px] resize-none"
+                          placeholder="-----BEGIN PRIVATE KEY-----&#10;MIIE...&#10;-----END PRIVATE KEY-----"
+                        ></textarea>
+                        <p class="text-[10px] text-base-content/40">Clave privada utilizada para firmar el pedido de token (WSAA).</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Presets de Costos e Impuestos por Defecto -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
+                  <mat-icon class="text-[22px]! w-5.5! h-5.5!">price_change</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Presets Globales de Costos e Impuestos</h3>
+                  <p class="text-xs text-base-content/50">
+                    Se aplicarán automáticamente a cada nuevo producto creado manualmente o mediante la IA/scrapers.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Formulario para agregar concepto -->
+              <div class="bg-base-200/40 p-3.5 sm:p-4 rounded-xl border border-base-200 space-y-3">
+                <span class="text-xs font-bold text-base-content uppercase tracking-wider block">Agregar Nuevo Concepto Base</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <!-- Concepto -->
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Nombre / Concepto</label>
+                    <input
+                      type="text"
+                      [ngModel]="newCostConcept()"
+                      (ngModelChange)="newCostConcept.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="input input-sm input-bordered w-full rounded-xl text-xs"
+                      placeholder="Ej. IIBB 3.5%, Packaging, etc."
+                    />
+                  </div>
+
+                  <!-- Categoría: Gasto vs Impuesto -->
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Categoría</label>
+                    <select
+                      [ngModel]="newCostCategory()"
+                      (ngModelChange)="newCostCategory.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
+                    >
+                      <option value="expense">📦 Gasto Operativo</option>
+                      <option value="tax">🏛️ Impuesto / Tasa</option>
+                    </select>
+                  </div>
+
+                  <!-- Tipo de Cálculo -->
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Tipo de Cálculo</label>
+                    <select
+                      [ngModel]="newCostType()"
+                      (ngModelChange)="newCostType.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
+                    >
+                      <option value="fixed">$ Monto Fijo</option>
+                      <option value="percent_over_provider">% s/Costo Proveedor</option>
+                      <option value="percent_over_price">% s/Precio de Venta</option>
+                    </select>
+                  </div>
+
+                  <!-- Valor -->
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Valor</label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        [ngModel]="newCostValue()"
+                        (ngModelChange)="newCostValue.set($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
+                        placeholder="0"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shrink-0"
+                        (click)="addDefaultCost()"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+                        <span>Agregar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lista de Conceptos por Defecto -->
+              @if (defaultCostsList.length === 0) {
+                <div class="text-center py-6 bg-base-200/20 rounded-xl border border-dashed border-base-300 space-y-1">
+                  <mat-icon class="text-base-content/30 text-[24px]! w-6! h-6!">playlist_add</mat-icon>
+                  <p class="text-xs font-semibold text-base-content/60">No tenés conceptos por defecto configurados.</p>
+                  <p class="text-[11px] text-base-content/40">Agregá conceptos como IIBB, embalaje o comisiones para que se asignen automáticamente a cada producto nuevo.</p>
+                </div>
+              } @else {
+                <div class="overflow-x-auto border border-base-200 rounded-xl">
+                  <table class="table table-xs w-full">
+                    <thead class="bg-base-200/60 font-bold text-[10px] uppercase text-base-content/70">
+                      <tr>
+                        <th>Concepto</th>
+                        <th>Categoría</th>
+                        <th>Tipo de Cálculo</th>
+                        <th>Valor</th>
+                        <th class="w-10 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cost of defaultCostsList; track $index) {
+                        <tr class="hover:bg-base-200/30">
+                          <td class="font-bold text-xs">{{ cost.concept }}</td>
+                          <td>
+                            @if (cost.category === 'tax') {
+                              <span class="badge badge-xs bg-amber-500/10 text-amber-700 border-amber-500/30 font-bold text-[10px]">
+                                🏛️ Impuesto
+                              </span>
+                            } @else {
+                              <span class="badge badge-xs bg-blue-500/10 text-blue-700 border-blue-500/30 font-bold text-[10px]">
+                                📦 Gasto
+                              </span>
+                            }
+                          </td>
+                          <td class="text-[11px] text-base-content/70">
+                            @if (cost.type === 'percent_over_provider') {
+                              % sobre Costo Proveedor
+                            } @else if (cost.type === 'percent_over_price') {
+                              % sobre Precio de Venta (Ad-Valorem)
+                            } @else {
+                              $ Monto Fijo
+                            }
+                          </td>
+                          <td class="font-mono font-bold text-xs">
+                            @if (cost.type === 'fixed') {
+                              ${{ cost.value }}
+                            } @else {
+                              {{ cost.value }}%
+                            }
+                          </td>
+                          <td class="text-center">
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                              (click)="removeDefaultCost($index)"
+                              title="Eliminar Concepto"
+                            >
+                              <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+
           </div>
         }
 

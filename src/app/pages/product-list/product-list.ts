@@ -106,6 +106,11 @@ export class ProductList {
     return this.#StoreConfigState.StoreConfig().config.categories || []
   });
 
+  isSupplierUrlQuery = computed(() => {
+    const q = (this.ProductState.currentSearchQuery() || '').trim();
+    return /^https?:\/\//i.test(q) || q.includes('www.') || q.includes('.com') || q.includes('.ar');
+  });
+
   constructor() {
     this.#SidebarService.navbarTitle.set({ title: 'Productos' });
 

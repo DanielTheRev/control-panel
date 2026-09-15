@@ -1,3 +1,29 @@
+import { ICostConcept } from './product.interface';
+
+export interface IFiscalProfile {
+  taxRegime?: 'monotributo' | 'responsable_inscripto' | 'exento';
+  monotributoCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K';
+  cuit?: string;
+  businessName?: string;
+  legalName?: string;
+  grossIncomeNumber?: string;
+  iibbPercentage?: number;
+  previousExternalBilling?: number;
+}
+
+export interface IArcaIntegrationConfig {
+  active: boolean;
+  cuit?: string;
+  businessName?: string;
+  taxRegime?: 'monotributo' | 'responsable_inscripto' | 'exento';
+  grossIncomeNumber?: string;
+  ptoVta: number;
+  isProduction: boolean;
+  cert?: string;
+  key?: string;
+  autoInvoiceOnSuccess?: boolean;
+}
+
 export interface IMetaPixelConfig {
   active: boolean;
   pixelId: string;
@@ -66,6 +92,7 @@ export interface IEcommerceIntegrations {
   googleAnalytics?: IGoogleAnalyticsConfig;
   googleAuth?: IGoogleAuthConfig;
   resend?: IResendConfig;
+  arca?: IArcaIntegrationConfig;
 }
 
 export interface IPricingStrategy {
@@ -102,6 +129,8 @@ export interface IEcommerceConfig {
   taxes: {
     iva: number;
   };
+  fiscalProfile?: IFiscalProfile;
+  defaultAdditionalCosts?: ICostConcept[];
   costCurrency?: 'USD' | 'ARS';
   dollarQuoteType?: 'oficial' | 'blue' | 'bolsa' | 'ccl' | 'tarjeta' | 'mayorista' | 'cripto' | 'custom';
   customDollarRate?: number;

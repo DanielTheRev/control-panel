@@ -193,16 +193,19 @@ export class PosComponent implements OnInit {
         },
         error: () => {
           // Fallback offline con carga local
+          const serverUrl = environment.apiUrl.replace(/\/api$/, '');
           const fallbackData = {
             tenantSlug: 'vura',
             terminalId: this.terminalId(),
             pairingCode: `VURA-${this.terminalId()}`,
+            serverUrl,
             qrPayload: JSON.stringify({
               type: 'NEXO_POS_TERMINAL',
               version: '1.0',
               action: 'pos_pair',
               tenant: 'vura',
               terminalId: this.terminalId(),
+              serverUrl,
               timestamp: Date.now(),
             }),
           };

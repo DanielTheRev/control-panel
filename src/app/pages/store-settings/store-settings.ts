@@ -4,25 +4,29 @@ import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule }
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { IEcommerceConfig, IDolarRate, IEmailTemplatesConfig, IEmailTemplateItem } from '../../interfaces/config.interface';
+import { ICostConcept } from '../../interfaces/product.interface';
+import { ArcaService } from '../../services/arca.service';
+import { firstValueFrom } from 'rxjs';
 import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { StoreConfigService } from '../../services/store.config.service';
 import { NotificationsService } from '../../services/notifications.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [PageHeader, PageLayout, ReactiveFormsModule, FormsModule, MatIcon, CommonModule, SingleImageUpload, MatTooltipModule],
+  imports: [PageHeader, PageLayout, ReactiveFormsModule, FormsModule, MatIcon, CommonModule, SingleImageUpload, MatTooltipModule, RouterLink],
   templateUrl: './store-settings.html',
   styleUrl: './store-settings.scss'
 })
 export class StoreSettings implements OnInit {
   configState = inject(StoreConfigStateService);
   #storeConfigService = inject(StoreConfigService);
+  #arcaService = inject(ArcaService);
   #sidebarService = inject(SidebarService);
   #NotificationService = inject(NotificationsService);
   #router = inject(Router);
@@ -39,7 +43,18 @@ export class StoreSettings implements OnInit {
   dolarQuotes = signal<IDolarRate[]>([]);
   isLoadingDolares = signal(false);
 
-  activeTab = signal<'general' | 'integrations' | 'auth' | 'emails' | 'contact' | 'clothing' | 'pos' | 'connection'>('general');
+  activeTab = signal<'general' | 'integrations' | 'fiscal' | 'auth' | 'emails' | 'contact' | 'clothing' | 'pos' | 'connection'>('general');
+
+  // ARCA & Fiscal Signals
+  isTestingArca = signal<boolean>(false);
+  arcaStatus = signal<{ success: boolean; data?: any; error?: string } | null>(null);
+  isSearchingCuit = signal<boolean>(false);
+  cuitTaxpayerData = signal<any>(null);
+  arcaMode = signal<'delegation' | 'custom_cert'>('delegation');
+  newCostConcept = signal<string>('');
+  newCostCategory = signal<'expense' | 'tax'>('expense');
+  newCostType = signal<'fixed' | 'percent_over_provider' | 'percent_over_price'>('fixed');
+  newCostValue = signal<number>(0);
 
   // Conexión & Tienda Web (API Keys & Dominios)
   newDomainInput = signal<string>('');
@@ -192,8 +207,29 @@ export class StoreSettings implements OnInit {
           apiKey: [''],
           fromEmail: [''],
           fromName: ['']
+        }),
+        arca: this.#fb.group({
+          active: [false],
+          cuit: [''],
+          ptoVta: [1],
+          isProduction: [false],
+          cert: [''],
+          key: [''],
+          autoInvoiceOnSuccess: [true]
         })
       }),
+      fiscalProfile: this.#fb.group({
+        taxRegime: ['monotributo'],
+        monotributoCategory: ['C'],
+        cuit: [''],
+        legalName: [''],
+        businessName: [''],
+        iibbNumber: [''],
+        grossIncomeNumber: [''],
+        iibbPercentage: [3.5],
+        previousExternalBilling: [0]
+      }),
+      defaultAdditionalCosts: [[]],
       authConfig: this.#fb.group({
         allowEmailPassword: [true],
         allowMagicCode: [true],
@@ -266,6 +302,22 @@ export class StoreSettings implements OnInit {
         if (config.authConfig) {
           this.configForm.get('authConfig')?.patchValue(config.authConfig);
         }
+        if (config.fiscalProfile) {
+          this.configForm.get('fiscalProfile')?.patchValue({
+            ...config.fiscalProfile,
+            legalName: config.fiscalProfile.legalName || config.fiscalProfile.businessName || '',
+            businessName: config.fiscalProfile.businessName || config.fiscalProfile.legalName || '',
+            iibbNumber: config.fiscalProfile.grossIncomeNumber || (config.fiscalProfile as any).iibbNumber || '',
+            monotributoCategory: config.fiscalProfile.monotributoCategory || 'C',
+            previousExternalBilling: config.fiscalProfile.previousExternalBilling || 0
+          });
+        }
+        if (config.defaultAdditionalCosts) {
+          this.configForm.get('defaultAdditionalCosts')?.setValue(config.defaultAdditionalCosts);
+        }
+        if (config.integrations?.arca) {
+          this.configForm.get('integrations.arca')?.patchValue(config.integrations.arca);
+        }
       }
     });
 
@@ -294,7 +346,7 @@ export class StoreSettings implements OnInit {
         this.#router.navigate(['/home/emails']);
         return;
       }
-      if (requestedTab && ['general', 'integrations', 'auth', 'contact', 'clothing', 'pos', 'connection'].includes(requestedTab)) {
+      if (requestedTab && ['general', 'integrations', 'fiscal', 'auth', 'contact', 'clothing', 'pos', 'connection'].includes(requestedTab)) {
         this.activeTab.set(requestedTab as any);
       }
     });
@@ -605,10 +657,26 @@ export class StoreSettings implements OnInit {
     });
   }
 
+  async saveFiscalSettings() {
+    const fp = this.configForm.get('fiscalProfile')?.value;
+    const normalizedFp = {
+      ...fp,
+      businessName: fp.legalName || fp.businessName || '',
+      grossIncomeNumber: fp.iibbNumber || fp.grossIncomeNumber || ''
+    };
+
+    await this.saveSlice('fiscal', {
+      fiscalProfile: normalizedFp,
+      defaultAdditionalCosts: this.configForm.get('defaultAdditionalCosts')?.value,
+      integrations: this.configForm.get('integrations')?.value
+    });
+  }
+
   get currentTabSaveLabel(): string {
     switch (this.activeTab()) {
       case 'general': return 'Guardar Identidad & Logo';
       case 'auth': return 'Guardar Métodos de Autenticación';
+      case 'fiscal': return 'Guardar Configuración Fiscal & ARCA';
       case 'integrations': return 'Guardar Integraciones';
       case 'emails': return 'Guardar Plantillas de Email';
       case 'contact': return 'Guardar Contacto & Redes';
@@ -622,11 +690,122 @@ export class StoreSettings implements OnInit {
     switch (tab) {
       case 'general': return this.saveGeneralSettings();
       case 'auth': return this.saveAuthSettings();
+      case 'fiscal': return this.saveFiscalSettings();
       case 'integrations': return this.saveIntegrations();
       case 'emails': return this.saveEmailTemplates();
       case 'contact': return this.saveContactSettings();
       case 'clothing': return this.saveClothingSettings();
       default: return this.saveGeneralSettings();
+    }
+  }
+
+  // ─── Métodos de Presets de Costos e Impuestos por Defecto ───
+
+  get defaultCostsList(): ICostConcept[] {
+    return this.configForm.get('defaultAdditionalCosts')?.value || [];
+  }
+
+  addDefaultCost() {
+    const concept = this.newCostConcept().trim();
+    if (!concept) {
+      this.#NotificationService.warning('Ingresá el nombre o concepto del costo/impuesto');
+      return;
+    }
+    const current = [...this.defaultCostsList];
+    current.push({
+      concept,
+      category: this.newCostCategory(),
+      type: this.newCostType(),
+      value: Number(this.newCostValue()) || 0
+    });
+    this.configForm.get('defaultAdditionalCosts')?.setValue(current);
+    this.configForm.markAsDirty();
+
+    this.newCostConcept.set('');
+    this.newCostValue.set(0);
+    this.#NotificationService.success(`Costo por defecto "${concept}" agregado`);
+  }
+
+  removeDefaultCost(index: number) {
+    const current = [...this.defaultCostsList];
+    const removed = current.splice(index, 1);
+    this.configForm.get('defaultAdditionalCosts')?.setValue(current);
+    this.configForm.markAsDirty();
+    if (removed.length > 0) {
+      this.#NotificationService.info(`Concepto "${removed[0].concept}" removido`);
+    }
+  }
+
+  // ─── Test Conexión ARCA ───
+
+  async testArcaConnection() {
+    this.isTestingArca.set(true);
+    this.arcaStatus.set(null);
+    try {
+      const res = await firstValueFrom(this.#arcaService.checkStatus());
+      this.arcaStatus.set({ success: true, data: res });
+      this.#NotificationService.success('Servidores de ARCA (AFIP) en línea y operativos');
+    } catch (err: any) {
+      const msg = err?.error?.error || err?.message || 'Error de conexión con ARCA';
+      this.arcaStatus.set({ success: false, error: msg });
+      this.#NotificationService.error(`Fallo de conexión ARCA: ${msg}`);
+    } finally {
+      this.isTestingArca.set(false);
+    }
+  }
+
+  async searchCuitInArca() {
+    const rawCuit = this.configForm.get('fiscalProfile.cuit')?.value;
+    if (!rawCuit) {
+      this.#NotificationService.error('Ingresá un CUIT para buscar en el padrón de ARCA / AFIP');
+      return;
+    }
+    const cleaned = String(rawCuit).replace(/\D/g, '');
+    if (cleaned.length < 10 || cleaned.length > 11) {
+      this.#NotificationService.error('El CUIT debe contener 11 dígitos numéricos');
+      return;
+    }
+
+    this.isSearchingCuit.set(true);
+    this.cuitTaxpayerData.set(null);
+    try {
+      const res: any = await firstValueFrom(this.#arcaService.getTaxpayer(cleaned));
+      const taxpayer = res?.taxpayer;
+      if (taxpayer) {
+        this.cuitTaxpayerData.set(taxpayer);
+
+        const patchData: any = {
+          cuit: cleaned
+        };
+        if (taxpayer.legalName) {
+          patchData.legalName = taxpayer.legalName;
+          patchData.businessName = taxpayer.legalName;
+        }
+        if (taxpayer.taxRegime) {
+          patchData.taxRegime = taxpayer.taxRegime;
+        }
+        if (taxpayer.monotributoCategory) {
+          patchData.monotributoCategory = taxpayer.monotributoCategory;
+        }
+        this.configForm.get('fiscalProfile')?.patchValue(patchData);
+
+        // También sincronizar CUIT en el grupo de integraciones ARCA si está vacío
+        const arcaGroup = this.configForm.get('integrations.arca');
+        if (arcaGroup && !arcaGroup.get('cuit')?.value) {
+          arcaGroup.patchValue({ cuit: cleaned });
+        }
+
+        this.configForm.markAsDirty();
+        const catInfo = taxpayer.monotributoCategory ? ` (Cat. ${taxpayer.monotributoCategory})` : '';
+        this.#NotificationService.success(`Datos obtenidos de ARCA: ${taxpayer.legalName || cleaned}${catInfo}`);
+      } else {
+        this.#NotificationService.info('Consulta completada, pero no se recuperaron campos automáticos.');
+      }
+    } catch (err: any) {
+      const msg = err?.error?.error || err?.error?.message || err?.message || 'Error al consultar ARCA';
+      this.#NotificationService.error(`ARCA: ${msg}`);
+    } finally {
+      this.isSearchingCuit.set(false);
     }
   }
 

@@ -18,11 +18,17 @@
             name="search"
             id="products-search"
             class="input input-bordered input-sm w-full pl-9 pr-8 text-xs rounded-xl focus:outline-none focus:border-primary shadow-2xs bg-base-100"
-            placeholder="Buscar prenda, modelo..."
-            matTooltip="Podés buscar múltiples prendas o SKUs separando con comas (ej: Aura, Viena, Fiore)"
+            placeholder="Buscar por nombre, SKU o link de proveedor..."
+            matTooltip="Podés buscar múltiples prendas, SKUs o pegar el link del proveedor"
             [value]="ProductState.currentSearchQuery()"
             (input)="$event.preventDefault(); onSearch($event)"
           />
+          @if (isSupplierUrlQuery()) {
+            <span class="absolute right-7 top-1/2 -translate-y-1/2 badge badge-xs badge-primary font-mono text-[9px] gap-1 px-1.5 py-0.5 hidden sm:inline-flex" title="Buscando por Link de Proveedor">
+              <mat-icon class="text-[10px]! w-2.5! h-2.5!">link</mat-icon>
+              <span>Link Proveedor</span>
+            </span>
+          }
           @if (ProductState.currentSearchQuery()) {
             <button
               type="button"

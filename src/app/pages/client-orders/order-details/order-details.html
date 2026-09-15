@@ -76,6 +76,18 @@
           }
         }
 
+        <!-- Facturación ARCA -->
+        @if (order()!.isFacturado || invoiceData()?.cae) {
+          <button class="btn btn-sm btn-primary gap-1.5 font-bold shadow-xs" (click)="downloadInvoicePdf()" title="Descargar Factura Oficial A4">
+            <mat-icon class="text-[16px]! w-4! h-4!">picture_as_pdf</mat-icon> Factura ARCA (PDF)
+          </button>
+        } @else if (canIssueArcaInvoice()) {
+          <button class="btn btn-sm btn-outline btn-primary gap-1.5 font-bold shadow-xs" (click)="issueArcaInvoice()" [disabled]="issuingInvoice()">
+            <mat-icon class="text-[16px]! w-4! h-4!">receipt_long</mat-icon>
+            {{ issuingInvoice() ? 'Emitiendo en ARCA...' : 'Facturar ARCA' }}
+          </button>
+        }
+
         <!-- Botón Imprimir Remito / Ticket -->
         <button class="btn btn-sm btn-neutral gap-1.5 font-bold shadow-xs" (click)="printTicket()">
           <mat-icon class="text-[16px]! w-4! h-4!">print</mat-icon> Imprimir Ticket
@@ -418,17 +430,34 @@
                   <span class="font-semibold text-error">-{{ baseProviderCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                 </div>
 
-                @if (additionalCostsBreakdown().length > 0) {
+                @if (operationalExpensesBreakdown().length > 0) {
                   <div class="space-y-1 px-1">
                     <div class="flex justify-between items-center">
-                      <span class="text-base-content/60">Gastos de Operación (Bolsas/Arca)</span>
-                      <span class="font-semibold text-error">-{{ totalAdditionalCosts() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                      <span class="text-base-content/60">Gastos de Operación (Embalaje/Flete)</span>
+                      <span class="font-semibold text-error">-{{ totalOperationalExpenses() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                     </div>
                     <div class="pl-2 border-l-2 border-base-300 space-y-0.5 text-[10px] text-base-content/40">
-                      @for (cost of additionalCostsBreakdown(); track cost.concept) {
+                      @for (cost of operationalExpensesBreakdown(); track cost.concept) {
                         <div class="flex justify-between items-center">
                           <span>• {{ cost.concept }}</span>
                           <span>{{ cost.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (taxesBreakdown().length > 0) {
+                  <div class="space-y-1 px-1">
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/60">Impuestos Aplicables (IIBB / Tasas)</span>
+                      <span class="font-semibold text-amber-600">-{{ totalTaxes() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="pl-2 border-l-2 border-amber-300 space-y-0.5 text-[10px] text-base-content/40">
+                      @for (tax of taxesBreakdown(); track tax.concept) {
+                        <div class="flex justify-between items-center">
+                          <span>• {{ tax.concept }}</span>
+                          <span>{{ tax.value | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                         </div>
                       }
                     </div>
@@ -462,6 +491,81 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Card Facturación Electrónica ARCA -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-base-200">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-primary text-[18px]! w-4.5! h-4.5!">receipt_long</mat-icon>
+                  <h3 class="text-xs font-bold text-base-content uppercase tracking-wider">
+                    Factura Electrónica ARCA
+                  </h3>
+                </div>
+                @if (order()!.isFacturado || invoiceData()?.cae) {
+                  <span class="badge badge-xs badge-success font-bold text-[9px] gap-1">
+                    <mat-icon class="text-[11px]! w-3! h-3!">verified</mat-icon> CAE OFICIAL
+                  </span>
+                } @else {
+                  <span class="badge badge-xs badge-ghost font-bold text-[9px]">PENDIENTE</span>
+                }
+              </div>
+
+              @if (order()!.isFacturado || invoiceData()?.cae) {
+                <div class="space-y-2.5 text-xs">
+                  <div class="bg-base-200/50 p-2.5 rounded-xl border border-base-200 space-y-1.5">
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/50 text-[10px] font-bold uppercase">Comprobante</span>
+                      <span class="font-black text-primary">
+                        {{ invoiceData()?.voucherTypeName || 'Factura' }}
+                      </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/50 text-[10px] font-bold uppercase">N° Comprobante</span>
+                      <span class="font-mono font-bold">
+                        {{ invoiceData()?.ptoVta }}-{{ invoiceData()?.voucherNumber }}
+                      </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/50 text-[10px] font-bold uppercase">N° CAE</span>
+                      <span class="font-mono font-bold text-xs">{{ invoiceData()?.cae }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-base-content/50 text-[10px] font-bold uppercase">Vto. CAE</span>
+                      <span class="text-base-content/70 font-mono text-[11px]">{{ invoiceData()?.caeExpiration | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    class="btn btn-sm btn-primary w-full gap-1.5 font-bold shadow-xs"
+                    (click)="downloadInvoicePdf()"
+                  >
+                    <mat-icon class="text-[16px]! w-4! h-4!">picture_as_pdf</mat-icon> Descargar Factura (A4 PDF)
+                  </button>
+                </div>
+              } @else {
+                <div class="space-y-3 text-xs">
+                  <p class="text-base-content/60 text-[11px] leading-relaxed">
+                    Emite la factura electrónica legal directamente ante los servidores de ARCA (ex-AFIP) con CAE y QR reglamentario.
+                  </p>
+
+                  @if (order()!.paymentInfo.status === paymentStatus.APPROVED) {
+                    <button
+                      class="btn btn-sm btn-primary w-full gap-1.5 font-bold shadow-xs"
+                      (click)="issueArcaInvoice()"
+                      [disabled]="issuingInvoice()"
+                    >
+                      <mat-icon class="text-[16px]! w-4! h-4!">receipt_long</mat-icon>
+                      {{ issuingInvoice() ? 'Solicitando CAE en ARCA...' : 'Emitir Factura Electrónica' }}
+                    </button>
+                  } @else {
+                    <div class="bg-amber-500/10 border border-amber-500/20 text-amber-700 p-2.5 rounded-xl text-[11px] flex items-center gap-2">
+                      <mat-icon class="text-[16px]! w-4! h-4! shrink-0">info</mat-icon>
+                      <span>Debes aprobar el pago de la orden para emitir la factura oficial.</span>
+                    </div>
+                  }
+                </div>
+              }
             </div>
 
             <!-- Card 2: Cliente & Contacto Directo -->

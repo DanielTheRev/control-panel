@@ -407,10 +407,19 @@
                 @if (additionalCostsControls.length > 0) {
                   <div class="space-y-2">
                     @for (cost of additionalCostsControls.controls; track $index; let idx = $index) {
-                      <div class="flex items-center gap-2 bg-base-200/30 p-2 rounded-xl border border-base-200">
-                        <input type="text" [formControl]="getCostControl(idx, 'concept')" placeholder="Concepto (ej: Envío, Packaging)" class="input input-bordered input-sm flex-1 text-xs" />
-                        <input type="number" [formControl]="getCostControl(idx, 'amount')" placeholder="Monto ($)" class="input input-bordered input-sm w-28 text-xs font-bold" />
-                        <button type="button" (click)="removeAdditionalCost(idx)" class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10">
+                      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-base-200/30 p-2 rounded-xl border border-base-200">
+                        <input type="text" [formControl]="getCostControl(idx, 'concept')" placeholder="Concepto (ej: Packaging, IIBB)" class="input input-bordered input-sm flex-1 text-xs" />
+                        <select [formControl]="getCostControl(idx, 'category')" class="select select-bordered select-sm w-full sm:w-28 text-xs font-semibold">
+                          <option value="expense">📦 Gasto</option>
+                          <option value="tax">🏛️ Impuesto</option>
+                        </select>
+                        <input type="number" [formControl]="getCostControl(idx, 'value')" placeholder="Valor" class="input input-bordered input-sm w-full sm:w-28 text-xs font-bold" />
+                        <select [formControl]="getCostControl(idx, 'type')" class="select select-bordered select-sm w-full sm:w-32 text-xs">
+                          <option value="fixed">Monto ($)</option>
+                          <option value="percent_over_provider">% Costo</option>
+                          <option value="percent_over_price">% Venta</option>
+                        </select>
+                        <button type="button" (click)="removeAdditionalCost(idx)" class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10 self-end sm:self-auto">
                           <mat-icon class="text-base">delete</mat-icon>
                         </button>
                       </div>

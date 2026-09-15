@@ -43,6 +43,7 @@ import {
   ProductType,
 } from '../../../interfaces/product.interface';
 import { IFinanceCost } from '../../../interfaces/finance.interface';
+import { ProductService } from '../../../services/product.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { DebugService } from '../../../services/debug.service';
 import { ProductStoreService } from '../../../states/product.state.service';
@@ -81,6 +82,7 @@ export class TechProductCreate implements OnInit {
   private sidebarService = inject(SidebarService);
   private fb = inject(FormBuilder);
   private productState = inject(ProductStoreService);
+  private productService = inject(ProductService);
   private router = inject(Router);
   private commerceConfigState = inject(StoreConfigStateService);
   private dialog = inject(MatDialog);
@@ -99,6 +101,10 @@ export class TechProductCreate implements OnInit {
   isUsingGlobalMargin = signal<boolean>(true);
   calculatedListPrice = signal<IFinanceCost | null>(null);
   private deletedImages = signal<string[]>([]);
+
+  isCheckingSupplierLink = signal<boolean>(false);
+  duplicateSupplierProduct = signal<any | null>(null);
+  supplierLinkClean = signal<boolean>(false);
 
   // Navigation steps
   currentStep = signal<number>(0);
@@ -198,6 +204,40 @@ export class TechProductCreate implements OnInit {
   originalImages = computed(() => this.originalProduct()?.images || []);
 
   constructor() {
+    // Detección automática de duplicados por link de proveedor
+    this.techForm.get('linkProductProvider')?.valueChanges
+      .pipe(
+        takeUntilDestroyed(),
+        debounceTime(350),
+        distinctUntilChanged(),
+        switchMap((url: string) => {
+          const trimmed = (url || '').trim();
+          if (!trimmed || trimmed.length < 5) {
+            this.isCheckingSupplierLink.set(false);
+            this.duplicateSupplierProduct.set(null);
+            this.supplierLinkClean.set(false);
+            return EMPTY;
+          }
+          this.isCheckingSupplierLink.set(true);
+          return this.productService.checkSupplierLink(trimmed, this.productID() || undefined).pipe(
+            catchError(() => {
+              this.isCheckingSupplierLink.set(false);
+              return EMPTY;
+            })
+          );
+        })
+      )
+      .subscribe((res: any) => {
+        this.isCheckingSupplierLink.set(false);
+        if (res?.exists && res?.product) {
+          this.duplicateSupplierProduct.set(res.product);
+          this.supplierLinkClean.set(false);
+        } else {
+          this.duplicateSupplierProduct.set(null);
+          this.supplierLinkClean.set(true);
+        }
+      });
+
     // Escucha de cambios de precio para cálculo de lista
     this.techForm.valueChanges
       .pipe(
@@ -462,12 +502,18 @@ export class TechProductCreate implements OnInit {
   }
 
   // Costos adicionales
-  addAdditionalCost() {
+  addAdditionalCost(
+    concept: string = '',
+    value: number = 0,
+    type: 'fixed' | 'percent_over_provider' | 'percent_over_price' = 'fixed',
+    category: 'expense' | 'tax' = 'expense',
+  ) {
     this.additionalCostsControls.push(
       this.fb.group({
-        concept: ['', Validators.required],
-        value: [0, [Validators.required, Validators.min(0)]],
-        type: ['fixed', Validators.required],
+        concept: [concept, Validators.required],
+        value: [value, [Validators.required, Validators.min(0)]],
+        type: [type, Validators.required],
+        category: [category, Validators.required],
       }),
     );
   }

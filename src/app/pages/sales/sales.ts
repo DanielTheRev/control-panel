@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { MonotributoWidget } from '../../shared/components/monotributo-widget/monotributo-widget';
 import { SalesStateService } from '../../states/sales.state.service';
 import { DailyBreakpoint, SalesRange, SaleWithDetail } from '../../interfaces/sales.interface';
 
@@ -22,7 +23,7 @@ let ChartLib: any;
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageLayout, PageHeader, MatIconModule, DecimalPipe],
+  imports: [CommonModule, FormsModule, PageLayout, PageHeader, MatIconModule, DecimalPipe, MonotributoWidget],
   templateUrl: './sales.html',
   styleUrl: './sales.scss',
 })

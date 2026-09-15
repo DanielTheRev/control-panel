@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -78,6 +79,7 @@ import { AddBrandCategory } from '../../share/components/add-brand-category/add-
 import { ProviderStateService } from '../../states/provider.state.service';
 import { ProviderCreate } from '../provider-create/provider-create';
 import { IFinanceCost } from '../../interfaces/finance.interface';
+import { ProductService } from '../../services/product.service';
 
 interface SizeGuideState {
   enabled: boolean;
@@ -115,6 +117,7 @@ export class ProductCreate {
   #SidebarService = inject(SidebarService);
   #fb = inject(FormBuilder);
   #productState = inject(ProductStoreService);
+  #productService = inject(ProductService);
   #router = inject(Router);
   #CommerceConfigState = inject(StoreConfigStateService);
   #dialog = inject(MatDialog);
@@ -125,6 +128,10 @@ export class ProductCreate {
   isFormReady = signal<boolean>(false);
   #deletedImages = signal<string[]>([]);
   seoImagePreview = signal<string | null>(null);
+
+  isCheckingSupplierLink = signal<boolean>(false);
+  duplicateSupplierProduct = signal<any | null>(null);
+  supplierLinkClean = signal<boolean>(false);
 
   brands = computed(() => {
     if (this.#CommerceConfigState.StoreConfig().hasError) return [];
@@ -932,13 +939,15 @@ XXL: 58, 76, 52
   addAdditionalCost(
     concept: string = '',
     value: number = 0,
-    type: 'fixed' | 'percent_over_provider' = 'fixed',
+    type: 'fixed' | 'percent_over_provider' | 'percent_over_price' = 'fixed',
+    category: 'expense' | 'tax' = 'expense',
   ) {
     this.additionalCostsControls.push(
       this.#fb.group({
         concept: [concept, Validators.required],
         value: [value, [Validators.required, Validators.min(0)]],
         type: [type, Validators.required],
+        category: [category, Validators.required],
       }),
     );
   }
@@ -987,6 +996,51 @@ XXL: 58, 76, 52
   }
 
   constructor() {
+    // Inyección automática de Gastos e Impuestos por defecto al crear un nuevo producto
+    effect(() => {
+      const isEdit = Boolean(this.productID());
+      const config = this.storeConfig()?.config;
+      if (!isEdit && config?.defaultAdditionalCosts?.length && this.additionalCostsControls.length === 0) {
+        config.defaultAdditionalCosts.forEach((c: any) => {
+          this.addAdditionalCost(c.concept, c.value, c.type, c.category || 'expense');
+        });
+      }
+    });
+
+    // Detección automática de duplicados por link de proveedor
+    this.productForm.get('linkProductProvider')?.valueChanges
+      .pipe(
+        takeUntilDestroyed(),
+        debounceTime(350),
+        distinctUntilChanged(),
+        switchMap((url: string) => {
+          const trimmed = (url || '').trim();
+          if (!trimmed || trimmed.length < 5) {
+            this.isCheckingSupplierLink.set(false);
+            this.duplicateSupplierProduct.set(null);
+            this.supplierLinkClean.set(false);
+            return EMPTY;
+          }
+          this.isCheckingSupplierLink.set(true);
+          return this.#productService.checkSupplierLink(trimmed, this.productID() || undefined).pipe(
+            catchError(() => {
+              this.isCheckingSupplierLink.set(false);
+              return EMPTY;
+            })
+          );
+        })
+      )
+      .subscribe((res: any) => {
+        this.isCheckingSupplierLink.set(false);
+        if (res?.exists && res?.product) {
+          this.duplicateSupplierProduct.set(res.product);
+          this.supplierLinkClean.set(false);
+        } else {
+          this.duplicateSupplierProduct.set(null);
+          this.supplierLinkClean.set(true);
+        }
+      });
+
     // Listen to price and margin changes for calculating visual prices via the backend
     // We use getRawValue() to include disabled controls (customProfitMargin, pricingMethodChoice)
     this.productForm.valueChanges
@@ -1267,6 +1321,7 @@ XXL: 58, 76, 52
               concept: [cost.concept, Validators.required],
               value: [cost.value, [Validators.required, Validators.min(0)]],
               type: [cost.type, Validators.required],
+              category: [cost.category || 'expense', Validators.required],
             }),
           );
         });
