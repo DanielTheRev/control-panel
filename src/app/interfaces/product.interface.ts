@@ -191,7 +191,7 @@ export interface ICostConcept {
   concept: string;
   value: number;
   type: 'fixed' | 'percent_over_provider' | 'percent_over_price';
-  category?: 'expense' | 'tax';
+  category?: 'expense' | 'tax' | 'shipping';
 }
 
 export interface IProductFinance {
@@ -225,6 +225,7 @@ export interface IProductPrices {
   cashTransferPrice: number;
   discountPercentageTransfer: number;
   updatedAt?: string | Date;
+  shippingSubsidy?: number;
   installments: {
     threePaymentsAmount: number;
     sixPaymentsAmount: number;

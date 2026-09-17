@@ -153,9 +153,7 @@ export interface IEcommerceConfig {
   brands: string[];
   categories: string[];
   clothingFits: string[];
-  shippingConfig?: {
-    freeShippingThreshold: number;
-  };
+  shippingConfig?: IShippingConfig;
   emailTemplates?: IEmailTemplatesConfig;
   workingHours?: {
     weekdayStart?: string;
@@ -219,5 +217,16 @@ export interface IEcommerceConfig {
     success?: string;
     fail?: string;
     notification?: string;
+  };
+}
+
+export interface IShippingConfig {
+  freeShippingThreshold: number;
+  defaultItemSubsidy?: number;
+  minShippingFloor?: number;
+  zoneRates?: {
+    caba: number;
+    buenosAires: number;
+    interior: number;
   };
 }

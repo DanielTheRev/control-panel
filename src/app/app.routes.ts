@@ -265,7 +265,7 @@ export const routes: Routes = [
       },
       {
         path: 'fiscal',
-        title: 'Mi Monotributo & Finanzas Fiscales',
+        title: 'ARCA & Finanzas Fiscales',
         loadComponent: () => import('./pages/fiscal-dashboard/fiscal-dashboard').then(c => c.FiscalDashboardComponent)
       },
       {

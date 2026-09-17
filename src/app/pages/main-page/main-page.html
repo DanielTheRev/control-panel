@@ -64,9 +64,9 @@
         </a>
         <a routerLink="/home/fiscal" routerLinkActive="active" class="menu-item"
           [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Mi Monotributo' : ''" matTooltipPosition="right">
+          [matTooltip]="isCollapsed ? 'ARCA & Fiscal' : ''" matTooltipPosition="right">
           <mat-icon>account_balance</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Mi Monotributo</span> }
+          @if (isExpanded) { <span class="menu-text">ARCA & Fiscal</span> }
         </a>
       </div>
 
@@ -294,7 +294,7 @@
           </a>
           <a routerLink="/home/fiscal" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
             <mat-icon>account_balance</mat-icon>
-            <span class="menu-text">Mi Monotributo</span>
+            <span class="menu-text">ARCA & Fiscal</span>
           </a>
         </div>
 

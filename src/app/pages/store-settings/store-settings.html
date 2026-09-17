@@ -63,6 +63,16 @@
         <span>Fiscal & ARCA</span>
       </button>
 
+      <button
+        type="button"
+        (click)="activeTab.set('shipping')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [ngClass]="activeTab() === 'shipping' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">local_shipping</mat-icon>
+        <span>Logística & Envíos</span>
+      </button>
+
       <a
         routerLink="/home/emails"
         class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs btn-ghost text-base-content/70 hover:bg-base-200"
@@ -708,7 +718,7 @@
 
                 <a routerLink="/home/fiscal" class="btn btn-xs btn-outline btn-primary rounded-xl font-bold gap-1.5 shadow-2xs">
                   <mat-icon class="text-[14px]! w-3.5! h-3.5!">analytics</mat-icon>
-                  <span>Ver Panel Monotributo</span>
+                  <span>Ver Panel ARCA</span>
                 </a>
               </div>
 
@@ -1135,6 +1145,7 @@
                     >
                       <option value="expense">📦 Gasto Operativo</option>
                       <option value="tax">🏛️ Impuesto / Tasa</option>
+                      <option value="shipping">🚚 Envío / Logística</option>
                     </select>
                   </div>
 
@@ -1208,6 +1219,10 @@
                               <span class="badge badge-xs bg-amber-500/10 text-amber-700 border-amber-500/30 font-bold text-[10px]">
                                 🏛️ Impuesto
                               </span>
+                            } @else if (cost.category === 'shipping') {
+                              <span class="badge badge-xs bg-purple-500/10 text-purple-700 border-purple-500/30 font-bold text-[10px]">
+                                🚚 Envío
+                              </span>
                             } @else {
                               <span class="badge badge-xs bg-blue-500/10 text-blue-700 border-blue-500/30 font-bold text-[10px]">
                                 📦 Gasto
@@ -1248,6 +1263,191 @@
               }
             </div>
 
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- LOGÍSTICA & ENVÍOS (ZONAS, UMBRALES Y SUBSIDIO SILENCIOSO)                -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'shipping') {
+          <div formGroupName="shippingConfig" class="space-y-6">
+
+            <!-- Card 1: Umbral de Envío Gratis & Subsidio Silencioso -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">local_shipping</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Estrategia de Envíos & Subsidio Silencioso</h3>
+                    <p class="text-xs text-base-content/50">Gestioná el umbral de envío gratis, el colchón por prenda y el piso mínimo de credibilidad.</p>
+                  </div>
+                </div>
+
+                <span class="badge badge-sm badge-primary font-bold capitalize">{{ StoreName() }} Logistics</span>
+              </div>
+
+              <!-- Explicación de la Lógica Silenciosa -->
+              <div class="bg-primary/5 border border-primary/20 rounded-xl p-3.5 space-y-1.5 text-xs">
+                <div class="flex items-center gap-1.5 font-bold text-primary">
+                  <mat-icon class="text-[16px]! w-4! h-4!">psychology</mat-icon>
+                  <span>¿Cómo funciona la regla de envíos silenciosa de <span class="capitalize">{{ StoreName() }}</span> ?</span>
+                </div>
+                <p class="text-base-content/70 leading-relaxed">
+                  1. Si el cliente supera el <strong>Umbral de Compra</strong>, el envío es <strong>100% GRATIS ($0)</strong>.<br />
+                  2. Si no llega al umbral, cada prenda que lleva aporta un <strong>Subsidio Acumulado</strong> (por defecto $4.000) que se descuenta internamente de la tarifa de su zona.<br />
+                  3. Si el subsidio deja el envío por debajo del <strong>Piso Mínimo Salvavidas</strong> (ej. daría $900), se cobra automáticamente el piso para mantener la seriedad de la marca.
+                </p>
+              </div>
+
+              <!-- Inputs Principales -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <!-- 1. Umbral Envío Gratis -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80 flex items-center gap-1">
+                    <span>Umbral Envío Gratis</span>
+                    <span class="badge badge-xs badge-success text-white font-bold">100% OFF</span>
+                  </label>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="1000"
+                      min="0"
+                      formControlName="freeShippingThreshold"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="80000"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Compras iguales o mayores a este monto tienen envío $0.</p>
+                </div>
+
+                <!-- 2. Subsidio por Prenda por Defecto -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80 flex items-center gap-1">
+                    <span>Subsidio Base por Prenda</span>
+                    <span class="badge badge-xs badge-ghost font-bold">Colchón</span>
+                  </label>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="defaultItemSubsidy"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="4000"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Monto que aporta cada prenda para abaratar el flete.</p>
+                </div>
+
+                <!-- 3. Piso Mínimo Salvavidas -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80 flex items-center gap-1">
+                    <span>Piso Mínimo Salvavidas</span>
+                    <span class="badge badge-xs badge-warning text-warning-content font-bold">Credibilidad</span>
+                  </label>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="minShippingFloor"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="5000"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Costo mínimo para evitar que el flete muestre precios irrisorios (ej. $900).</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Tarifas Base por Zonas (Correo Argentino + Gross-Up MP) -->
+            <div formGroupName="zoneRates" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
+                  <mat-icon class="text-[20px]! w-5! h-5!">map</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Tarifas Base por Región / Zona</h3>
+                  <p class="text-xs text-base-content/50">Valores con gross-up incluido para cubrir el costo real del Correo y la comisión de Mercado Pago.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Zona 1: CABA -->
+                <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-primary text-[16px]! w-4! h-4!">location_city</mat-icon>
+                      <span>CABA (Capital Federal)</span>
+                    </div>
+                    <span class="badge badge-xs badge-outline text-[10px]">Local</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="caba"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="8900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Cubre tarifa Correo ($7.755) + comisión pasarela.</p>
+                </div>
+
+                <!-- Zona 2: Buenos Aires -->
+                <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-secondary text-[16px]! w-4! h-4!">domain</mat-icon>
+                      <span>Provincia de Buenos Aires</span>
+                    </div>
+                    <span class="badge badge-xs badge-outline text-[10px]">Regional</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="buenosAires"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="9900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">GBA, La Plata, Mar del Plata y todo Bs As ($8.955 base).</p>
+                </div>
+
+                <!-- Zona 3: Interior del País -->
+                <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-amber-500 text-[16px]! w-4! h-4!">public</mat-icon>
+                      <span>Resto del País (Interior)</span>
+                    </div>
+                    <span class="badge badge-xs badge-outline text-[10px]">Nacional</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="interior"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="11900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Santa Fe, Rosario, Córdoba, Cuyo, NOA, Patagonia.</p>
+                </div>
+              </div>
+            </div>
           </div>
         }
 
