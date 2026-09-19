@@ -514,6 +514,8 @@
                           <option [value]="10">10</option>
                           <option [value]="20">20</option>
                           <option [value]="50">50</option>
+                          <option [value]="100">100</option>
+                          <option [value]="200">200</option>
                         </select>
                       </div>
 
@@ -668,7 +670,7 @@
                   @let endItem = p.totalItems === 0 ? 0 : (p.currentPage * p.itemsPerPage > p.totalItems ? p.totalItems : p.currentPage * p.itemsPerPage);
                   <div class="flex items-center gap-1.5 text-base-content/60 font-medium"><span>Mostrando</span><span class="font-bold text-base-content">{{ startItem }} - {{ endItem }}</span><span>de</span><span class="font-bold text-base-content">{{ p.totalItems }}</span><span>productos</span></div>
                   <div class="flex items-center gap-2 sm:gap-3">
-                    <div class="flex items-center gap-1"><span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span><select [value]="p.itemsPerPage" (change)="onPageSizeChange($any($event.target).value)" class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"><option [value]="10">10</option><option [value]="20">20</option><option [value]="50">50</option></select></div>
+                    <div class="flex items-center gap-1"><span class="text-[11px] text-base-content/40 hidden sm:inline">Por pág:</span><select [value]="p.itemsPerPage" (change)="onPageSizeChange($any($event.target).value)" class="select select-xs select-bordered rounded-xl bg-base-100 font-bold text-xs focus:outline-none h-6.5 min-h-6.5 py-0 px-2"><option [value]="10">10</option><option [value]="20">20</option><option [value]="50">50</option><option [value]="100">100</option><option [value]="200">200</option></select></div>
                     <div class="join border border-base-300 rounded-xl overflow-hidden shadow-2xs">
                       <button type="button" class="join-item btn btn-xs btn-ghost hover:bg-base-200 gap-1 px-2.5 h-6.5 min-h-6.5" [disabled]="p.currentPage <= 1" (click)="onPageChange({ pageIndex: p.currentPage - 2, pageSize: p.itemsPerPage, length: p.totalItems, previousPageIndex: p.currentPage - 1 })" title="Página anterior"><mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon><span class="hidden sm:inline text-xs font-semibold">Anterior</span></button>
                       <div class="join-item px-2.5 flex items-center bg-base-200/50 text-xs font-bold text-base-content/80 border-x border-base-300">{{ p.currentPage }} / {{ p.totalPages || 1 }}</div>

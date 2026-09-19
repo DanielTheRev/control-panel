@@ -9,6 +9,6 @@ export const environment = {
   brandName: 'NexoCommerce',
 
   MP_MASTER_CLIENT_ID: 8846222731123020,
-  appVersion: 'v2.3.0 (dev)',
-  buildDate: '17/09/2026'
+  appVersion: 'v2.3.1 (dev)',
+  buildDate: '19/09/2026'
 };

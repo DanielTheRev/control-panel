@@ -1492,8 +1492,20 @@ export class ProductList {
 
   selectedProductsTypesSummary = computed(() => {
     const selectedIds = this.selectedProducts();
-    const allProducts = this.ProductState.products().data || [];
-    const selectedList = allProducts.filter((p) => selectedIds.includes(p._id));
+    const sourceProducts = [
+      ...(this.ProductState.allProducts() || []),
+      ...(this.ProductState.products().data || [])
+    ];
+    const uniqueMap = new Map<string, any>();
+    sourceProducts.forEach((p) => {
+      if (p?._id && !uniqueMap.has(p._id)) {
+        uniqueMap.set(p._id, p);
+      }
+    });
+    const selectedList = selectedIds
+      .map((id) => uniqueMap.get(id))
+      .filter((p): p is any => Boolean(p));
+
     if (selectedList.length === 0) return { isMixed: false, dominantType: ProductType.CLOTHING, breakdown: '', types: [], count: 0 };
 
     const typeCounts: Record<string, number> = {};
@@ -2019,8 +2031,19 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
 
   async copyAiUpdatePrompt() {
     const selectedIds = this.selectedProducts();
-    const allProducts = this.ProductState.products().data || [];
-    const productsToExport = allProducts.filter((p) => selectedIds.includes(p._id));
+    const sourceProducts = [
+      ...(this.ProductState.allProducts() || []),
+      ...(this.ProductState.products().data || [])
+    ];
+    const uniqueMap = new Map<string, any>();
+    sourceProducts.forEach((p) => {
+      if (p?._id && !uniqueMap.has(p._id)) {
+        uniqueMap.set(p._id, p);
+      }
+    });
+    const productsToExport = selectedIds
+      .map((id) => uniqueMap.get(id))
+      .filter((p): p is any => Boolean(p));
 
     if (productsToExport.length === 0) {
       this.#snackBar.open('Selecciona al menos un producto para actualizar.', 'Cerrar', { duration: 3000 });
@@ -2432,7 +2455,16 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
         this.aiParsedUpdateDiffs.set([]);
       } else {
         // Update mode with granular diffing
-        const allProducts = this.ProductState.products().data || [];
+        const sourceProducts = [
+          ...(this.ProductState.allProducts() || []),
+          ...(this.ProductState.products().data || [])
+        ];
+        const allProductsMap = new Map<string, any>();
+        sourceProducts.forEach((p) => {
+          if (p?._id && !allProductsMap.has(p._id)) {
+            allProductsMap.set(p._id, p);
+          }
+        });
         const knownFits = this.storeClothingFits();
         const diffs: any[] = [];
 
@@ -2441,7 +2473,7 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
             throw new Error(`Ítem #${idx + 1} (${item.model || 'sin nombre'}) no tiene la propiedad _id.`);
           }
 
-          const orig = allProducts.find((p: any) => p._id === item._id);
+          const orig = allProductsMap.get(item._id);
           const changes: Array<{ label: string; text: string; icon: string }> = [];
 
           // 1. Costo
