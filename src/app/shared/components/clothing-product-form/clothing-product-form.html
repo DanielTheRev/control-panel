@@ -65,6 +65,91 @@
                         formControlName="season" />
                 </fieldset>
             </div>
+
+            <!-- ============================================================== -->
+            <!-- PRENDAS QUE COMBINAN (COMPLETA EL LOOK / SHOP THE LOOK)          -->
+            <!-- ============================================================== -->
+            <div class="mt-6 pt-5 border-t border-base-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h4 class="text-sm font-semibold text-base-content flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                            Prendas que combinan (Completa el Look)
+                        </h4>
+                        <p class="text-xs text-base-content/60">
+                            Prendas con las que se combina en las fotos de catálogo para recomendaciones y Shop The Look.
+                        </p>
+                    </div>
+                    <span class="badge badge-sm badge-secondary/15 text-secondary font-medium">
+                        {{ selectedCombineIds.length }} {{ selectedCombineIds.length === 1 ? 'prenda' : 'prendas' }}
+                    </span>
+                </div>
+
+                <!-- Chips / Tarjetitas de prendas seleccionadas -->
+                @if (selectedCombinedProducts().length > 0) {
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        @for (item of selectedCombinedProducts(); track item._id) {
+                            <div class="inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl bg-base-200/70 border border-base-300 text-xs text-base-content shadow-xs group hover:border-secondary/40 transition-colors">
+                                <img [src]="getProductImage(item)" class="w-6 h-6 rounded-lg object-cover bg-base-300" alt="" />
+                                <span class="font-medium max-w-[150px] truncate">{{ item.model }}</span>
+                                @if (item.category) {
+                                    <span class="text-[10px] text-base-content/50 uppercase">({{ item.category }})</span>
+                                }
+                                <button type="button" class="btn btn-ghost btn-circle btn-xs text-base-content/50 hover:text-error hover:bg-error/10 ml-0.5" (click)="removeCombinedProduct(item._id)" title="Quitar combinación">
+                                    <mat-icon class="text-[14px] w-3.5 h-3.5 leading-none">close</mat-icon>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Selector con Búsqueda -->
+                <div class="relative">
+                    <div class="relative">
+                        <input
+                            type="text"
+                            class="input input-bordered w-full text-sm pr-10"
+                            placeholder="Buscar prenda por nombre o categoría para agregar..."
+                            [ngModel]="searchTerm()"
+                            (ngModelChange)="searchTerm.set($event); isDropdownOpen.set(true)"
+                            (focus)="isDropdownOpen.set(true)"
+                            [ngModelOptions]="{standalone: true}"
+                        />
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-base-content/40">
+                            <mat-icon class="text-[18px] w-4.5 h-4.5">search</mat-icon>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown de resultados -->
+                    @if (isDropdownOpen() && availableProducts().length > 0) {
+                        <div class="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-xl bg-base-100 border border-base-200 shadow-xl p-1.5 space-y-1">
+                            @for (prod of availableProducts(); track prod._id) {
+                                <button
+                                    type="button"
+                                    class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/80 transition-colors text-left text-xs text-base-content cursor-pointer"
+                                    (click)="addCombinedProduct(prod)"
+                                >
+                                    <img [src]="getProductImage(prod)" class="w-8 h-8 rounded-lg object-cover bg-base-200 flex-shrink-0" alt="" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-sm truncate">{{ prod.model }}</div>
+                                        <div class="text-[11px] text-base-content/60 flex items-center gap-2">
+                                            <span>{{ prod.category || 'Sin categoría' }}</span>
+                                            @if (prod.brand) { <span>• {{ prod.brand }}</span> }
+                                        </div>
+                                    </div>
+                                    <mat-icon class="text-[18px] w-4.5 h-4.5 text-secondary flex-shrink-0">add_circle_outline</mat-icon>
+                                </button>
+                            }
+                        </div>
+                    } @else if (isDropdownOpen() && searchTerm().trim().length > 0) {
+                        <div class="absolute left-0 right-0 z-50 mt-1 p-3 rounded-xl bg-base-100 border border-base-200 shadow-xl text-center text-xs text-base-content/50">
+                            No se encontraron prendas con "{{ searchTerm() }}"
+                        </div>
+                    }
+                </div>
+            </div>
         </form>
     </div>
 </div>

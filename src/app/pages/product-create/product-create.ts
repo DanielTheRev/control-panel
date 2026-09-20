@@ -1232,6 +1232,7 @@ XXL: 58, 76, 52
           material: product.material || '',
           sizeType: product.sizeType || '',
           season: product.season || '',
+          combineWith: (product as any).combineWith || [],
         });
       } else if (type === ProductType.BEAUTY) {
         this.beautyInitialValue.set({
@@ -2025,6 +2026,9 @@ XXL: 58, 76, 52
         if (clothingVals.sizeType)
           formData.append('sizeType', clothingVals.sizeType);
         if (clothingVals.season) formData.append('season', clothingVals.season);
+        if (clothingVals.combineWith && Array.isArray(clothingVals.combineWith) && clothingVals.combineWith.length > 0) {
+          formData.append('combineWith', JSON.stringify(clothingVals.combineWith));
+        }
       }
 
       if (data.productType === ProductType.GENERAL) {

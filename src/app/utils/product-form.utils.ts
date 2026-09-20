@@ -210,6 +210,21 @@ export class ProductFormUtils {
       }
     });
 
+    if (productData.combineWith !== undefined) {
+      const prodCombine = Array.isArray(productData.combineWith)
+        ? productData.combineWith.map((p: any) => typeof p === 'string' ? p : p?._id).filter(Boolean).sort()
+        : [];
+      const origCombine = Array.isArray(originalProduct.combineWith)
+        ? originalProduct.combineWith.map((p: any) => typeof p === 'string' ? p : p?._id).filter(Boolean).sort()
+        : [];
+
+      if (JSON.stringify(prodCombine) !== JSON.stringify(origCombine)) {
+        debugWarn(`[DEBUG] Change detected in combineWith. New:`, prodCombine, `Orig:`, origCombine);
+        changes.formData.append('combineWith', JSON.stringify(prodCombine));
+        changes.hasChanges = true;
+      }
+    }
+
 
 
     // --- 7. IMÁGENES ---

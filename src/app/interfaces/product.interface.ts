@@ -164,6 +164,7 @@ export interface IClothingProduct extends IProduct {
   season?: string;
   variants: IClothingVariant[];
   sizeGuide?: ISizeGuide;
+  combineWith?: (string | IProduct)[];
 }
 
 export enum ClothingGender {

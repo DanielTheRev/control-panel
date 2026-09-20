@@ -172,6 +172,71 @@
             </nav>
           </div>
 
+          <!-- ========================================================================= -->
+          <!-- ACCIONES RÁPIDAS (Guardar / Actualizar / Cancelar)                        -->
+          <!-- ========================================================================= -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between px-0.5">
+              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest">
+                Acciones
+              </span>
+              @if (isEditMode()) {
+                @if (hasChanges()) {
+                  <span class="badge badge-warning badge-xs font-semibold gap-1">Con cambios</span>
+                } @else {
+                  <span class="badge badge-ghost badge-xs font-normal text-base-content/40">Sin cambios</span>
+                }
+              }
+            </div>
+
+            @let sidebarDisable =
+              productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
+
+            <!-- Botón Principal: Guardar / Actualizar -->
+            <button
+              type="button"
+              class="btn btn-primary w-full font-bold shadow-xs hover:shadow-md transition-all gap-2"
+              (click)="saveProduct()"
+              [disabled]="sidebarDisable"
+            >
+              @if (isLoading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Guardando...</span>
+              } @else {
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">save</mat-icon>
+                <span>{{ productID() ? "Actualizar Producto" : "Guardar Producto" }}</span>
+              }
+            </button>
+
+            <!-- Botón Opcional: Guardar y Cargar Otro (solo creación) -->
+            @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary w-full font-bold shadow-2xs gap-1.5"
+                (click)="saveAndCreateNext()"
+                [disabled]="productForm.invalid || isLoading()"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">queue</mat-icon>
+                <span>Guardar y Cargar Otro</span>
+              </button>
+            }
+
+            <!-- Botón Cancelar -->
+            <a
+              [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
+              class="btn btn-sm btn-ghost w-full text-base-content/60 hover:text-base-content transition-colors font-medium text-xs"
+            >
+              Cancelar
+            </a>
+
+            @if (productForm.invalid) {
+              <div class="flex items-center gap-1.5 px-0.5 text-[11px] text-error font-medium">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! shrink-0">error_outline</mat-icon>
+                <span>Faltan campos obligatorios</span>
+              </div>
+            }
+          </div>
+
           <!-- Resumen Rápido / Tips -->
           <div class="bg-base-200/40 rounded-2xl p-4 border border-base-200 text-xs text-base-content/60 space-y-2">
             <div class="flex items-center gap-2 font-bold text-base-content/80 text-[11px] uppercase tracking-wider">
@@ -996,6 +1061,7 @@
               } @else if (selectedType() === ProductType.CLOTHING) {
                 <app-clothing-product-form
                   [value]="clothingInitialValue()"
+                  [currentProductId]="productID()"
                   (formChange)="onTypeSpecificFormChange($event)"
                 />
               } @else if (selectedType() === ProductType.BEAUTY) {
