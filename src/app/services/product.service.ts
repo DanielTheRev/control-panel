@@ -205,6 +205,23 @@ export class ProductService {
       );
   }
 
+  /**
+   * Búsqueda administrativa de productos para selectores/asociaciones (sin filtros de tabla)
+   */
+  searchAdminProducts(query: string = '', limit: number = 30): Observable<IProduct[]> {
+    const params: any = {
+      page: '1',
+      limit: limit.toString(),
+      status: 'all',
+    };
+    if (query.trim()) params.q = query.trim();
+    return this.#http
+      .get<IPaginatedResult<IProduct>>(`${this.#apiUrl}/admin/list`, { params })
+      .pipe(
+        map((res) => (res?.data || []).map(mapProductPrices)),
+      );
+  }
+
   getProductByBarcode(barcode: string): Observable<{ product: any; matchedVariant?: any }> {
     return this.#http
       .get<{ product: any; matchedVariant?: any }>(`${this.#apiUrl}/by-barcode/${barcode}`)

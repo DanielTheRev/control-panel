@@ -80,6 +80,7 @@ import { ProviderStateService } from '../../states/provider.state.service';
 import { ProviderCreate } from '../provider-create/provider-create';
 import { IFinanceCost } from '../../interfaces/finance.interface';
 import { ProductService } from '../../services/product.service';
+import { NotificationsService } from '../../services/notifications.service';
 
 interface SizeGuideState {
   enabled: boolean;
@@ -123,6 +124,7 @@ export class ProductCreate {
   #dialog = inject(MatDialog);
   #ProviderState = inject(ProviderStateService);
   #debug = inject(DebugService);
+  #notificationService = inject(NotificationsService);
 
   readonly storeConfig = this.#CommerceConfigState.StoreConfig;
   isFormReady = signal<boolean>(false);
@@ -954,6 +956,34 @@ XXL: 58, 76, 52
 
   removeAdditionalCost(index: number) {
     this.additionalCostsControls.removeAt(index);
+  }
+
+  loadDefaultAdditionalCosts() {
+    const defaultCosts = this.storeConfig()?.config?.defaultAdditionalCosts;
+    if (!defaultCosts || defaultCosts.length === 0) {
+      this.#notificationService.info(
+        'No tenés gastos por defecto configurados en la tienda. Podés definirlos desde Configuración > Fiscal & ARCA.',
+      );
+      return;
+    }
+    const existingConcepts = new Set(
+      this.additionalCostsControls.controls.map((ctrl) =>
+        (ctrl.get('concept')?.value || '').toLowerCase().trim(),
+      ),
+    );
+    let added = 0;
+    defaultCosts.forEach((c: any) => {
+      if (!existingConcepts.has((c.concept || '').toLowerCase().trim())) {
+        this.addAdditionalCost(c.concept, c.value, c.type, c.category || 'expense');
+        added++;
+      }
+    });
+    if (added > 0) {
+      this.productForm.markAsDirty();
+      this.#notificationService.success(`Se agregaron ${added} gasto(s) configurados por defecto.`);
+    } else {
+      this.#notificationService.info('Los gastos configurados por defecto ya están presentes en este producto.');
+    }
   }
 
   get invalidControls(): string[] {

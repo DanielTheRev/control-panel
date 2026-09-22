@@ -38,41 +38,6 @@
           <span>Listo p/guardar</span>
         </div>
       }
-
-      <a
-        [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
-        class="btn btn-sm btn-ghost text-base-content/60 hover:text-base-content"
-      >
-        Cancelar
-      </a>
-
-      @let disable =
-        productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
-      @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
-        <button
-          type="button"
-          class="btn btn-sm btn-outline btn-primary px-4 font-bold shadow-xs hover:shadow-md transition-all gap-1.5"
-          (click)="saveAndCreateNext()"
-          [disabled]="productForm.invalid || isLoading()"
-        >
-          <mat-icon class="text-[18px]! w-4.5! h-4.5!">queue</mat-icon>
-          <span>Guardar y Cargar Otro</span>
-        </button>
-      }
-
-      <button
-        class="btn btn-sm btn-primary px-5 font-bold shadow-xs hover:shadow-md transition-all"
-        (click)="saveProduct()"
-        [disabled]="disable"
-      >
-        @if (isLoading()) {
-          <span class="loading loading-spinner loading-xs"></span>
-          <span>Guardando...</span>
-        } @else {
-          <mat-icon class="text-[18px]! w-4.5! h-4.5!">save</mat-icon>
-          <span>{{ productID() ? "Actualizar" : "Guardar" }}</span>
-        }
-      </button>
     </div>
 
     <!-- Stepper Móvil Sticky (Visible en < lg) -->
@@ -582,19 +547,40 @@
                     <mat-icon class="text-[16px]! w-4! h-4! text-secondary">tune</mat-icon>
                     <span>Gastos Operativos Adicionales (Opcional)</span>
                   </div>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-xs text-primary gap-1 font-bold mr-6"
-                    (click)="$event.stopPropagation(); addAdditionalCost()"
-                  >
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Añadir Gasto
-                  </button>
+                  <div class="flex items-center gap-1.5 mr-6" (click)="$event.stopPropagation()">
+                    @if (storeConfig().config.defaultAdditionalCosts?.length) {
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs text-secondary hover:bg-secondary/10 gap-1 font-bold"
+                        (click)="loadDefaultAdditionalCosts()"
+                        title="Cargar los gastos configurados en la tienda"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">auto_mode</mat-icon> Presets Tienda
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs text-primary gap-1 font-bold"
+                      (click)="addAdditionalCost()"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon> Añadir Gasto
+                    </button>
+                  </div>
                 </summary>
                 <div class="collapse-content px-4 pb-4 pt-1 space-y-2">
                   @if (additionalCostsControls.length === 0) {
-                    <p class="text-xs text-base-content/40 italic text-center py-2">
-                      Sin costos adicionales. Hacé clic en "Añadir Gasto" para agregar envíos, empaque o IVA.
-                    </p>
+                    <div class="text-xs text-base-content/50 italic text-center py-3 space-y-1">
+                      <p>Sin costos adicionales en este producto.</p>
+                      @if (storeConfig().config.defaultAdditionalCosts?.length) {
+                        <p class="text-[11px] not-italic text-base-content/60">
+                          Podés hacer clic en <strong class="text-secondary font-bold cursor-pointer" (click)="loadDefaultAdditionalCosts()">"Presets Tienda"</strong> para cargar tus conceptos predefinidos.
+                        </p>
+                      } @else {
+                        <p class="text-[11px] not-italic text-base-content/40">
+                          Hacé clic en "Añadir Gasto" o configuralos en <em>Configuración > Fiscal & ARCA</em> para que se apliquen siempre.
+                        </p>
+                      }
+                    </div>
                   } @else {
                     <div class="space-y-2" formArrayName="additionalCosts">
                       @for (costGroup of additionalCostsControls.controls; track costGroup; let i = $index) {
