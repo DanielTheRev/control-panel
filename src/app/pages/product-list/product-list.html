@@ -144,8 +144,8 @@
               >
                 <mat-icon class="text-[18px]! w-4.5! h-4.5! text-base-content/70">content_copy</mat-icon>
                 <div class="flex flex-col text-left">
-                  <span>Copiar catálogo p/ IA</span>
-                  <span class="text-[10px] font-normal text-base-content/60">Exporta prompt para ChatGPT</span>
+                  <span>{{ selectedProducts().length > 0 ? 'Copiar (' + selectedProducts().length + ') p/ IA' : 'Copiar catálogo p/ IA' }}</span>
+                  <span class="text-[10px] font-normal text-base-content/60">{{ selectedProducts().length > 0 ? 'Exporta ' + selectedProducts().length + ' prenda(s) seleccionada(s)' : 'Exporta prompt para ChatGPT' }}</span>
                 </div>
               </button>
             </li>
@@ -223,9 +223,13 @@
                   </label>
                 </div>
                 <div class="flex items-center gap-1 flex-wrap">
-                  <button class="btn btn-xs bg-purple-600 hover:bg-purple-700 text-white font-bold cursor-pointer flex items-center gap-1" (click)="openAiBulkModal('update')">
+                  <button class="btn btn-xs bg-purple-600 hover:bg-purple-700 text-white font-bold cursor-pointer flex items-center gap-1 shadow-2xs" (click)="openAiBulkModal('update')" title="Editar productos seleccionados con IA">
                     <mat-icon class="text-[14px]! w-3.5! h-3.5!">auto_awesome</mat-icon>
-                    <span>IA</span>
+                    <span>Editar con IA</span>
+                  </button>
+                  <button class="btn btn-xs btn-outline border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 font-bold flex items-center gap-1 cursor-pointer" (click)="copyForAi()" title="Copiar reporte completo para ChatGPT de las prendas seleccionadas">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon>
+                    <span>Copiar Reporte ({{ selectedProducts().length }})</span>
                   </button>
                   <button class="btn btn-xs btn-ghost text-emerald-600 hover:bg-emerald-500/10 font-bold flex items-center gap-1" (click)="publishSelected()">
                     <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon>
@@ -719,7 +723,7 @@
           </div>
 
           <div class="p-3 border-t border-base-300 bg-base-200/40 shrink-0">
-            <button (click)="copyForAi()" type="button" class="btn btn-outline border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 w-full btn-xs text-[11px] font-bold gap-1.5 rounded-xl"><mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon><span>Copiar p/ ChatGPT</span></button>
+            <button (click)="copyForAi()" type="button" class="btn btn-outline border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 w-full btn-xs text-[11px] font-bold gap-1.5 rounded-xl"><mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon><span>{{ selectedProducts().length > 0 ? 'Copiar (' + selectedProducts().length + ') p/ ChatGPT' : 'Copiar p/ ChatGPT' }}</span></button>
           </div>
         </aside>
       }

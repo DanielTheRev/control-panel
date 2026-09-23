@@ -550,9 +550,36 @@ export class ProductList {
   isCopyingForAi = signal<boolean>(false);
 
   async copyForAi() {
-    const products = this.ProductState.products().data;
-    if (!products || products.length === 0) {
+    const allProducts = this.ProductState.products().data || [];
+    if (allProducts.length === 0) {
       this.#snackBar.open('No hay productos en la lista para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const selectedIds = this.selectedProducts();
+    const isFilteredBySelection = selectedIds.length > 0;
+    let products: IProduct[] = [];
+
+    if (isFilteredBySelection) {
+      const sourceProducts = [
+        ...(this.ProductState.allProducts() || []),
+        ...allProducts
+      ];
+      const uniqueMap = new Map<string, IProduct>();
+      sourceProducts.forEach((p) => {
+        if (p?._id && !uniqueMap.has(p._id.toString())) {
+          uniqueMap.set(p._id.toString(), p);
+        }
+      });
+      products = selectedIds
+        .map((id) => uniqueMap.get(id.toString()))
+        .filter((p): p is IProduct => Boolean(p));
+    } else {
+      products = allProducts;
+    }
+
+    if (products.length === 0) {
+      this.#snackBar.open('No se encontraron productos para exportar.', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -675,13 +702,19 @@ export class ProductList {
       content += `======================================================================\n`;
       content += `## 📊 2. RESUMEN DEL LOTE Y MÉTRICAS DE INVENTARIO\n`;
       content += `======================================================================\n`;
-      content += `• Cantidad de productos en esta vista: ${products.length} (Total en catálogo: ${this.ProductState.products().itemsCount})\n`;
+      if (isFilteredBySelection) {
+        content += `• Cantidad de productos en este reporte: ${products.length} (Seleccionados manualmente de un catálogo de ${this.ProductState.products().itemsCount || allProducts.length} productos)\n`;
+      } else {
+        content += `• Cantidad de productos en esta vista: ${products.length} (Total en catálogo: ${this.ProductState.products().itemsCount || allProducts.length})\n`;
+      }
       content += `• Productos Publicados: ${publishedCount} | Otros Estados: ${products.length - publishedCount}\n`;
       content += `• Stock total acumulado en unidades: ${totalUnits.toLocaleString('es-AR')} unidades\n`;
       content += `• Valor potencial del stock disponible a Precio de Venta: $${totalRetailValue.toLocaleString('es-AR')} ARS\n`;
       content += `• Costo potencial de reposición del stock disponible: $${totalCostValue.toLocaleString('es-AR')} ARS\n`;
       content += `• Ganancia neta potencial acumulada (Transferencia): $${totalTransferProfit.toLocaleString('es-AR')} ARS\n`;
-      content += `• Filtros aplicados en la vista: ${activeFilters.length > 0 ? activeFilters.join(' | ') : 'Ninguno (Catálogo completo)'}\n\n`;
+      const selectionLabel = isFilteredBySelection ? `Selección manual (${products.length} producto${products.length > 1 ? 's' : ''})` : '';
+      const filterSummary = [selectionLabel, ...activeFilters].filter(Boolean).join(' | ');
+      content += `• Filtros aplicados en la vista: ${filterSummary || 'Ninguno (Catálogo completo)'}\n\n`;
 
       // ==========================================
       // 3. DETALLE EXHAUSTIVO POR PRODUCTO
@@ -772,13 +805,13 @@ export class ProductList {
         if (p.largeDescription) content += `- Descripción Detallada: ${p.largeDescription}\n`;
         if (p.features && p.features.length > 0) {
           content += `- Características Clave (Features):\n`;
-          p.features.forEach((feat) => {
+          p.features.forEach((feat: string) => {
             content += `  • ${feat}\n`;
           });
         }
         if (p.specifications && p.specifications.length > 0) {
           content += `- Especificaciones Técnicas:\n`;
-          p.specifications.forEach((spec) => {
+          p.specifications.forEach((spec: { key: string; value: string }) => {
             content += `  • ${spec.key}: ${spec.value}\n`;
           });
         }
@@ -814,7 +847,7 @@ export class ProductList {
 
         if (p.finance?.additionalCosts && p.finance.additionalCosts.length > 0) {
           content += `- Costos Operativos Adicionales (Packaging/Fletes/Etc):\n`;
-          p.finance.additionalCosts.forEach((c) => {
+          p.finance.additionalCosts.forEach((c: any) => {
             const normalizedConcept = /^(bolsas?|packaging|paqueter[ií]a)$/i.test(c.concept?.trim()) ? 'Paqueteria' : c.concept;
             const valStr = c.type === 'percent_over_provider' ? `${c.value}% s/costo proveedor` : `$${c.value.toLocaleString('es-AR')} fijos`;
             content += `  • ${normalizedConcept}: ${valStr}\n`;
@@ -924,7 +957,7 @@ export class ProductList {
         content += `- Imagen SEO Dedicada (OG Image): ${metaImgUrl || 'Sin imagen dedicada'}\n`;
         if (p.images && p.images.length > 0) {
           content += `- Galería de Imágenes (${p.images.length}):\n`;
-          p.images.forEach((img, imgIdx) => {
+          p.images.forEach((img: any, imgIdx: number) => {
             content += `  [Foto ${imgIdx + 1}] ${img.url}\n`;
           });
         }
@@ -976,7 +1009,10 @@ export class ProductList {
       });
 
       await navigator.clipboard.writeText(content);
-      this.#snackBar.open(`✨ ¡Reporte completo de ${products.length} productos copiado para la IA!`, 'Genial', { duration: 4000 });
+      const snackMsg = isFilteredBySelection
+        ? `✨ ¡Reporte de ${products.length} producto${products.length > 1 ? 's' : ''} seleccionado${products.length > 1 ? 's' : ''} copiado para la IA!`
+        : `✨ ¡Reporte completo de ${products.length} productos copiado para la IA!`;
+      this.#snackBar.open(snackMsg, 'Genial', { duration: 4000 });
     } catch (err) {
       console.error('Error al copiar contexto para IA:', err);
       this.#snackBar.open('Error al copiar al portapapeles.', 'Cerrar', { duration: 3000 });
