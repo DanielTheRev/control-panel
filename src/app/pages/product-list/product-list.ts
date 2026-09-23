@@ -929,9 +929,47 @@ export class ProductList {
           });
         }
 
-        // 🎯 RECOMENDACIONES
+        // 🎯 RECOMENDACIONES Y OUTFIT DE FOTOS
         if (p.recommendationsMode) {
           content += `- Modo de Recomendación Cruzada: ${p.recommendationsMode === 'manual' ? 'Manual (Productos curados)' : 'Automático por Categoría/Marca'}\n`;
+        }
+
+        const combineList = (p as any).combineWith;
+        if (Array.isArray(combineList) && combineList.length > 0) {
+          const allKnownMap = new Map<string, any>();
+          (this.ProductState.allProducts() || []).forEach((prod: any) => {
+            if (prod?._id) allKnownMap.set(prod._id.toString(), prod);
+          });
+          (this.ProductState.products().data || []).forEach((prod: any) => {
+            if (prod?._id) allKnownMap.set(prod._id.toString(), prod);
+          });
+
+          const resolvedCombined: string[] = [];
+          combineList.forEach((item: any) => {
+            if (typeof item === 'object' && item !== null && item.model) {
+              resolvedCombined.push(`• ${item.model} (Marca: ${item.brand || 'Vura'} | Categoría: ${item.category || 'Indumentaria'})`);
+            } else {
+              const id = typeof item === 'string' ? item : item?._id?.toString();
+              const found = allKnownMap.get(id);
+              if (found) {
+                resolvedCombined.push(`• ${found.model} (Marca: ${found.brand || 'Vura'} | Categoría: ${found.category || 'Indumentaria'})`);
+              } else if (id) {
+                resolvedCombined.push(`• Prenda ID: ${id}`);
+              }
+            }
+          });
+
+          if (resolvedCombined.length > 0) {
+            content += `\n--- 📸 PRODUCCIÓN DE FOTOS & OUTFIT COMBINADO (LOOKBOOK) ---\n`;
+            content += `- 👗 Prendas del Outfit / Usadas en la Foto (${resolvedCombined.length}):\n`;
+            resolvedCombined.forEach((line) => {
+              content += `  ${line}\n`;
+            });
+            content += `- 💡 Contexto Clave para la IA: Este producto fue fotografiado y combina directamente con las prendas mencionadas arriba. Úsalas prioritariamente para:\n`;
+            content += `  1. Diseñar el contexto visual del photoshoot o generación de imágenes/modelos con IA.\n`;
+            content += `  2. Redactar copies vendedores para Instagram/TikTok ("Armá tu look combinándolo con...").\n`;
+            content += `  3. Sugerir combos, carruseles y compra cruzada (cross-selling) para toda la semana.\n`;
+          }
         }
 
         content += `\n----------------------------------------------------------------------\n\n`;
@@ -2070,6 +2108,13 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
 
       if (p.linkProductProvider) {
         item.linkProductProvider = p.linkProductProvider;
+      }
+
+      if (Array.isArray((p as any).combineWith) && (p as any).combineWith.length > 0) {
+        item.outfitCombinaCon = (p as any).combineWith.map((c: any) => {
+          if (typeof c === 'object' && c?.model) return `${c.model} (${c.brand || 'Vura'} - ${c.category || ''})`.trim();
+          return typeof c === 'string' ? c : c?._id;
+        });
       }
 
       if (scopeKeys.includes('model') && p.model) {
