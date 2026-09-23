@@ -112,18 +112,34 @@
           <span class="hidden xl:inline">Crear con IA</span>
         </button>
 
+        <!-- Botón Exportar a Excel (Desktop) -->
+        <button
+          type="button"
+          (click)="exportToExcel()"
+          [disabled]="isExportingExcel()"
+          class="hidden sm:inline-flex btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-200 shrink-0 font-bold items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+          [matTooltip]="selectedProducts().length > 0 ? 'Exportar ' + selectedProducts().length + ' prenda(s) a Excel' : 'Exportar catálogo a Excel (.xlsx)'"
+        >
+          @if (isExportingExcel()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          } @else {
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">table_view</mat-icon>
+          }
+          <span class="hidden xl:inline">{{ selectedProducts().length > 0 ? 'Excel (' + selectedProducts().length + ')' : 'Exportar Excel' }}</span>
+        </button>
+
         <!-- Dropdown de IA en Pantallas Más Chicas (Mobile) -->
         <div class="dropdown dropdown-end sm:hidden shrink-0">
           <button
             tabindex="0"
             type="button"
             class="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white font-bold px-2 sm:px-2.5 shadow-xs flex items-center gap-1"
-            title="Herramientas de IA"
+            title="Herramientas de IA y Exportación"
           >
-            <mat-icon class="text-[16px]! w-4! h-4!">auto_awesome</mat-icon>
-            <span class="text-xs">Crear con AI</span>
+            <mat-icon class="text-[16px]! w-4! h-4!">menu_open</mat-icon>
+            <span class="text-xs">Acciones</span>
           </button>
-          <ul tabindex="0" class="dropdown-content menu p-2 shadow-2xl bg-base-100 rounded-2xl w-60 border border-base-300 z-50 mt-1.5 space-y-1">
+          <ul tabindex="0" class="dropdown-content menu p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300 z-50 mt-1.5 space-y-1">
             <li>
               <button
                 (click)="openAiBulkModal('create')"
@@ -133,6 +149,20 @@
                 <div class="flex flex-col text-left">
                   <span>Crear con IA</span>
                   <span class="text-[10px] font-normal text-base-content/60">Genera prendas con talles y costos</span>
+                </div>
+              </button>
+            </li>
+            <li class="border-t border-base-200"></li>
+            <li>
+              <button
+                (click)="exportToExcel()"
+                [disabled]="isExportingExcel()"
+                class="flex items-center gap-2.5 py-2.5 font-semibold text-emerald-700 dark:text-emerald-400 active:bg-emerald-50"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">table_view</mat-icon>
+                <div class="flex flex-col text-left">
+                  <span>{{ selectedProducts().length > 0 ? 'Exportar Excel (' + selectedProducts().length + ')' : 'Exportar a Excel' }}</span>
+                  <span class="text-[10px] font-normal text-base-content/60">Descarga archivo .xlsx con finanzas</span>
                 </div>
               </button>
             </li>
@@ -230,6 +260,14 @@
                   <button class="btn btn-xs btn-outline border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 font-bold flex items-center gap-1 cursor-pointer" (click)="copyForAi()" title="Copiar reporte completo para ChatGPT de las prendas seleccionadas">
                     <mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon>
                     <span>Copiar Reporte ({{ selectedProducts().length }})</span>
+                  </button>
+                  <button class="btn btn-xs btn-outline border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50" (click)="exportToExcel()" [disabled]="isExportingExcel()" title="Exportar prendas seleccionadas a Excel (.xlsx)">
+                    @if (isExportingExcel()) {
+                      <span class="loading loading-spinner loading-xs"></span>
+                    } @else {
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">table_view</mat-icon>
+                    }
+                    <span>Excel ({{ selectedProducts().length }})</span>
                   </button>
                   <button class="btn btn-xs btn-ghost text-emerald-600 hover:bg-emerald-500/10 font-bold flex items-center gap-1" (click)="publishSelected()">
                     <mat-icon class="text-[14px]! w-3.5! h-3.5!">check_circle</mat-icon>
@@ -722,7 +760,15 @@
             </div>
           </div>
 
-          <div class="p-3 border-t border-base-300 bg-base-200/40 shrink-0">
+          <div class="p-3 border-t border-base-300 bg-base-200/40 shrink-0 space-y-1.5">
+            <button (click)="exportToExcel()" [disabled]="isExportingExcel()" type="button" class="btn btn-outline border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 w-full btn-xs text-[11px] font-bold gap-1.5 rounded-xl cursor-pointer disabled:opacity-50">
+              @if (isExportingExcel()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              } @else {
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">table_view</mat-icon>
+              }
+              <span>{{ selectedProducts().length > 0 ? 'Exportar (' + selectedProducts().length + ') a Excel' : 'Exportar a Excel' }}</span>
+            </button>
             <button (click)="copyForAi()" type="button" class="btn btn-outline border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 w-full btn-xs text-[11px] font-bold gap-1.5 rounded-xl"><mat-icon class="text-[14px]! w-3.5! h-3.5!">content_copy</mat-icon><span>{{ selectedProducts().length > 0 ? 'Copiar (' + selectedProducts().length + ') p/ ChatGPT' : 'Copiar p/ ChatGPT' }}</span></button>
           </div>
         </aside>

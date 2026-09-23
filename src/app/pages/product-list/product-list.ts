@@ -20,6 +20,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { ProviderStateService } from '../../states/provider.state.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 
 @Component({
   selector: 'app-product-list',
@@ -49,6 +50,7 @@ export class ProductList {
   #SidebarService = inject(SidebarService)
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
+  #excelExportService = inject(ExcelExportService);
 
   activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'published');
   statusCounts = this.ProductState.statusCounts;
@@ -545,6 +547,68 @@ export class ProductList {
   async toggleProductStatus(product: IProduct) {
     const nextStatus: ProductStatus = product.status === 'published' ? 'paused' : 'published';
     await this.setProductStatus(product, nextStatus);
+  }
+
+  isExportingExcel = signal<boolean>(false);
+
+  async exportToExcel() {
+    const allProducts = this.ProductState.products().data || [];
+    if (allProducts.length === 0) {
+      this.#snackBar.open('No hay productos en la lista para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const selectedIds = this.selectedProducts();
+    const isFilteredBySelection = selectedIds.length > 0;
+    let products: IProduct[] = [];
+
+    const sourceProducts = [
+      ...(this.ProductState.allProducts() || []),
+      ...allProducts,
+    ];
+    const uniqueMap = new Map<string, IProduct>();
+    sourceProducts.forEach((p) => {
+      if (p?._id && !uniqueMap.has(p._id.toString())) {
+        uniqueMap.set(p._id.toString(), p);
+      }
+    });
+
+    if (isFilteredBySelection) {
+      products = selectedIds
+        .map((id) => uniqueMap.get(id.toString()))
+        .filter((p): p is IProduct => Boolean(p));
+    } else {
+      products = Array.from(uniqueMap.values());
+    }
+
+    if (products.length === 0) {
+      this.#snackBar.open('No se encontraron productos para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isExportingExcel.set(true);
+
+    try {
+      const config = this.#StoreConfigState.StoreConfig().config;
+      const storeName = config?.name || 'Vura';
+
+      this.#excelExportService.exportProductsToExcel(
+        products,
+        storeName,
+        config,
+        Array.from(uniqueMap.values())
+      );
+
+      const msg = isFilteredBySelection
+        ? `📊 ¡Excel descargado con ${products.length} prenda${products.length > 1 ? 's' : ''} seleccionada${products.length > 1 ? 's' : ''}!`
+        : `📊 ¡Excel descargado con ${products.length} productos del catálogo!`;
+      this.#snackBar.open(msg, 'Genial', { duration: 4000 });
+    } catch (err) {
+      console.error('Error al exportar a Excel:', err);
+      this.#snackBar.open('Error al generar el archivo Excel.', 'Cerrar', { duration: 3000 });
+    } finally {
+      this.isExportingExcel.set(false);
+    }
   }
 
   isCopyingForAi = signal<boolean>(false);
