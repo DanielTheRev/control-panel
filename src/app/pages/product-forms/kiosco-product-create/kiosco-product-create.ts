@@ -23,6 +23,7 @@ import {
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { HotToastService } from '@ngxpert/hot-toast';
 import {
   IProduct,
@@ -30,6 +31,7 @@ import {
 } from '../../../interfaces/product.interface';
 import { SidebarService } from '../../../services/sidebar.service';
 import { DebugService } from '../../../services/debug.service';
+import { MasterCatalogService, MasterCatalogProduct } from '../../../services/master-catalog.service';
 import { ProductStoreService } from '../../../states/product.state.service';
 import { StoreConfigStateService } from '../../../states/store.config.state.service';
 import { ProviderStateService } from '../../../states/provider.state.service';
@@ -59,17 +61,27 @@ export class KioscoProductCreate implements OnInit {
   private productState = inject(ProductStoreService);
   private commerceConfigState = inject(StoreConfigStateService);
   private providerState = inject(ProviderStateService);
+  private masterCatalogService = inject(MasterCatalogService);
   private dialog = inject(MatDialog);
   private toast = inject(HotToastService);
   private debug = inject(DebugService);
 
   @ViewChild('barcodeInput') barcodeInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('costPriceInput') costPriceInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('salePriceInput') salePriceInputRef!: ElementRef<HTMLInputElement>;
 
   productID = input<string | null>(null);
   isEditMode = computed(() => !!this.productID());
   originalProduct = signal<IProduct | null>(null);
   isLoading = signal<boolean>(false);
   isSearchingBarcode = signal<boolean>(false);
+
+  // Catálogo Global Maestro
+  globalMatchProduct = signal<MasterCatalogProduct | null>(null);
+  showCatalogSearchModal = signal<boolean>(false);
+  catalogSearchResults = signal<MasterCatalogProduct[]>([]);
+  catalogSearchQuery = signal<string>('');
+  isSearchingCatalog = signal<boolean>(false);
 
   // Previsualización de foto opcional
   selectedImageFile = signal<File | null>(null);
@@ -211,43 +223,102 @@ export class KioscoProductCreate implements OnInit {
   }
 
   /**
-   * Búsqueda en OpenFoodFacts
+   * Búsqueda inteligente en el Catálogo Global Maestro de NexoCommerce
    */
   async searchBarcodeData() {
     const rawBarcode = this.kioscoForm.get('barcode')?.value?.trim();
-    if (!rawBarcode || rawBarcode.length < 8) {
-      this.toast.info('Ingresá al menos 8 dígitos para buscar en la base de datos.');
+    if (!rawBarcode || rawBarcode.length < 6) {
+      this.toast.info('Ingresá al menos 6 dígitos para buscar en el catálogo.');
       return;
     }
 
     this.isSearchingBarcode.set(true);
     try {
-      const url = `https://world.openfoodfacts.org/api/v2/product/${rawBarcode}.json`;
-      const res = await fetch(url).then((r) => r.json());
+      const res = await firstValueFrom(this.masterCatalogService.lookupBarcode(rawBarcode));
 
-      if (res.status === 1 && res.product) {
+      if (res && res.found && res.product) {
         const p = res.product;
-        const name = p.product_name_es || p.product_name || '';
-        const brand = (p.brands || '').split(',')[0]?.trim() || '';
+        this.applyCatalogProductToForm(p);
 
-        const patch: any = {};
-        if (name && !this.kioscoForm.get('model')?.value) patch.model = name;
-        if (brand && (!this.kioscoForm.get('brand')?.value || this.kioscoForm.get('brand')?.value === 'Genérico')) {
-          patch.brand = brand;
-        }
-
-        if (Object.keys(patch).length > 0) {
-          this.kioscoForm.patchValue(patch);
-          this.toast.success(`Encontrado: ${name || brand}`, { icon: '✨' });
-        }
+        const sourceLabel = res.source === 'database' ? 'Catálogo Central' : 'Red Externa';
+        this.toast.success(`✨ ¡Encontrado en ${sourceLabel}! ${p.name}`, { duration: 4000 });
       } else {
-        this.toast.info('No se encontraron datos en línea. Podés escribir el nombre manualmente.');
+        this.globalMatchProduct.set(null);
+        this.toast.info('No encontrado en el catálogo global. Podés escribir los datos manualmente.');
       }
     } catch {
-      this.toast.error('No se pudo consultar la base externa.');
+      this.toast.error('Error al consultar el catálogo.');
     } finally {
       this.isSearchingBarcode.set(false);
     }
+  }
+
+  applyCatalogProductToForm(p: MasterCatalogProduct) {
+    this.globalMatchProduct.set(p);
+
+    const patch: any = {
+      model: p.name,
+      barcode: p.barcode,
+    };
+
+    if (p.brand) patch.brand = p.brand;
+    if (p.category) patch.category = p.category;
+    if (p.unit) patch.unit = p.unit;
+    if (p.isSoldByWeight !== undefined) patch.isSoldByWeight = p.isSoldByWeight;
+
+    // Si tiene precio sugerido y no hay costo definido
+    if (p.suggestedPrice && p.suggestedPrice > 0) {
+      const currentCost = this.kioscoForm.get('costPrice')?.value;
+      if (!currentCost || currentCost === 0) {
+        patch.costPrice = Math.round(p.suggestedPrice * 0.7);
+        patch.salePrice = p.suggestedPrice;
+      }
+    }
+
+    if (p.imageUrl && !this.selectedImageFile()) {
+      this.imagePreviewUrl.set(p.imageUrl);
+    }
+
+    this.kioscoForm.patchValue(patch);
+
+    // Auto-foco al precio de costo para que la carga sea instantánea
+    setTimeout(() => {
+      this.costPriceInputRef?.nativeElement?.focus();
+    }, 150);
+  }
+
+  // Métodos del Modal de Búsqueda por Nombre en Catálogo Global
+  openCatalogSearchModal() {
+    this.showCatalogSearchModal.set(true);
+    const currentName = this.kioscoForm.get('model')?.value?.trim() || '';
+    if (currentName) {
+      this.catalogSearchQuery.set(currentName);
+      this.searchInMasterCatalog(currentName);
+    } else {
+      this.searchInMasterCatalog('');
+    }
+  }
+
+  closeCatalogSearchModal() {
+    this.showCatalogSearchModal.set(false);
+  }
+
+  async searchInMasterCatalog(query: string) {
+    this.isSearchingCatalog.set(true);
+    try {
+      const res = await firstValueFrom(this.masterCatalogService.search(query, 25));
+      this.catalogSearchResults.set(res.data || []);
+    } catch {
+      this.toast.error('Error buscando en catálogo global');
+    } finally {
+      this.isSearchingCatalog.set(false);
+    }
+  }
+
+  selectCatalogProduct(p: MasterCatalogProduct) {
+    this.applyCatalogProductToForm(p);
+    this.closeCatalogSearchModal();
+    this.toast.success(`✨ Seleccionado: ${p.name}`);
   }
 
   onBarcodeKeydown(event: KeyboardEvent) {
@@ -377,6 +448,7 @@ export class KioscoProductCreate implements OnInit {
             status: 'published',
           });
           this.removeSelectedImage();
+          this.globalMatchProduct.set(null);
           setTimeout(() => this.focusBarcode(), 100);
         } else {
           this.router.navigate(['/home/products', id]);

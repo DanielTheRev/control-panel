@@ -67,6 +67,45 @@ html, body {
   min-height: -webkit-fill-available;
   font-family: 'Plus Jakarta Sans', 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* ========================================================================= */
+/* PALETAS DE COLOR DINÁMICAS POR RUBRO (ARGENTINA)                          */
+/* ========================================================================= */
+[data-business-type="kiosk_grocery"] {
+  --color-primary: oklch(60% 0.19 150);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="fashion"] {
+  --color-primary: oklch(54% 0.25 292);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="butcher"] {
+  --color-primary: oklch(55% 0.22 25);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="bakery"] {
+  --color-primary: oklch(63% 0.18 65);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="tech_electronics"] {
+  --color-primary: oklch(56% 0.20 235);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="gastronomy"] {
+  --color-primary: oklch(58% 0.21 42);
+  --color-primary-content: #ffffff;
+}
+
+[data-business-type="general"] {
+  --color-primary: oklch(53% 0.22 265);
+  --color-primary-content: #ffffff;
 }
 
 /* Scrollbar */
@@ -124,10 +163,10 @@ main::-webkit-scrollbar-thumb {
     }
 
     &.active {
-      @apply bg-base-200 text-base-content font-medium;
+      @apply bg-primary text-primary-content font-bold shadow-md shadow-primary/25;
 
       mat-icon {
-        @apply text-base-content!;
+        @apply text-primary-content!;
       }
     }
   }

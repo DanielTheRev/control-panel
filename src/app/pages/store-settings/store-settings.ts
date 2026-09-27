@@ -3,12 +3,15 @@ import {
   Component,
   computed,
   effect,
+  HostListener,
   inject,
   input,
   linkedSignal,
+  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
+import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
 import {
   FormBuilder,
   FormControl,
@@ -23,6 +26,7 @@ import {
   IDolarRate,
   IEmailTemplatesConfig,
   IEmailTemplateItem,
+  BusinessType,
 } from '../../interfaces/config.interface';
 import { ICostConcept } from '../../interfaces/product.interface';
 import { ArcaService } from '../../services/arca.service';
@@ -33,6 +37,7 @@ import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { StoreConfigService } from '../../services/store.config.service';
 import { NotificationsService } from '../../services/notifications.service';
+import { BusinessProfileService, BUSINESS_THEMES } from '../../services/business-profile.service';
 import { Router, RouterLink } from '@angular/router';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 
@@ -53,8 +58,9 @@ import { SingleImageUpload } from '../../shared/components/single-image-upload/s
   templateUrl: './store-settings.html',
   styleUrl: './store-settings.scss',
 })
-export class StoreSettings implements OnInit {
+export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate {
   configState = inject(StoreConfigStateService);
+  businessProfile = inject(BusinessProfileService);
   #storeConfigService = inject(StoreConfigService);
   #arcaService = inject(ArcaService);
   #sidebarService = inject(SidebarService);
@@ -88,6 +94,93 @@ export class StoreSettings implements OnInit {
     | 'shipping'
   >('general');
 
+  // Rubro seleccionado actualmente en la vista (reactivo a la selección en tiempo real)
+  selectedBusinessType = linkedSignal<BusinessType>(() => this.businessProfile.businessType());
+
+  readonly isCounterProfile = computed(() => {
+    const t = this.selectedBusinessType();
+    return t === 'kiosk_grocery' || t === 'butcher' || t === 'bakery' || t === 'gastronomy';
+  });
+
+  readonly isFashionProfile = computed(() => {
+    return this.selectedBusinessType() === 'fashion';
+  });
+
+  // Visibilidad condicional estricta de pestañas según rubro
+  readonly showTabAuth = computed(() => !this.isCounterProfile());
+  readonly showTabIntegrations = computed(() => !this.isCounterProfile());
+  readonly showTabShipping = computed(() => !this.isCounterProfile());
+  readonly showTabEmails = computed(() => !this.isCounterProfile());
+  readonly showTabContact = computed(() => !this.isCounterProfile());
+  readonly showTabClothing = computed(() => this.isFashionProfile() || this.selectedBusinessType() === 'general');
+
+  // Protección contra cambios sin guardar (CanDeactivate & BeforeUnload)
+  showUnsavedModal = signal<boolean>(false);
+  private pendingDeactivateResolver: ((allow: boolean) => void) | null = null;
+
+  hasUnsavedChanges(): boolean {
+    return (this.configForm?.dirty || this.isNewLogoSelected) ?? false;
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.hasUnsavedChanges()) {
+      return true;
+    }
+    return new Promise<boolean>((resolve) => {
+      this.pendingDeactivateResolver = resolve;
+      this.showUnsavedModal.set(true);
+    });
+  }
+
+  confirmDiscardChanges(): void {
+    // 1. Revertir tema y perfil al rubro original guardado en el servidor
+    const savedType =
+      this.configState.StoreConfig().config?.businessType || 'general';
+    this.businessProfile.applyTheme(savedType);
+    this.selectedBusinessType.set(savedType);
+
+    // 2. Revertir formulario al estado guardado y marcarlo como limpio
+    const savedConfig = this.configState.StoreConfig().config;
+    if (savedConfig) {
+      this.configForm.patchValue(savedConfig);
+    }
+    this.configForm.markAsPristine();
+    this.logoControl.reset();
+    this.showUnsavedModal.set(false);
+
+    // 3. Permitir la navegación pendiente
+    if (this.pendingDeactivateResolver) {
+      this.pendingDeactivateResolver(true);
+      this.pendingDeactivateResolver = null;
+    }
+  }
+
+  cancelDiscardChanges(): void {
+    this.showUnsavedModal.set(false);
+    if (this.pendingDeactivateResolver) {
+      this.pendingDeactivateResolver(false);
+      this.pendingDeactivateResolver = null;
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+      event.returnValue = true;
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Si el componente se desmonta con cambios sin guardar,
+    // aseguramos restaurar el tema y perfil original guardado
+    if (this.hasUnsavedChanges()) {
+      const savedType =
+        this.configState.StoreConfig().config?.businessType || 'general';
+      this.businessProfile.applyTheme(savedType);
+    }
+  }
+
   // ARCA & Fiscal Signals
   isTestingArca = signal<boolean>(false);
   arcaStatus = signal<{ success: boolean; data?: any; error?: string } | null>(
@@ -103,6 +196,102 @@ export class StoreSettings implements OnInit {
   >('fixed');
   newCostValue = signal<number>(0);
 
+  // Rubro / Perfil de Negocio (Argentino & Temas Dinámicos)
+  readonly businessTypeOptions: {
+    value: BusinessType;
+    label: string;
+    icon: string;
+    badge: string;
+    colorName: string;
+    previewHex: string;
+    desc: string;
+  }[] = [
+    {
+      value: 'kiosk_grocery',
+      label: BUSINESS_THEMES.kiosk_grocery.label,
+      icon: 'storefront',
+      badge: BUSINESS_THEMES.kiosk_grocery.badge,
+      colorName: BUSINESS_THEMES.kiosk_grocery.colorName,
+      previewHex: BUSINESS_THEMES.kiosk_grocery.previewHex,
+      desc: 'Optimizado para mostrador rápido, lector de códigos de barras, golosinas, bebidas, cigarrillos y venta fraccionada por peso (fiambrería).',
+    },
+    {
+      value: 'fashion',
+      label: BUSINESS_THEMES.fashion.label,
+      icon: 'checkroom',
+      badge: BUSINESS_THEMES.fashion.badge,
+      colorName: BUSINESS_THEMES.fashion.colorName,
+      previewHex: BUSINESS_THEMES.fashion.previewHex,
+      desc: 'Catálogo de ropa y calzado con variantes de talles, colores, colecciones de temporada, banners, Shop The Look y cupones.',
+    },
+    {
+      value: 'butcher',
+      label: BUSINESS_THEMES.butcher.label,
+      icon: 'restaurant',
+      badge: BUSINESS_THEMES.butcher.badge,
+      colorName: BUSINESS_THEMES.butcher.colorName,
+      previewHex: BUSINESS_THEMES.butcher.previewHex,
+      desc: 'Enfocado en cortes vacunos, cerdo, pollo y embutidos por kilo, gramajes exactos y cálculo dinámico de balanza en mostrador.',
+    },
+    {
+      value: 'bakery',
+      label: BUSINESS_THEMES.bakery.label,
+      icon: 'bakery_dining',
+      badge: BUSINESS_THEMES.bakery.badge,
+      colorName: BUSINESS_THEMES.bakery.colorName,
+      previewHex: BUSINESS_THEMES.bakery.previewHex,
+      desc: 'Venta ágil de pan por peso, facturas y medialunas por docena o unidad, masas finas, sándwiches de miga y despacho.',
+    },
+    {
+      value: 'tech_electronics',
+      label: BUSINESS_THEMES.tech_electronics.label,
+      icon: 'devices',
+      badge: BUSINESS_THEMES.tech_electronics.badge,
+      colorName: BUSINESS_THEMES.tech_electronics.colorName,
+      previewHex: BUSINESS_THEMES.tech_electronics.previewHex,
+      desc: 'Gestión con control de especificaciones técnicas, números de serie (IMEI) y marcas de electrónica.',
+    },
+    {
+      value: 'gastronomy',
+      label: BUSINESS_THEMES.gastronomy.label,
+      icon: 'lunch_dining',
+      badge: BUSINESS_THEMES.gastronomy.badge,
+      colorName: BUSINESS_THEMES.gastronomy.colorName,
+      previewHex: BUSINESS_THEMES.gastronomy.previewHex,
+      desc: 'Comandas para cocina, barra de cafetería, platos, bebidas y despacho para consumo en el local o delivery.',
+    },
+    {
+      value: 'general',
+      label: BUSINESS_THEMES.general.label,
+      icon: 'store',
+      badge: BUSINESS_THEMES.general.badge,
+      colorName: BUSINESS_THEMES.general.colorName,
+      previewHex: BUSINESS_THEMES.general.previewHex,
+      desc: 'Todas las funcionalidades habilitadas tanto para mostrador presencial como para catálogo e-commerce.',
+    },
+  ];
+
+  selectBusinessType(type: BusinessType) {
+    this.configForm.get('businessType')?.setValue(type);
+    this.configForm.markAsDirty();
+    this.selectedBusinessType.set(type);
+    // Cambia el color de la aplicación inmediatamente en tiempo real
+    this.businessProfile.applyTheme(type);
+
+    // Si la pestaña actual no corresponde al perfil seleccionado, regresar a 'general'
+    const current = this.activeTab();
+    const isCounter = type === 'kiosk_grocery' || type === 'butcher' || type === 'bakery' || type === 'gastronomy';
+    if (isCounter && ['auth', 'integrations', 'shipping', 'emails', 'contact', 'clothing'].includes(current)) {
+      this.activeTab.set('general');
+    } else if (type === 'tech_electronics' && current === 'clothing') {
+      this.activeTab.set('general');
+    }
+  }
+
+  getSelectedRubroLabel(): string {
+    const val = (this.configForm.get('businessType')?.value as BusinessType) || 'general';
+    return (BUSINESS_THEMES[val] || BUSINESS_THEMES['general']).label;
+  }
 
   // Conexión & Tienda Web (API Keys & Dominios)
   newDomainInput = signal<string>('');
@@ -311,6 +500,7 @@ export class StoreSettings implements OnInit {
 
     this.configForm = this.#fb.group({
       name: [''],
+      businessType: ['general'],
       costCurrency: ['USD'],
 
       integrations: this.#fb.group({
@@ -440,6 +630,9 @@ export class StoreSettings implements OnInit {
       if (hasData && !hasError && !isLoading && config) {
         this.configForm.patchValue(config);
         this.StoreName.set(config.name || 'Mi tienda');
+        if (config.businessType) {
+          this.selectedBusinessType.set(config.businessType);
+        }
         if (config.costCurrency) {
           this.configForm.get('costCurrency')?.setValue(config.costCurrency);
         }
@@ -528,10 +721,6 @@ export class StoreSettings implements OnInit {
         this.#router.navigate(['/home/payment-methods']);
         return;
       }
-      if (requestedTab === 'emails') {
-        this.#router.navigate(['/home/emails']);
-        return;
-      }
       if (
         requestedTab &&
         [
@@ -543,9 +732,16 @@ export class StoreSettings implements OnInit {
           'clothing',
           'pos',
           'connection',
+          'shipping',
+          'emails',
         ].includes(requestedTab)
       ) {
-        this.activeTab.set(requestedTab as any);
+        const isCounter = this.isCounterProfile();
+        if (isCounter && ['auth', 'integrations', 'shipping', 'emails', 'contact', 'clothing'].includes(requestedTab)) {
+          this.activeTab.set('general');
+        } else {
+          this.activeTab.set(requestedTab as any);
+        }
       }
     });
 
@@ -863,6 +1059,9 @@ export class StoreSettings implements OnInit {
     try {
       const { success, shouldRecalculate } =
         await this.configState.saveConfig(sliceData);
+      if (success) {
+        this.configForm.markAsPristine();
+      }
       if (success && shouldRecalculate) {
         this.showRecalculateModal.set(true);
       }
@@ -878,6 +1077,7 @@ export class StoreSettings implements OnInit {
     }
     await this.saveSlice('general', {
       name: this.configForm.get('name')?.value,
+      businessType: this.configForm.get('businessType')?.value,
       costCurrency: this.configForm.get('costCurrency')?.value,
       shippingConfig: this.configForm.get('shippingConfig')?.value,
       workingHours: this.configForm.get('workingHours')?.value,
@@ -932,6 +1132,18 @@ export class StoreSettings implements OnInit {
     });
   }
 
+  async savePOSSettings() {
+    await this.saveSlice('pos', {
+      posConfig: this.configForm.get('posConfig')?.value,
+    });
+  }
+
+  async saveShippingSettings() {
+    await this.saveSlice('shipping', {
+      shippingConfig: this.configForm.get('shippingConfig')?.value,
+    });
+  }
+
   get currentTabSaveLabel(): string {
     switch (this.activeTab()) {
       case 'general':
@@ -948,6 +1160,12 @@ export class StoreSettings implements OnInit {
         return 'Guardar Contacto & Redes';
       case 'clothing':
         return 'Guardar Cortes & Fits';
+      case 'shipping':
+        return 'Guardar Logística & Envíos';
+      case 'pos':
+        return 'Guardar Configuración Mostrador & POS';
+      case 'connection':
+        return 'Guardar Conexión & Tienda Web';
       default:
         return 'Guardar Cambios';
     }
@@ -970,6 +1188,12 @@ export class StoreSettings implements OnInit {
         return this.saveContactSettings();
       case 'clothing':
         return this.saveClothingSettings();
+      case 'shipping':
+        return this.saveShippingSettings();
+      case 'pos':
+        return this.savePOSSettings();
+      case 'connection':
+        return this.saveGeneralSettings();
       default:
         return this.saveGeneralSettings();
     }

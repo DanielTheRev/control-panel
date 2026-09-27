@@ -46,14 +46,24 @@
       <!-- 1. BARCODE HERO SCANNER CARD                                              -->
       <!-- ========================================================================= -->
       <div class="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-2 border-primary/30 rounded-2xl p-5 shadow-xs space-y-3">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 text-primary font-bold text-sm">
             <mat-icon class="text-lg">barcode_reader</mat-icon>
             <span>Código de Barras (EAN-13 / UPC)</span>
           </div>
-          <span class="text-2xs font-semibold text-primary/80 bg-primary/10 px-2.5 py-1 rounded-full">
-            Pistoleá con el lector o celular
-          </span>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="openCatalogSearchModal()"
+              class="btn btn-xs btn-outline btn-primary font-bold rounded-lg gap-1 shadow-2xs hover:scale-105 transition-all"
+            >
+              <mat-icon class="text-xs">travel_explore</mat-icon>
+              <span>Buscar en Catálogo Global</span>
+            </button>
+            <span class="text-2xs font-semibold text-primary/80 bg-primary/10 px-2.5 py-1 rounded-full">
+              Pistoleá con el lector o celular
+            </span>
+          </div>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3">
@@ -66,7 +76,7 @@
               type="text"
               formControlName="barcode"
               (keydown)="onBarcodeKeydown($event)"
-              placeholder="Pistoleá el código aquí (ej: 7790310984189)"
+              placeholder="Pistoleá el código aquí (ej: 7790895000997)"
               class="w-full pl-10 pr-4 py-3 bg-base-100 border border-input rounded-xl text-foreground font-mono text-base font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
             />
           </div>
@@ -84,9 +94,19 @@
           </button>
         </div>
 
+        @if (globalMatchProduct(); as gp) {
+          <div class="mt-2 p-3 bg-success/10 border border-success/30 rounded-xl flex items-center justify-between text-success">
+            <div class="flex items-center gap-2 text-xs font-bold">
+              <mat-icon class="text-base text-success">verified</mat-icon>
+              <span>✨ Catálogo Global: {{ gp.name }} — {{ gp.brand }} ({{ gp.category }})</span>
+            </div>
+            <span class="badge badge-success badge-sm font-semibold text-2xs uppercase">Sincronizado</span>
+          </div>
+        }
+
         <p class="text-2xs text-muted-foreground flex items-center gap-1.5">
           <mat-icon class="text-xs text-amber-500">lightbulb</mat-icon>
-          Al pistolear o presionar Enter, se consultará la base para auto-completar el nombre y la marca del producto.
+          Al pistolear o presionar Enter, se consultará el catálogo central para auto-completar nombre, marca, categoría y foto.
         </p>
       </div>
 
@@ -168,6 +188,7 @@
             <div class="relative">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground font-bold text-sm">$</span>
               <input
+                #costPriceInput
                 type="number"
                 min="0"
                 formControlName="costPrice"
@@ -204,6 +225,7 @@
             <div class="relative">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-emerald-600 font-bold text-sm">$</span>
               <input
+                #salePriceInput
                 type="number"
                 min="1"
                 formControlName="salePrice"
@@ -385,4 +407,122 @@
       </div>
     </form>
   </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL DE BÚSQUEDA EN CATÁLOGO GLOBAL                                      -->
+  <!-- ========================================================================= -->
+  @if (showCatalogSearchModal()) {
+    <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div class="bg-base-100 border border-base-300 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
+        <!-- Header -->
+        <div class="p-5 border-b border-base-200 flex items-center justify-between bg-base-200/50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <mat-icon>travel_explore</mat-icon>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-base-content">Catálogo Global Maestro</h3>
+              <p class="text-2xs text-base-content/60">Buscá entre cientos de productos precargados de kiosco, almacén y bebidas</p>
+            </div>
+          </div>
+          <button (click)="closeCatalogSearchModal()" class="btn btn-ghost btn-sm btn-circle">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Search Bar & Quick Tags -->
+        <div class="p-4 border-b border-base-200 space-y-3 bg-base-100">
+          <div class="relative">
+            <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40">search</mat-icon>
+            <input
+              type="text"
+              #catalogSearchInput
+              [value]="catalogSearchQuery()"
+              (input)="catalogSearchQuery.set($any($event.target).value); searchInMasterCatalog($any($event.target).value)"
+              placeholder="Buscar por nombre o marca (ej: Coca Cola, Oreo, Guaymallen, Speed, Marlboro)..."
+              class="input input-bordered w-full pl-11 text-sm font-medium rounded-xl"
+            />
+          </div>
+
+          <!-- Quick filters -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-2xs no-scrollbar">
+            <span class="text-base-content/40 font-bold shrink-0">Populares:</span>
+            @for (quick of ['Coca Cola', 'Oreo', 'Guaymallén', 'Speed', 'Fernet', 'Quilmes', 'Lays', 'Beldent', 'Marlboro', 'Playadito', 'La Serenísima']; track quick) {
+              <button
+                type="button"
+                (click)="catalogSearchQuery.set(quick); searchInMasterCatalog(quick)"
+                class="px-2.5 py-1 bg-base-200 hover:bg-primary/10 hover:text-primary rounded-lg font-semibold shrink-0 transition-colors"
+              >
+                {{ quick }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Product Results List -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-2.5 min-h-[300px]">
+          @if (isSearchingCatalog()) {
+            <div class="flex flex-col items-center justify-center py-12 gap-2 text-base-content/50">
+              <span class="loading loading-spinner loading-md text-primary"></span>
+              <span class="text-xs">Buscando en catálogo global...</span>
+            </div>
+          } @else if (catalogSearchResults().length === 0) {
+            <div class="flex flex-col items-center justify-center py-12 gap-2 text-base-content/40 text-center">
+              <mat-icon class="text-4xl">inventory_2</mat-icon>
+              <p class="text-xs font-semibold">No se encontraron productos para "{{ catalogSearchQuery() }}"</p>
+              <p class="text-2xs">Podés escribirlo manualmente en el formulario y se sincronizará automáticamente.</p>
+            </div>
+          } @else {
+            @for (item of catalogSearchResults(); track item.barcode) {
+              <div
+                (click)="selectCatalogProduct(item)"
+                class="p-3.5 bg-base-200/40 hover:bg-primary/5 hover:border-primary/40 border border-base-200 rounded-2xl flex items-center justify-between gap-4 cursor-pointer transition-all group"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-11 h-11 rounded-xl bg-base-100 border border-base-200 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                    @if (item.imageUrl) {
+                      <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-contain" />
+                    } @else {
+                      <mat-icon class="text-lg">inventory_2</mat-icon>
+                    }
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-xs sm:text-sm text-base-content truncate group-hover:text-primary transition-colors">
+                      {{ item.name }}
+                    </h4>
+                    <div class="flex items-center gap-2 mt-0.5 text-2xs text-base-content/60">
+                      <span class="font-semibold text-base-content/80">{{ item.brand }}</span>
+                      <span>•</span>
+                      <span>{{ item.category }}</span>
+                      <span>•</span>
+                      <span class="font-mono bg-base-100 px-1.5 py-0.5 rounded border border-base-200">{{ item.barcode }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 shrink-0">
+                  @if (item.suggestedPrice) {
+                    <div class="text-right hidden sm:block">
+                      <span class="text-2xs text-base-content/40 block">Sugerido</span>
+                      <span class="font-bold text-xs text-base-content font-mono">${{ item.suggestedPrice | number:'1.0-0' }}</span>
+                    </div>
+                  }
+                  <button type="button" class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shadow-2xs">
+                    <span>Cargar</span>
+                    <mat-icon class="text-xs">arrow_forward</mat-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3 border-t border-base-200 bg-base-200/30 flex items-center justify-between text-2xs text-base-content/60 px-5">
+          <span>Se encontraron {{ catalogSearchResults().length }} productos</span>
+          <button (click)="closeCatalogSearchModal()" class="btn btn-ghost btn-xs font-bold">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
 </app-page-layout>

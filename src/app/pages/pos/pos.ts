@@ -14,6 +14,9 @@ import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationsService } from '../../services/notifications.service';
+import { BusinessProfileService } from '../../services/business-profile.service';
+import { ProductStoreService } from '../../states/product.state.service';
+import { MasterCatalogService, MasterCatalogProduct } from '../../services/master-catalog.service';
 import { environment } from '../../../environments/environment';
 
 export interface CartItem {
@@ -22,6 +25,10 @@ export interface CartItem {
   variant: any | null;
   quantity: number;
   price: number;
+  isSoldByWeight?: boolean;
+  unit?: string;
+  weightGrams?: number;
+  totalMoneyAmount?: number;
   notes?: string;
 }
 
@@ -42,6 +49,15 @@ export class PosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   public cashStore = inject(CashRegisterStoreService);
   public storeConfigStore = inject(StoreConfigStateService);
+  public profile = inject(BusinessProfileService);
+  private productState = inject(ProductStoreService);
+  private masterCatalogService = inject(MasterCatalogService);
+
+  // Catálogo Global en Mostrador POS
+  showGlobalProductModal = signal<boolean>(false);
+  globalProductFound = signal<MasterCatalogProduct | null>(null);
+  globalProductPrice = signal<number>(0);
+  isSavingGlobalProduct = signal<boolean>(false);
 
   // Terminal & Scanner Remoto
   terminalId = signal<string>('CAJA-01');
@@ -108,9 +124,44 @@ export class PosComponent implements OnInit {
   // Cart & Discounts
   cart = signal<CartItem[]>([]);
   discountCoupon = signal<number>(0);
-  subtotal = computed(() => this.cart().reduce((sum, item) => sum + item.price * item.quantity, 0));
+  subtotal = computed(() =>
+    this.cart().reduce((sum, item) => {
+      if (item.totalMoneyAmount !== undefined) {
+        return sum + item.totalMoneyAmount;
+      }
+      return sum + Math.round(item.price * item.quantity);
+    }, 0)
+  );
   total = computed(() => Math.max(0, this.subtotal() - this.discountCoupon()));
-  totalItems = computed(() => this.cart().reduce((sum, item) => sum + item.quantity, 0));
+  totalItems = computed(() =>
+    this.cart().reduce((sum, item) => sum + (item.isSoldByWeight ? 1 : item.quantity), 0)
+  );
+
+  // Weight & Fractional Sale Modal (Venta por Balanza / Peso / Fraccionado)
+  showWeightModal = signal<boolean>(false);
+  weightProduct = signal<any>(null);
+  weightInputMode = signal<'money' | 'weight'>('money'); // 'money' ($) o 'weight' (gramos)
+  weightMoneyAmount = signal<number>(1000);
+  weightGramsAmount = signal<number>(250);
+
+  weightProductPrice = computed(() => {
+    const p = this.weightProduct();
+    return p ? this.getProductPrice(p) : 0;
+  });
+
+  computedGramsFromMoney = computed(() => {
+    const price = this.weightProductPrice();
+    const money = this.weightMoneyAmount();
+    if (price <= 0 || money <= 0) return 0;
+    return Math.round((money / price) * 1000);
+  });
+
+  computedMoneyFromGrams = computed(() => {
+    const price = this.weightProductPrice();
+    const grams = this.weightGramsAmount();
+    if (price <= 0 || grams <= 0) return 0;
+    return Math.round((grams / 1000) * price);
+  });
 
   // Variant Modal
   showVariantModal = signal(false);
@@ -276,24 +327,95 @@ export class PosComponent implements OnInit {
       return;
     }
 
-    // 2. Buscar en el backend mediante el endpoint dedicado
+    // 2. Buscar en el backend mediante el endpoint de tienda
     this.productService.getProductByBarcode(barcode).subscribe({
       next: ({ product, matchedVariant }) => {
         if (product) {
           this.soundService.playScannerBeep();
           this.addVariantToCart(product, matchedVariant || null);
         } else {
-          this.notifications.error(
-            `Producto no encontrado para el código ${barcode}`,
-          );
+          this.checkGlobalCatalogForBarcode(barcode);
         }
       },
       error: () => {
-        this.notifications.error(
-          `No se encontró ningún producto con código ${barcode}`,
-        );
+        this.checkGlobalCatalogForBarcode(barcode);
       },
     });
+  }
+
+  checkGlobalCatalogForBarcode(barcode: string): void {
+    this.masterCatalogService.lookupBarcode(barcode).subscribe({
+      next: (res) => {
+        if (res && res.found && res.product) {
+          this.globalProductFound.set(res.product);
+          this.globalProductPrice.set(res.product.suggestedPrice || 1000);
+          this.showGlobalProductModal.set(true);
+        } else {
+          this.notifications.error(`No se encontró ningún producto con código ${barcode}`);
+        }
+      },
+      error: () => {
+        this.notifications.error(`No se encontró ningún producto con código ${barcode}`);
+      },
+    });
+  }
+
+  async confirmAddGlobalProductToCart(): Promise<void> {
+    const gp = this.globalProductFound();
+    const price = Number(this.globalProductPrice() || 0);
+    if (!gp || price <= 0) return;
+
+    this.isSavingGlobalProduct.set(true);
+    try {
+      const formData = new FormData();
+      formData.append('productType', 'general');
+      formData.append('model', gp.name);
+      formData.append('category', gp.category || 'Almacén');
+      formData.append('brand', gp.brand || 'Genérico');
+      formData.append('price', String(Math.round(price * 0.7))); // Costo estimado
+      formData.append('status', 'published');
+      formData.append('barcode', gp.barcode);
+      formData.append('isSoldByWeight', String(!!gp.isSoldByWeight));
+      formData.append('unit', gp.unit || 'un');
+
+      const cleanModel = gp.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toUpperCase();
+      const variants = [
+        {
+          sku: `${cleanModel}-${Date.now().toString().slice(-4)}`,
+          stock: 100,
+          barcode: gp.barcode,
+          isActive: true,
+          imageReference: { url: gp.imageUrl || '', public_id: '' },
+        },
+      ];
+      formData.append('variants', JSON.stringify(variants));
+
+      const createdId = await this.productState.createProduct(formData);
+      const newProduct = await this.productState.getProduct(createdId);
+
+      if (newProduct) {
+        this.products.update((list) => [newProduct, ...list]);
+        this.soundService.playScannerBeep();
+
+        if (newProduct.isSoldByWeight) {
+          this.openWeightModal(newProduct);
+        } else {
+          this.addVariantToCart(newProduct, newProduct.variants?.[0] || null);
+        }
+
+        this.notifications.success(`✨ ¡${gp.name} sumado a la venta y guardado en tu catálogo!`);
+      }
+      this.closeGlobalProductModal();
+    } catch (err) {
+      this.notifications.error('Error al guardar el producto en el mostrador');
+    } finally {
+      this.isSavingGlobalProduct.set(false);
+    }
+  }
+
+  closeGlobalProductModal(): void {
+    this.showGlobalProductModal.set(false);
+    this.globalProductFound.set(null);
   }
 
   setupSearch(): void {
@@ -376,6 +498,11 @@ export class PosComponent implements OnInit {
   }
 
   onProductCardClick(product: any): void {
+    if (product.isSoldByWeight) {
+      this.openWeightModal(product);
+      return;
+    }
+
     if (product.variants && product.variants.length > 1) {
       this.selectedProduct.set(product);
       this.showVariantModal.set(true);
@@ -389,6 +516,119 @@ export class PosComponent implements OnInit {
   onPlusButtonClick(product: any, event: MouseEvent): void {
     event.stopPropagation();
     this.onProductCardClick(product);
+  }
+
+  openWeightModal(product: any, initialMoney?: number, initialGrams?: number): void {
+    this.weightProduct.set(product);
+    const price = this.getProductPrice(product);
+    if (initialMoney && initialMoney > 0) {
+      this.weightInputMode.set('money');
+      this.weightMoneyAmount.set(initialMoney);
+      this.weightGramsAmount.set(price > 0 ? Math.round((initialMoney / price) * 1000) : 250);
+    } else if (initialGrams && initialGrams > 0) {
+      this.weightInputMode.set('weight');
+      this.weightGramsAmount.set(initialGrams);
+      this.weightMoneyAmount.set(price > 0 ? Math.round((initialGrams / 1000) * price) : 1000);
+    } else {
+      this.weightInputMode.set('money');
+      this.weightMoneyAmount.set(1000);
+      this.weightGramsAmount.set(price > 0 ? Math.round((1000 / price) * 1000) : 250);
+    }
+    this.showWeightModal.set(true);
+  }
+
+  closeWeightModal(): void {
+    this.showWeightModal.set(false);
+    this.weightProduct.set(null);
+  }
+
+  setWeightInputMode(mode: 'money' | 'weight'): void {
+    this.weightInputMode.set(mode);
+  }
+
+  setQuickWeightMoney(amount: number): void {
+    this.weightMoneyAmount.set(amount);
+  }
+
+  addQuickWeightMoney(delta: number): void {
+    this.weightMoneyAmount.update(curr => Math.max(0, curr + delta));
+  }
+
+  setQuickWeightGrams(grams: number): void {
+    this.weightGramsAmount.set(grams);
+  }
+
+  addQuickWeightGrams(delta: number): void {
+    this.weightGramsAmount.update(curr => Math.max(0, curr + delta));
+  }
+
+  weightKeypadPress(key: string): void {
+    const isMoney = this.weightInputMode() === 'money';
+    const currentVal = isMoney ? this.weightMoneyAmount().toString() : this.weightGramsAmount().toString();
+
+    if (key === 'C') {
+      if (isMoney) this.weightMoneyAmount.set(0);
+      else this.weightGramsAmount.set(0);
+      return;
+    }
+    if (key === '⌫') {
+      const sliced = currentVal.length <= 1 ? 0 : Number(currentVal.slice(0, -1));
+      if (isMoney) this.weightMoneyAmount.set(sliced);
+      else this.weightGramsAmount.set(sliced);
+      return;
+    }
+    const newVal = currentVal === '0' ? key : currentVal + key;
+    if (newVal.length <= 7) {
+      const num = Number(newVal) || 0;
+      if (isMoney) this.weightMoneyAmount.set(num);
+      else this.weightGramsAmount.set(num);
+    }
+  }
+
+  confirmWeightItem(): void {
+    const product = this.weightProduct();
+    if (!product) return;
+
+    const price = this.getProductPrice(product);
+    let qtyKg = 0;
+    let finalGrams = 0;
+    let finalMoney = 0;
+
+    if (this.weightInputMode() === 'money') {
+      finalMoney = this.weightMoneyAmount();
+      if (finalMoney <= 0) {
+        this.notifications.warning('Por favor ingresá un monto mayor a $0');
+        return;
+      }
+      finalGrams = price > 0 ? Math.round((finalMoney / price) * 1000) : 0;
+      qtyKg = Number((finalGrams / 1000).toFixed(4));
+    } else {
+      finalGrams = this.weightGramsAmount();
+      if (finalGrams <= 0) {
+        this.notifications.warning('Por favor ingresá un gramaje mayor a 0g');
+        return;
+      }
+      qtyKg = Number((finalGrams / 1000).toFixed(4));
+      finalMoney = Math.round((finalGrams / 1000) * price);
+    }
+
+    const cartItemId = `${product._id}-weight-${Date.now()}`;
+    const newItem: CartItem = {
+      cartItemId,
+      product,
+      variant: product.variants?.[0] || null,
+      quantity: qtyKg,
+      price,
+      isSoldByWeight: true,
+      unit: product.unit || 'kg',
+      weightGrams: finalGrams,
+      totalMoneyAmount: finalMoney,
+    };
+
+    this.cart.update(curr => [...curr, newItem]);
+    this.soundService.playScannerBeep();
+    this.notifications.success(`Agregado: ${finalGrams}g de "${product.model}" por $${finalMoney.toLocaleString('es-AR')}`);
+    this.closeWeightModal();
   }
 
   addVariantToCart(product: any, variant: any | null): void {
@@ -423,11 +663,27 @@ export class PosComponent implements OnInit {
 
   updateQuantity(index: number, delta: number): void {
     const currentCart = [...this.cart()];
-    const newQty = currentCart[index].quantity + delta;
+    const item = currentCart[index];
+    if (!item) return;
+
+    if (item.isSoldByWeight) {
+      if (delta === -item.quantity || delta < -10) {
+        currentCart.splice(index, 1);
+        this.cart.set(currentCart);
+        return;
+      }
+      // Re-abrir modal para editar peso o monto
+      this.openWeightModal(item.product, item.totalMoneyAmount, item.weightGrams);
+      currentCart.splice(index, 1);
+      this.cart.set(currentCart);
+      return;
+    }
+
+    const newQty = item.quantity + delta;
     if (newQty <= 0) {
       currentCart.splice(index, 1);
     } else {
-      currentCart[index] = { ...currentCart[index], quantity: newQty };
+      currentCart[index] = { ...item, quantity: newQty };
     }
     this.cart.set(currentCart);
   }

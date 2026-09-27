@@ -120,9 +120,19 @@ export interface IPOSConfig {
   autoPrintReceipt?: boolean;
 }
 
+export type BusinessType =
+  | 'kiosk_grocery'
+  | 'fashion'
+  | 'tech_electronics'
+  | 'butcher'
+  | 'bakery'
+  | 'gastronomy'
+  | 'general';
+
 export interface IEcommerceConfig {
   name: string;
   logo?: string;
+  businessType?: BusinessType;
   profit: number;
   profit1Pay?: number;
   profitInstallments?: number;

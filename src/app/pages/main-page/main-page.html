@@ -27,7 +27,7 @@
         @if (isExpanded) {
           <div class="flex flex-col min-w-0 overflow-hidden">
             <span class="text-sm font-bold tracking-tight text-base-content truncate">{{ brandName }}</span>
-            <span class="text-[10px] font-semibold text-primary uppercase tracking-wider">Panel de Control</span>
+            <span class="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">{{ profile.businessTypeLabel() }}</span>
           </div>
         }
       </div>
@@ -45,183 +45,317 @@
     <!-- Navigation Groups (Custom Slim Scroll) -->
     <nav class="grow px-3 py-3 overflow-y-auto custom-sidebar-scroll flex flex-col gap-4">
       
-      <!-- GRUPO 1: MÉTRICAS -->
-      <div class="flex flex-col gap-0.5">
-        @if (isExpanded) {
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
-        }
-        <a routerLink="/home/sales" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Ventas' : ''" matTooltipPosition="right">
-          <mat-icon>bar_chart</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Ventas</span> }
-        </a>
-        <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Resumen Diario' : ''" matTooltipPosition="right">
-          <mat-icon>today</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Resumen Diario</span> }
-        </a>
-        <a routerLink="/home/fiscal" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'ARCA & Fiscal' : ''" matTooltipPosition="right">
-          <mat-icon>account_balance</mat-icon>
-          @if (isExpanded) { <span class="menu-text">ARCA & Fiscal</span> }
-        </a>
-      </div>
-
-      <!-- GRUPO 2: VENTAS & POS -->
-      <div class="flex flex-col gap-0.5">
-        @if (isExpanded) {
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Ventas & POS</span>
-        }
-        <a routerLink="/home/client-orders" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Pedidos Online' : ''" matTooltipPosition="right">
-          <mat-icon>shopping_cart</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Pedidos Online</span> }
-        </a>
-        <a routerLink="/home/pos" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Mostrador (POS)' : ''" matTooltipPosition="right">
-          <mat-icon>point_of_sale</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Mostrador (POS)</span> }
-        </a>
-        <a routerLink="/home/cash-register" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Caja Registradora' : ''" matTooltipPosition="right">
-          <mat-icon>account_balance_wallet</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Caja Registradora</span> }
-        </a>
-        @if (authService.isAdmin()) {
-          <a routerLink="/home/clients" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Clientes' : ''" matTooltipPosition="right">
-            <mat-icon>people</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Clientes</span> }
-          </a>
-          <a routerLink="/home/favorites" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Favoritos' : ''" matTooltipPosition="right">
-            <mat-icon>favorite</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Favoritos</span> }
-          </a>
-        }
-      </div>
-
-      <!-- GRUPO 3: CATÁLOGO & STOCK -->
-      <div class="flex flex-col gap-0.5">
-        @if (isExpanded) {
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Catálogo</span>
-        }
-        <a routerLink="/home/products" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
-          <mat-icon>inventory_2</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Productos</span> }
-        </a>
-        <a routerLink="/home/categories" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Categorías' : ''" matTooltipPosition="right">
-          <mat-icon>category</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Categorías</span> }
-        </a>
-        @if (authService.isAdmin()) {
-          <a routerLink="/home/providers" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Proveedores' : ''" matTooltipPosition="right">
-            <mat-icon>domain</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Proveedores</span> }
-          </a>
-        }
-      </div>
-
-      <!-- GRUPO 4: MARKETING -->
-      <div class="flex flex-col gap-0.5">
-        @if (isExpanded) {
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
-        }
-        <a routerLink="/home/banners" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Banners' : ''" matTooltipPosition="right">
-          <mat-icon>view_carousel</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Banners</span> }
-        </a>
-        <a routerLink="/home/menus" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Menús' : ''" matTooltipPosition="right">
-          <mat-icon>menu_book</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Menús</span> }
-        </a>
-        <a routerLink="/home/hero" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
-          <mat-icon>view_day</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Hero Slider</span> }
-        </a>
-        <a routerLink="/home/shop-the-look" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Shop The Look' : ''" matTooltipPosition="right">
-          <mat-icon>style</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Shop The Look</span> }
-        </a>
-        <a routerLink="/home/coupons" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Cupones' : ''" matTooltipPosition="right">
-          <mat-icon>local_offer</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Cupones</span> }
-        </a>
-        <a routerLink="/home/subscribers" routerLinkActive="active" class="menu-item"
-          [class.justify-center]="isCollapsed"
-          [matTooltip]="isCollapsed ? 'Newsletter' : ''" matTooltipPosition="right">
-          <mat-icon>mark_email_read</mat-icon>
-          @if (isExpanded) { <span class="menu-text">Newsletter</span> }
-        </a>
-      </div>
-
-      <!-- GRUPO 5: CONFIGURACIÓN -->
-      @if (authService.isAdmin()) {
+      <!-- ============================================== -->
+      <!-- CASO A: KIOSCO / ALMACÉN / CARNICERÍA / PANADERÍA -->
+      <!-- ============================================== -->
+      @if (profile.isKioskOrCounter()) {
+        <!-- GRUPO 1: MOSTRADOR & CAJA (MÁXIMA PRIORIDAD OPERATIVA) -->
         <div class="flex flex-col gap-0.5">
           @if (isExpanded) {
-            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Mostrador & Caja</span>
           }
-          <a routerLink="/home/settings" routerLinkActive="active" class="menu-item text-primary"
+          <a routerLink="/home/pos" routerLinkActive="active" class="menu-item bg-primary/10 text-primary hover:bg-primary/20 font-semibold"
             [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Ajustes de Tienda' : ''" matTooltipPosition="right">
-            <mat-icon>store</mat-icon>
-            @if (isExpanded) { <span class="menu-text font-semibold">Ajustes de Tienda</span> }
+            [matTooltip]="isCollapsed ? 'Punto de Venta (POS)' : ''" matTooltipPosition="right">
+            <mat-icon>point_of_sale</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Mostrador (POS)</span> }
           </a>
-          <a routerLink="/home/staff" routerLinkActive="active" class="menu-item"
+          <a routerLink="/home/cash-register" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Equipo & Empleados' : ''" matTooltipPosition="right">
-            <mat-icon>badge</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Equipo & Empleados</span> }
+            [matTooltip]="isCollapsed ? 'Caja Registradora' : ''" matTooltipPosition="right">
+            <mat-icon>account_balance_wallet</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Caja Registradora</span> }
           </a>
-          <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
+          <a routerLink="/home/client-orders" routerLinkActive="active" class="menu-item"
             [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Cobros & Pagos' : ''" matTooltipPosition="right">
-            <mat-icon>payments</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Cobros & Pagos</span> }
-          </a>
-          <a routerLink="/home/emails" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Emails & Plantillas' : ''" matTooltipPosition="right">
-            <mat-icon>mail</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Emails & Plantillas</span> }
-          </a>
-          <a routerLink="/home/shipping-options" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Envíos' : ''" matTooltipPosition="right">
-            <mat-icon>local_shipping</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Envíos</span> }
-          </a>
-          <a routerLink="/home/recommendations" routerLinkActive="active" class="menu-item"
-            [class.justify-center]="isCollapsed"
-            [matTooltip]="isCollapsed ? 'Recomendaciones AI' : ''" matTooltipPosition="right">
-            <mat-icon>auto_awesome</mat-icon>
-            @if (isExpanded) { <span class="menu-text">Recomendaciones</span> }
+            [matTooltip]="isCollapsed ? 'Pedidos / Delivery' : ''" matTooltipPosition="right">
+            <mat-icon>shopping_cart</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Pedidos / Delivery</span> }
           </a>
         </div>
+
+        <!-- GRUPO 2: PRODUCTOS & STOCK -->
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Stock & Catálogo</span>
+          }
+          <a routerLink="/home/products" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
+            <mat-icon>inventory_2</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Productos</span> }
+          </a>
+          <a routerLink="/home/categories" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Categorías' : ''" matTooltipPosition="right">
+            <mat-icon>category</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Categorías</span> }
+          </a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/home/providers" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Proveedores' : ''" matTooltipPosition="right">
+              <mat-icon>domain</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Proveedores</span> }
+            </a>
+          }
+        </div>
+
+        <!-- GRUPO 3: CAJA & MÉTRICAS -->
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
+          }
+          <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Resumen Diario' : ''" matTooltipPosition="right">
+            <mat-icon>today</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Resumen Diario</span> }
+          </a>
+          <a routerLink="/home/sales" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Historial de Ventas' : ''" matTooltipPosition="right">
+            <mat-icon>bar_chart</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Historial Ventas</span> }
+          </a>
+          <a routerLink="/home/fiscal" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'ARCA & Fiscal' : ''" matTooltipPosition="right">
+            <mat-icon>account_balance</mat-icon>
+            @if (isExpanded) { <span class="menu-text">ARCA & Fiscal</span> }
+          </a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/home/clients" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Clientes' : ''" matTooltipPosition="right">
+              <mat-icon>people</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Clientes</span> }
+            </a>
+          }
+        </div>
+
+        <!-- GRUPO 4: CONFIGURACIÓN -->
+        @if (authService.isAdmin()) {
+          <div class="flex flex-col gap-0.5">
+            @if (isExpanded) {
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
+            }
+            <a routerLink="/home/settings" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Ajustes del Negocio' : ''" matTooltipPosition="right">
+              <mat-icon>store</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Ajustes</span> }
+            </a>
+            <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Cobros & Pagos' : ''" matTooltipPosition="right">
+              <mat-icon>payments</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Cobros & Pagos</span> }
+            </a>
+            <a routerLink="/home/staff" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Equipo & Empleados' : ''" matTooltipPosition="right">
+              <mat-icon>badge</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Equipo & Empleados</span> }
+            </a>
+          </div>
+        }
+
+      } @else {
+        <!-- ============================================== -->
+        <!-- CASO B: MODA / RETAIL / COMERCIO GENERAL       -->
+        <!-- ============================================== -->
+        
+        <!-- GRUPO 1: MÉTRICAS -->
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
+          }
+          <a routerLink="/home/sales" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Ventas' : ''" matTooltipPosition="right">
+            <mat-icon>bar_chart</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Ventas</span> }
+          </a>
+          <a routerLink="/home/daily-reports" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Resumen Diario' : ''" matTooltipPosition="right">
+            <mat-icon>today</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Resumen Diario</span> }
+          </a>
+          <a routerLink="/home/fiscal" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'ARCA & Fiscal' : ''" matTooltipPosition="right">
+            <mat-icon>account_balance</mat-icon>
+            @if (isExpanded) { <span class="menu-text">ARCA & Fiscal</span> }
+          </a>
+        </div>
+
+        <!-- GRUPO 2: VENTAS & TIENDA -->
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Ventas & POS</span>
+          }
+          <a routerLink="/home/client-orders" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Pedidos Online' : ''" matTooltipPosition="right">
+            <mat-icon>shopping_cart</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Pedidos Online</span> }
+          </a>
+          <a routerLink="/home/pos" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Mostrador (POS)' : ''" matTooltipPosition="right">
+            <mat-icon>point_of_sale</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Mostrador (POS)</span> }
+          </a>
+          <a routerLink="/home/cash-register" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Caja Registradora' : ''" matTooltipPosition="right">
+            <mat-icon>account_balance_wallet</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Caja Registradora</span> }
+          </a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/home/clients" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Clientes' : ''" matTooltipPosition="right">
+              <mat-icon>people</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Clientes</span> }
+            </a>
+            @if (profile.features().showFavorites) {
+              <a routerLink="/home/favorites" routerLinkActive="active" class="menu-item"
+                [class.justify-center]="isCollapsed"
+                [matTooltip]="isCollapsed ? 'Favoritos' : ''" matTooltipPosition="right">
+                <mat-icon>favorite</mat-icon>
+                @if (isExpanded) { <span class="menu-text">Favoritos</span> }
+              </a>
+            }
+          }
+        </div>
+
+        <!-- GRUPO 3: CATÁLOGO & STOCK -->
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Catálogo</span>
+          }
+          <a routerLink="/home/products" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Productos' : ''" matTooltipPosition="right">
+            <mat-icon>inventory_2</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Productos</span> }
+          </a>
+          <a routerLink="/home/categories" routerLinkActive="active" class="menu-item"
+            [class.justify-center]="isCollapsed"
+            [matTooltip]="isCollapsed ? 'Categorías' : ''" matTooltipPosition="right">
+            <mat-icon>category</mat-icon>
+            @if (isExpanded) { <span class="menu-text">Categorías</span> }
+          </a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/home/providers" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Proveedores' : ''" matTooltipPosition="right">
+              <mat-icon>domain</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Proveedores</span> }
+            </a>
+          }
+        </div>
+
+        <!-- GRUPO 4: MARKETING & DISEÑO E-COMMERCE -->
+        @if (profile.features().showBanners) {
+          <div class="flex flex-col gap-0.5">
+            @if (isExpanded) {
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
+            }
+            <a routerLink="/home/banners" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Banners' : ''" matTooltipPosition="right">
+              <mat-icon>view_carousel</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Banners</span> }
+            </a>
+            <a routerLink="/home/menus" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Menús' : ''" matTooltipPosition="right">
+              <mat-icon>menu_book</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Menús</span> }
+            </a>
+            <a routerLink="/home/hero" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Hero Slider' : ''" matTooltipPosition="right">
+              <mat-icon>view_day</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Hero Slider</span> }
+            </a>
+            @if (profile.features().showShopTheLook) {
+              <a routerLink="/home/shop-the-look" routerLinkActive="active" class="menu-item"
+                [class.justify-center]="isCollapsed"
+                [matTooltip]="isCollapsed ? 'Shop The Look' : ''" matTooltipPosition="right">
+                <mat-icon>style</mat-icon>
+                @if (isExpanded) { <span class="menu-text">Shop The Look</span> }
+              </a>
+            }
+            <a routerLink="/home/coupons" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Cupones' : ''" matTooltipPosition="right">
+              <mat-icon>local_offer</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Cupones</span> }
+            </a>
+            <a routerLink="/home/subscribers" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Newsletter' : ''" matTooltipPosition="right">
+              <mat-icon>mark_email_read</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Newsletter</span> }
+            </a>
+          </div>
+        }
+
+        <!-- GRUPO 5: CONFIGURACIÓN -->
+        @if (authService.isAdmin()) {
+          <div class="flex flex-col gap-0.5">
+            @if (isExpanded) {
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
+            }
+            <a routerLink="/home/settings" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Ajustes de Tienda' : ''" matTooltipPosition="right">
+              <mat-icon>store</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Ajustes de Tienda</span> }
+            </a>
+            <a routerLink="/home/staff" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Equipo & Empleados' : ''" matTooltipPosition="right">
+              <mat-icon>badge</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Equipo & Empleados</span> }
+            </a>
+            <a routerLink="/home/payment-methods" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Cobros & Pagos' : ''" matTooltipPosition="right">
+              <mat-icon>payments</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Cobros & Pagos</span> }
+            </a>
+            @if (profile.features().showEmailsTemplates) {
+              <a routerLink="/home/emails" routerLinkActive="active" class="menu-item"
+                [class.justify-center]="isCollapsed"
+                [matTooltip]="isCollapsed ? 'Emails & Plantillas' : ''" matTooltipPosition="right">
+                <mat-icon>mail</mat-icon>
+                @if (isExpanded) { <span class="menu-text">Emails & Plantillas</span> }
+              </a>
+            }
+            @if (profile.features().showShippingOptions) {
+              <a routerLink="/home/shipping-options" routerLinkActive="active" class="menu-item"
+                [class.justify-center]="isCollapsed"
+                [matTooltip]="isCollapsed ? 'Envíos' : ''" matTooltipPosition="right">
+                <mat-icon>local_shipping</mat-icon>
+                @if (isExpanded) { <span class="menu-text">Envíos</span> }
+              </a>
+            }
+            @if (profile.features().showRecommendations) {
+              <a routerLink="/home/recommendations" routerLinkActive="active" class="menu-item"
+                [class.justify-center]="isCollapsed"
+                [matTooltip]="isCollapsed ? 'Recomendaciones AI' : ''" matTooltipPosition="right">
+                <mat-icon>auto_awesome</mat-icon>
+                @if (isExpanded) { <span class="menu-text">Recomendaciones</span> }
+              </a>
+            }
+          </div>
+        }
       }
     </nav>
 
@@ -271,7 +405,7 @@
           </div>
           <div class="flex flex-col min-w-0">
             <span class="font-bold text-sm text-base-content truncate">{{ brandName }}</span>
-            <span class="text-[10px] font-semibold text-primary uppercase tracking-wider">Panel de Control</span>
+            <span class="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">{{ profile.businessTypeLabel() }}</span>
           </div>
         </div>
         <button class="btn btn-ghost btn-sm btn-circle" (click)="sidebarService.closeMobile()">
@@ -281,127 +415,218 @@
 
       <!-- Mobile Nav Links -->
       <nav class="grow px-3 py-4 overflow-y-auto flex flex-col gap-4">
-        <!-- MÉTRICAS -->
-        <div class="flex flex-col gap-0.5">
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
-          <a routerLink="/home/sales" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>bar_chart</mat-icon>
-            <span class="menu-text">Ventas</span>
-          </a>
-          <a routerLink="/home/daily-reports" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>today</mat-icon>
-            <span class="menu-text">Resumen Diario</span>
-          </a>
-          <a routerLink="/home/fiscal" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>account_balance</mat-icon>
-            <span class="menu-text">ARCA & Fiscal</span>
-          </a>
-        </div>
-
-        <!-- VENTAS & POS -->
-        <div class="flex flex-col gap-0.5">
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Ventas & POS</span>
-          <a routerLink="/home/client-orders" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>shopping_cart</mat-icon>
-            <span class="menu-text">Pedidos Online</span>
-          </a>
-          <a routerLink="/home/pos" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>point_of_sale</mat-icon>
-            <span class="menu-text">Mostrador (POS)</span>
-          </a>
-          <a routerLink="/home/cash-register" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>account_balance_wallet</mat-icon>
-            <span class="menu-text">Caja Registradora</span>
-          </a>
-          @if (authService.isAdmin()) {
-            <a routerLink="/home/clients" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>people</mat-icon>
-              <span class="menu-text">Clientes</span>
-            </a>
-            <a routerLink="/home/favorites" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>favorite</mat-icon>
-              <span class="menu-text">Favoritos</span>
-            </a>
-          }
-        </div>
-
-        <!-- CATÁLOGO -->
-        <div class="flex flex-col gap-0.5">
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Catálogo</span>
-          <a routerLink="/home/products" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>inventory_2</mat-icon>
-            <span class="menu-text">Productos</span>
-          </a>
-          <a routerLink="/home/categories" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>category</mat-icon>
-            <span class="menu-text">Categorías</span>
-          </a>
-          @if (authService.isAdmin()) {
-            <a routerLink="/home/providers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>domain</mat-icon>
-              <span class="menu-text">Proveedores</span>
-            </a>
-          }
-        </div>
-
-        <!-- MARKETING -->
-        <div class="flex flex-col gap-0.5">
-          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
-          <a routerLink="/home/banners" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>view_carousel</mat-icon>
-            <span class="menu-text">Banners</span>
-          </a>
-          <a routerLink="/home/menus" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>menu_book</mat-icon>
-            <span class="menu-text">Menús</span>
-          </a>
-          <a routerLink="/home/hero" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>view_day</mat-icon>
-            <span class="menu-text">Hero Slider</span>
-          </a>
-          <a routerLink="/home/shop-the-look" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>style</mat-icon>
-            <span class="menu-text">Shop The Look</span>
-          </a>
-          <a routerLink="/home/coupons" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>local_offer</mat-icon>
-            <span class="menu-text">Cupones</span>
-          </a>
-          <a routerLink="/home/subscribers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-            <mat-icon>mark_email_read</mat-icon>
-            <span class="menu-text">Newsletter</span>
-          </a>
-        </div>
-
-        <!-- CONFIGURACIÓN -->
-        @if (authService.isAdmin()) {
+        @if (profile.isKioskOrCounter()) {
+          <!-- KIOSCO / CARNICERÍA / PANADERÍA / ALMACÉN -->
           <div class="flex flex-col gap-0.5">
-            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
-            <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item text-primary">
-              <mat-icon>store</mat-icon>
-              <span class="menu-text font-semibold">Ajustes de Tienda</span>
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Mostrador & Caja</span>
+            <a routerLink="/home/pos" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item bg-primary/10 text-primary font-semibold">
+              <mat-icon>point_of_sale</mat-icon>
+              <span class="menu-text">Mostrador (POS)</span>
             </a>
-            <a routerLink="/home/staff" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>badge</mat-icon>
-              <span class="menu-text">Equipo & Empleados</span>
+            <a routerLink="/home/cash-register" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>account_balance_wallet</mat-icon>
+              <span class="menu-text">Caja Registradora</span>
             </a>
-            <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>payments</mat-icon>
-              <span class="menu-text">Cobros & Pagos</span>
-            </a>
-            <a routerLink="/home/emails" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>mail</mat-icon>
-              <span class="menu-text">Emails & Plantillas</span>
-            </a>
-            <a routerLink="/home/shipping-options" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>local_shipping</mat-icon>
-              <span class="menu-text">Envíos</span>
-            </a>
-            <a routerLink="/home/recommendations" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
-              <mat-icon>auto_awesome</mat-icon>
-              <span class="menu-text">Recomendaciones AI</span>
+            <a routerLink="/home/client-orders" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>shopping_cart</mat-icon>
+              <span class="menu-text">Pedidos / Delivery</span>
             </a>
           </div>
+
+          <div class="flex flex-col gap-0.5">
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Stock & Catálogo</span>
+            <a routerLink="/home/products" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>inventory_2</mat-icon>
+              <span class="menu-text">Productos</span>
+            </a>
+            <a routerLink="/home/categories" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>category</mat-icon>
+              <span class="menu-text">Categorías</span>
+            </a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/home/providers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>domain</mat-icon>
+                <span class="menu-text">Proveedores</span>
+              </a>
+            }
+          </div>
+
+          <div class="flex flex-col gap-0.5">
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
+            <a routerLink="/home/daily-reports" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>today</mat-icon>
+              <span class="menu-text">Resumen Diario</span>
+            </a>
+            <a routerLink="/home/sales" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>bar_chart</mat-icon>
+              <span class="menu-text">Historial Ventas</span>
+            </a>
+            <a routerLink="/home/fiscal" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>account_balance</mat-icon>
+              <span class="menu-text">ARCA & Fiscal</span>
+            </a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/home/clients" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>people</mat-icon>
+                <span class="menu-text">Clientes</span>
+              </a>
+            }
+          </div>
+
+          @if (authService.isAdmin()) {
+            <div class="flex flex-col gap-0.5">
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
+              <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>store</mat-icon>
+                <span class="menu-text">Ajustes</span>
+              </a>
+              <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>payments</mat-icon>
+                <span class="menu-text">Cobros & Pagos</span>
+              </a>
+              <a routerLink="/home/staff" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>badge</mat-icon>
+                <span class="menu-text">Equipo & Empleados</span>
+              </a>
+            </div>
+          }
+
+        } @else {
+          <!-- MODA / RETAIL / COMERCIO GENERAL -->
+          <!-- MÉTRICAS -->
+          <div class="flex flex-col gap-0.5">
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Métricas</span>
+            <a routerLink="/home/sales" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>bar_chart</mat-icon>
+              <span class="menu-text">Ventas</span>
+            </a>
+            <a routerLink="/home/daily-reports" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>today</mat-icon>
+              <span class="menu-text">Resumen Diario</span>
+            </a>
+            <a routerLink="/home/fiscal" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>account_balance</mat-icon>
+              <span class="menu-text">ARCA & Fiscal</span>
+            </a>
+          </div>
+
+          <!-- VENTAS & POS -->
+          <div class="flex flex-col gap-0.5">
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Ventas & POS</span>
+            <a routerLink="/home/client-orders" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>shopping_cart</mat-icon>
+              <span class="menu-text">Pedidos Online</span>
+            </a>
+            <a routerLink="/home/pos" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>point_of_sale</mat-icon>
+              <span class="menu-text">Mostrador (POS)</span>
+            </a>
+            <a routerLink="/home/cash-register" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>account_balance_wallet</mat-icon>
+              <span class="menu-text">Caja Registradora</span>
+            </a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/home/clients" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>people</mat-icon>
+                <span class="menu-text">Clientes</span>
+              </a>
+              @if (profile.features().showFavorites) {
+                <a routerLink="/home/favorites" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                  <mat-icon>favorite</mat-icon>
+                  <span class="menu-text">Favoritos</span>
+                </a>
+              }
+            }
+          </div>
+
+          <!-- CATÁLOGO -->
+          <div class="flex flex-col gap-0.5">
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Catálogo</span>
+            <a routerLink="/home/products" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>inventory_2</mat-icon>
+              <span class="menu-text">Productos</span>
+            </a>
+            <a routerLink="/home/categories" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+              <mat-icon>category</mat-icon>
+              <span class="menu-text">Categorías</span>
+            </a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/home/providers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>domain</mat-icon>
+                <span class="menu-text">Proveedores</span>
+              </a>
+            }
+          </div>
+
+          <!-- MARKETING -->
+          @if (profile.features().showBanners) {
+            <div class="flex flex-col gap-0.5">
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
+              <a routerLink="/home/banners" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>view_carousel</mat-icon>
+                <span class="menu-text">Banners</span>
+              </a>
+              <a routerLink="/home/menus" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>menu_book</mat-icon>
+                <span class="menu-text">Menús</span>
+              </a>
+              <a routerLink="/home/hero" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>view_day</mat-icon>
+                <span class="menu-text">Hero Slider</span>
+              </a>
+              @if (profile.features().showShopTheLook) {
+                <a routerLink="/home/shop-the-look" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                  <mat-icon>style</mat-icon>
+                  <span class="menu-text">Shop The Look</span>
+                </a>
+              }
+              <a routerLink="/home/coupons" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>local_offer</mat-icon>
+                <span class="menu-text">Cupones</span>
+              </a>
+              <a routerLink="/home/subscribers" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>mark_email_read</mat-icon>
+                <span class="menu-text">Newsletter</span>
+              </a>
+            </div>
+          }
+
+          <!-- CONFIGURACIÓN -->
+          @if (authService.isAdmin()) {
+            <div class="flex flex-col gap-0.5">
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Configuración</span>
+              <a routerLink="/home/settings" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>store</mat-icon>
+                <span class="menu-text">Ajustes de Tienda</span>
+              </a>
+              <a routerLink="/home/staff" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>badge</mat-icon>
+                <span class="menu-text">Equipo & Empleados</span>
+              </a>
+              <a routerLink="/home/payment-methods" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>payments</mat-icon>
+                <span class="menu-text">Cobros & Pagos</span>
+              </a>
+              @if (profile.features().showEmailsTemplates) {
+                <a routerLink="/home/emails" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                  <mat-icon>mail</mat-icon>
+                  <span class="menu-text">Emails & Plantillas</span>
+                </a>
+              }
+              @if (profile.features().showShippingOptions) {
+                <a routerLink="/home/shipping-options" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                  <mat-icon>local_shipping</mat-icon>
+                  <span class="menu-text">Envíos</span>
+                </a>
+              }
+              @if (profile.features().showRecommendations) {
+                <a routerLink="/home/recommendations" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                  <mat-icon>auto_awesome</mat-icon>
+                  <span class="menu-text">Recomendaciones AI</span>
+                </a>
+              }
+            </div>
+          }
         }
       </nav>
       <!-- Mobile Drawer Footer with Version -->

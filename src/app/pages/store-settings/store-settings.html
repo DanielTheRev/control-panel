@@ -21,8 +21,9 @@
       </button>
     </div>
 
-    <!-- Pestañas de Navegación Rápida (Sub-Menu) -->
+    <!-- Pestañas de Navegación Rápida (Sub-Menu) Adaptadas al Rubro -->
     <div sub-menu class="inline-flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs overflow-x-auto max-w-full custom-scrollbar">
+      <!-- 1. General & Logo (Siempre disponible) -->
       <button
         type="button"
         (click)="activeTab.set('general')"
@@ -33,26 +34,7 @@
         <span>General & Logo</span>
       </button>
 
-      <button
-        type="button"
-        (click)="activeTab.set('auth')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'auth' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">lock_person</mat-icon>
-        <span>Autenticación</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="activeTab.set('integrations')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'integrations' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">extension</mat-icon>
-        <span>Integraciones</span>
-      </button>
-
+      <!-- 2. Fiscal & ARCA (Siempre disponible) -->
       <button
         type="button"
         (click)="activeTab.set('fiscal')"
@@ -63,44 +45,18 @@
         <span>Fiscal & ARCA</span>
       </button>
 
+      <!-- 3. Mostrador & POS (Siempre disponible y vital para Kioscos) -->
       <button
         type="button"
-        (click)="activeTab.set('shipping')"
+        (click)="activeTab.set('pos')"
         class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'shipping' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        [ngClass]="activeTab() === 'pos' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
       >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">local_shipping</mat-icon>
-        <span>Logística & Envíos</span>
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">point_of_sale</mat-icon>
+        <span>Mostrador & POS</span>
       </button>
 
-      <a
-        routerLink="/home/emails"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs btn-ghost text-base-content/70 hover:bg-base-200"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
-        <span>Emails & Plantillas</span>
-      </a>
-
-      <button
-        type="button"
-        (click)="activeTab.set('contact')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'contact' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">contact_phone</mat-icon>
-        <span>Contacto & Redes</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="activeTab.set('clothing')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'clothing' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
-        <span>Indumentaria</span>
-      </button>
-
+      <!-- 4. Conexión & Tienda Web (Siempre disponible) -->
       <button
         type="button"
         (click)="activeTab.set('connection')"
@@ -111,15 +67,83 @@
         <span>Conexión & Tienda Web</span>
       </button>
 
-      <button
-        type="button"
-        (click)="activeTab.set('pos')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'pos' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">point_of_sale</mat-icon>
-        <span>Mostrador & POS</span>
-      </button>
+      <!-- 5. Indumentaria (Solo para Fashion o General) -->
+      @if (showTabClothing()) {
+        <button
+          type="button"
+          (click)="activeTab.set('clothing')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'clothing' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
+          <span>Indumentaria</span>
+        </button>
+      }
+
+      <!-- 6. Autenticación (Solo E-commerce / Fashion / General) -->
+      @if (showTabAuth()) {
+        <button
+          type="button"
+          (click)="activeTab.set('auth')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'auth' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">lock_person</mat-icon>
+          <span>Autenticación</span>
+        </button>
+      }
+
+      <!-- 7. Integraciones (Solo E-commerce / Fashion / General) -->
+      @if (showTabIntegrations()) {
+        <button
+          type="button"
+          (click)="activeTab.set('integrations')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'integrations' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">extension</mat-icon>
+          <span>Integraciones</span>
+        </button>
+      }
+
+      <!-- 8. Logística & Envíos (Solo E-commerce / Fashion / General) -->
+      @if (showTabShipping()) {
+        <button
+          type="button"
+          (click)="activeTab.set('shipping')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'shipping' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">local_shipping</mat-icon>
+          <span>Logística & Envíos</span>
+        </button>
+      }
+
+      <!-- 9. Emails & Plantillas (Solo E-commerce / Fashion / General) -->
+      @if (showTabEmails()) {
+        <button
+          type="button"
+          (click)="activeTab.set('emails')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'emails' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
+          <span>Emails & Plantillas</span>
+        </button>
+      }
+
+      <!-- 10. Contacto & Redes (Solo E-commerce / Fashion / General) -->
+      @if (showTabContact()) {
+        <button
+          type="button"
+          (click)="activeTab.set('contact')"
+          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+          [ngClass]="activeTab() === 'contact' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+        >
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">contact_phone</mat-icon>
+          <span>Contacto & Redes</span>
+        </button>
+      }
     </div>
   </app-page-header>
 
@@ -140,6 +164,75 @@
         <!-- ========================================================================= -->
         @if (activeTab() === 'general') {
           <div class="space-y-6">
+            <!-- RUBRO & PERFIL DE NEGOCIO -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                    <mat-icon class="text-[20px]! w-5! h-5!">category</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Rubro & Perfil de Negocio</h3>
+                    <p class="text-xs text-base-content/50">El panel adapta dinámicamente sus menús, rutas y herramientas para ajustarse a tu rubro.</p>
+                  </div>
+                </div>
+                <div class="badge badge-primary font-bold text-xs py-3 px-3.5 gap-2 shadow-xs">
+                  <span class="w-2 h-2 rounded-full bg-primary-content animate-pulse"></span>
+                  <span>Rubro Activo: {{ getSelectedRubroLabel() }}</span>
+                </div>
+              </div>
+
+              <!-- Grid de Rubros Seleccionables con Tema Dinámico -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                @for (opt of businessTypeOptions; track opt.value) {
+                  @let isSelected = configForm.get('businessType')?.value === opt.value;
+                  <div
+                    (click)="selectBusinessType(opt.value)"
+                    class="relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col justify-between gap-3 text-left group hover:scale-[1.01]"
+                    [class.border-primary]="isSelected"
+                    [class.bg-primary/5]="isSelected"
+                    [class.shadow-md]="isSelected"
+                    [class.shadow-primary/10]="isSelected"
+                    [class.border-base-200]="!isSelected"
+                    [class.bg-base-100]="!isSelected"
+                    [class.hover:border-primary/40]="!isSelected"
+                    [class.hover:bg-base-200/30]="!isSelected"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-xs"
+                          [style.background-color]="isSelected ? 'var(--color-primary)' : opt.previewHex + '18'"
+                          [style.color]="isSelected ? 'var(--color-primary-content)' : opt.previewHex"
+                        >
+                          <mat-icon class="text-[20px]! w-5! h-5!">{{ opt.icon }}</mat-icon>
+                        </div>
+                        <div>
+                          <span class="text-xs font-bold block text-base-content leading-tight">{{ opt.label }}</span>
+                          <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span class="badge badge-xs text-[9px] font-bold px-1.5 py-0.5" [class.badge-primary]="isSelected" [class.badge-ghost]="!isSelected">
+                              {{ opt.badge }}
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-base-content/60">
+                              <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="opt.previewHex"></span>
+                              {{ opt.colorName }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="radio"
+                        [name]="'businessTypeRadio'"
+                        [checked]="isSelected"
+                        class="radio radio-primary radio-xs shrink-0 pointer-events-none mt-1"
+                      />
+                    </div>
+                    <p class="text-[11px] text-base-content/65 leading-relaxed">{{ opt.desc }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
               <div class="flex items-center gap-3 pb-3 border-b border-base-200">
                 <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
@@ -252,7 +345,7 @@
         <!-- ========================================================================= -->
         <!-- 2. AUTENTICACIÓN & LOGIN DE CLIENTES                                       -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'auth') {
+        @if (showTabAuth() && activeTab() === 'auth') {
           <div formGroupName="authConfig" class="space-y-6">
 
             <!-- Header Informativo de la sección -->
@@ -460,7 +553,7 @@
         <!-- ========================================================================= -->
         <!-- 3. INTEGRACIONES & APIS (GOOGLE, RESEND, META)                            -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'integrations') {
+        @if (showTabIntegrations() && activeTab() === 'integrations') {
           <div formGroupName="integrations" class="space-y-6">
 
             <!-- 🔑 Google Sign-In (OAuth) -->
@@ -1274,7 +1367,7 @@
         <!-- ========================================================================= -->
         <!-- LOGÍSTICA & ENVÍOS (ZONAS, UMBRALES Y SUBSIDIO SILENCIOSO)                -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'shipping') {
+        @if (showTabShipping() && activeTab() === 'shipping') {
           <div formGroupName="shippingConfig" class="space-y-6">
 
             <!-- Card 1: Umbral de Envío Gratis & Subsidio Silencioso -->
@@ -1459,7 +1552,7 @@
         <!-- ========================================================================= -->
         <!-- 5. EMAILS & NOTIFICACIONES (RESEND & PLANTILLAS)                          -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'emails') {
+        @if (showTabEmails() && activeTab() === 'emails') {
           <div formGroupName="emailTemplates" class="space-y-6">
 
             <!-- 🎨 Branding Global de Correos -->
@@ -1972,7 +2065,7 @@
         <!-- ========================================================================= -->
         <!-- 6. CONTACTO & REDES SOCIALES                                              -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'contact') {
+        @if (showTabContact() && activeTab() === 'contact') {
           <div class="space-y-6">
             <!-- Contacto -->
             <div formGroupName="contact" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
@@ -2043,7 +2136,7 @@
         <!-- ========================================================================= -->
         <!-- 6. INDUMENTARIA (FITS & CORTES)                                           -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'clothing') {
+        @if (showTabClothing() && activeTab() === 'clothing') {
           <div class="space-y-6">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
               <div class="flex items-center gap-3 pb-3 border-b border-base-200">
@@ -2365,6 +2458,50 @@
             <span class="loading loading-spinner loading-xs"></span>
           }
           Sí, Regenerar Llave
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de Confirmación de Cambios sin Guardar (CanDeactivate) -->
+@if (showUnsavedModal()) {
+  <div class="modal modal-open">
+    <div class="modal-box rounded-3xl border border-base-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-warning/15 text-warning flex items-center justify-center shrink-0">
+          <mat-icon class="text-[28px]! w-7! h-7!">warning</mat-icon>
+        </div>
+        <div>
+          <h3 class="font-black text-base text-base-content">¿Salir sin guardar los cambios?</h3>
+          <p class="text-xs text-base-content/60">Tenés modificaciones pendientes en la configuración.</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 bg-base-200/50 rounded-2xl text-xs text-base-content/75 space-y-1">
+        <p class="font-semibold text-base-content">
+          Modificaste el rubro o datos de la tienda.
+        </p>
+        <p class="text-[11px] text-base-content/60">
+          Si salís ahora, se descartarán los cambios y la aplicación volverá al rubro y colores que tenías guardados.
+        </p>
+      </div>
+
+      <div class="modal-action flex items-center justify-end gap-2 pt-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost rounded-xl text-xs font-bold"
+          (click)="cancelDiscardChanges()"
+        >
+          Seguir Editando
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-error rounded-xl text-xs font-bold gap-1 text-white shadow-sm"
+          (click)="confirmDiscardChanges()"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">logout</mat-icon>
+          Descartar y Salir
         </button>
       </div>
     </div>
