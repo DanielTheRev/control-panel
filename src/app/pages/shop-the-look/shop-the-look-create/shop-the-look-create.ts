@@ -231,14 +231,49 @@ export class ShopTheLookCreateComponent implements OnInit {
 
   getProductColors(product: IProduct): Array<{ name: string; hex?: string; image?: string; public_id?: string; sku?: string }> {
     if (!product?.variants || !Array.isArray(product.variants)) return [];
+
+    // Extract valid images from product.images
+    const prodImages = (product.images || []).map((img: any) => ({
+      url: (typeof img === 'string' ? img : img?.url || '').trim(),
+      public_id: (typeof img === 'string' ? '' : img?.public_id || '').trim()
+    })).filter(i => Boolean(i.url));
+
+    const defaultImg = prodImages[0] || { url: '', public_id: '' };
+
     const colorsMap = new Map<string, { name: string; hex?: string; image?: string; public_id?: string; sku?: string }>();
+    
+    // Check how many unique color names exist
+    const uniqueColorNames = new Set(
+      product.variants.map((v: any) => v.color?.name?.trim()).filter(Boolean)
+    );
+    const isSingleColor = uniqueColorNames.size <= 1;
+
     product.variants.forEach((v: any) => {
-      if (v.color?.name && !colorsMap.has(v.color.name)) {
-        colorsMap.set(v.color.name, {
-          name: v.color.name,
-          hex: v.color.hex,
-          image: v.imageReference?.url,
-          public_id: v.imageReference?.public_id || '',
+      const colorName = v.color?.name?.trim();
+      if (colorName && !colorsMap.has(colorName)) {
+        let variantImgUrl = v.imageReference?.url?.trim() || '';
+        let variantPubId = v.imageReference?.public_id?.trim() || '';
+
+        // If variant's image is not in active product images list, it's stale/orphaned
+        const isUrlInProdImages = prodImages.some(pi => pi.url === variantImgUrl);
+
+        if (!variantImgUrl || !isUrlInProdImages) {
+          // If variant has imageIndex pointing to product.images, use it
+          if (v.imageIndex !== undefined && v.imageIndex !== null && prodImages[v.imageIndex]) {
+            variantImgUrl = prodImages[v.imageIndex].url;
+            variantPubId = prodImages[v.imageIndex].public_id;
+          } else if (isSingleColor || prodImages.length > 0) {
+            // If the product has only 1 color or general fallback, use primary product image
+            variantImgUrl = defaultImg.url;
+            variantPubId = defaultImg.public_id;
+          }
+        }
+
+        colorsMap.set(colorName, {
+          name: colorName,
+          hex: v.color?.hex,
+          image: variantImgUrl,
+          public_id: variantPubId,
           sku: v.sku
         });
       }
@@ -254,11 +289,19 @@ export class ShopTheLookCreateComponent implements OnInit {
       const updated = [...drafts];
       const current = { ...updated[activeIdx] };
       const updatedHotspots = [...current.hotspots];
+      const targetHotspot = updatedHotspots[hotspotIndex];
+
+      const fallbackImg = targetHotspot.product?.images?.[0]?.url || (typeof targetHotspot.product?.images?.[0] === 'string' ? targetHotspot.product.images[0] : '');
+      const fallbackPubId = targetHotspot.product?.images?.[0]?.public_id || '';
+
+      const finalImgUrl = (color.image?.trim() || fallbackImg || '').trim();
+      const finalPubId = (color.public_id?.trim() || fallbackPubId || '').trim();
+
       updatedHotspots[hotspotIndex] = {
-        ...updatedHotspots[hotspotIndex],
+        ...targetHotspot,
         selectedColor: { name: color.name, hex: color.hex },
         selectedSku: color.sku,
-        variantImage: color.image ? { url: color.image, public_id: color.public_id || '' } : undefined
+        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined
       };
       current.hotspots = updatedHotspots;
       updated[activeIdx] = current;
@@ -269,6 +312,11 @@ export class ShopTheLookCreateComponent implements OnInit {
   assignProductToHotspot(product: IProduct, index: number) {
     const availableColors = this.getProductColors(product);
     const defaultColor = availableColors[0];
+
+    const fallbackImg = product.images?.[0]?.url || (typeof product.images?.[0] === 'string' ? product.images[0] : '');
+    const fallbackPubId = product.images?.[0]?.public_id || '';
+    const finalImgUrl = (defaultColor?.image?.trim() || fallbackImg || '').trim();
+    const finalPubId = (defaultColor?.public_id?.trim() || fallbackPubId || '').trim();
 
     this.looks.update(drafts => {
       const activeIdx = this.activeTabIndex();
@@ -282,12 +330,20 @@ export class ShopTheLookCreateComponent implements OnInit {
         product,
         selectedColor: defaultColor ? { name: defaultColor.name, hex: defaultColor.hex } : undefined,
         selectedSku: defaultColor?.sku,
-        variantImage: defaultColor?.image ? { url: defaultColor.image, public_id: defaultColor.public_id || '' } : undefined
+        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined
       };
       current.hotspots = updatedHotspots;
       updated[activeIdx] = current;
       return updated;
     });
+  }
+
+  onHotspotImageError(event: Event, hotspot: IShopTheLookHotspot) {
+    const target = event.target as HTMLImageElement;
+    const fallback = hotspot.product?.images?.[0]?.url || (typeof hotspot.product?.images?.[0] === 'string' ? hotspot.product.images[0] : '');
+    if (fallback && target.src !== fallback) {
+      target.src = fallback;
+    }
   }
 
   toggleActiveLookStatus() {
