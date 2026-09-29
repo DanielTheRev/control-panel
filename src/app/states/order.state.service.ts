@@ -185,11 +185,14 @@ export class OrdersStateService {
   // Método para actualizar una orden específica
   async updateOrder(
     target: 'updatePayment' | 'updateShippingStatus',
-    data: { orderID: string, status: PaymentStatus | OrderStatus },
+    data: { orderID: string; status: PaymentStatus | OrderStatus; trackingNumber?: string; carrier?: string },
   ): Promise<IOrder> {
     try {
       const { message, orderUpdated } =
-        await this.orderService.updatePaymentState(data.orderID, target, data.status);
+        await this.orderService.updatePaymentState(data.orderID, target, data.status, {
+          trackingNumber: data.trackingNumber,
+          carrier: data.carrier
+        });
       this.updateOrderState(orderUpdated);
 
       return orderUpdated;

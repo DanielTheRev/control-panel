@@ -1,5 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe, DecimalPipe, Location } from '@angular/common';
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -18,6 +19,7 @@ import { firstValueFrom } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatIconModule,
     MatButtonModule,
     CurrencyPipe,
@@ -49,6 +51,10 @@ export class OrderDetails implements OnInit {
   updating = signal<boolean>(false);
   issuingInvoice = signal<boolean>(false);
   invoiceData = signal<IInvoiceResponse | null>(null);
+
+  dispatchModalOpen = signal<boolean>(false);
+  dispatchTrackingNumber = signal<string>('');
+  dispatchCarrier = signal<string>('');
 
   ngOnInit(): void {
     this.loading.set(true);
@@ -414,18 +420,53 @@ export class OrderDetails implements OnInit {
     }
   }
 
-  async markAsShipped(): Promise<void> {
+  openDispatchModal(): void {
     const o = this.order();
     if (!o) return;
+    const chosenCarrier = o.shippingInfo?.carrier || 'Andreani';
+    this.dispatchCarrier.set(chosenCarrier);
+    this.dispatchTrackingNumber.set(o.shippingInfo?.trackingNumber || '');
+    this.dispatchModalOpen.set(true);
+  }
+
+  closeDispatchModal(): void {
+    this.dispatchModalOpen.set(false);
+  }
+
+  getSelectedCarrierName(): string {
+    const o = this.order();
+    return o?.shippingInfo?.carrier || 'Andreani';
+  }
+
+  async confirmDispatch(): Promise<void> {
+    const o = this.order();
+    if (!o) return;
+    const tracking = this.dispatchTrackingNumber().trim();
+    if (!tracking) {
+      alert('Por favor, ingresá el código de seguimiento.');
+      return;
+    }
+    const carrier = this.dispatchCarrier().trim() || this.getSelectedCarrierName();
+
     this.updating.set(true);
     try {
-      await this.orderState.updateOrder('updateShippingStatus', { orderID: o._id, status: OrderStatus.SHIPPED });
-      this.order.set({ ...o, status: OrderStatus.SHIPPED });
+      const updated = await this.orderState.updateOrder('updateShippingStatus', {
+        orderID: o._id,
+        status: OrderStatus.SHIPPED,
+        trackingNumber: tracking,
+        carrier: carrier
+      });
+      this.order.set(updated);
+      this.closeDispatchModal();
     } catch {
-      alert('Error al marcar como enviado.');
+      alert('Error al marcar como despachado.');
     } finally {
       this.updating.set(false);
     }
+  }
+
+  async markAsShipped(): Promise<void> {
+    this.openDispatchModal();
   }
 
   async markAsDelivered(): Promise<void> {

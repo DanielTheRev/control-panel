@@ -667,6 +667,30 @@
                   </div>
                 </div>
               }
+
+              @if (order()!.shippingInfo.carrier) {
+                <div class="flex justify-between items-center text-xs pt-2 border-t border-base-200">
+                  <span class="text-base-content/40 font-bold uppercase text-[10px]">Empresa Courier:</span>
+                  <span class="font-bold text-base-content">{{ order()!.shippingInfo.carrier }}</span>
+                </div>
+              }
+
+              @if (order()!.shippingInfo.trackingNumber) {
+                <div class="mt-2 bg-primary/5 border border-primary/20 p-2.5 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span class="text-[10px] font-bold uppercase text-primary/70 block">N° de Seguimiento</span>
+                    <span class="font-mono text-xs font-black text-primary">{{ order()!.shippingInfo.trackingNumber }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="openDispatchModal()"
+                    class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-bold"
+                    title="Modificar seguimiento"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon> Editar
+                  </button>
+                </div>
+              }
             </div>
 
             <!-- Card 4: Método y Comprobante de Pago -->
@@ -739,3 +763,112 @@
     }
   </ng-container>
 </app-page-layout>
+
+<!-- ========================================================================= -->
+<!-- MODAL: DESPACHAR PEDIDO / CÓDIGO DE SEGUIMIENTO                           -->
+<!-- ========================================================================= -->
+@if (dispatchModalOpen()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-base-100 rounded-3xl border border-base-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scale-up">
+      
+      <!-- Encabezado -->
+      <div class="flex items-center justify-between border-b border-base-200 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <mat-icon class="text-[20px]! w-5! h-5!">flight_takeoff</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-base-content">Despachar Pedido</h3>
+            <p class="text-[10px] font-mono text-base-content/50">Orden #{{ order()?.orderNumber }}</p>
+          </div>
+        </div>
+        <button (click)="closeDispatchModal()" class="btn btn-ghost btn-sm btn-circle text-base-content/50">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Banner con la indicación solicitada por el usuario -->
+      <div class="bg-primary/5 border border-primary/20 rounded-2xl p-3.5 flex items-start gap-3">
+        <div class="w-7 h-7 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
+          <mat-icon class="text-[16px]! w-4! h-4!">local_shipping</mat-icon>
+        </div>
+        <div class="text-xs">
+          <p class="font-bold text-base-content leading-snug">
+            El usuario eligió <span class="text-primary font-black underline decoration-primary/30 decoration-2">{{ getSelectedCarrierName() }}</span>, poné su código de seguimiento.
+          </p>
+          <p class="text-[11px] text-base-content/60 mt-1">
+            Se guardará en el pedido, le llegará al cliente por email y podrá copiarlo directamente para rastrear su paquete.
+          </p>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="space-y-3">
+        <!-- Empresa de transporte / Courier -->
+        <div>
+          <label class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block mb-1">
+            Empresa de Envío (Courier)
+          </label>
+          <input
+            type="text"
+            class="input input-sm input-bordered w-full rounded-xl text-xs font-semibold"
+            [ngModel]="dispatchCarrier()"
+            (ngModelChange)="dispatchCarrier.set($event)"
+            list="detailCarrierSuggestions"
+            placeholder="Ej: Andreani, Correo Argentino..."
+          />
+          <datalist id="detailCarrierSuggestions">
+            <option value="Andreani"></option>
+            <option value="Correo Argentino"></option>
+            <option value="Enviamelo"></option>
+            <option value="OCA"></option>
+            <option value="Urbano"></option>
+            <option value="Cadetería Propia"></option>
+          </datalist>
+        </div>
+
+        <!-- Código de Seguimiento -->
+        <div>
+          <label class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block mb-1">
+            Código de Seguimiento (Tracking)
+          </label>
+          <input
+            type="text"
+            class="input input-bordered w-full rounded-xl text-sm font-mono font-bold tracking-wider placeholder:font-normal placeholder:tracking-normal placeholder:text-xs"
+            [ngModel]="dispatchTrackingNumber()"
+            (ngModelChange)="dispatchTrackingNumber.set($event)"
+            placeholder="Ej: 000008472910 o AR123456789"
+            autofocus
+            (keyup.enter)="confirmDispatch()"
+          />
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="flex gap-2 pt-2 border-t border-base-200">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost flex-1 rounded-xl font-bold"
+          (click)="closeDispatchModal()"
+          [disabled]="updating()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary flex-1 rounded-xl font-bold gap-1.5 shadow-sm"
+          (click)="confirmDispatch()"
+          [disabled]="updating() || !dispatchTrackingNumber().trim()"
+        >
+          @if (updating()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">send</mat-icon>
+          }
+          Confirmar y Despachar
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

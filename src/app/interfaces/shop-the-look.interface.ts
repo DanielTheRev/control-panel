@@ -12,11 +12,19 @@ export interface IHotspotPosition {
   y: number; // Porcentaje de 0 a 100
 }
 
+export interface IHotspotColor {
+  name: string;
+  hex?: string;
+}
+
 // Representación de un Hotspot
 export interface IShopTheLookHotspot {
   _id?: string;
   product: IProduct; // ⚠️ En los GET vendrá el Objeto Producto poblado. En los POST/PUT enviarás solo el String (ID del producto).
   position: IHotspotPosition;
+  selectedColor?: IHotspotColor;
+  selectedSku?: string;
+  variantImage?: IShopTheLookImage;
   isActive: boolean;
 }
 

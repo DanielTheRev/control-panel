@@ -94,6 +94,7 @@ export class OrdersService {
     orderID: string,
     target: 'updatePayment' | 'updateShippingStatus',
     status: PaymentStatus | OrderStatus,
+    extraData?: { trackingNumber?: string; carrier?: string }
   ) {
     const action =
       target === 'updatePayment'
@@ -103,7 +104,7 @@ export class OrdersService {
     return firstValueFrom(
       this._http.post<{ message: string; orderUpdated: IOrder }>(
         `${this.apiURI}/${action}`,
-        { orderID, status }
+        { orderID, status, ...extraData }
       ).pipe(
         map(res => {
           if (res && res.orderUpdated) {

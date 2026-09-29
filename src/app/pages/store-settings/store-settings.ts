@@ -40,6 +40,7 @@ import { NotificationsService } from '../../services/notifications.service';
 import { BusinessProfileService, BUSINESS_THEMES } from '../../services/business-profile.service';
 import { Router, RouterLink } from '@angular/router';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-store-settings',
@@ -80,6 +81,25 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   isRecalculating = signal(false);
   dolarQuotes = signal<IDolarRate[]>([]);
   isLoadingDolares = signal(false);
+  isCopiedFeed = signal(false);
+
+  readonly metaFeedUrl = computed(() => {
+    const slug = this.configState.connectionSettings()?.slug || environment.tenantSlug || 'vura';
+    const apiBase = environment.apiUrl || 'https://api.vura.com.ar';
+    return `${apiBase}/api/feeds/meta/${slug}`;
+  });
+
+  async copyMetaFeedUrl(): Promise<void> {
+    const url = this.metaFeedUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      this.isCopiedFeed.set(true);
+      this.#NotificationService.success('¡URL del catálogo copiada al portapapeles! 📋');
+      setTimeout(() => this.isCopiedFeed.set(false), 2500);
+    } catch {
+      this.#NotificationService.error('No se pudo copiar la URL al portapapeles');
+    }
+  }
 
   activeTab = signal<
     | 'general'

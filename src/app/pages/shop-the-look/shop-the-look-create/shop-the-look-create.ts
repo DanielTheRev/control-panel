@@ -101,7 +101,7 @@ export class ShopTheLookCreateComponent implements OnInit {
       nameControl,
       imageControl: control,
       previewImage: initialData?.mainImage?.url || null,
-      hotspots: initialData?.hotspots || [],
+      hotspots: initialData?.hotspots ? structuredClone(initialData.hotspots) : [],
       isActive: initialData?.isActive ?? true,
       originalImage: initialData?.mainImage
     };
@@ -229,14 +229,63 @@ export class ShopTheLookCreateComponent implements OnInit {
     });
   }
 
-  assignProductToHotspot(product: IProduct, index: number) {
+  getProductColors(product: IProduct): Array<{ name: string; hex?: string; image?: string; public_id?: string; sku?: string }> {
+    if (!product?.variants || !Array.isArray(product.variants)) return [];
+    const colorsMap = new Map<string, { name: string; hex?: string; image?: string; public_id?: string; sku?: string }>();
+    product.variants.forEach((v: any) => {
+      if (v.color?.name && !colorsMap.has(v.color.name)) {
+        colorsMap.set(v.color.name, {
+          name: v.color.name,
+          hex: v.color.hex,
+          image: v.imageReference?.url,
+          public_id: v.imageReference?.public_id || '',
+          sku: v.sku
+        });
+      }
+    });
+    return Array.from(colorsMap.values());
+  }
+
+  selectHotspotColor(hotspotIndex: number, color: { name: string; hex?: string; image?: string; public_id?: string; sku?: string }) {
     this.looks.update(drafts => {
+      const activeIdx = this.activeTabIndex();
+      if (!drafts[activeIdx] || !drafts[activeIdx].hotspots[hotspotIndex]) return drafts;
+
       const updated = [...drafts];
-      const current = { ...updated[this.activeTabIndex()] };
+      const current = { ...updated[activeIdx] };
       const updatedHotspots = [...current.hotspots];
-      updatedHotspots[index] = { ...updatedHotspots[index], product };
+      updatedHotspots[hotspotIndex] = {
+        ...updatedHotspots[hotspotIndex],
+        selectedColor: { name: color.name, hex: color.hex },
+        selectedSku: color.sku,
+        variantImage: color.image ? { url: color.image, public_id: color.public_id || '' } : undefined
+      };
       current.hotspots = updatedHotspots;
-      updated[this.activeTabIndex()] = current;
+      updated[activeIdx] = current;
+      return updated;
+    });
+  }
+
+  assignProductToHotspot(product: IProduct, index: number) {
+    const availableColors = this.getProductColors(product);
+    const defaultColor = availableColors[0];
+
+    this.looks.update(drafts => {
+      const activeIdx = this.activeTabIndex();
+      if (!drafts[activeIdx] || !drafts[activeIdx].hotspots[index]) return drafts;
+
+      const updated = [...drafts];
+      const current = { ...updated[activeIdx] };
+      const updatedHotspots = [...current.hotspots];
+      updatedHotspots[index] = {
+        ...updatedHotspots[index],
+        product,
+        selectedColor: defaultColor ? { name: defaultColor.name, hex: defaultColor.hex } : undefined,
+        selectedSku: defaultColor?.sku,
+        variantImage: defaultColor?.image ? { url: defaultColor.image, public_id: defaultColor.public_id || '' } : undefined
+      };
+      current.hotspots = updatedHotspots;
+      updated[activeIdx] = current;
       return updated;
     });
   }
@@ -282,18 +331,20 @@ export class ShopTheLookCreateComponent implements OnInit {
 
       // JSON Array construction
       const finalLooksData = currentLooks.map((draft, index) => {
-        const hData = draft.hotspots.map(h => {
-          const mapped: any = {
-            ...h,
-            product: h.product._id || (h.product as any)
-          };
-          // Eliminamos el _id temporal generado en frontend (7 caracteres) 
-          // para evitar que Mongoose falle al parsearlo como ObjectId
-          if (mapped._id && mapped._id.length < 24) {
-             delete mapped._id;
-          }
-          return mapped;
-        });
+        const hData = draft.hotspots
+          .filter(h => h && h.product)
+          .map(h => {
+            const mapped: any = {
+              ...h,
+              product: h.product._id || (h.product as any)
+            };
+            // Eliminamos el _id temporal generado en frontend (7 caracteres) 
+            // para evitar que Mongoose falle al parsearlo como ObjectId
+            if (mapped._id && mapped._id.length < 24) {
+               delete mapped._id;
+            }
+            return mapped;
+          });
 
         const lookPayload: any = {
           name: draft.nameControl.value?.trim() || '',
@@ -307,6 +358,8 @@ export class ShopTheLookCreateComponent implements OnInit {
         if (typeof controlValue === 'string' && controlValue.trim() !== '' && draft.originalImage && controlValue === draft.originalImage.url) {
           // Preserving original cloud image
           lookPayload.mainImage = draft.originalImage;
+        } else if (!lookPayload.mainImage && typeof controlValue === 'string' && controlValue.trim() !== '') {
+          lookPayload.mainImage = draft.originalImage || { url: controlValue, public_id: '' };
         }
 
         return lookPayload;

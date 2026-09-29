@@ -75,6 +75,8 @@ export interface IShippingAddress {
 export interface IShippingInfo {
   _id?: string; // Auto-generado por Mongoose
   type: ShippingType;
+  carrier?: string;
+  trackingNumber?: string;
   pickupPoint?: {
     name: string;
     address: string;

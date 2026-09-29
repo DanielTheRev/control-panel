@@ -1,5 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -25,6 +26,7 @@ import { NotificationsService } from '../../services/notifications.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     PageLayout,
     PageHeader,
     CurrencyPipe,
@@ -53,6 +55,12 @@ export class ClientOrders {
   // Transfer Auditing Modal
   auditingReceiptOrder = signal<IOrder | null>(null);
   isApprovingTransfer = signal<boolean>(false);
+
+  // Dispatch Tracking Modal
+  dispatchingOrder = signal<IOrder | null>(null);
+  dispatchTrackingNumber = signal<string>('');
+  dispatchCarrier = signal<string>('');
+  dispatchingLoading = signal<boolean>(false);
 
   // Exponer propiedades del servicio para el template
   readonly orders = this.orderStateService.orders;
@@ -371,19 +379,59 @@ export class ClientOrders {
   }
 
   /**
-   * Marcar orden como enviada
+   * Abrir modal de despacho
    */
-  async markAsShipped(orderID: string): Promise<void> {
+  openDispatchModal(order: IOrder): void {
+    this.dispatchingOrder.set(order);
+    this.dispatchCarrier.set(order.shippingInfo?.carrier || 'Andreani');
+    this.dispatchTrackingNumber.set(order.shippingInfo?.trackingNumber || '');
+  }
+
+  /**
+   * Cerrar modal de despacho
+   */
+  closeDispatchModal(): void {
+    this.dispatchingOrder.set(null);
+    this.dispatchTrackingNumber.set('');
+    this.dispatchCarrier.set('');
+  }
+
+  /**
+   * Confirmar despacho con código de seguimiento
+   */
+  async confirmDispatchFromList(): Promise<void> {
+    const o = this.dispatchingOrder();
+    if (!o) return;
+    const tracking = this.dispatchTrackingNumber().trim();
+    if (!tracking) {
+      alert('Por favor, ingresá el código de seguimiento.');
+      return;
+    }
+    const carrier = this.dispatchCarrier().trim() || o.shippingInfo?.carrier || 'Andreani';
+
+    this.dispatchingLoading.set(true);
     try {
-      await this.orderStateService.updateOrder(
-        'updateShippingStatus',
-        { orderID, status: OrderStatus.SHIPPED }
-      );
-      this.#debug.log('✅ Orden marcada como enviada');
+      await this.orderStateService.updateOrder('updateShippingStatus', {
+        orderID: o._id,
+        status: OrderStatus.SHIPPED,
+        trackingNumber: tracking,
+        carrier: carrier
+      });
+      this.#debug.log('✅ Orden marcada como enviada con tracking');
+      this.closeDispatchModal();
     } catch (error) {
       this.#debug.error('❌ Error al marcar como enviada:', error);
       alert('Error al actualizar la orden. Por favor, intenta nuevamente.');
+    } finally {
+      this.dispatchingLoading.set(false);
     }
+  }
+
+  /**
+   * Marcar orden como enviada (compatibilidad)
+   */
+  markAsShipped(order: IOrder): void {
+    this.openDispatchModal(order);
   }
 
   /**
