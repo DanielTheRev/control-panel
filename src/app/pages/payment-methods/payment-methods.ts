@@ -98,7 +98,9 @@ export class PaymentMethods implements OnInit {
         maxInstallments: [3],
         absorbInstallments: [true],
         maxInstallmentsToAbsorb: [3],
-        card1PayDiscount: [false]
+        card1PayDiscount: [false],
+        excludedPaymentMethods: [[]],
+        excludedPaymentTypes: [[]]
       }),
       getnet: this.#fb.group({
         active: [false],
@@ -166,7 +168,9 @@ export class PaymentMethods implements OnInit {
               maxInstallments: config.paymentGateways.mercadopago.maxInstallments ?? 3,
               absorbInstallments: config.pricingStrategy?.absorbInstallments ?? true,
               maxInstallmentsToAbsorb: config.pricingStrategy?.maxInstallmentsToAbsorb ?? 3,
-              card1PayDiscount: config.pricingStrategy?.card1PayDiscount ?? false
+              card1PayDiscount: config.pricingStrategy?.card1PayDiscount ?? false,
+              excludedPaymentMethods: config.paymentGateways.mercadopago.excludedPaymentMethods || [],
+              excludedPaymentTypes: config.paymentGateways.mercadopago.excludedPaymentTypes || []
             });
           }
           if (config.paymentGateways.getnet) {
@@ -271,6 +275,15 @@ export class PaymentMethods implements OnInit {
       const getnetVal = gVal.getnet || {};
       const ualaVal = gVal.uala || {};
       const currentConfig = this.storeConfigState.StoreConfig().config;
+      const mpState = this.state().automaticGateways.mercadopago;
+
+      const excludedPaymentMethods = Array.isArray(mpVal.excludedPaymentMethods)
+        ? mpVal.excludedPaymentMethods
+        : (mpState.excludedPaymentMethods ?? currentConfig?.paymentGateways?.mercadopago?.excludedPaymentMethods ?? []);
+
+      const excludedPaymentTypes = Array.isArray(mpVal.excludedPaymentTypes)
+        ? mpVal.excludedPaymentTypes
+        : (mpState.excludedPaymentTypes ?? currentConfig?.paymentGateways?.mercadopago?.excludedPaymentTypes ?? []);
 
       await this.storeConfigState.saveConfig({
         paymentGateways: {
@@ -287,7 +300,9 @@ export class PaymentMethods implements OnInit {
             cft3cuotas: Number(mpVal.cft3cuotas) || 0,
             cft6Cuotas: Number(mpVal.cft6Cuotas) || 0,
             cft12cuotas: Number(mpVal.cft12cuotas) || 0,
-            maxInstallments: Number(mpVal.maxInstallments) || 3
+            maxInstallments: Number(mpVal.maxInstallments) || 3,
+            excludedPaymentMethods,
+            excludedPaymentTypes
           },
           getnet: {
             ...currentConfig?.paymentGateways?.getnet,
@@ -402,16 +417,22 @@ export class PaymentMethods implements OnInit {
   async toggleMPActive(active: boolean) {
     try {
       const mpState = this.state().automaticGateways.mercadopago;
+      const formMethods = this.gatewaysForm.get('mercadopago.excludedPaymentMethods')?.value as string[] | undefined;
+      const formTypes = this.gatewaysForm.get('mercadopago.excludedPaymentTypes')?.value as string[] | undefined;
+      const excludedMethods = Array.isArray(formMethods) ? formMethods : (mpState.excludedPaymentMethods || []);
+      const excludedTypes = Array.isArray(formTypes) ? formTypes : (mpState.excludedPaymentTypes || []);
+
       await this.#paymentMethodsState.updateMPConfig({
         paymentGateways: {
           mercadopago: {
             active,
-            excludedPaymentMethods: mpState.excludedPaymentMethods || [],
-            excludedPaymentTypes: mpState.excludedPaymentTypes || []
+            excludedPaymentMethods: excludedMethods,
+            excludedPaymentTypes: excludedTypes
           }
         }
       });
       this.gatewaysForm.get('mercadopago.active')?.setValue(active);
+      this.storeConfigState.refresh();
       this.#NotificationService.success(`Mercado Pago ${active ? 'activado' : 'desactivado'}`);
     } catch (err) {
       this.#NotificationService.error('Error al actualizar Mercado Pago');
@@ -421,21 +442,28 @@ export class PaymentMethods implements OnInit {
   async toggleMethodExclusion(methodId: string) {
     try {
       const mpState = this.state().automaticGateways.mercadopago;
-      const currentMethods = mpState.excludedPaymentMethods || [];
+      const formMethods = this.gatewaysForm.get('mercadopago.excludedPaymentMethods')?.value as string[] | undefined;
+      const currentMethods = Array.isArray(formMethods) ? formMethods : (mpState.excludedPaymentMethods || []);
       const isExcluded = currentMethods.includes(methodId);
       const updatedMethods = isExcluded
         ? currentMethods.filter(id => id !== methodId)
         : [...currentMethods, methodId];
+
+      this.gatewaysForm.get('mercadopago.excludedPaymentMethods')?.setValue(updatedMethods);
+
+      const formTypes = this.gatewaysForm.get('mercadopago.excludedPaymentTypes')?.value as string[] | undefined;
+      const excludedTypes = Array.isArray(formTypes) ? formTypes : (mpState.excludedPaymentTypes || []);
 
       await this.#paymentMethodsState.updateMPConfig({
         paymentGateways: {
           mercadopago: {
             active: this.gatewaysForm.get('mercadopago.active')?.value ?? mpState.active,
             excludedPaymentMethods: updatedMethods,
-            excludedPaymentTypes: mpState.excludedPaymentTypes || []
+            excludedPaymentTypes: excludedTypes
           }
         }
       });
+      this.storeConfigState.refresh();
       this.#NotificationService.info('Preferencia de tarjeta actualizada');
     } catch (err) {
       this.#NotificationService.error('Error al actualizar tarjeta');
@@ -445,24 +473,35 @@ export class PaymentMethods implements OnInit {
   async toggleTypeExclusion(type: string) {
     try {
       const mpState = this.state().automaticGateways.mercadopago;
-      const currentTypes = mpState.excludedPaymentTypes || [];
+      const formTypes = this.gatewaysForm.get('mercadopago.excludedPaymentTypes')?.value as string[] | undefined;
+      const currentTypes = Array.isArray(formTypes) ? formTypes : (mpState.excludedPaymentTypes || []);
       const isExcluded = currentTypes.includes(type);
       const updatedTypes = isExcluded
         ? currentTypes.filter(t => t !== type)
         : [...currentTypes, type];
 
+      this.gatewaysForm.get('mercadopago.excludedPaymentTypes')?.setValue(updatedTypes);
+
+      const formMethods = this.gatewaysForm.get('mercadopago.excludedPaymentMethods')?.value as string[] | undefined;
+      const excludedMethods = Array.isArray(formMethods) ? formMethods : (mpState.excludedPaymentMethods || []);
+
       await this.#paymentMethodsState.updateMPConfig({
         paymentGateways: {
           mercadopago: {
             active: this.gatewaysForm.get('mercadopago.active')?.value ?? mpState.active,
-            excludedPaymentMethods: mpState.excludedPaymentMethods || [],
+            excludedPaymentMethods: excludedMethods,
             excludedPaymentTypes: updatedTypes
           }
         }
       });
-      this.#NotificationService.info('Preferencia de cupón actualizada');
+      this.storeConfigState.refresh();
+      this.#NotificationService.info(
+        updatedTypes.includes('ticket')
+          ? 'Cupones en efectivo (Rapipago / Pago Fácil) desactivados'
+          : 'Cupones en efectivo (Rapipago / Pago Fácil) activados'
+      );
     } catch (err) {
-      this.#NotificationService.error('Error al actualizar tipo');
+      this.#NotificationService.error('Error al actualizar cupón');
     }
   }
 
