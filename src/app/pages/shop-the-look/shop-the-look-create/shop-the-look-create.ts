@@ -180,20 +180,18 @@ export class ShopTheLookCreateComponent implements OnInit {
     const draft = this.looks()[index];
     if (!draft) return;
 
-    let url = `${getStoreUrl()}/shop-the-look/${slug}`;
-    if (index > 0) {
-      const nameVal = draft.nameControl.value?.trim();
-      const lookSlug = nameVal
-        ? nameVal
-            .toLowerCase()
-            .trim()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-        : (draft.dbId || String(index + 1));
-      url += `?look=${lookSlug}`;
-    }
+    const nameVal = draft.nameControl.value?.trim();
+    const lookSlug = nameVal
+      ? nameVal
+          .toLowerCase()
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+      : (draft.dbId || String(index + 1));
+
+    const url = `${getStoreUrl()}/shop-the-look/${slug}?look=${lookSlug}`;
 
     try {
       await navigator.clipboard.writeText(url);
