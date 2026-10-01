@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
+import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import {
   IAdminNotification,
   INotification,
@@ -19,6 +20,11 @@ import { getTenantSlug } from '../utils/tenant.utils';
 })
 export class WebSocketService {
   private socket: Socket | null = null;
+  private supabase: SupabaseClient | null = null;
+  private adminChannel: RealtimeChannel | null = null;
+  private posChannel: RealtimeChannel | null = null;
+  private terminalChannel: RealtimeChannel | null = null;
+
   private orderState = inject(OrdersStateService);
   private soundService = inject(SoundService);
   #debug = inject(DebugService);
@@ -46,15 +52,23 @@ export class WebSocketService {
   public isScannerConnected = computed(() => this.activeScannersCount() > 0);
   private currentTerminalId: string | null = null;
 
+  /**
+   * Proveedor activo: configurado formalmente desde environment
+   */
+  public get provider(): 'socketio' | 'supabase' {
+    const env = environment as any;
+    return env.realtimeProvider || env.realtime_provider || 'supabase';
+  }
+
   constructor(private authService: AuthService) {
-    this.#debug.log('🔌 Inicializando WebSocketService');
+    this.#debug.log(`🔌 Inicializando WebSocketService [Provider: ${this.provider}]`);
     effect(() => {
       if (this.authService.isAuthenticated()) {
-        this.#debug.log('✅ Usuario admin autenticado, conectando WebSocket...');
+        this.#debug.log(`✅ Usuario admin autenticado, conectando Realtime [${this.provider}]...`);
         this.connect();
       } else {
         this.#debug.log(
-          '❌ Usuario no admin o no autenticado, desconectando WebSocket...',
+          '❌ Usuario no admin o no autenticado, desconectando Realtime...',
         );
         this.disconnect();
       }
@@ -62,18 +76,30 @@ export class WebSocketService {
   }
 
   connect(): void {
+    if (this.provider === 'supabase') {
+      this.connectSupabase();
+    } else {
+      this.connectSocketIo();
+    }
+  }
+
+  private connectSocketIo(): void {
     if (this.socket?.connected) {
-      this.#debug.log('ℹ️ WebSocket ya está conectado');
+      this.#debug.log('ℹ️ WebSocket Socket.io ya está conectado');
       return;
     }
 
-    this.#debug.log('🔌 Creando conexión WebSocket:');
+    this.#debug.log('🔌 Creando conexión WebSocket Socket.io:');
 
     const tenantId = getTenantSlug();
 
-    this.socket = io(environment.socket_config.url, {
+    const env = environment as any;
+    const socketUrl = env.socketUrl || env.socket_config?.url;
+    const socketPath = env.socketPath || env.socket_config?.path;
+
+    this.socket = io(socketUrl, {
       withCredentials: true,
-      path: environment.socket_config.path,
+      path: socketPath,
       extraHeaders: { 'x-tenant-id': tenantId },
       query: { tenantId },
       transports: ['websocket', 'polling'],
@@ -85,6 +111,79 @@ export class WebSocketService {
     });
 
     this.setupEventListeners();
+  }
+
+  private connectSupabase(): void {
+    if (this.adminChannel) {
+      this.#debug.log('ℹ️ Supabase Realtime ya está conectado');
+      return;
+    }
+
+    const env = environment as any;
+    const supabaseUrl = env.supabaseUrl || env.supabase?.url;
+    const supabaseKey = env.supabasePublishableKey || env.supabase?.publishableKey;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('[Supabase Realtime] ⚠️ Falta configuración de Supabase en environment');
+      return;
+    }
+
+    this.#debug.log('⚡ Creando conexión Supabase Realtime...');
+
+    if (!this.supabase) {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+    }
+
+    const tenantId = getTenantSlug();
+    const adminTopic = `tenant:${tenantId}:admins`;
+    const posTopic = `tenant:${tenantId}:pos`;
+
+    // 1. Canal de administradores
+    this.adminChannel = this.supabase.channel(adminTopic);
+    this.adminChannel
+      .on('broadcast', { event: 'admin-notification' }, (payload: any) => {
+        const notification = payload.payload as IAdminNotification;
+        this.#debug.log('📨 [Supabase Realtime] Notificación de Admin:', notification);
+
+        this.handleSideEffects(notification);
+        this.addNotification(notification);
+
+        if (!notification.read) {
+          this.showNotification(notification.title, notification.message, notification.id);
+        }
+      })
+      .on('broadcast', { event: 'pos:barcode_scanned' }, (payload: any) => {
+        this.#debug.log('📷 [Supabase Realtime] Código de barras escaneado:', payload.payload);
+        this.barcodeScanned$.next(payload.payload);
+      })
+      .on('broadcast', { event: 'pos:scanner_status' }, (payload: any) => {
+        this.#debug.log('📱 [Supabase Realtime] Estado de escáner:', payload.payload);
+        this.activeScannersCount.set(payload.payload?.scannersCount || 0);
+        this.activeScanners.set(payload.payload?.scanners || []);
+      })
+      .subscribe((status) => {
+        this.#debug.log(`⚡ [Supabase Realtime] Canal Admin [${adminTopic}] estado: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          this.updateConnectionState(true);
+          if (this.currentTerminalId) {
+            this.joinPosTerminal(this.currentTerminalId);
+          }
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          this.updateConnectionState(false);
+        }
+      });
+
+    // 2. Canal de mostrador POS global
+    this.posChannel = this.supabase.channel(posTopic);
+    this.posChannel
+      .on('broadcast', { event: 'pos:barcode_scanned' }, (payload: any) => {
+        this.barcodeScanned$.next(payload.payload);
+      })
+      .on('broadcast', { event: 'pos:scanner_status' }, (payload: any) => {
+        this.activeScannersCount.set(payload.payload?.scannersCount || 0);
+        this.activeScanners.set(payload.payload?.scanners || []);
+      })
+      .subscribe();
   }
 
   private setupEventListeners(): void {
@@ -144,8 +243,26 @@ export class WebSocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      this.updateConnectionState(false);
     }
+
+    if (this.adminChannel) {
+      this.supabase?.removeChannel(this.adminChannel);
+      this.adminChannel = null;
+    }
+
+    if (this.posChannel) {
+      this.supabase?.removeChannel(this.posChannel);
+      this.posChannel = null;
+    }
+
+    if (this.terminalChannel) {
+      this.supabase?.removeChannel(this.terminalChannel);
+      this.terminalChannel = null;
+    }
+
+    this.updateConnectionState(false);
+    this.activeScannersCount.set(0);
+    this.activeScanners.set([]);
   }
 
   private updateConnectionState(connected: boolean): void {
@@ -187,7 +304,7 @@ export class WebSocketService {
     }
   }
 
-  // Métodos públicos para interactuar con WebSocket
+  // Métodos públicos para interactuar con WebSocket / Realtime
   joinRoom(room: string): void {
     if (this.socket?.connected) {
       this.socket.emit('join-room', room);
@@ -206,8 +323,31 @@ export class WebSocketService {
 
   joinPosTerminal(terminalId: string): void {
     this.currentTerminalId = terminalId;
-    if (this.socket?.connected) {
-      const tenantId = getTenantSlug();
+    const tenantId = getTenantSlug();
+
+    if (this.provider === 'supabase') {
+      if (this.terminalChannel) {
+        this.supabase?.removeChannel(this.terminalChannel);
+        this.terminalChannel = null;
+      }
+      if (this.supabase && terminalId) {
+        const cleanTerminal = terminalId.trim().toLowerCase();
+        const terminalTopic = `tenant:${tenantId}:terminal:${cleanTerminal}`;
+        this.#debug.log(`⚡ [Supabase Realtime] Suscribiendo terminal POS a [${terminalTopic}]`);
+
+        this.terminalChannel = this.supabase.channel(terminalTopic);
+        this.terminalChannel
+          .on('broadcast', { event: 'pos:barcode_scanned' }, (payload: any) => {
+            this.#debug.log(`📷 [Supabase Realtime] Barcode recibido en terminal [${cleanTerminal}]:`, payload.payload);
+            this.barcodeScanned$.next(payload.payload);
+          })
+          .on('broadcast', { event: 'pos:scanner_status' }, (payload: any) => {
+            this.activeScannersCount.set(payload.payload?.scannersCount || 0);
+            this.activeScanners.set(payload.payload?.scanners || []);
+          })
+          .subscribe();
+      }
+    } else if (this.socket?.connected) {
       this.socket.emit('pos:join_terminal', { terminalId, tenantSlug: tenantId });
     }
   }

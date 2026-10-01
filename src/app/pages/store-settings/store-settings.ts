@@ -85,7 +85,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
 
   readonly metaFeedUrl = computed(() => {
     const slug = this.configState.connectionSettings()?.slug || environment.tenantSlug || 'vura';
-    const apiBase = environment.apiUrl || 'https://api.vura.com.ar';
+    const apiBase = environment.apiUrl || 'https://api.vexx.com.ar';
     return `${apiBase}/api/feeds/meta/${slug}`;
   });
 

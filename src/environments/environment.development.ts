@@ -1,10 +1,14 @@
 export const environment = {
   production: false,
+  // apiUrl: 'https://api.vexx.com.ar',
+  // socketUrl: 'https://api.vexx.com.ar',
+  // socketPath: '/api/socket.io',
   apiUrl: 'http://localhost:3001/api',
-  socket_config: {
-    url: 'http://localhost:3001',
-    path: '/api/socket.io',
-  },
+  socketUrl: 'http://localhost:3001',
+  socketPath: '/api/socket.io',
+  supabaseUrl: 'https://savyruhfhrkjqhtaozae.supabase.co',
+  supabasePublishableKey: 'sb_publishable_PNirMf7Zqlq6XceesCDoRg_U0_-th7z',
+  realtimeProvider: 'supabase' as 'socketio' | 'supabase',
   tenantSlug: 'vura',
   brandName: 'NexoCommerce',
 

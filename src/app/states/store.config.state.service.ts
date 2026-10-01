@@ -4,6 +4,7 @@ import { IEcommerceConfig } from '../interfaces/config.interface';
 import { NotificationsService } from '../services/notifications.service';
 import { DebugService } from '../services/debug.service';
 import { httpResource } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -86,7 +87,7 @@ export class StoreConfigStateService {
   signMercadoPago() {
     const clientId = this.#configService.getMasterClientID();
     const tenantSlug = this.#configService.getTenantID() || localStorage.getItem('lastTenantSlug') || 'vura';
-    const redirectUri = 'https://api.vura.com.ar/config/mercadopago/callback';
+    const redirectUri = `${environment.apiUrl}/config/mercadopago/callback`;
 
     const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${tenantSlug}`;
     window.location.href = authUrl;

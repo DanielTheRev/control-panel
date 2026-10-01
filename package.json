@@ -34,6 +34,7 @@
     "@fontsource-variable/nunito": "^5.2.7",
     "@fontsource-variable/roboto": "^5.2.9",
     "@ngxpert/hot-toast": "^6.1.0",
+    "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/postcss": "^4.1.11",
     "chart.js": "^4.5.1",
     "ngx-quill": "^30.0.1",
