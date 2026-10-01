@@ -19,27 +19,63 @@
           <mat-icon class="text-primary">campaign</mat-icon> Información de Campaña
         </h3>
 
-        <form [formGroup]="form" class="flex flex-col lg:flex-row gap-6 items-start">
-          <label class="form-control w-full lg:w-2/5">
-            <span class="label-text font-medium mb-2 text-base-content/70">Título de la Campaña</span>
-            <input type="text" formControlName="title" placeholder="Ej: Look Verano 2026"
-              class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors"
-              [class.input-error]="form.get('title')?.invalid && form.get('title')?.touched" />
-          </label>
-
-          <label class="form-control w-full lg:w-2/5">
-            <span class="label-text font-medium mb-2 text-base-content/70">Subtítulo (Opcional)</span>
-            <input type="text" formControlName="subtitle" placeholder="Ej: Especial Ropa Ligera"
-              class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors" />
-          </label>
-
-          <div class="form-control w-full lg:w-1/5 lg:mt-9">
-            <label
-              class="label cursor-pointer justify-center gap-3 bg-base-200/50 hover:bg-base-200 px-4 py-3 rounded-xl border border-base-200 transition-colors">
-              <span class="label-text font-bold">Visible</span>
-              <input type="checkbox" class="toggle toggle-primary" formControlName="isActive" />
+        <form [formGroup]="form" class="flex flex-col gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <label class="form-control lg:col-span-4">
+              <span class="label-text font-medium mb-2 text-base-content/70">Título de la Campaña</span>
+              <input type="text" formControlName="title" placeholder="Ej: Look Verano 2026"
+                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors"
+                [class.input-error]="form.get('title')?.invalid && form.get('title')?.touched" />
             </label>
+
+            <label class="form-control lg:col-span-3">
+              <span class="label-text font-medium mb-2 text-base-content/70">Subtítulo (Opcional)</span>
+              <input type="text" formControlName="subtitle" placeholder="Ej: Especial Ropa Ligera"
+                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors" />
+            </label>
+
+            <label class="form-control lg:col-span-3">
+              <span class="label-text font-medium mb-2 text-base-content/70 flex items-center justify-between">
+                <span>Slug / URL Amigable</span>
+                <span class="text-[10px] text-primary font-mono">/shop-the-look/...</span>
+              </span>
+              <input type="text" formControlName="slug" placeholder="ej: look-verano-2026"
+                class="input input-bordered w-full bg-base-50 focus:bg-base-100 font-mono text-sm transition-colors" />
+            </label>
+
+            <div class="form-control lg:col-span-2 lg:mt-8">
+              <label
+                class="label cursor-pointer justify-center gap-3 bg-base-200/50 hover:bg-base-200 px-4 py-3 rounded-xl border border-base-200 transition-colors">
+                <span class="label-text font-bold">Visible</span>
+                <input type="checkbox" class="toggle toggle-primary" formControlName="isActive" />
+              </label>
+            </div>
           </div>
+
+          @if (form.value.slug || form.value.title) {
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <div class="text-xs text-base-content/60 flex items-center gap-1.5 bg-base-200/40 px-3 py-1.5 rounded-lg border border-base-200 w-fit">
+                  <mat-icon class="text-sm scale-75 text-primary">link</mat-icon>
+                  <span>Enlace público:</span>
+                  <span class="font-mono text-primary font-bold">/shop-the-look/{{ form.value.slug || '...' }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-outline btn-primary gap-1 shadow-sm"
+                  (click)="copyCampaignLink()"
+                  title="Copiar enlace de la campaña al portapapeles">
+                  <mat-icon class="text-[14px]">content_copy</mat-icon> Copiar Enlace
+                </button>
+              </div>
+              @if (isEditMode()) {
+                <span class="text-[11px] text-base-content/50 flex items-center gap-1">
+                  <mat-icon class="text-[14px] text-warning">info</mat-icon>
+                  Si ya compartiste este enlace, cambiarlo dejará inaccesible la URL anterior.
+                </span>
+              }
+            </div>
+          }
         </form>
       </div>
     </div>
@@ -90,11 +126,20 @@
                   </div>
                 </div>
 
-                <button
-                  class="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  (click)="$event.stopPropagation(); removeLook(i)" title="Eliminar look">
-                  <mat-icon class="text-[18px]">delete_outline</mat-icon>
-                </button>
+                <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-base-content/60 hover:text-primary"
+                    (click)="$event.stopPropagation(); copyLookLink(i)" title="Copiar enlace directo de este look">
+                    <mat-icon class="text-[17px]">share</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-error"
+                    (click)="$event.stopPropagation(); removeLook(i)" title="Eliminar look">
+                    <mat-icon class="text-[17px]">delete_outline</mat-icon>
+                  </button>
+                </div>
               </a>
             </li>
             }
@@ -108,11 +153,20 @@
           <div class="card-body p-6">
             <div class="flex items-center justify-between mb-4 border-b border-base-200 pb-4">
               <h3 class="font-bold text-lg">Configuración del Look</h3>
-              <label class="cursor-pointer flex items-center gap-2">
-                <span class="label-text text-xs font-bold uppercase text-base-content/50">Habilitado</span>
-                <input type="checkbox" class="toggle toggle-primary toggle-sm" [checked]="activeLook!.isActive"
-                  (change)="toggleActiveLookStatus()" />
-              </label>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn btn-xs btn-ghost text-base-content/70 hover:text-primary gap-1 border border-base-300"
+                  (click)="copyLookLink(activeTabIndex())"
+                  title="Copiar enlace directo a este look">
+                  <mat-icon class="text-[15px]">share</mat-icon> Copiar Link
+                </button>
+                <label class="cursor-pointer flex items-center gap-1.5 ml-1">
+                  <span class="label-text text-xs font-bold uppercase text-base-content/50">Habilitado</span>
+                  <input type="checkbox" class="toggle toggle-primary toggle-sm" [checked]="activeLook!.isActive"
+                    (change)="toggleActiveLookStatus()" />
+                </label>
+              </div>
             </div>
 
             <label class="form-control w-full mb-4">

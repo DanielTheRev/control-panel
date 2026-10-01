@@ -3,7 +3,7 @@ import { environment } from '../../environments/environment';
 /**
  * Returns the tenant slug for the current session.
  * - localhost: reads from environment.tenantSlug
- * - production: extracts from subdomain (e.g. bellaisabella.nexocommerce.com → "bellaisabella")
+ * - production: extracts from subdomain (e.g. bellaisabella.vexx.com.ar → "bellaisabella")
  */
 export function getTenantSlug(): string {
   const hostname = window.location.hostname;
@@ -16,7 +16,7 @@ export function getTenantSlug(): string {
 /**
  * Returns the public store URL for the current tenant.
  * - If environment.storeUrl is set, use it.
- * - Otherwise, builds it from the tenant slug: https://{slug}.nexocommerce.com
+ * - Otherwise, builds it from the tenant slug: https://{slug}.vexx.com.ar
  */
 export function getStoreUrl(): string {
   // if (environment.storeUrl) {
@@ -26,5 +26,8 @@ export function getStoreUrl(): string {
     return 'http://localhost:4200';
   }
   const slug = getTenantSlug();
-  return `https://${slug}.nexocommerce.com`;
+  if (slug === 'vura') {
+    return 'https://vura.com.ar';
+  }
+  return `https://${slug}.vexx.com.ar`;
 }

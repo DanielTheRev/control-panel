@@ -281,7 +281,7 @@ export class WebSocketService {
     const options: NotificationOptions = {
       body,
       icon: '/favicon.ico',
-      tag: notificationId || 'nexocommerce-admin',
+      tag: notificationId || 'vexx-admin',
     };
 
     const createNotification = () => {

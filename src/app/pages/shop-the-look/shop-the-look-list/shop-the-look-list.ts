@@ -3,9 +3,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterModule } from '@angular/router';
 import { SidebarService } from '../../../services/sidebar.service';
+import { NotificationsService } from '../../../services/notifications.service';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { PageLayout } from '../../../shared/components/page-layout/page-layout';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
+import { getStoreUrl } from '../../../utils/tenant.utils';
+import { IShopTheLook } from '../../../interfaces/shop-the-look.interface';
 
 @Component({
   selector: 'app-shop-the-look-list',
@@ -23,6 +26,7 @@ import { ShopTheLookStateService } from '../../../states/shop-the-look.state.ser
 export class ShopTheLookListComponent implements OnInit {
   #sidebarService = inject(SidebarService);
   #shopTheLookState = inject(ShopTheLookStateService);
+  #notificationService = inject(NotificationsService);
 
   campaigns = this.#shopTheLookState.campaigns;
 
@@ -33,6 +37,17 @@ export class ShopTheLookListComponent implements OnInit {
   }
 
   ngOnInit() {
+  }
+
+  async copyLink(campaign: IShopTheLook) {
+    const slug = campaign.slug || campaign._id;
+    const url = `${getStoreUrl()}/shop-the-look/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      this.#notificationService.success(`Enlace de "${campaign.title}" copiado`);
+    } catch {
+      this.#notificationService.error('No se pudo copiar al portapapeles');
+    }
   }
 
   async deleteCampaign(id: string) {

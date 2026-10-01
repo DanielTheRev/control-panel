@@ -223,7 +223,7 @@ export class KioscoProductCreate implements OnInit {
   }
 
   /**
-   * Búsqueda inteligente en el Catálogo Global Maestro de NexoCommerce
+   * Búsqueda inteligente en el Catálogo Global Maestro de Vexx
    */
   async searchBarcodeData() {
     const rawBarcode = this.kioscoForm.get('barcode')?.value?.trim();

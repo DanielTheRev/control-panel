@@ -694,7 +694,7 @@ export class ProductList {
 
       let content = `# 🏢 REPORTE INTEGRAL DE E-COMMERCE Y CATÁLOGO DE PRODUCTOS (LLM CONTEXT)\n`;
       content += `• Fecha y Hora: ${reportTimestamp}\n`;
-      content += `• Plataforma: NexoCommerce SaaS (Multi-Tenant E-Commerce Suite)\n\n`;
+      content += `• Plataforma: Vexx SaaS (Multi-Tenant E-Commerce Suite)\n\n`;
 
       // ==========================================
       // 1. CONTEXTO GLOBAL DEL NEGOCIO
@@ -2127,7 +2127,7 @@ export class ProductList {
 
     const typeLabel = this.productTypeOptions.find((o) => o.type === pType)?.label || pType;
 
-    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Genera un array JSON válido con nuevos productos del rubro '${typeLabel}' siguiendo estrictamente este formato y tipos de datos:
+    const prompt = `Actúa como especialista de catálogo y e-commerce para Vexx. Genera un array JSON válido con nuevos productos del rubro '${typeLabel}' siguiendo estrictamente este formato y tipos de datos:
 
 DICCIONARIO DE TIPOS Y PROPIEDADES ACEPTADAS:
 ${dictionary}
@@ -2356,7 +2356,7 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
     const customInstruction = this.aiCustomInstruction().trim();
     const typeSummary = this.selectedProductsTypesSummary();
 
-    const prompt = `Actúa como especialista de catálogo y e-commerce para NexoCommerce. Necesito actualizar EXCLUSIVAMENTE las siguientes propiedades de estos ${compactProducts.length} productos (${typeSummary.breakdown}): [${activeProps.map((p) => p.label).join(', ')}].
+    const prompt = `Actúa como especialista de catálogo y e-commerce para Vexx. Necesito actualizar EXCLUSIVAMENTE las siguientes propiedades de estos ${compactProducts.length} productos (${typeSummary.breakdown}): [${activeProps.map((p) => p.label).join(', ')}].
 
 LISTA ACTUAL DE PRODUCTOS CON SUS IDs, TIPOS Y DATOS EXISTENTES:
 \`\`\`json

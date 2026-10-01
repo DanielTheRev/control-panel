@@ -1,6 +1,6 @@
 {
-  "name": "control-panel",
-  "short_name": "control-panel",
+  "name": "Vexx Panel",
+  "short_name": "Vexx",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#000000",

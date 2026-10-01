@@ -41,6 +41,7 @@ export interface IShopTheLook {
   _id: string;
   title: string;
   subtitle: string;
+  slug?: string;
   isActive: boolean;
   looks: ILookItem[];
   createdAt: string;

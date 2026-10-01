@@ -14,6 +14,7 @@ import { PageLayout } from '../../../shared/components/page-layout/page-layout';
 import { ProductSearchDialogComponent } from '../../../shared/components/product-search-dialog/product-search-dialog';
 import { SingleImageUpload } from '../../../shared/components/single-image-upload/single-image-upload';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
+import { getStoreUrl } from '../../../utils/tenant.utils';
 
 interface ILookDraft {
   internalId: string;
@@ -58,6 +59,7 @@ export class ShopTheLookCreateComponent implements OnInit {
   form: FormGroup = this.#fb.group({
     title: ['', Validators.required],
     subtitle: [''],
+    slug: [''],
     isActive: [true]
   });
 
@@ -83,9 +85,21 @@ export class ShopTheLookCreateComponent implements OnInit {
     if (id) {
       this.isEditMode.set(true);
       this.loadCampaign(id);
-    } else {
-      // Comenzamos con 0 looks por decisión de negocio
     }
+
+    this.form.get('title')?.valueChanges.subscribe(val => {
+      const slugCtrl = this.form.get('slug');
+      if (!slugCtrl?.dirty) {
+        const autoSlug = (val || '')
+          .toLowerCase()
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        slugCtrl?.setValue(autoSlug, { emitEvent: false });
+      }
+    });
   }
 
   generateInternalId() { return Math.random().toString(36).substring(2, 9); }
@@ -142,6 +156,54 @@ export class ShopTheLookCreateComponent implements OnInit {
     this.activeHotspotIndex.set(null);
   }
 
+  async copyCampaignLink() {
+    const slug = this.form.value.slug?.trim() || this.originalCampaign()?.slug || this.lookID();
+    if (!slug) {
+      this.#notificationService.warning('Primero define un título o slug para la campaña.');
+      return;
+    }
+    const url = `${getStoreUrl()}/shop-the-look/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      this.#notificationService.success('¡Enlace de la campaña copiado al portapapeles!');
+    } catch {
+      this.#notificationService.error('No se pudo copiar al portapapeles.');
+    }
+  }
+
+  async copyLookLink(index: number) {
+    const slug = this.form.value.slug?.trim() || this.originalCampaign()?.slug || this.lookID();
+    if (!slug) {
+      this.#notificationService.warning('Primero define un título o slug para la campaña.');
+      return;
+    }
+    const draft = this.looks()[index];
+    if (!draft) return;
+
+    let url = `${getStoreUrl()}/shop-the-look/${slug}`;
+    if (index > 0) {
+      const nameVal = draft.nameControl.value?.trim();
+      const lookSlug = nameVal
+        ? nameVal
+            .toLowerCase()
+            .trim()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        : (draft.dbId || String(index + 1));
+      url += `?look=${lookSlug}`;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      const lookName = draft.nameControl.value?.trim() || `Look ${index + 1}`;
+      this.#notificationService.success(`¡Enlace de "${lookName}" copiado!`);
+    } catch {
+      this.#notificationService.error('No se pudo copiar al portapapeles.');
+    }
+  }
+
   setActiveTab(index: number) {
     this.activeTabIndex.set(index);
     this.activeHotspotIndex.set(null);
@@ -158,6 +220,7 @@ export class ShopTheLookCreateComponent implements OnInit {
         this.form.patchValue({
           title: campaign.title,
           subtitle: campaign.subtitle,
+          slug: campaign.slug || '',
           isActive: campaign.isActive !== undefined ? campaign.isActive : true
         });
 
@@ -383,6 +446,7 @@ export class ShopTheLookCreateComponent implements OnInit {
       const formData = new FormData();
       formData.append('title', this.form.value.title);
       if (this.form.value.subtitle) formData.append('subtitle', this.form.value.subtitle);
+      if (this.form.value.slug) formData.append('slug', this.form.value.slug.trim().toLowerCase());
       formData.append('isActive', this.form.value.isActive);
 
       // JSON Array construction

@@ -36,6 +36,9 @@
                   @if(campaign.subtitle) {
                     <div class="text-xs text-base-content/50">{{ campaign.subtitle }}</div>
                   }
+                  @if(campaign.slug) {
+                    <div class="text-[11px] font-mono text-primary/80">/shop-the-look/{{ campaign.slug }}</div>
+                  }
                 </td>
                   <span class="badge badge-neutral badge-sm">{{ campaign.looks.length || 0 }} looks</span>
                 <td>
@@ -44,10 +47,13 @@
                   </span>
                 </td>
                 <td class="text-right">
-                  <a [routerLink]="['edit', campaign._id]" class="btn btn-sm btn-ghost btn-circle">
+                  <button (click)="copyLink(campaign)" class="btn btn-sm btn-ghost btn-circle" title="Copiar enlace público de la campaña">
+                    <mat-icon class="text-base-content/60">content_copy</mat-icon>
+                  </button>
+                  <a [routerLink]="['edit', campaign._id]" class="btn btn-sm btn-ghost btn-circle" title="Editar">
                     <mat-icon class="text-base-content/50">edit</mat-icon>
                   </a>
-                  <button (click)="deleteCampaign(campaign._id!)" class="btn btn-sm btn-ghost btn-circle text-error">
+                  <button (click)="deleteCampaign(campaign._id!)" class="btn btn-sm btn-ghost btn-circle text-error" title="Eliminar">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </td>
