@@ -263,8 +263,14 @@
         @if (profile.features().showBanners) {
           <div class="flex flex-col gap-0.5">
             @if (isExpanded) {
-              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing & Diseño</span>
             }
+            <a routerLink="/home/home-layout" routerLinkActive="active" class="menu-item"
+              [class.justify-center]="isCollapsed"
+              [matTooltip]="isCollapsed ? 'Diseño del Home' : ''" matTooltipPosition="right">
+              <mat-icon>dashboard_customize</mat-icon>
+              @if (isExpanded) { <span class="menu-text">Diseño del Home</span> }
+            </a>
             <a routerLink="/home/banners" routerLinkActive="active" class="menu-item"
               [class.justify-center]="isCollapsed"
               [matTooltip]="isCollapsed ? 'Banners' : ''" matTooltipPosition="right">
@@ -561,7 +567,11 @@
           <!-- MARKETING -->
           @if (profile.features().showBanners) {
             <div class="flex flex-col gap-0.5">
-              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing</span>
+              <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">Marketing & Diseño</span>
+              <a routerLink="/home/home-layout" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
+                <mat-icon>dashboard_customize</mat-icon>
+                <span class="menu-text">Diseño del Home</span>
+              </a>
               <a routerLink="/home/banners" routerLinkActive="active" (click)="sidebarService.closeMobile()" class="menu-item">
                 <mat-icon>view_carousel</mat-icon>
                 <span class="menu-text">Banners</span>

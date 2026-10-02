@@ -27,6 +27,12 @@ export const fashionRoutes: Routes = [
     ]
   },
   {
+    path: 'home-layout',
+    title: 'Diseño del Home',
+    canActivate: [businessTypeGuard(['fashion', 'general', 'tech_electronics'])],
+    loadComponent: () => import('../pages/home-layout/home-layout').then(c => c.HomeLayoutComponent),
+  },
+  {
     path: 'banners',
     canActivate: [businessTypeGuard(['fashion', 'general'])],
     children: [
