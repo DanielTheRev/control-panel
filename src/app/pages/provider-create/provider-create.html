@@ -72,6 +72,20 @@
                   formControlName="zipCode" />
               </fieldset>
 
+              @if (providerForm.get('address.street')?.value && providerForm.get('address.street')?.value !== 'Sin datos') {
+                <div class="col-span-2 pt-1">
+                  <a
+                    [href]="getGoogleMapsUrl()"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-xs btn-outline btn-primary gap-1.5 font-bold"
+                    title="Ver dirección en Google Maps"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">map</mat-icon>
+                    Ver en Google Maps
+                  </a>
+                </div>
+              }
             </div>
             <span class="block text-xl">Datos de pago</span>
             <div class="grid grid-cols-2 gap-4" formGroupName="paymentData">

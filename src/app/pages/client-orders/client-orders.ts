@@ -536,4 +536,41 @@ export class ClientOrders {
         paymentStatus === PaymentStatus.APPROVED)
     );
   }
+
+  getGoogleMapsUrl(order: IOrder): string {
+    const pickup = order.shippingInfo?.pickupPoint;
+    if (pickup?.address) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickup.address)}`;
+    }
+    const addr = order.shippingInfo?.shippingAddress;
+    if (addr?.street) {
+      const parts = [
+        addr.street,
+        addr.number,
+        addr.city,
+        addr.state,
+        addr.zipCode || addr.postalCode ? `CP ${addr.zipCode || addr.postalCode}` : '',
+        'Argentina'
+      ].filter(Boolean);
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}`;
+    }
+    return '';
+  }
+
+  copyAddress(order: IOrder, event?: Event): void {
+    if (event) event.stopPropagation();
+    const pickup = order.shippingInfo?.pickupPoint;
+    if (pickup?.address) {
+      navigator.clipboard.writeText(pickup.address);
+      this.notifications.success('Dirección copiada');
+      return;
+    }
+    const addr = order.shippingInfo?.shippingAddress;
+    if (addr?.street) {
+      const text = `${addr.street} ${addr.number || ''}, ${addr.city || ''} ${addr.state || ''}`.trim();
+      navigator.clipboard.writeText(text);
+      this.notifications.success('Dirección copiada');
+    }
+  }
 }
+

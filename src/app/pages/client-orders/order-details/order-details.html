@@ -330,6 +330,76 @@
                       </div>
                     </div>
 
+                    <!-- Datos y Dirección del Proveedor (Snapshot) -->
+                    @if (item.productSnapshot.providerSnapshot; as prov) {
+                      <div class="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div class="flex flex-wrap items-center gap-2 min-w-0">
+                          <span class="badge badge-xs bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider py-2 px-2 shrink-0">
+                            Proveedor: {{ prov.name }}
+                          </span>
+                          @if (getProviderAddressText(prov.address); as addrText) {
+                            <span class="text-xs text-base-content/80 font-medium flex items-center gap-1 truncate" [title]="addrText">
+                              <mat-icon class="text-error text-[14px]! w-3.5! h-3.5! shrink-0">location_on</mat-icon>
+                              <span class="truncate">{{ addrText }}</span>
+                            </span>
+                          }
+                        </div>
+
+                        <div class="flex items-center flex-wrap gap-1.5 shrink-0">
+                          @if (getGoogleMapsUrlFromAddress(prov.address); as mapsUrl) {
+                            <a
+                              [href]="mapsUrl"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="btn btn-xs btn-outline btn-primary gap-1 font-bold h-7 min-h-7 px-2"
+                              title="Ver en Google Maps"
+                            >
+                              <mat-icon class="text-[13px]! w-3.5! h-3.5!">map</mat-icon>
+                              <span>Google Maps</span>
+                            </a>
+                          }
+
+                          @if (getProviderAddressText(prov.address); as addrText) {
+                            <button
+                              type="button"
+                              (click)="copyText(addrText, 'Dirección del proveedor copiada')"
+                              class="btn btn-xs btn-ghost text-base-content/70 hover:bg-base-200 gap-1 font-semibold h-7 min-h-7 px-2"
+                              title="Copiar dirección"
+                            >
+                              <mat-icon class="text-[13px]! w-3.5! h-3.5!">content_copy</mat-icon>
+                              <span>Copiar</span>
+                            </button>
+                          }
+
+                          @if (prov.phone) {
+                            <a
+                              [href]="getProviderWhatsAppUrl(prov.phone, prov.name)"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="btn btn-xs bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 border border-emerald-600/30 gap-1 font-bold h-7 min-h-7 px-2"
+                              title="Contactar al proveedor por WhatsApp"
+                            >
+                              <mat-icon class="text-[13px]! w-3.5! h-3.5!">chat</mat-icon>
+                              <span>WhatsApp</span>
+                            </a>
+                          }
+
+                          @if (getItemProviderLink(item); as pLink) {
+                            <a
+                              [href]="pLink"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="btn btn-xs btn-ghost text-indigo-600 hover:bg-indigo-500/10 gap-1 font-bold h-7 min-h-7 px-2"
+                              title="Abrir producto en la tienda del mayorista"
+                            >
+                              <mat-icon class="text-[13px]! w-3.5! h-3.5!">open_in_new</mat-icon>
+                              <span>Mayorista</span>
+                            </a>
+                          }
+                        </div>
+                      </div>
+                    }
+
                     <!-- Fila Inferior: Desglose Financiero por Unidad -->
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2.5 border-t border-base-300/50 text-xs">
                       <div>
@@ -665,6 +735,31 @@
                       </span>
                     </div>
                   </div>
+                </div>
+              }
+
+              <!-- Acciones de Destino Maps & Copiar -->
+              @if (getCustomerShippingMapsUrl(); as destMapsUrl) {
+                <div class="flex items-center gap-2 pt-2 border-t border-base-200">
+                  <a
+                    [href]="destMapsUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-xs btn-outline btn-primary gap-1 font-bold flex-1"
+                    title="Abrir destino en Google Maps"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">map</mat-icon>
+                    <span>Ver en Google Maps</span>
+                  </a>
+                  <button
+                    type="button"
+                    (click)="copyText(getCustomerShippingAddressText(), 'Dirección de envío copiada')"
+                    class="btn btn-xs btn-ghost border border-base-300 hover:bg-base-200 gap-1 font-semibold"
+                    title="Copiar dirección de destino"
+                  >
+                    <mat-icon class="text-[13px]! w-3.5! h-3.5!">content_copy</mat-icon>
+                    <span>Copiar</span>
+                  </button>
                 </div>
               }
 

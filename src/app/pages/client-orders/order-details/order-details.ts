@@ -12,6 +12,7 @@ import { OrdersService } from '../../../services/orders.service';
 import { PaymentType } from '../../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../../interfaces/shipping.interface';
 import { ArcaService, IInvoiceResponse } from '../../../services/arca.service';
+import { NotificationsService } from '../../../services/notifications.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -37,6 +38,7 @@ export class OrderDetails implements OnInit {
   private orderState = inject(OrdersStateService);
   private ordersService = inject(OrdersService);
   private arcaService = inject(ArcaService);
+  private notifications = inject(NotificationsService);
   private location = inject(Location);
   public paymentType = PaymentType;
   public paymentStatus = PaymentStatus;
@@ -244,9 +246,11 @@ export class OrderDetails implements OnInit {
 
   copied = signal<boolean>(false);
 
-  copyText(text: string) {
+  copyText(text: string, successMsg = 'Copiado al portapapeles'): void {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     this.copied.set(true);
+    this.notifications.success(successMsg);
     setTimeout(() => this.copied.set(false), 2000);
   }
 
@@ -587,5 +591,93 @@ export class OrderDetails implements OnInit {
     const url = this.arcaService.getInvoicePdfUrl(invId);
     window.open(url, '_blank');
   }
+
+  // ─── Google Maps & Proveedores ───
+
+  getGoogleMapsUrlFromAddress(address: any): string {
+    if (!address) return '';
+    if (typeof address === 'string') {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+    const parts = [
+      address.street,
+      address.number && address.number !== 'Sin datos' ? address.number : '',
+      address.city && address.city !== 'Sin datos' ? address.city : '',
+      address.province || address.state || '',
+      address.zipCode || address.postalCode ? `CP ${address.zipCode || address.postalCode}` : '',
+      'Argentina'
+    ].filter(Boolean);
+    if (parts.length === 0) return '';
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}`;
+  }
+
+  getCustomerShippingMapsUrl(): string {
+    const o = this.order();
+    if (!o) return '';
+    const pickup = o.shippingInfo?.pickupPoint;
+    if (pickup?.address) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickup.address)}`;
+    }
+    const addr = o.shippingInfo?.shippingAddress;
+    if (addr?.street) {
+      return this.getGoogleMapsUrlFromAddress(addr);
+    }
+    return '';
+  }
+
+  getCustomerShippingAddressText(): string {
+    const o = this.order();
+    if (!o) return '';
+    const pickup = o.shippingInfo?.pickupPoint;
+    if (pickup?.address) {
+      return pickup.address;
+    }
+    const addr = o.shippingInfo?.shippingAddress;
+    if (addr?.street) {
+      const parts = [
+        `${addr.street} ${addr.number || ''}`.trim(),
+        addr.apartment ? `(Depto ${addr.apartment})` : '',
+        addr.city,
+        addr.state,
+        addr.zipCode || addr.postalCode ? `CP ${addr.zipCode || addr.postalCode}` : '',
+        'Argentina'
+      ].filter(Boolean);
+      return parts.join(', ');
+    }
+    return '';
+  }
+
+  getProviderAddressText(addr: any): string {
+    if (!addr || typeof addr !== 'object') return '';
+    const parts = [
+      addr.street,
+      addr.number && addr.number !== 'Sin datos' ? addr.number : '',
+      addr.city && addr.city !== 'Sin datos' ? addr.city : '',
+      addr.province && addr.province !== 'Sin datos' ? addr.province : ''
+    ].filter(Boolean);
+    return parts.join(', ');
+  }
+
+  getProviderWhatsAppUrl(phone?: string, providerName?: string): string {
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '');
+    const num = cleaned.startsWith('54') ? cleaned : `549${cleaned}`;
+    const text = `Hola ${providerName || ''}, te contacto de la tienda sobre una reposición de pedido.`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(text.trim())}`;
+  }
+
+  getItemProviderLink(item: IOrderItem): string {
+    const it = item as any;
+    return (
+      it.linkProductProvider ||
+      it.productSnapshot?.linkProductProvider ||
+      it.productSnapshot?.providerLink ||
+      it.productSnapshot?.providerSnapshot?.linkProductProvider ||
+      it.productSnapshot?.providerSnapshot?.providerLink ||
+      it.product?.linkProductProvider ||
+      ''
+    );
+  }
 }
+
 
