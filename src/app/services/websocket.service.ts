@@ -230,11 +230,17 @@ export class WebSocketService {
   }
 
   private handleSideEffects(notification: IAdminNotification) {
-    // Si es una nueva orden, actualizar el estado
+    // Si es una nueva orden, agregarla al estado
     if (notification.type === NotificationType.NEW_ORDER) {
-      this.orderState.addNewOrder(notification.data);
+      if (notification.data) {
+        this.orderState.addNewOrder(notification.data);
+      }
       if (!notification.read) {
         this.soundService.startOrderAlarm();
+      }
+    } else if (notification.type === NotificationType.ORDER_STATUS_CHANGED) {
+      if (notification.data) {
+        this.orderState.updateOrderState(notification.data);
       }
     }
   }

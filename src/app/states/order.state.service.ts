@@ -72,9 +72,19 @@ export class OrdersStateService {
     this.state.update((oldState) => {
       this.debug.log('Agregando nueva compra al estado de ordenes', order);
       if (!oldState) return oldState;
+      const exists = oldState.data.some((ordr) => ordr._id === order._id);
+      if (exists) {
+        return {
+          ...oldState,
+          data: oldState.data.map((ordr) => (ordr._id === order._id ? sanitizeOrder(order) : ordr)),
+        };
+      }
       return {
         data: [sanitizeOrder(order), ...oldState.data],
-        pagination: oldState.pagination,
+        pagination: {
+          ...oldState.pagination,
+          totalItems: (oldState.pagination?.totalItems || 0) + 1,
+        },
       };
     });
   }
@@ -82,6 +92,17 @@ export class OrdersStateService {
   updateOrderState(order: Partial<IOrder>) {
     this.state.update((oldState) => {
       if (!oldState) return oldState;
+      const exists = oldState.data.some((ordr) => ordr._id === order._id);
+      if (!exists && order._id) {
+        return {
+          ...oldState,
+          data: [sanitizeOrder(order as IOrder), ...oldState.data],
+          pagination: {
+            ...oldState.pagination,
+            totalItems: (oldState.pagination?.totalItems || 0) + 1,
+          },
+        };
+      }
       return {
         ...oldState,
         data: oldState.data.map((ordr) => {

@@ -1043,15 +1043,17 @@ export class ProductList {
 
           const resolvedCombined: string[] = [];
           combineList.forEach((item: any) => {
-            if (typeof item === 'object' && item !== null && item.model) {
-              resolvedCombined.push(`• ${item.model} (Marca: ${item.brand || 'Vura'} | Categoría: ${item.category || 'Indumentaria'})`);
+            const prodObj = (item && typeof item === 'object') ? (item.product || item) : item;
+            const colorStr = (item && typeof item === 'object' && item.color) ? ` [Color: ${item.color}]` : '';
+            if (typeof prodObj === 'object' && prodObj !== null && prodObj.model) {
+              resolvedCombined.push(`• ${prodObj.model}${colorStr} (Marca: ${prodObj.brand || 'Vura'} | Categoría: ${prodObj.category || 'Indumentaria'})`);
             } else {
-              const id = typeof item === 'string' ? item : item?._id?.toString();
+              const id = typeof prodObj === 'string' ? prodObj : prodObj?._id?.toString();
               const found = allKnownMap.get(id);
               if (found) {
-                resolvedCombined.push(`• ${found.model} (Marca: ${found.brand || 'Vura'} | Categoría: ${found.category || 'Indumentaria'})`);
+                resolvedCombined.push(`• ${found.model}${colorStr} (Marca: ${found.brand || 'Vura'} | Categoría: ${found.category || 'Indumentaria'})`);
               } else if (id) {
-                resolvedCombined.push(`• Prenda ID: ${id}`);
+                resolvedCombined.push(`• Prenda ID: ${id}${colorStr}`);
               }
             }
           });
@@ -2212,8 +2214,10 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
 
       if (Array.isArray((p as any).combineWith) && (p as any).combineWith.length > 0) {
         item.outfitCombinaCon = (p as any).combineWith.map((c: any) => {
-          if (typeof c === 'object' && c?.model) return `${c.model} (${c.brand || 'Vura'} - ${c.category || ''})`.trim();
-          return typeof c === 'string' ? c : c?._id;
+          const prodObj = (c && typeof c === 'object') ? (c.product || c) : c;
+          const colorStr = (c && typeof c === 'object' && c.color) ? ` [${c.color}]` : '';
+          if (typeof prodObj === 'object' && prodObj?.model) return `${prodObj.model}${colorStr} (${prodObj.brand || 'Vura'} - ${prodObj.category || ''})`.trim();
+          return typeof prodObj === 'string' ? `${prodObj}${colorStr}` : prodObj?._id;
         });
       }
 

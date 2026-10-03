@@ -27,13 +27,18 @@ import { IProduct } from '../../../interfaces/product.interface';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
 
+export interface ICombineWithItemValue {
+  product: string;
+  color?: string | null;
+}
+
 export interface ClothingFormValue {
   gender: string;
   fit: string;
   material: string;
   sizeType: string;
   season: string;
-  combineWith: string[];
+  combineWith: ICombineWithItemValue[];
 }
 
 @Component({
@@ -85,40 +90,120 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
     { value: 'Talle Único', label: 'Talle Único' },
   ];
 
-  get selectedCombineIds(): string[] {
-    return this.clothingForm?.get('combineWith')?.value || [];
+  get selectedCombineItems(): ICombineWithItemValue[] {
+    const raw = this.clothingForm?.get('combineWith')?.value;
+    if (!Array.isArray(raw)) return [];
+    const items: ICombineWithItemValue[] = [];
+    for (const item of raw) {
+      if (typeof item === 'string' && item) {
+        items.push({ product: item, color: null });
+      } else if (item && typeof item === 'object') {
+        const pId = item.product || item._id;
+        const resolvedId = typeof pId === 'object' ? pId._id : (pId ? String(pId) : null);
+        if (resolvedId) {
+          items.push({ product: resolvedId, color: item.color || null });
+        }
+      }
+    }
+    return items;
   }
 
-  // Lista de productos combinados seleccionados con sus datos completos (nombre, foto, categoría)
-  selectedCombinedProducts = computed(() => {
+  // Lista de items combinados seleccionados con sus datos completos para mostrar
+  selectedCombinedDisplayList = computed(() => {
     const map = this.knownProductsMap();
-    const ids = this.selectedCombineIds;
-    return ids.map(
-      (id) =>
-        map.get(id) ||
-        ({
-          _id: id,
-          model: 'Prenda asociada',
-          category: '',
-          brand: '',
-          images: [],
-        } as unknown as IProduct),
-    );
+    const items = this.selectedCombineItems;
+    return items.map((item) => {
+      const prod = map.get(item.product);
+      let image = '/no-image.jpg';
+      let colorHex: string | undefined = undefined;
+
+      if (prod) {
+        if (item.color && (prod as any).variants?.length) {
+          const matchVar = (prod as any).variants.find(
+            (v: any) => v.color?.name?.toLowerCase() === item.color?.toLowerCase(),
+          );
+          if (matchVar) {
+            image = matchVar.imageReference?.url || this.getProductImage(prod);
+            colorHex = matchVar.color?.hex;
+          } else {
+            image = this.getProductImage(prod);
+          }
+        } else {
+          image = this.getProductImage(prod);
+        }
+      }
+
+      return {
+        productId: item.product,
+        color: item.color,
+        colorHex,
+        model: prod?.model || 'Prenda asociada',
+        brand: prod?.brand || '',
+        category: prod?.category || '',
+        image,
+        key: `${item.product}_${item.color || 'default'}`,
+      };
+    });
   });
 
-  // Productos sugeridos en el buscador (excluye el producto actual y los ya seleccionados)
-  availableProducts = computed(() => {
+  // Opciones desplegadas por variante de color (Opción A)
+  availableCombineOptions = computed(() => {
     const all = this.searchResults();
     const currentId = this.currentProductId();
-    const selectedIds = new Set(this.selectedCombineIds);
+    const selectedKeys = new Set(
+      this.selectedCombineItems.map((i) => `${i.product}_${i.color || 'default'}`),
+    );
 
-    return all
-      .filter((p) => {
-        if (currentId && p._id === currentId) return false;
-        if (selectedIds.has(p._id)) return false;
-        return true;
-      })
-      .slice(0, 15);
+    const options: {
+      product: IProduct;
+      colorName: string | null;
+      colorHex?: string;
+      image: string;
+      key: string;
+    }[] = [];
+
+    for (const p of all) {
+      if (currentId && p._id === currentId) continue;
+
+      const variants = ((p as any).variants || []).filter((v: any) => v.isActive !== false);
+      const colorMap = new Map<string, any>();
+
+      for (const v of variants) {
+        const cName = v.color?.name?.trim();
+        if (cName && !colorMap.has(cName.toLowerCase())) {
+          colorMap.set(cName.toLowerCase(), v);
+        }
+      }
+
+      if (colorMap.size > 0) {
+        for (const [_, v] of colorMap.entries()) {
+          const colorName = v.color?.name || null;
+          const key = `${p._id}_${colorName || 'default'}`;
+          if (!selectedKeys.has(key)) {
+            options.push({
+              product: p,
+              colorName,
+              colorHex: v.color?.hex,
+              image: v.imageReference?.url || this.getProductImage(p),
+              key,
+            });
+          }
+        }
+      } else {
+        const key = `${p._id}_default`;
+        if (!selectedKeys.has(key)) {
+          options.push({
+            product: p,
+            colorName: null,
+            colorHex: undefined,
+            image: this.getProductImage(p),
+            key,
+          });
+        }
+      }
+    }
+
+    return options.slice(0, 20);
   });
 
   constructor(private fb: FormBuilder) {
@@ -128,7 +213,7 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
       material: [''],
       sizeType: [''],
       season: [''],
-      combineWith: [[] as string[]],
+      combineWith: [[] as ICombineWithItemValue[]],
     });
 
     this.clothingForm.valueChanges.subscribe(() => {
@@ -177,24 +262,34 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
     const v = this.value();
     if (!v) return;
 
-    let initialCombine: string[] = [];
+    let initialCombine: ICombineWithItemValue[] = [];
     if (Array.isArray(v.combineWith)) {
       v.combineWith.forEach((item: any) => {
-        if (typeof item === 'object' && item && item._id) {
-          initialCombine.push(item._id);
-          this.knownProductsMap.update((map) => {
-            const next = new Map(map);
-            next.set(item._id, item as IProduct);
-            return next;
-          });
+        if (typeof item === 'object' && item) {
+          const prodObj = item.product || item;
+          const prodId = typeof prodObj === 'object' ? prodObj._id : prodObj;
+          const color = item.color || null;
+          if (prodId) {
+            initialCombine.push({ product: String(prodId), color });
+            if (typeof prodObj === 'object' && prodObj._id) {
+              this.knownProductsMap.update((map) => {
+                const next = new Map(map);
+                next.set(String(prodObj._id), prodObj as IProduct);
+                return next;
+              });
+            }
+          }
         } else if (typeof item === 'string' && item) {
-          initialCombine.push(item);
+          initialCombine.push({ product: item, color: null });
         }
       });
     }
 
     // Si hay IDs en combineWith que aún no tienen objeto en el mapa, los buscamos de fondo
-    const missing = initialCombine.filter((id) => !this.knownProductsMap().has(id));
+    const missing = initialCombine
+      .map((i) => i.product)
+      .filter((id) => !this.knownProductsMap().has(id));
+
     if (missing.length > 0) {
       this.#productService.searchAdminProducts('', 100).subscribe((prods) => {
         this.knownProductsMap.update((map) => {
@@ -239,27 +334,35 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
     return this.clothingForm.value as ClothingFormValue;
   }
 
-  addCombinedProduct(product: IProduct) {
-    const current = this.selectedCombineIds;
-    if (!current.includes(product._id)) {
+  addCombinedProduct(product: IProduct, color: string | null = null) {
+    const current = this.selectedCombineItems;
+    const key = `${product._id}_${color || 'default'}`;
+    const exists = current.some((i) => `${i.product}_${i.color || 'default'}` === key);
+
+    if (!exists) {
       this.knownProductsMap.update((map) => {
         const next = new Map(map);
         next.set(product._id, product);
         return next;
       });
       this.clothingForm.patchValue({
-        combineWith: [...current, product._id],
+        combineWith: [...current, { product: product._id, color }],
       });
     }
     this.searchTerm.set('');
     this.isDropdownOpen.set(false);
   }
 
-  removeCombinedProduct(productId: string) {
-    const current = this.selectedCombineIds;
+  removeCombinedItem(productId: string, color: string | null = null) {
+    const current = this.selectedCombineItems;
+    const targetKey = `${productId}_${color || 'default'}`;
     this.clothingForm.patchValue({
-      combineWith: current.filter((id) => id !== productId),
+      combineWith: current.filter((i) => `${i.product}_${i.color || 'default'}` !== targetKey),
     });
+  }
+
+  removeCombinedProduct(productId: string) {
+    this.removeCombinedItem(productId, null);
   }
 
   getProductImage(product: any): string {

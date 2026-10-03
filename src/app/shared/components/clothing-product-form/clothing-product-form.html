@@ -83,24 +83,32 @@
                         </p>
                     </div>
                     <span class="badge badge-sm badge-secondary/15 text-secondary font-medium">
-                        {{ selectedCombineIds.length }} {{ selectedCombineIds.length === 1 ? 'prenda' : 'prendas' }}
+                        {{ selectedCombineItems.length }} {{ selectedCombineItems.length === 1 ? 'prenda' : 'prendas' }}
                     </span>
                 </div>
 
                 <!-- Chips / Tarjetitas de prendas seleccionadas -->
-                @if (selectedCombinedProducts().length > 0) {
+                @if (selectedCombinedDisplayList().length > 0) {
                     <div class="flex flex-wrap gap-2.5 mb-4">
-                        @for (item of selectedCombinedProducts(); track item._id) {
+                        @for (item of selectedCombinedDisplayList(); track item.key) {
                             <div class="inline-flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-2xl bg-base-100 border border-base-300 text-xs text-base-content shadow-xs group hover:border-secondary/40 transition-colors">
-                                <img [src]="getProductImage(item)" class="w-8 h-8 rounded-xl object-cover bg-base-200 border border-base-content/10 shrink-0" alt="" />
+                                <img [src]="item.image" class="w-8 h-8 rounded-xl object-cover bg-base-200 border border-base-content/10 shrink-0" alt="" />
                                 <div class="flex flex-col min-w-0 pr-1">
                                     <span class="font-bold text-xs max-w-[170px] truncate text-base-content">{{ item.model }}</span>
                                     <div class="flex items-center gap-1.5 text-[10px] text-base-content/60">
+                                        @if (item.color) {
+                                            <span class="inline-flex items-center gap-1 font-semibold text-secondary">
+                                                @if (item.colorHex) {
+                                                    <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="item.colorHex"></span>
+                                                }
+                                                {{ item.color }}
+                                            </span>
+                                        }
                                         @if (item.brand) { <span class="font-semibold">{{ item.brand }}</span> }
                                         @if (item.category) { <span class="badge badge-2xs badge-ghost uppercase">{{ item.category }}</span> }
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-ghost btn-circle btn-xs text-base-content/40 hover:text-error hover:bg-error/10 ml-0.5" (click)="removeCombinedProduct(item._id)" title="Quitar combinación">
+                                <button type="button" class="btn btn-ghost btn-circle btn-xs text-base-content/40 hover:text-error hover:bg-error/10 ml-0.5" (click)="removeCombinedItem(item.productId, item.color)" title="Quitar combinación">
                                     <mat-icon class="text-[15px] w-3.5 h-3.5 leading-none">close</mat-icon>
                                 </button>
                             </div>
@@ -130,21 +138,31 @@
                         </div>
                     </div>
 
-                    <!-- Dropdown de resultados -->
-                    @if (isDropdownOpen() && availableProducts().length > 0) {
+                    <!-- Dropdown de resultados desglosados por color (Opción A) -->
+                    @if (isDropdownOpen() && availableCombineOptions().length > 0) {
                         <div class="absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-xl bg-base-100 border border-base-200 shadow-xl p-1.5 space-y-1">
-                            @for (prod of availableProducts(); track prod._id) {
+                            @for (opt of availableCombineOptions(); track opt.key) {
                                 <button
                                     type="button"
                                     class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/80 transition-colors text-left text-xs text-base-content cursor-pointer"
-                                    (mousedown)="addCombinedProduct(prod)"
+                                    (mousedown)="addCombinedProduct(opt.product, opt.colorName)"
                                 >
-                                    <img [src]="getProductImage(prod)" class="w-10 h-10 rounded-lg object-cover bg-base-200 flex-shrink-0 border border-base-content/10" alt="" />
+                                    <img [src]="opt.image" class="w-10 h-10 rounded-lg object-cover bg-base-200 flex-shrink-0 border border-base-content/10" alt="" />
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-bold text-sm truncate text-base-content">{{ prod.model }}</div>
+                                        <div class="font-bold text-sm truncate text-base-content flex items-center gap-2">
+                                            <span>{{ opt.product.model }}</span>
+                                            @if (opt.colorName) {
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-secondary/10 text-secondary text-[10px] font-semibold">
+                                                    @if (opt.colorHex) {
+                                                        <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="opt.colorHex"></span>
+                                                    }
+                                                    {{ opt.colorName }}
+                                                </span>
+                                            }
+                                        </div>
                                         <div class="text-[11px] text-base-content/60 flex items-center gap-1.5">
-                                            @if (prod.brand) { <span class="font-medium text-base-content/75">{{ prod.brand }}</span> }
-                                            <span>• {{ prod.category || 'Sin categoría' }}</span>
+                                            @if (opt.product.brand) { <span class="font-medium text-base-content/75">{{ opt.product.brand }}</span> }
+                                            <span>• {{ opt.product.category || 'Sin categoría' }}</span>
                                         </div>
                                     </div>
                                     <mat-icon class="text-[20px] w-5 h-5 text-secondary flex-shrink-0">add_circle_outline</mat-icon>

@@ -211,12 +211,22 @@ export class ProductFormUtils {
     });
 
     if (productData.combineWith !== undefined) {
-      const prodCombine = Array.isArray(productData.combineWith)
-        ? productData.combineWith.map((p: any) => typeof p === 'string' ? p : p?._id).filter(Boolean).sort()
-        : [];
-      const origCombine = Array.isArray(originalProduct.combineWith)
-        ? originalProduct.combineWith.map((p: any) => typeof p === 'string' ? p : p?._id).filter(Boolean).sort()
-        : [];
+      const normalizeCombine = (list: any[]) =>
+        (Array.isArray(list) ? list : [])
+          .map((item: any) => {
+            if (typeof item === 'string') return { product: item, color: null };
+            if (item && typeof item === 'object') {
+              const prodId = item.product || item._id;
+              const resolvedId = typeof prodId === 'object' ? prodId?._id : prodId;
+              return resolvedId ? { product: resolvedId, color: item.color || null } : null;
+            }
+            return null;
+          })
+          .filter(Boolean)
+          .sort((a: any, b: any) => `${a.product}_${a.color || ''}`.localeCompare(`${b.product}_${b.color || ''}`));
+
+      const prodCombine = normalizeCombine(productData.combineWith);
+      const origCombine = normalizeCombine(originalProduct.combineWith);
 
       if (JSON.stringify(prodCombine) !== JSON.stringify(origCombine)) {
         debugWarn(`[DEBUG] Change detected in combineWith. New:`, prodCombine, `Orig:`, origCombine);
