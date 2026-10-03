@@ -5,10 +5,10 @@
   height: 100%;
 }
 
-// Override page-layout <main> so the orders table controls its own scroll
-// and the pagination bar is always pinned at the bottom
+// Permitir scroll vertical en la sección de pedidos y KPIs
 :host ::ng-deep app-page-layout > section > main {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   display: flex;
   flex-direction: column;
