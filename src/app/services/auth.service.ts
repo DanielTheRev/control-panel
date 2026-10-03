@@ -145,6 +145,13 @@ export class AuthService {
 
   checkAuthStatus(): Observable<IUser | null> {
     return this.http.get<IUser>(`${this.API_URL}/getUser`).pipe(
+      tap((user) => {
+        if (user && (user as any).tenantSlug) {
+          try {
+            localStorage.setItem('lastTenantSlug', (user as any).tenantSlug.trim().toLowerCase());
+          } catch (e) {}
+        }
+      }),
       map((response) => response),
       catchError(() => {
         this.#debug.log('❌ Usuario no autenticado');

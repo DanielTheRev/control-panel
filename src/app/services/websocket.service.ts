@@ -142,14 +142,15 @@ export class WebSocketService {
     this.adminChannel = this.supabase.channel(adminTopic);
     this.adminChannel
       .on('broadcast', { event: 'admin-notification' }, (payload: any) => {
-        const notification = payload.payload as IAdminNotification;
+        const notification = (payload?.payload ?? payload) as IAdminNotification;
+        if (!notification) return;
         this.#debug.log('📨 [Supabase Realtime] Notificación de Admin:', notification);
 
         this.handleSideEffects(notification);
         this.addNotification(notification);
 
         if (!notification.read) {
-          this.showNotification(notification.title, notification.message, notification.id);
+          this.showNotification(notification.title || 'Nueva Notificación', notification.message || '', notification.id);
         }
       })
       .on('broadcast', { event: 'pos:barcode_scanned' }, (payload: any) => {
@@ -241,6 +242,9 @@ export class WebSocketService {
     } else if (notification.type === NotificationType.ORDER_STATUS_CHANGED) {
       if (notification.data) {
         this.orderState.updateOrderState(notification.data);
+      }
+      if (!notification.read) {
+        this.soundService.playSuccessSound();
       }
     }
   }
