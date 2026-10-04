@@ -114,6 +114,7 @@ export interface IProduct {
   sizeGuide?: ISizeGuide;
   careInstructions?: string[];
   season?: string;
+  combineWith?: (string | IProduct | ICombineWithItem)[];
   // Beauty fields (opcionales, presentes si productType === BEAUTY)
   volume?: string;
   concentration?: string;

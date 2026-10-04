@@ -335,6 +335,89 @@ export class ProductList {
     return 'U';
   }
 
+  getCombinedItems(p: IProduct) {
+    if (!p || !Array.isArray(p.combineWith) || p.combineWith.length === 0) return [];
+
+    const pageProducts = this.ProductState.products().data || [];
+    const pageMap = new Map<string, IProduct>(pageProducts.map(prod => [prod._id, prod]));
+
+    return p.combineWith.map((item: any) => {
+      let prodObj: IProduct | null = null;
+      let productId: string = '';
+      let color: string | null = null;
+
+      if (typeof item === 'string') {
+        productId = item;
+      } else if (item && typeof item === 'object') {
+        if (item.product && typeof item.product === 'object') {
+          prodObj = item.product;
+          productId = prodObj?._id || '';
+        } else if (item.product) {
+          productId = String(item.product);
+        } else if (item._id) {
+          prodObj = item;
+          productId = item._id;
+        }
+        color = item.color || null;
+      }
+
+      if (!prodObj && productId && pageMap.has(productId)) {
+        prodObj = pageMap.get(productId)!;
+      }
+
+      let image = '/no-image.jpg';
+      let colorHex: string | undefined = undefined;
+
+      if (prodObj) {
+        if (color && Array.isArray((prodObj as any).variants) && (prodObj as any).variants.length > 0) {
+          const matchVar = (prodObj as any).variants.find(
+            (v: any) => v.color?.name?.toLowerCase() === color?.toLowerCase()
+          );
+          if (matchVar) {
+            image = matchVar.imageReference?.url || (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            colorHex = matchVar.color?.hex;
+          } else {
+            image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+          }
+        } else {
+          image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+        }
+      }
+
+      return {
+        productId,
+        productObj: prodObj,
+        model: prodObj?.model || 'Prenda combinada',
+        brand: prodObj?.brand || '',
+        category: prodObj?.category || '',
+        price: prodObj?.price?.cashTransferPrice || prodObj?.price?.listPrice || 0,
+        color,
+        colorHex,
+        image,
+        key: `${productId}_${color || 'default'}`,
+      };
+    });
+  }
+
+  async openCombinedProductOverview(item: { productId: string; productObj?: IProduct | null }) {
+    if (!item.productId) return;
+    const pageProducts = this.ProductState.products().data || [];
+    const fullInPage = pageProducts.find(p => p._id === item.productId);
+    if (fullInPage) {
+      this.openQuickOverview(fullInPage);
+      return;
+    }
+    try {
+      const fullProd = await this.ProductState.getProduct(item.productId);
+      if (fullProd) {
+        this.openQuickOverview(fullProd);
+      }
+    } catch {
+      this.#router.navigate(['/home/products', item.productId]);
+      this.closeQuickOverview();
+    }
+  }
+
   async deleteProduct(product: IProduct) {
     if (confirm(`¿Estás seguro de que deseas eliminar el producto ${product.model}?`)) {
       try {

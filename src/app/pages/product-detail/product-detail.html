@@ -343,6 +343,65 @@
               }
             </div>
 
+            <!-- Prendas que Combinan (Completa el Look / Shop The Look) -->
+            @if (combinedItems().length > 0) {
+              <div class="order-3 bg-base-100 rounded-2xl border border-base-200 p-3.5 sm:p-4 shadow-sm flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <mat-icon class="text-[16px] text-secondary">style</mat-icon>
+                    Prendas que combinan (Completa el Look)
+                  </h3>
+                  <span class="badge badge-sm badge-secondary/15 text-secondary font-bold">
+                    {{ combinedItems().length }} {{ combinedItems().length === 1 ? 'prenda' : 'prendas' }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  @for (item of combinedItems(); track item.key) {
+                    <div class="p-2.5 rounded-xl bg-base-200/40 border border-base-200/80 hover:border-secondary/40 transition-all flex items-center justify-between gap-3 group">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-content/10 shrink-0">
+                          <img [src]="item.image" class="w-full h-full object-cover" [alt]="item.model" />
+                        </div>
+                        <div class="min-w-0 flex flex-col">
+                          <span class="text-xs font-black text-base-content truncate group-hover:text-primary transition-colors">
+                            {{ item.model }}
+                          </span>
+                          <div class="flex items-center gap-1.5 text-[10px] text-base-content/60 truncate mt-0.5">
+                            @if (item.brand) { <span class="font-bold text-base-content/80">{{ item.brand }}</span> }
+                            @if (item.category) { <span>· {{ item.category }}</span> }
+                          </div>
+                          @if (item.color) {
+                            <div class="mt-1 flex items-center gap-1">
+                              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-secondary/10 text-secondary text-[10px] font-semibold">
+                                @if (item.colorHex) {
+                                  <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="item.colorHex"></span>
+                                }
+                                {{ item.color }}
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-end shrink-0 gap-1">
+                        @if (item.price > 0) {
+                          <span class="text-xs font-black text-base-content">
+                            {{ item.price | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                          </span>
+                        }
+                        @if (item.productId) {
+                          <a [routerLink]="['/home/products', item.productId]" class="btn btn-2xs btn-ghost text-primary gap-0.5" title="Ver prenda">
+                            <span>Ver</span>
+                            <mat-icon class="text-[12px]! w-3! h-3!">arrow_forward</mat-icon>
+                          </a>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
             <!-- 4. Composición del Precio & Rentabilidad (order-4 en Mobile) -->
             <div class="order-4 flex flex-col gap-3">
               <!-- Composición del Precio de Lista (Stacked Bar) -->

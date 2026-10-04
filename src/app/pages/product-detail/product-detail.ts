@@ -63,6 +63,71 @@ export class ProductDetail implements OnInit {
     })
   }
 
+  missingProductsMap = signal<Map<string, IProduct>>(new Map());
+
+  combinedItems = computed(() => {
+    const p = this.product();
+    if (!p || !Array.isArray(p.combineWith) || p.combineWith.length === 0) return [];
+    const missingMap = this.missingProductsMap();
+
+    return p.combineWith.map((item: any) => {
+      let prodObj: IProduct | null = null;
+      let productId: string = '';
+      let color: string | null = null;
+
+      if (typeof item === 'string') {
+        productId = item;
+      } else if (item && typeof item === 'object') {
+        if (item.product && typeof item.product === 'object') {
+          prodObj = item.product;
+          productId = prodObj?._id || '';
+        } else if (item.product) {
+          productId = String(item.product);
+        } else if (item._id) {
+          prodObj = item;
+          productId = item._id;
+        }
+        color = item.color || null;
+      }
+
+      if (!prodObj && productId && missingMap.has(productId)) {
+        prodObj = missingMap.get(productId)!;
+      }
+
+      let image = '/no-image.jpg';
+      let colorHex: string | undefined = undefined;
+
+      if (prodObj) {
+        if (color && Array.isArray((prodObj as any).variants) && (prodObj as any).variants.length > 0) {
+          const matchVar = (prodObj as any).variants.find(
+            (v: any) => v.color?.name?.toLowerCase() === color?.toLowerCase()
+          );
+          if (matchVar) {
+            image = matchVar.imageReference?.url || (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            colorHex = matchVar.color?.hex;
+          } else {
+            image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+          }
+        } else {
+          image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+        }
+      }
+
+      return {
+        productId,
+        productObj: prodObj,
+        model: prodObj?.model || 'Prenda combinada',
+        brand: prodObj?.brand || '',
+        category: prodObj?.category || '',
+        price: prodObj?.price?.cashTransferPrice || prodObj?.price?.listPrice || 0,
+        color,
+        colorHex,
+        image,
+        key: `${productId}_${color || 'default'}`,
+      };
+    });
+  });
+
   async ngOnInit() {
     try {
       const product = await this.#productState.getProduct(this.productID());
@@ -70,6 +135,24 @@ export class ProductDetail implements OnInit {
       const hasMargin = product.finance?.pricingStrategy?.targetProfit !== undefined && product.finance?.pricingStrategy?.targetProfit !== null;
       this.isUsingGlobalMargin.set(!hasMargin);
       this.product.set(product);
+
+      // Si algún combineWith no vino populado como objeto (es sólo string ID), resolverlo de fondo
+      if (Array.isArray(product.combineWith) && product.combineWith.length > 0) {
+        const unpopulatedIds = product.combineWith
+          .map((i: any) => typeof i === 'string' ? i : (typeof i?.product === 'string' ? i.product : null))
+          .filter((id): id is string => Boolean(id));
+
+        if (unpopulatedIds.length > 0) {
+          Promise.all(unpopulatedIds.map(id => this.#productState.getProduct(id).catch(() => null)))
+            .then(fetchedList => {
+              const fetchedMap = new Map<string, IProduct>();
+              fetchedList.forEach(p => { if (p && p._id) fetchedMap.set(p._id, p); });
+              if (fetchedMap.size > 0) {
+                this.missingProductsMap.set(fetchedMap);
+              }
+            });
+        }
+      }
     } catch {
       this.hasError.set(true);
     } finally {

@@ -1604,6 +1604,72 @@
           </div>
         </div>
 
+        <!-- Prendas que combinan (Completa el look) -->
+        @if (getCombinedItems(p).length > 0) {
+          <div class="p-3.5 bg-base-100 rounded-2xl border border-base-300 shadow-2xs space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-1.5">
+                <mat-icon class="text-[16px]! w-4! h-4! text-secondary">style</mat-icon>
+                <span>Prendas que combinan ({{ getCombinedItems(p).length }})</span>
+              </h3>
+              <span class="badge badge-xs badge-secondary/15 text-secondary font-bold">Completa el look</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto custom-scrollbar">
+              @for (item of getCombinedItems(p); track item.key) {
+                <div class="p-2 rounded-xl bg-base-200/40 border border-base-200/80 flex items-center justify-between gap-2.5 hover:border-secondary/30 transition-colors">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <img [src]="item.image" class="w-10 h-10 rounded-lg object-cover bg-base-200 shrink-0 border border-base-content/10" alt="" />
+                    <div class="min-w-0 flex flex-col">
+                      <span class="text-xs font-bold text-base-content truncate">{{ item.model }}</span>
+                      <div class="flex items-center gap-1.5 text-[10px] text-base-content/60 truncate">
+                        @if (item.brand) { <span class="font-medium text-base-content/75">{{ item.brand }}</span> }
+                        @if (item.category) { <span>· {{ item.category }}</span> }
+                      </div>
+                      @if (item.color) {
+                        <div class="flex items-center gap-1 mt-0.5">
+                          <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-secondary">
+                            @if (item.colorHex) {
+                              <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="item.colorHex"></span>
+                            }
+                            {{ item.color }}
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    @if (item.price > 0) {
+                      <span class="text-xs font-black text-base-content mr-1">
+                        {{ item.price | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                      </span>
+                    }
+                    @if (item.productId) {
+                      <button
+                        type="button"
+                        (click)="openCombinedProductOverview(item)"
+                        class="btn btn-2xs btn-outline border-base-300 hover:btn-secondary gap-1"
+                        title="Ver en vista rápida"
+                      >
+                        <span>Ver</span>
+                      </button>
+                      <a
+                        [routerLink]="['/home/products', item.productId]"
+                        (click)="closeQuickOverview()"
+                        class="btn btn-2xs btn-ghost text-primary px-1"
+                        title="Ir a ficha de producto"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">open_in_new</mat-icon>
+                      </a>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Descripción / SEO -->
         @if (p.shortDescription || p.seo.metaDescription) {
           <div class="p-3.5 bg-base-100 rounded-2xl border border-base-300 shadow-2xs space-y-1.5">
