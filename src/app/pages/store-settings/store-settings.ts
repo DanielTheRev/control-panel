@@ -581,10 +581,18 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
         freeShippingThreshold: [80000],
         defaultItemSubsidy: [4000],
         minShippingFloor: [5000],
+        classicEstimatedDelivery: ['2 a 5 días hábiles'],
         zoneRates: this.#fb.group({
           caba: [8900],
           buenosAires: [9900],
           interior: [11900],
+        }),
+        enableExpressShipping: [true],
+        expressEstimatedDelivery: ['1 a 3 días hábiles'],
+        expressZoneRates: this.#fb.group({
+          caba: [12900],
+          buenosAires: [14900],
+          interior: [18900],
         }),
       }),
       emailTemplates: this.#fb.group({
@@ -706,10 +714,21 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
             defaultItemSubsidy:
               config.shippingConfig.defaultItemSubsidy ?? 4000,
             minShippingFloor: config.shippingConfig.minShippingFloor ?? 5000,
+            classicEstimatedDelivery:
+              config.shippingConfig.classicEstimatedDelivery ?? '2 a 5 días hábiles',
             zoneRates: {
               caba: config.shippingConfig.zoneRates?.caba ?? 8900,
               buenosAires: config.shippingConfig.zoneRates?.buenosAires ?? 9900,
               interior: config.shippingConfig.zoneRates?.interior ?? 11900,
+            },
+            enableExpressShipping:
+              config.shippingConfig.enableExpressShipping ?? true,
+            expressEstimatedDelivery:
+              config.shippingConfig.expressEstimatedDelivery ?? '1 a 3 días hábiles',
+            expressZoneRates: {
+              caba: config.shippingConfig.expressZoneRates?.caba ?? 12900,
+              buenosAires: config.shippingConfig.expressZoneRates?.buenosAires ?? 14900,
+              interior: config.shippingConfig.expressZoneRates?.interior ?? 18900,
             },
           });
         }

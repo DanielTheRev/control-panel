@@ -103,6 +103,15 @@
                     <div class="card-body p-6 space-y-4">
                         <h3 class="card-title text-base font-bold">Detalles del Servicio</h3>
 
+                        @if (form.get('type')?.value === 'Envío a domicilio') {
+                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-900 flex items-start gap-2.5">
+                                <mat-icon class="text-blue-600 text-[18px]! w-4.5! h-4.5! shrink-0">info</mat-icon>
+                                <p class="leading-relaxed">
+                                    <strong>Tarifas Dinámicas por Zona:</strong> En el checkout y la ficha de producto, los costos de <strong>Correo Argentino (Paq.ar Clásico y Paq.ar Expreso)</strong> se calculan automáticamente por Código Postal (CABA, Prov. Bs As e Interior), con el umbral de envío gratis ($80.000) y subsidios configurados en <a routerLink="/home/settings" class="underline font-bold text-blue-700">Ajustes de Tienda &gt; Logística</a>. El costo base aquí indicado se utiliza como respaldo.
+                                </p>
+                            </div>
+                        }
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <fieldset class="fieldset">
                                 <legend class="fieldset-legend font-bold">Nombre visible en Checkout</legend>

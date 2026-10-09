@@ -261,7 +261,15 @@ export interface IShippingConfig {
   freeShippingThreshold: number;
   defaultItemSubsidy?: number;
   minShippingFloor?: number;
+  classicEstimatedDelivery?: string;
   zoneRates?: {
+    caba: number;
+    buenosAires: number;
+    interior: number;
+  };
+  enableExpressShipping?: boolean;
+  expressEstimatedDelivery?: string;
+  expressZoneRates?: {
     caba: number;
     buenosAires: number;
     interior: number;

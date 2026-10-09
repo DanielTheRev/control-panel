@@ -1502,19 +1502,32 @@
               </div>
             </div>
 
-            <!-- Card 2: Tarifas Base por Zonas (Correo Argentino + Gross-Up MP) -->
-            <div formGroupName="zoneRates" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
-                  <mat-icon class="text-[20px]! w-5! h-5!">map</mat-icon>
+            <!-- Card 2: Correo Argentino Paq.ar Clásico (Estándar) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">local_shipping</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Correo Argentino · Paq.ar Clásico (Estándar)</h3>
+                    <p class="text-xs text-base-content/50">Modalidad económica estándar. Se bonifica a $0 si la orden supera el umbral de compra.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Tarifas Base por Región / Zona</h3>
-                  <p class="text-xs text-base-content/50">Valores con gross-up incluido para cubrir el costo real del Correo y la comisión de Mercado Pago.</p>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-base-content/70">Plazo estimado:</span>
+                  <input
+                    type="text"
+                    formControlName="classicEstimatedDelivery"
+                    class="input input-xs input-bordered w-36 font-semibold text-xs rounded-lg"
+                    placeholder="2 a 5 días hábiles"
+                  />
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- Tarifas por Zona para Paq.ar Clásico -->
+              <div formGroupName="zoneRates" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Zona 1: CABA -->
                 <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-2">
                   <div class="flex items-center justify-between">
@@ -1535,7 +1548,7 @@
                       placeholder="8900"
                     />
                   </div>
-                  <p class="text-[10px] text-base-content/50">Cubre tarifa Correo ($7.755) + comisión pasarela.</p>
+                  <p class="text-[10px] text-base-content/50">Tarifa Correo Clásico + comisión pasarela.</p>
                 </div>
 
                 <!-- Zona 2: Buenos Aires -->
@@ -1558,7 +1571,7 @@
                       placeholder="9900"
                     />
                   </div>
-                  <p class="text-[10px] text-base-content/50">GBA, La Plata, Mar del Plata y todo Bs As ($8.955 base).</p>
+                  <p class="text-[10px] text-base-content/50">GBA, La Plata, Costa y todo Bs As.</p>
                 </div>
 
                 <!-- Zona 3: Interior del País -->
@@ -1581,7 +1594,116 @@
                       placeholder="11900"
                     />
                   </div>
-                  <p class="text-[10px] text-base-content/50">Santa Fe, Rosario, Córdoba, Cuyo, NOA, Patagonia.</p>
+                  <p class="text-[10px] text-base-content/50">Santa Fe, Córdoba, Cuyo, NOA, Patagonia.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Correo Argentino Paq.ar Expreso (Prioritario / Rápido) -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200 flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">bolt</mat-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Correo Argentino · Paq.ar Expreso (Prioritario)</h3>
+                      <label class="cursor-pointer label p-0 gap-1.5">
+                        <input
+                          type="checkbox"
+                          formControlName="enableExpressShipping"
+                          class="toggle toggle-warning toggle-xs"
+                        />
+                        <span class="text-[11px] font-bold text-base-content/70">
+                          {{ configForm.get('shippingConfig.enableExpressShipping')?.value ? 'Activo' : 'Pausado' }}
+                        </span>
+                      </label>
+                    </div>
+                    <p class="text-xs text-base-content/50">Entrega rápida para clientas que necesitan su compra con urgencia.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-base-content/70">Plazo estimado:</span>
+                  <input
+                    type="text"
+                    formControlName="expressEstimatedDelivery"
+                    class="input input-xs input-bordered w-36 font-semibold text-xs rounded-lg"
+                    placeholder="1 a 3 días hábiles"
+                  />
+                </div>
+              </div>
+
+              <!-- Tarifas por Zona para Paq.ar Expreso -->
+              <div formGroupName="expressZoneRates" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Expreso CABA -->
+                <div class="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-primary text-[16px]! w-4! h-4!">location_city</mat-icon>
+                      <span>CABA Expreso</span>
+                    </div>
+                    <span class="badge badge-xs badge-warning font-bold text-[10px]">1-3 días</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="caba"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="12900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Tarifa express para Capital Federal.</p>
+                </div>
+
+                <!-- Expreso Buenos Aires -->
+                <div class="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-secondary text-[16px]! w-4! h-4!">domain</mat-icon>
+                      <span>Bs As Expreso</span>
+                    </div>
+                    <span class="badge badge-xs badge-warning font-bold text-[10px]">1-3 días</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="buenosAires"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="14900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">La Plata, GBA y todo Buenos Aires.</p>
+                </div>
+
+                <!-- Expreso Interior -->
+                <div class="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-base-content">
+                      <mat-icon class="text-amber-500 text-[16px]! w-4! h-4!">public</mat-icon>
+                      <span>Interior Expreso</span>
+                    </div>
+                    <span class="badge badge-xs badge-warning font-bold text-[10px]">1-3 días</span>
+                  </div>
+                  <div class="join w-full">
+                    <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="500"
+                      min="0"
+                      formControlName="interior"
+                      class="join-item input input-sm input-bordered w-full font-mono font-bold text-xs"
+                      placeholder="18900"
+                    />
+                  </div>
+                  <p class="text-[10px] text-base-content/50">Resto del país con prioridad de despacho.</p>
                 </div>
               </div>
             </div>
