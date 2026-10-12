@@ -255,6 +255,8 @@ export interface IProductImage {
   public_id: string;
   width?: number;
   height?: number;
+  bytes?: number;
+  format?: string;
 }
 
 export interface IProductCreateDTO {

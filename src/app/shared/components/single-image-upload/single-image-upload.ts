@@ -91,8 +91,35 @@ export class SingleImageUpload {
     this.previewUrl.set(blobURL);
     this.previewChange.emit(blobURL);
 
+    const ext = file.name.split('.').pop()?.toUpperCase() || file.type.split('/')[1]?.toUpperCase() || 'IMG';
+    this.computeSizeInfo(file.size, ext);
+
     // Le mandamos el archivo físico al formControl del padre
     this.control().setValue(file);
+  }
+
+  imageSizeInfo = signal<{ bytes: number; formatted: string; badgeClass: string; format?: string } | null>(null);
+
+  private computeSizeInfo(bytes: number, format?: string) {
+    if (!bytes || bytes <= 0) {
+      this.imageSizeInfo.set(null);
+      return;
+    }
+    let formatted = '';
+    if (bytes < 1024) formatted = `${bytes} B`;
+    else if (bytes < 1024 * 1024) formatted = `${(bytes / 1024).toFixed(0)} KB`;
+    else formatted = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    let badgeClass = 'bg-emerald-950/85 text-emerald-300 border-emerald-500/40';
+    if (bytes > 2000 * 1024) {
+      badgeClass = 'bg-rose-950/90 text-rose-300 border-rose-500/50';
+    } else if (bytes > 1000 * 1024) {
+      badgeClass = 'bg-amber-950/90 text-amber-300 border-amber-500/50';
+    } else if (bytes > 500 * 1024) {
+      badgeClass = 'bg-sky-950/85 text-sky-200 border-sky-400/40';
+    }
+
+    this.imageSizeInfo.set({ bytes, formatted, badgeClass, format });
   }
 
   #CheckInitialValue(val: any) {
@@ -101,10 +128,31 @@ export class SingleImageUpload {
       this.isUrlMode.set(true);
       this.isFileMode.set(false);
       this.previewChange.emit(val);
+
+      if (val.startsWith('http')) {
+        fetch(val, { method: 'HEAD' })
+          .then((res) => {
+            const len = res.headers.get('content-length');
+            const type = res.headers.get('content-type') || '';
+            const detectedFormat =
+              type.split('/')[1]?.toUpperCase() ||
+              val.split('.').pop()?.split('?')[0]?.toUpperCase() ||
+              'IMG';
+            if (len) {
+              const b = parseInt(len, 10);
+              if (!isNaN(b) && b > 0) this.computeSizeInfo(b, detectedFormat);
+            }
+          })
+          .catch(() => {});
+      }
+    } else if (val instanceof File) {
+      const ext = val.name.split('.').pop()?.toUpperCase() || 'IMG';
+      this.computeSizeInfo(val.size, ext);
     } else if (!val) {
       this.previewUrl.set(null);
       this.isUrlMode.set(false);
       this.isFileMode.set(false);
+      this.imageSizeInfo.set(null);
     }
   }
 
@@ -116,6 +164,7 @@ export class SingleImageUpload {
     this.previewUrl.set(null);
     this.isFileMode.set(false);
     this.isUrlMode.set(false);
+    this.imageSizeInfo.set(null);
     this.previewChange.emit(null);
 
     // Vaciamos el formControl del padre (vuelve a ser inválido si era required)

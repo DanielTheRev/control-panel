@@ -30,6 +30,19 @@
     } @else {
     <div class="group w-full h-full relative rounded-lg overflow-hidden bg-base-200">
       <img [src]="previewUrl()" class="w-full h-full object-contain" alt="Preview" />
+      
+      @if (imageSizeInfo(); as info) {
+        <div
+          class="absolute bottom-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold backdrop-blur-md shadow-xs pointer-events-none border transition-all"
+          [ngClass]="info.badgeClass"
+        >
+          <span>{{ info.formatted }}</span>
+          @if (info.format) {
+            <span class="opacity-70 text-[9px] uppercase tracking-wide">· {{ info.format }}</span>
+          }
+        </div>
+      }
+
       <div
         class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
         <button type="button" class="btn btn-circle btn-error shadow-lg" (click)="clearAll()">

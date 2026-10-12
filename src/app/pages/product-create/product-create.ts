@@ -1469,6 +1469,8 @@ XXL: 58, 76, 52
             this.#fb.group({
               link: [img.url || img],
               file: [null],
+              size: [img.bytes || null],
+              format: [img.format || null],
             }),
           );
         });
@@ -1662,11 +1664,14 @@ XXL: 58, 76, 52
     );
     if (exists) return;
 
+    const cleanSize = sizeName.trim();
+    const formattedSize = cleanSize.toLowerCase() === 'único' ? 'Único' : cleanSize.toUpperCase();
+
     variantsArray.push(
       this.#fb.group({
         _id: [''],
         sku: [''],
-        size: [sizeName.toUpperCase(), Validators.required],
+        size: [formattedSize, Validators.required],
         stock: [defaultStock, [Validators.required, Validators.min(0)]],
         isActive: [true],
       }),

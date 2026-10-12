@@ -4,7 +4,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
-import { IClothingVariant, IProduct, ITechVariant, ProductStatus, ProductType } from '../../interfaces/product.interface';
+import { IClothingVariant, IProduct, IProductImage, ITechVariant, ProductStatus, ProductType } from '../../interfaces/product.interface';
 import { SidebarService } from '../../services/sidebar.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
@@ -372,4 +372,39 @@ export class ProductDetail implements OnInit {
       isVeryOld: diffDays >= 30
     };
   }
+
+  /**
+   * Obtiene información estética y formateada del peso/formato de la imagen
+   * Leyendo directamente de la base de datos (0 llamadas HTTP adicionales).
+   */
+  getImageSizeInfo(img?: IProductImage | null): { formatted: string; badgeClass: string; format?: string } | null {
+    if (!img || !img.bytes || img.bytes <= 0) return null;
+
+    const bytes = img.bytes;
+    let formatted = '';
+    if (bytes < 1024) formatted = `${bytes} B`;
+    else if (bytes < 1024 * 1024) formatted = `${(bytes / 1024).toFixed(0)} KB`;
+    else formatted = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    // Escala cromática según peso:
+    // <= 500 KB: Esmeralda (óptima / liviana)
+    // 500 KB - 1 MB: Sky (buen balance)
+    // 1 MB - 2 MB: Ámbar (pesadita)
+    // > 2 MB: Rose (pesada / original)
+    let badgeClass = 'bg-emerald-950/85 text-emerald-300 border-emerald-500/40';
+    if (bytes > 2000 * 1024) {
+      badgeClass = 'bg-rose-950/90 text-rose-300 border-rose-500/50';
+    } else if (bytes > 1000 * 1024) {
+      badgeClass = 'bg-amber-950/90 text-amber-300 border-amber-500/50';
+    } else if (bytes > 500 * 1024) {
+      badgeClass = 'bg-sky-950/85 text-sky-200 border-sky-400/40';
+    }
+
+    return {
+      formatted,
+      badgeClass,
+      format: img.format?.toUpperCase(),
+    };
+  }
 }
+

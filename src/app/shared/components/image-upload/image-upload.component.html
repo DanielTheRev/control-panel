@@ -25,6 +25,19 @@
         {{ $index + 1 }}
       </div>
 
+      <!-- Weight & Format Badge -->
+      @if (getImageSize($index); as info) {
+        <div
+          class="absolute bottom-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold backdrop-blur-md shadow-xs pointer-events-none border transition-all"
+          [ngClass]="info.badgeClass"
+        >
+          <span>{{ info.formatted }}</span>
+          @if (info.format) {
+            <span class="opacity-70 text-[9px] uppercase tracking-wide">· {{ info.format }}</span>
+          }
+        </div>
+      }
+
       <!-- Placeholder during drag -->
       <div *cdkDragPlaceholder class="w-full h-full bg-base-300/50 rounded-lg border-2 border-dashed border-base-content/20"></div>
 

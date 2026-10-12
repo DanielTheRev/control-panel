@@ -74,6 +74,18 @@
                   </span>
                 </div>
 
+                @if (getImageSizeInfo(p.images[selectedImageIndex()] || p.images[0]); as sizeInfo) {
+                  <div
+                    class="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold backdrop-blur-md shadow-sm border pointer-events-none transition-all"
+                    [ngClass]="sizeInfo.badgeClass"
+                  >
+                    <span>{{ sizeInfo.formatted }}</span>
+                    @if (sizeInfo.format) {
+                      <span class="opacity-75 text-[10px] uppercase tracking-wide">· {{ sizeInfo.format }}</span>
+                    }
+                  </div>
+                }
+
                 @if (p.linkProductProvider) {
                   <a
                     [href]="p.linkProductProvider"
@@ -92,11 +104,18 @@
                 <div class="grid grid-cols-5 gap-2 pt-0.5">
                   @for (img of p.images; track $index) {
                     <div
-                      class="aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:opacity-90"
+                      class="relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:opacity-90"
                       [class.border-primary]="selectedImageIndex() === $index"
                       [class.border-base-200]="selectedImageIndex() !== $index"
                       (click)="selectImage($index)">
                       <img [src]="img.url" class="w-full h-full object-cover object-top" />
+                      @if (getImageSizeInfo(img); as thumbSize) {
+                        <span
+                          class="absolute bottom-1 left-1 px-1 py-0.5 rounded text-[9px] font-mono font-bold backdrop-blur-md border shadow-xs z-10 pointer-events-none leading-none"
+                          [ngClass]="thumbSize.badgeClass">
+                          {{ thumbSize.formatted }}
+                        </span>
+                      }
                     </div>
                   }
                 </div>
