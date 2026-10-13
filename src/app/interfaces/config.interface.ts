@@ -255,6 +255,14 @@ export interface IEcommerceConfig {
     notification?: string;
   };
   homeLayout?: IHomeLayoutConfig;
+  catalogRanking?: ICatalogRankingConfig;
+}
+
+export interface ICatalogRankingConfig {
+  active: boolean;
+  viewWeight?: number;
+  cartWeight?: number;
+  saleWeight?: number;
 }
 
 export interface IShippingConfig {

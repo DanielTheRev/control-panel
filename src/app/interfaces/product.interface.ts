@@ -20,6 +20,13 @@ export interface ISizeGuide {
   tolerance?: string;
 }
 
+export interface IProductMetrics {
+  viewsCount?: number;
+  cartAddsCount?: number;
+  salesCount?: number;
+  lastViewedAt?: Date | string;
+}
+
 // ============ VARIANT INTERFACES ============
 export interface IVariantColor {
   name: string;
@@ -95,6 +102,9 @@ export interface IProduct {
   linkProductProvider?: string;
   recommendationsMode?: 'auto' | 'manual';
   manualRecommendations?: string[] | IProduct[];
+  rankingScore?: number;
+  metrics?: IProductMetrics;
+  effectiveScore?: number;
   // Virtuals
   totalStock: number;
   hasStock: boolean;

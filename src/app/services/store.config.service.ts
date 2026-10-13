@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { IEcommerceConfig } from '../interfaces/config.interface';
+import { IEcommerceConfig, ICatalogRankingConfig } from '../interfaces/config.interface';
 import { IAggregatedPaymentMethodsResponse, IUpdateMPConfigDTO } from '../interfaces/mercadopago.interface';
 import { firstValueFrom } from 'rxjs';
 import { getTenantSlug } from '../utils/tenant.utils';
@@ -165,6 +165,24 @@ export class StoreConfigService {
   async updateAllowedOrigins(allowedOrigins: string[]): Promise<{ success: boolean; allowedOrigins: string[]; message: string }> {
     return firstValueFrom(
       this.#http.put<{ success: boolean; allowedOrigins: string[]; message: string }>(`${this.#apiUrl}/connection/allowed-origins`, { allowedOrigins })
+    );
+  }
+
+  async getCatalogRankingConfig(): Promise<ICatalogRankingConfig> {
+    return firstValueFrom(
+      this.#http.get<ICatalogRankingConfig>(`${this.#apiUrl}/catalog-ranking`)
+    );
+  }
+
+  async updateCatalogRankingConfig(config: Partial<ICatalogRankingConfig>): Promise<{ success: boolean; data: ICatalogRankingConfig; message: string }> {
+    return firstValueFrom(
+      this.#http.put<{ success: boolean; data: ICatalogRankingConfig; message: string }>(`${this.#apiUrl}/catalog-ranking`, config)
+    );
+  }
+
+  async recalculateRankingScores(): Promise<{ success: boolean; message: string; updatedCount: number }> {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; message: string; updatedCount: number }>(`${this.#apiUrl}/catalog-ranking/recalculate`, {})
     );
   }
 }

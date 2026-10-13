@@ -205,6 +205,7 @@ export class ProductCreate {
     ],
     status: ['published'],
     isFeatured: [false],
+    rankingScore: [100, [Validators.min(0)]],
     shortDescription: ['', Validators.required],
     largeDescription: ['', Validators.required],
     images: this.#fb.array<{ link: string; file: File | null }>(
@@ -1322,6 +1323,7 @@ XXL: 58, 76, 52
         pricingMethodChoice: pricingMethodChoiceVal,
         status: product.status || 'published',
         isFeatured: !!product.isFeatured,
+        rankingScore: product.rankingScore ?? 100,
         shortDescription: product.shortDescription,
         largeDescription: product.largeDescription,
         seo: {
@@ -2011,6 +2013,9 @@ XXL: 58, 76, 52
 
     formData.append('status', String(data.status || 'published'));
     formData.append('isFeatured', String(data.isFeatured || false));
+    if (data.rankingScore !== undefined && data.rankingScore !== null) {
+      formData.append('rankingScore', String(data.rankingScore));
+    }
 
     formData.append('shortDescription', data.shortDescription || '');
     formData.append('largeDescription', data.largeDescription || '');

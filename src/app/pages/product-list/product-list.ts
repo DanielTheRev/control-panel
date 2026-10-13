@@ -21,6 +21,9 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { StoreConfigStateService } from '../../states/store.config.state.service';
 import { ProviderStateService } from '../../states/provider.state.service';
 import { ExcelExportService } from '../../services/excel-export.service';
+import { ProductService } from '../../services/product.service';
+import { StoreConfigService } from '../../services/store.config.service';
+import { ICatalogRankingConfig } from '../../interfaces/config.interface';
 
 @Component({
   selector: 'app-product-list',
@@ -51,6 +54,102 @@ export class ProductList {
   #snackBar = inject(MatSnackBar);
   #router = inject(Router);
   #excelExportService = inject(ExcelExportService);
+  #productService = inject(ProductService);
+  #storeConfigService = inject(StoreConfigService);
+
+  // Modo Principal: Inventario vs Ranking ELO
+  activeMainTab = signal<'inventory' | 'ranking'>('inventory');
+
+  // Configuración de Ranking ELO
+  rankingConfig = signal<ICatalogRankingConfig>({
+    active: false,
+    viewWeight: 1,
+    cartWeight: 5,
+    saleWeight: 25,
+  });
+  isSavingRankingConfig = signal<boolean>(false);
+  isRecalculatingRanking = signal<boolean>(false);
+
+  // Lista de productos para la Vista Tienda & Ranking
+  rankingProducts = signal<IProduct[]>([]);
+  isLoadingRankingProducts = signal<boolean>(false);
+  rankingSearchQuery = signal<string>('');
+  rankingCategoryFilter = signal<string>('');
+  updatingScoreProductId = signal<string | null>(null);
+
+  filteredRankingProducts = computed(() => {
+    let prods = this.rankingProducts();
+    const q = this.rankingSearchQuery().toLowerCase().trim();
+    const cat = this.rankingCategoryFilter().trim();
+
+    if (q) {
+      prods = prods.filter(p =>
+        (p.model || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
+        (p.variants || []).some(v => (v.sku || '').toLowerCase().includes(q))
+      );
+    }
+    if (cat) {
+      prods = prods.filter(p => p.category === cat);
+    }
+    return prods;
+  });
+
+  // Paginación de la Vista Tienda & Ranking (por defecto 16 para replicar el lote de carga de la tienda Vura)
+  rankingPage = signal<number>(1);
+  rankingPageSize = signal<number>(16);
+
+  totalRankingPages = computed(() => {
+    const total = this.filteredRankingProducts().length;
+    const size = this.rankingPageSize();
+    if (size <= 0) return 1;
+    return Math.max(1, Math.ceil(total / size));
+  });
+
+  paginatedRankingProducts = computed(() => {
+    const list = this.filteredRankingProducts();
+    const size = this.rankingPageSize();
+    if (size <= 0) return list;
+    const page = Math.min(this.rankingPage(), this.totalRankingPages());
+    const start = (page - 1) * size;
+    return list.slice(start, start + size);
+  });
+
+  rankingEndIndex = computed(() => {
+    const size = this.rankingPageSize();
+    const total = this.filteredRankingProducts().length;
+    if (size <= 0) return total;
+    return Math.min(this.rankingPage() * size, total);
+  });
+
+  setRankingPage(page: number) {
+    if (page >= 1 && page <= this.totalRankingPages()) {
+      this.rankingPage.set(page);
+    }
+  }
+
+  setRankingPageSize(size: any) {
+    this.rankingPageSize.set(Number(size));
+    this.rankingPage.set(1);
+  }
+
+  onRankingSearchChange(q: string) {
+    this.rankingSearchQuery.set(q);
+    this.rankingPage.set(1);
+  }
+
+  onRankingCategoryChange(cat: string) {
+    this.rankingCategoryFilter.set(cat);
+    this.rankingPage.set(1);
+  }
+
+  getProductImageUrl(product: any): string {
+    if (!product?.images || product.images.length === 0) return '/no-image.jpg';
+    const first = product.images[0];
+    if (typeof first === 'string') return first;
+    return first?.url || '/no-image.jpg';
+  }
 
   activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'published');
   statusCounts = this.ProductState.statusCounts;
@@ -122,6 +221,136 @@ export class ProductList {
     ).subscribe(query => {
       this.ProductState.setSearchQuery(query);
     });
+  }
+
+  async switchToRankingTab() {
+    this.activeMainTab.set('ranking');
+    await Promise.all([
+      this.loadRankingConfig(),
+      this.loadRankingProducts()
+    ]);
+  }
+
+  async loadRankingConfig() {
+    try {
+      const cfg = await this.#storeConfigService.getCatalogRankingConfig();
+      if (cfg) {
+        this.rankingConfig.set({
+          active: !!cfg.active,
+          viewWeight: cfg.viewWeight ?? 1,
+          cartWeight: cfg.cartWeight ?? 5,
+          saleWeight: cfg.saleWeight ?? 25,
+        });
+      }
+    } catch (err) {
+      console.error('Error al cargar config de ranking:', err);
+    }
+  }
+
+  async loadRankingProducts() {
+    this.isLoadingRankingProducts.set(true);
+    try {
+      const res = await this.#productService.getRankingPreviewProducts({
+        limit: 250,
+      });
+      if (res && res.data) {
+        this.rankingProducts.set(res.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar productos para ranking:', err);
+    } finally {
+      this.isLoadingRankingProducts.set(false);
+    }
+  }
+
+  async toggleRankingActive() {
+    const current = this.rankingConfig();
+    const newActive = !current.active;
+    this.rankingConfig.update(c => ({ ...c, active: newActive }));
+    await this.saveRankingConfig(newActive);
+  }
+
+  updateRankingWeight(field: 'viewWeight' | 'cartWeight' | 'saleWeight', value: any) {
+    const num = Number(value);
+    this.rankingConfig.update(c => ({
+      ...c,
+      [field]: isNaN(num) ? 0 : num
+    }));
+  }
+
+  async saveRankingConfig(overrideActive?: boolean) {
+    this.isSavingRankingConfig.set(true);
+    try {
+      const current = this.rankingConfig();
+      const payload: Partial<ICatalogRankingConfig> = {
+        active: overrideActive !== undefined ? overrideActive : current.active,
+        viewWeight: Number(current.viewWeight) || 1,
+        cartWeight: Number(current.cartWeight) || 5,
+        saleWeight: Number(current.saleWeight) || 25,
+      };
+      await this.#storeConfigService.updateCatalogRankingConfig(payload);
+      this.#snackBar.open(
+        payload.active
+          ? '🏆 Algoritmo ELO activado en el catálogo online'
+          : '⚪ Algoritmo ELO desactivado (catálogo en modo estándar)',
+        'Cerrar',
+        { duration: 3000 }
+      );
+    } catch (err) {
+      this.#snackBar.open('Error al guardar configuración de ranking', 'Cerrar', { duration: 3000 });
+      console.error(err);
+    } finally {
+      this.isSavingRankingConfig.set(false);
+    }
+  }
+
+  async triggerRecalculateScores() {
+    this.isRecalculatingRanking.set(true);
+    try {
+      const res = await this.#storeConfigService.recalculateRankingScores();
+      this.#snackBar.open(
+        `✅ Scores recalculados con éxito (${res.updatedCount} productos actualizados)`,
+        'Cerrar',
+        { duration: 4000 }
+      );
+      await this.loadRankingProducts();
+    } catch (err) {
+      this.#snackBar.open('Error al recalcular scores', 'Cerrar', { duration: 3000 });
+      console.error(err);
+    } finally {
+      this.isRecalculatingRanking.set(false);
+    }
+  }
+
+  async updateProductScore(product: IProduct, newScoreRaw: any) {
+    const newScore = Number(newScoreRaw);
+    if (isNaN(newScore) || newScore < 0) return;
+    if (product.rankingScore === newScore) return;
+
+    this.updatingScoreProductId.set(product._id);
+    try {
+      await this.#productService.updateRankingScore(product._id, newScore);
+
+      const currentCfg = this.rankingConfig();
+      const views = product.metrics?.viewsCount || 0;
+      const carts = product.metrics?.cartAddsCount || 0;
+      const sales = product.metrics?.salesCount || 0;
+      const effectiveScore = newScore + (views * (currentCfg.viewWeight ?? 1)) + (carts * (currentCfg.cartWeight ?? 5)) + (sales * (currentCfg.saleWeight ?? 25));
+
+      this.rankingProducts.update(prods =>
+        prods.map(p => p._id === product._id
+          ? { ...p, rankingScore: newScore, effectiveScore }
+          : p
+        ).sort((a, b) => (b.effectiveScore ?? 0) - (a.effectiveScore ?? 0))
+      );
+
+      this.#snackBar.open(`Score base de "${product.model}" actualizado a ${newScore} (Total: ${effectiveScore})`, 'OK', { duration: 2500 });
+    } catch (err) {
+      this.#snackBar.open('Error al actualizar el score', 'Cerrar', { duration: 3000 });
+      console.error(err);
+    } finally {
+      this.updatingScoreProductId.set(null);
+    }
   }
 
   onSearch(event: Event) {

@@ -441,6 +441,29 @@
                     </span>
                   </div>
                 </div>
+
+                <!-- Prioridad / Ranking ELO Base -->
+                <div class="bg-base-200/40 p-3.5 rounded-xl border border-base-200 flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                      <mat-icon class="text-amber-500 text-[16px]! w-4! h-4!">military_tech</mat-icon>
+                      <span>Prioridad de Catálogo (Score Base)</span>
+                    </span>
+                    <span class="badge badge-warning badge-sm font-mono font-bold text-2xs">ELO</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      class="input input-bordered input-sm w-28 font-mono font-bold text-xs"
+                      formControlName="rankingScore"
+                      placeholder="100"
+                    />
+                    <span class="text-[11px] text-base-content/60 leading-tight">
+                      Puntaje inicial (default: 100). Determina la posición inicial en la grilla antes de sumar vistas y ventas.
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

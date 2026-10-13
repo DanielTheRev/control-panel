@@ -313,4 +313,32 @@ export class ProductService {
     if (excludeId) params = params.set('excludeId', excludeId);
     return this.#http.get<{ exists: boolean; product?: any }>(`${this.#apiUrl}/admin/check-supplier-link`, { params });
   }
+
+  updateRankingScore(id: string, rankingScore: number) {
+    return firstValueFrom(
+      this.#http.patch<{ success: boolean; data: IProduct; message: string }>(`${this.#apiUrl}/${id}/ranking-score`, { rankingScore })
+    );
+  }
+
+  getRankingPreviewProducts(options?: { q?: string; category?: string; page?: number; limit?: number }): Promise<IPaginatedResult<IProduct>> {
+    let params = new HttpParams()
+      .set('page', (options?.page || 1).toString())
+      .set('limit', (options?.limit || 250).toString())
+      .set('sortBy', 'ranking')
+      .set('status', 'published');
+
+    if (options?.q) params = params.set('q', options.q);
+    if (options?.category) params = params.set('category', options.category);
+
+    return firstValueFrom(
+      this.#http.get<IPaginatedResult<IProduct>>(`${this.#apiUrl}/admin/list`, { params }).pipe(
+        map((res) => {
+          if (res && Array.isArray(res.data)) {
+            res.data = res.data.map(mapProductPrices);
+          }
+          return res;
+        })
+      )
+    );
+  }
 }

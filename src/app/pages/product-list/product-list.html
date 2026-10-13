@@ -196,7 +196,53 @@
   </app-page-header>
 
   <ng-container content>
-    <div class="flex-1 flex flex-row min-h-0 w-full gap-3 bg-transparent">
+    <!-- Switcher Principal: Inventario vs Ranking ELO & Vista Tienda -->
+    <div class="flex items-center justify-between bg-base-100 p-2 px-3 rounded-2xl border border-base-200 shadow-2xs mb-3 shrink-0">
+      <div class="inline-flex join bg-base-200/80 p-1 rounded-xl">
+        <button
+          type="button"
+          class="join-item btn btn-xs sm:btn-sm gap-1.5 font-bold transition-all cursor-pointer"
+          [ngClass]="activeMainTab() === 'inventory' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+          (click)="activeMainTab.set('inventory')"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">inventory_2</mat-icon>
+          <span>Inventario & Stock</span>
+        </button>
+        <button
+          type="button"
+          class="join-item btn btn-xs sm:btn-sm gap-1.5 font-bold transition-all cursor-pointer"
+          [ngClass]="activeMainTab() === 'ranking' ? 'btn-warning shadow-xs text-warning-content' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+          (click)="switchToRankingTab()"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">military_tech</mat-icon>
+          <span>Vista Tienda & Ranking ELO</span>
+          @if (rankingConfig().active) {
+            <span class="badge badge-success badge-xs font-mono font-bold text-white ml-0.5">ACTIVO</span>
+          } @else {
+            <span class="badge badge-ghost badge-xs font-mono opacity-60 ml-0.5">INACTIVO</span>
+          }
+        </button>
+      </div>
+
+      @if (activeMainTab() === 'ranking') {
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-base-content/60 hidden md:inline">Algoritmo en tienda:</span>
+          <button
+            type="button"
+            (click)="toggleRankingActive()"
+            [disabled]="isSavingRankingConfig()"
+            class="btn btn-xs sm:btn-sm gap-1.5 font-bold shadow-xs transition-all cursor-pointer"
+            [ngClass]="rankingConfig().active ? 'btn-success text-white' : 'btn-outline border-base-300'"
+          >
+            <span class="w-2 h-2 rounded-full" [ngClass]="rankingConfig().active ? 'bg-white animate-pulse' : 'bg-base-content/30'"></span>
+            <span>{{ rankingConfig().active ? 'Algoritmo Activo en Tienda' : 'Activar Algoritmo' }}</span>
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (activeMainTab() === 'inventory') {
+      <div class="flex-1 flex flex-row min-h-0 w-full gap-3 bg-transparent">
       
       <!-- Panel de Contenido Principal (Lista / Mosaico) -->
       <div class="flex-1 flex flex-col min-h-0 min-w-0 w-full">
@@ -775,6 +821,387 @@
       }
 
     </div>
+    } @else {
+      <!-- ========================================== -->
+      <!-- VISTA TIENDA & RANKING ELO (Catálogo Vivo) -->
+      <!-- ========================================== -->
+      <div class="flex-1 flex flex-col min-h-0 w-full gap-3.5 overflow-y-auto pr-1">
+
+        <!-- Card Superior: Configuración & Pesos del Algoritmo -->
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-5 space-y-4">
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 border-b border-base-200 pb-3">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 border border-amber-500/20">
+                <mat-icon class="text-[22px]! w-5.5! h-5.5!">military_tech</mat-icon>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-sm font-bold text-base-content">Algoritmo de Prioridad & Popularidad ELO</h3>
+                  @if (rankingConfig().active) {
+                    <span class="badge badge-success badge-sm font-mono font-bold text-white gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                      EN VIVO EN TIENDA
+                    </span>
+                  } @else {
+                    <span class="badge badge-ghost badge-sm font-mono opacity-70">MODO SEGURO (INACTIVO)</span>
+                  }
+                </div>
+                <p class="text-xs text-base-content/60 mt-0.5">
+                  @if (rankingConfig().active) {
+                    El storefront ordena el catálogo dinámicamente según el puntaje base asignado más las vistas, carritos y ventas reales.
+                  } @else {
+                    El algoritmo está apagado. El catálogo se muestra en orden estándar. Podés ajustar los puntajes libremente antes de activarlo.
+                  }
+                </p>
+              </div>
+            </div>
+
+            <!-- Botones de Acción Global -->
+            <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
+              <button
+                type="button"
+                (click)="triggerRecalculateScores()"
+                [disabled]="isRecalculatingRanking()"
+                class="btn btn-sm btn-ghost border border-base-300 hover:border-primary gap-1.5 text-xs font-bold"
+                matTooltip="Recalcula el Effective Score de todos los productos en la base de datos"
+              >
+                @if (isRecalculatingRanking()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                } @else {
+                  <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon>
+                }
+                <span>Recalcular Scores</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="toggleRankingActive()"
+                [disabled]="isSavingRankingConfig()"
+                class="btn btn-sm font-bold gap-1.5 shadow-sm cursor-pointer"
+                [ngClass]="rankingConfig().active ? 'btn-error btn-outline' : 'btn-success text-white'"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">{{ rankingConfig().active ? 'power_settings_new' : 'bolt' }}</mat-icon>
+                <span>{{ rankingConfig().active ? 'Desactivar en Tienda' : 'Activar en Tienda' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ponderación de Factores (Weights) -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div class="bg-base-200/50 p-2.5 rounded-xl border border-base-200">
+              <label class="text-[11px] font-bold text-base-content/70 block mb-1 flex items-center gap-1">
+                <span>👁️ Peso por Vista</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input input-bordered input-sm w-full font-mono font-bold text-xs"
+                  [ngModel]="rankingConfig().viewWeight"
+                  (ngModelChange)="updateRankingWeight('viewWeight', $event)"
+                />
+                <span class="text-xs text-base-content/50 font-bold shrink-0">pts</span>
+              </div>
+            </div>
+
+            <div class="bg-base-200/50 p-2.5 rounded-xl border border-base-200">
+              <label class="text-[11px] font-bold text-base-content/70 block mb-1 flex items-center gap-1">
+                <span>🛒 Peso por Carrito</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input input-bordered input-sm w-full font-mono font-bold text-xs"
+                  [ngModel]="rankingConfig().cartWeight"
+                  (ngModelChange)="updateRankingWeight('cartWeight', $event)"
+                />
+                <span class="text-xs text-base-content/50 font-bold shrink-0">pts</span>
+              </div>
+            </div>
+
+            <div class="bg-base-200/50 p-2.5 rounded-xl border border-base-200">
+              <label class="text-[11px] font-bold text-base-content/70 block mb-1 flex items-center gap-1">
+                <span>🛍️ Peso por Venta</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input input-bordered input-sm w-full font-mono font-bold text-xs"
+                  [ngModel]="rankingConfig().saleWeight"
+                  (ngModelChange)="updateRankingWeight('saleWeight', $event)"
+                />
+                <span class="text-xs text-base-content/50 font-bold shrink-0">pts</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="saveRankingConfig()"
+                [disabled]="isSavingRankingConfig()"
+                class="btn btn-sm btn-primary w-full font-bold gap-1.5 cursor-pointer"
+              >
+                @if (isSavingRankingConfig()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                } @else {
+                  <mat-icon class="text-[16px]! w-4! h-4!">save</mat-icon>
+                }
+                <span>Guardar Factores</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtro en Vista Ranking -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-base-100 p-3 rounded-2xl border border-base-200 shadow-2xs">
+          <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
+            <div class="relative flex-1 sm:max-w-xs">
+              <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 text-[18px]! w-4.5! h-4.5!">search</mat-icon>
+              <input
+                type="text"
+                class="input input-bordered input-sm w-full pl-9 text-xs rounded-xl"
+                placeholder="Filtrar por nombre o SKU..."
+                [ngModel]="rankingSearchQuery()"
+                (ngModelChange)="onRankingSearchChange($event)"
+              />
+            </div>
+            <select
+              class="select select-bordered select-sm text-xs rounded-xl font-semibold"
+              [ngModel]="rankingCategoryFilter()"
+              (ngModelChange)="onRankingCategoryChange($event)"
+            >
+              <option value="">Todas las categorías</option>
+              @for (cat of Categories(); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs text-base-content/60 font-medium">
+              Mostrando <strong>{{ filteredRankingProducts().length }}</strong> prendas en orden de visualización
+            </span>
+            <button
+              type="button"
+              (click)="loadRankingProducts()"
+              [disabled]="isLoadingRankingProducts()"
+              class="btn btn-xs btn-ghost btn-circle cursor-pointer"
+              title="Refrescar lista"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grilla de Productos Ordenados por ELO -->
+        @if (isLoadingRankingProducts()) {
+          <div class="flex flex-col items-center justify-center py-16 gap-3 bg-base-100 rounded-2xl border border-base-200">
+            <span class="loading loading-spinner loading-lg text-amber-500"></span>
+            <span class="text-xs text-base-content/60 font-semibold">Cargando catálogo con cálculo de ELO...</span>
+          </div>
+        } @else if (filteredRankingProducts().length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-center bg-base-100 rounded-2xl border border-base-200">
+            <mat-icon class="text-4xl! w-12! h-12! text-base-content/30 mb-2">military_tech</mat-icon>
+            <p class="text-sm font-bold text-base-content/70">No se encontraron productos para los filtros seleccionados</p>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
+            @for (product of paginatedRankingProducts(); track product._id; let idx = $index) {
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xs hover:shadow-md transition-all flex flex-col overflow-hidden group">
+                
+                <!-- Encabezado de Tarjeta / Imagen -->
+                <div class="relative aspect-4/5 bg-base-200 overflow-hidden">
+                  <!-- Posición en Feed Global -->
+                  <div class="absolute top-2 left-2 z-10 flex items-center gap-1 bg-black/75 backdrop-blur-xs text-white text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg shadow-xs">
+                    <span>#{{ rankingPageSize() > 0 ? (rankingPage() - 1) * rankingPageSize() + idx + 1 : idx + 1 }}</span>
+                  </div>
+
+                  <!-- Badge de ELO Efectivo Total -->
+                  <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-amber-500 text-white text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-lg shadow-xs">
+                    <mat-icon class="text-[12px]! w-3! h-3!">star</mat-icon>
+                    <span>{{ product.effectiveScore ?? product.rankingScore ?? 100 }}</span>
+                  </div>
+
+                  <!-- Imagen Portada -->
+                  <img
+                    [src]="getProductImageUrl(product)"
+                    [alt]="product.model"
+                    loading="lazy"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+
+                  <!-- Indicador si está destacado -->
+                  @if (product.isFeatured) {
+                    <div class="absolute bottom-2 left-2 z-10 badge badge-xs badge-primary font-bold shadow-xs">
+                      Destacado
+                    </div>
+                  }
+                </div>
+
+                <!-- Cuerpo de Tarjeta -->
+                <div class="p-3 flex flex-col flex-1 justify-between gap-2.5">
+                  <div>
+                    <div class="flex items-center justify-between text-[10px] text-base-content/50 font-bold uppercase tracking-wider">
+                      <span class="truncate">{{ product.brand || 'Vura' }}</span>
+                      <span class="truncate text-primary">{{ product.category }}</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-base-content truncate mt-0.5" [title]="product.model">
+                      {{ product.model }}
+                    </h4>
+
+                    <!-- Métricas 1st-Party Analytics -->
+                    <div class="grid grid-cols-3 gap-1 bg-base-200/60 p-1.5 rounded-xl mt-2 text-center text-[10px]">
+                      <div class="flex flex-col">
+                        <span class="font-bold text-base-content">{{ product.metrics?.viewsCount || 0 }}</span>
+                        <span class="text-[9px] text-base-content/50">👁️ Vistas</span>
+                      </div>
+                      <div class="flex flex-col border-x border-base-300">
+                        <span class="font-bold text-base-content">{{ product.metrics?.cartAddsCount || 0 }}</span>
+                        <span class="text-[9px] text-base-content/50">🛒 Carrito</span>
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="font-bold text-base-content">{{ product.metrics?.salesCount || 0 }}</span>
+                        <span class="text-[9px] text-base-content/50">🛍️ Ventas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Editor Inline de Score Base -->
+                  <div class="pt-2 border-t border-base-200/80 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-base-content/70">Score Base Manual:</span>
+                      <span class="text-[10px] font-mono text-base-content/50">
+                        {{ product.rankingScore ?? 100 }} pts
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                      <input
+                        #scoreInput
+                        type="number"
+                        min="0"
+                        [value]="product.rankingScore ?? 100"
+                        class="input input-bordered input-xs w-full font-mono font-bold text-xs"
+                        (keydown.enter)="updateProductScore(product, scoreInput.value)"
+                      />
+                      <button
+                        type="button"
+                        [disabled]="updatingScoreProductId() === product._id"
+                        (click)="updateProductScore(product, scoreInput.value)"
+                        class="btn btn-xs btn-primary font-bold px-2.5 shrink-0 cursor-pointer"
+                        title="Guardar nuevo score base"
+                      >
+                        @if (updatingScoreProductId() === product._id) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">check</mat-icon>
+                        }
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            }
+          </div>
+
+          <!-- Barra de Paginación y Selector de Lotes -->
+          @if (filteredRankingProducts().length > 0) {
+            <div class="flex flex-col md:flex-row items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-200 shadow-2xs mt-3">
+              <!-- Info de posición actual -->
+              <div class="flex items-center gap-2 text-xs text-base-content/70">
+                <span class="font-bold text-base-content">
+                  Página {{ rankingPage() }} de {{ totalRankingPages() }}
+                </span>
+                <span class="text-base-content/40">•</span>
+                <span>
+                  Prendas <strong>#{{ (rankingPage() - 1) * rankingPageSize() + 1 }}</strong> a 
+                  <strong>{{ rankingEndIndex() }}</strong> 
+                  (de {{ filteredRankingProducts().length }} totales)
+                </span>
+              </div>
+
+              <!-- Botones de Paginación -->
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  (click)="setRankingPage(1)"
+                  [disabled]="rankingPage() === 1"
+                  class="btn btn-xs btn-outline border-base-300 font-bold cursor-pointer disabled:opacity-40"
+                  title="Primera página"
+                >
+                  ««
+                </button>
+                <button
+                  type="button"
+                  (click)="setRankingPage(rankingPage() - 1)"
+                  [disabled]="rankingPage() === 1"
+                  class="btn btn-xs btn-outline border-base-300 font-bold cursor-pointer disabled:opacity-40"
+                  title="Página anterior"
+                >
+                  ‹ Ant
+                </button>
+
+                <!-- Selector rápido de página -->
+                <div class="flex items-center gap-1 px-1">
+                  <span class="text-xs font-semibold">Pág</span>
+                  <input
+                    type="number"
+                    min="1"
+                    [max]="totalRankingPages()"
+                    [ngModel]="rankingPage()"
+                    (ngModelChange)="setRankingPage($event)"
+                    class="input input-bordered input-xs w-12 text-center font-bold font-mono text-xs"
+                  />
+                  <span class="text-xs text-base-content/50">/ {{ totalRankingPages() }}</span>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="setRankingPage(rankingPage() + 1)"
+                  [disabled]="rankingPage() >= totalRankingPages()"
+                  class="btn btn-xs btn-outline border-base-300 font-bold cursor-pointer disabled:opacity-40"
+                  title="Página siguiente"
+                >
+                  Sig ›
+                </button>
+                <button
+                  type="button"
+                  (click)="setRankingPage(totalRankingPages())"
+                  [disabled]="rankingPage() >= totalRankingPages()"
+                  class="btn btn-xs btn-outline border-base-300 font-bold cursor-pointer disabled:opacity-40"
+                  title="Última página"
+                >
+                  »»
+                </button>
+              </div>
+
+              <!-- Selector de tamaño de lote -->
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-base-content/60 font-medium">Por página:</span>
+                <select
+                  class="select select-bordered select-xs rounded-lg font-bold"
+                  [ngModel]="rankingPageSize()"
+                  (ngModelChange)="setRankingPageSize($event)"
+                >
+                  <option [value]="16">16 (Lote Tienda Vura)</option>
+                  <option [value]="24">24 por página</option>
+                  <option [value]="48">48 por página</option>
+                  <option [value]="0">Todas (Sin límite)</option>
+                </select>
+              </div>
+            </div>
+          }
+        }
+
+      </div>
+    }
   </ng-container>
 </div>
 
