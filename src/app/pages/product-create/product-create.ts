@@ -1656,6 +1656,16 @@ XXL: 58, 76, 52
     this.colorGroupsControls.removeAt(index);
   }
 
+  moveColorGroup(index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= this.colorGroupsControls.length) return;
+
+    const groupControl = this.colorGroupsControls.at(index);
+    this.colorGroupsControls.removeAt(index);
+    this.colorGroupsControls.insert(targetIndex, groupControl);
+    this.productForm.markAsDirty();
+  }
+
   addSizeToGroup(groupIndex: number, sizeName: string, defaultStock = 8) {
     const group = this.colorGroupsControls.at(groupIndex) as FormGroup;
     const variantsArray = group.get('variants') as FormArray;

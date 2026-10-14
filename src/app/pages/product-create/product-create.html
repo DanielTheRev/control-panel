@@ -1129,44 +1129,67 @@
                         <!-- Header del Grupo de Color -->
                         <div class="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-base-300/60 bg-base-100/60 p-3 rounded-xl">
                           <div class="flex flex-wrap items-center gap-3">
-                            <!-- Selector Visual de Foto Grande -->
+                            <!-- Selector Visual de Foto Grande y Posición -->
                             <div class="flex items-center gap-2.5">
+                              <div class="flex flex-col items-center justify-center shrink-0">
+                                <span
+                                  class="badge badge-xs font-mono font-bold text-[10px] px-2 py-2 rounded-lg shadow-2xs"
+                                  [class.badge-primary]="gIndex === 0"
+                                  [class.badge-neutral]="gIndex > 0"
+                                  [title]="gIndex === 0 ? 'Color #1: Se mostrará como primera opción y portada en la tienda' : 'Color #' + (gIndex + 1)"
+                                >
+                                  #{{ gIndex + 1 }}
+                                </span>
+                                @if (gIndex === 0) {
+                                  <span class="text-[8px] font-black text-primary uppercase tracking-tighter mt-0.5">1° Web</span>
+                                }
+                              </div>
+
                               <div
                                 class="relative group/pic cursor-pointer shrink-0"
                                 (click)="cycleColorGroupImage(group)"
                                 title="Clic para rotar entre las fotos del producto"
                               >
                                 @if (getColorGroupImageLink(group)) {
-                                  <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-base-300 group-hover/pic:border-primary shadow-xs transition-all">
+                                  <div class="relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 border-base-300 group-hover/pic:border-primary shadow-xs group-hover/pic:shadow-md transition-all">
                                     <img
                                       [src]="getColorGroupImageLink(group)"
                                       alt="Foto color"
-                                      class="w-full h-full object-cover group-hover/pic:scale-110 transition-transform duration-300"
+                                      class="w-full h-full object-cover object-top group-hover/pic:scale-105 transition-transform duration-300"
                                     />
-                                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover/pic:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                      <mat-icon class="text-[16px]! w-4! h-4!">sync</mat-icon>
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/pic:opacity-100 flex flex-col items-center justify-center transition-opacity text-white backdrop-blur-[2px]">
+                                      <mat-icon class="text-[20px]! w-5! h-5!">sync</mat-icon>
+                                      <span class="text-[9px] font-black tracking-wider uppercase mt-1">Rotar</span>
                                     </div>
                                   </div>
                                 } @else {
-                                  <div class="w-12 h-12 rounded-xl bg-base-200 border-2 border-dashed border-base-300 flex flex-col items-center justify-center text-base-content/30 group-hover/pic:text-primary transition-colors" title="Sin foto asociada">
-                                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">add_photo_alternate</mat-icon>
-                                    <span class="text-[8px] font-bold">Foto</span>
+                                  <div class="w-20 sm:w-24 h-28 sm:h-32 rounded-2xl bg-base-200 border-2 border-dashed border-base-300 flex flex-col items-center justify-center text-base-content/30 group-hover/pic:text-primary group-hover/pic:border-primary transition-all p-2 text-center" title="Sin foto asociada">
+                                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">add_photo_alternate</mat-icon>
+                                    <span class="text-[9px] font-bold mt-1 leading-tight">Sin Foto</span>
                                   </div>
                                 }
                               </div>
 
-                              <div class="flex flex-col gap-1">
+                              <div class="flex flex-col gap-1.5 justify-center">
                                 <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Foto Asignada</span>
                                 @if (imagesControls.length > 0) {
                                   <select
                                     formControlName="imageIndex"
-                                    class="select select-xs select-bordered font-bold text-xs h-7 min-h-0 bg-base-100 rounded-lg max-w-36"
+                                    class="select select-xs select-bordered font-bold text-xs h-8 min-h-0 bg-base-100 rounded-lg max-w-40"
                                     title="Foto de la galería que se muestra al hacer clic en este color en la web"
                                   >
                                     @for (img of imagesControls.controls; track $index; let imgIdx = $index) {
                                       <option [value]="imgIdx">Foto #{{ imgIdx + 1 }} {{ imgIdx === 0 ? '(Portada)' : '' }}</option>
                                     }
                                   </select>
+                                  <button
+                                    type="button"
+                                    class="btn btn-ghost btn-xs text-[10px] text-base-content/60 hover:text-primary gap-1 px-1 h-5 min-h-0 self-start"
+                                    (click)="cycleColorGroupImage(group)"
+                                    title="Cambiar a la siguiente foto de la galería"
+                                  >
+                                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">sync</mat-icon> Siguiente foto
+                                  </button>
                                 } @else {
                                   <span class="text-[10px] text-warning italic font-semibold">Subí fotos arriba</span>
                                 }
@@ -1200,6 +1223,30 @@
                           </div>
 
                           <div class="flex items-center gap-2">
+                            <!-- Botones de Reordenar Color (Subir / Bajar) -->
+                            @if (colorGroupsControls.length > 1) {
+                              <div class="join border border-base-300 rounded-lg bg-base-100 shadow-2xs" title="Reordenar posición del color en la tienda">
+                                <button
+                                  type="button"
+                                  class="join-item btn btn-xs btn-ghost px-1.5 text-base-content/70 hover:text-primary disabled:opacity-20 cursor-pointer"
+                                  (click)="moveColorGroup(gIndex, -1)"
+                                  [disabled]="gIndex === 0"
+                                  title="Mover color hacia arriba (se mostrará antes en la web)"
+                                >
+                                  <mat-icon class="text-[16px]! w-4! h-4!">arrow_upward</mat-icon>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="join-item btn btn-xs btn-ghost px-1.5 text-base-content/70 hover:text-primary disabled:opacity-20 cursor-pointer"
+                                  (click)="moveColorGroup(gIndex, 1)"
+                                  [disabled]="gIndex === colorGroupsControls.length - 1"
+                                  title="Mover color hacia abajo (se mostrará después en la web)"
+                                >
+                                  <mat-icon class="text-[16px]! w-4! h-4!">arrow_downward</mat-icon>
+                                </button>
+                              </div>
+                            }
+
                             <button
                               type="button"
                               class="btn btn-xs btn-primary btn-outline font-bold gap-1 rounded-lg shadow-2xs"
