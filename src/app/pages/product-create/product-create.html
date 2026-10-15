@@ -560,6 +560,34 @@
                     />
                     <span class="join-item btn btn-sm btn-static bg-base-200 border-base-300 font-bold px-3">%</span>
                   </div>
+
+                  @if (productForm.get('useCustomProfit')?.value) {
+                    <div class="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-base-200/60">
+                      <span class="text-[10px] font-bold text-base-content/60">Tipo de cálculo:</span>
+                      <div class="join">
+                        <button
+                          type="button"
+                          class="join-item btn btn-2xs"
+                          [ngClass]="(productForm.get('pricingMethodChoice')?.value || globalPricingMethod()) === 'margin' ? 'btn-primary font-bold' : 'btn-ghost border border-base-300'"
+                          (click)="productForm.get('pricingMethodChoice')?.setValue('margin')"
+                        >
+                          s/ Venta (Margin)
+                        </button>
+                        <button
+                          type="button"
+                          class="join-item btn btn-2xs"
+                          [ngClass]="(productForm.get('pricingMethodChoice')?.value || globalPricingMethod()) === 'markup' ? 'btn-primary font-bold' : 'btn-ghost border border-base-300'"
+                          (click)="productForm.get('pricingMethodChoice')?.setValue('markup')"
+                        >
+                          s/ Costo (Markup)
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="text-[9px] text-base-content/40 italic mt-1">
+                      Hereda de tienda: {{ globalPricingMethod() === 'margin' ? 'Margen s/ Venta' : 'Recargo s/ Costo' }}
+                    </div>
+                  }
                 </fieldset>
               </div>
 
@@ -797,14 +825,14 @@
                   <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs">
                     <mat-icon class="text-amber-600 dark:text-amber-400 text-[18px] shrink-0 mt-0.5">info</mat-icon>
                     <div class="text-base-content/85 text-[11px] leading-relaxed">
-                      <strong class="text-amber-800 dark:text-amber-300">6 cuotas sin interés no está activo en tu tienda</strong> (actualmente ofrecés hasta {{ (lp.maxInstallments ?? 3) > 1 ? (lp.maxInstallments + ' cuotas') : '1 pago' }}), pero <strong>si las tuvieras habilitadas</strong>, quitando el precio del proveedor ({{ lp.breakdown[0]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}) y los gastos adicionales ({{ lp.breakdown[1]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}), te quedaría una ganancia limpia en mano de <strong class="text-amber-700 dark:text-amber-300 font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> por venta.
+                      <strong class="text-amber-800 dark:text-amber-300">6 cuotas sin interés no está activo en tu tienda</strong> (actualmente ofrecés hasta {{ (lp.maxInstallments ?? 3) > 1 ? (lp.maxInstallments + ' cuotas') : '1 pago' }}), pero <strong>si las tuvieras habilitadas</strong>, quitando los costos base totales ({{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }} entre proveedor, adicionales e impuestos), te quedaría una ganancia limpia en mano de <strong class="text-amber-700 dark:text-amber-300 font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> por venta.
                     </div>
                   </div>
                 } @else {
                   <div class="p-3 rounded-xl bg-primary/10 border border-primary/25 flex items-start gap-2.5 text-xs">
                     <mat-icon class="text-primary text-[18px] shrink-0 mt-0.5">verified</mat-icon>
                     <div class="text-base-content/85 text-[11px] leading-relaxed">
-                      <strong class="text-primary">6 cuotas sin interés activas:</strong> Si tu cliente compra en 6 cuotas con tarjeta, quitando el costo de proveedor ({{ lp.breakdown[0]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}), los adicionales ({{ lp.breakdown[1]?.value | currency:'ARS':'symbol-narrow':'1.0-0' }}) y las comisiones de pasarela, tu ganancia neta en mano es de <strong class="text-primary font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>.
+                      <strong class="text-primary">6 cuotas sin interés activas:</strong> Si tu cliente compra en 6 cuotas con tarjeta, quitando los costos base totales ({{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }} entre proveedor, adicionales e impuestos) y las comisiones de pasarela, tu ganancia neta en mano es de <strong class="text-primary font-black">{{ lp.profits.six_installments | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>.
                     </div>
                   </div>
                 }
@@ -980,8 +1008,8 @@
                             <span class="font-bold">{{ lp.listPrice * (1 - simulatedCouponPercent() / 100) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="flex items-center justify-between text-base-content/70">
-                            <span>Costos cubiertos (Proveedor + Adicionales):</span>
-                            <span class="font-bold text-success">{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
+                            <span>Costos cubiertos (Proveedor + Gastos + Impuestos):</span>
+                            <span class="font-bold text-success">{{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
                           </div>
                           <div class="flex items-center justify-between pt-1 border-t border-base-200">
                             <span class="text-[10px] font-bold text-warning">Impacto en tu ganancia:</span>
@@ -1008,8 +1036,8 @@
                             <span class="font-bold">{{ transferPrice() * (1 - simulatedCouponPercent() / 100) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="flex items-center justify-between text-base-content/70">
-                            <span>Costos cubiertos (Proveedor + Adicionales):</span>
-                            <span class="font-bold text-success">{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
+                            <span>Costos cubiertos (Proveedor + Gastos + Impuestos):</span>
+                            <span class="font-bold text-success">{{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }} ✓</span>
                           </div>
                           <div class="flex items-center justify-between pt-1 border-t border-base-200">
                             <span class="text-[10px] font-bold text-warning">Impacto en tu ganancia:</span>
@@ -1030,10 +1058,10 @@
                       </summary>
                       <div class="collapse-content px-3 pb-3 pt-1 text-[11px] text-base-content/60 space-y-1.5 leading-relaxed">
                         <p>
-                          • <strong>En Tarjetas/Cuotas (Límite {{ maxCouponPercentList() }}%):</strong> De lo que Mercado Pago te liquida neto (restando comisiones de pasarela), tus costos fijos se llevan <strong>{{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> y tu ganancia pretendida original eran <strong>{{ ((lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments) | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>. El {{ maxCouponPercentList() }}% OFF es el punto de quiebre donde cobrás exactamente tus costos ($0 de ganancia). Si emitís un cupón mayor al {{ maxCouponPercentList() }}%, empezás a perder plata de tu bolsillo.
+                          • <strong>En Tarjetas/Cuotas (Límite {{ maxCouponPercentList() }}%):</strong> De lo que Mercado Pago te liquida neto (restando comisiones de pasarela), tus costos fijos e impuestos se llevan <strong>{{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> y tu ganancia pretendida original eran <strong>{{ ((lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments) | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>. El {{ maxCouponPercentList() }}% OFF es el punto de quiebre donde cobrás exactamente tus costos ($0 de ganancia). Si emitís un cupón mayor al {{ maxCouponPercentList() }}%, empezás a perder plata de tu bolsillo.
                         </p>
                         <p>
-                          • <strong>En Transferencia (Límite {{ maxCouponPercentTransfer() }}%):</strong> Como en transferencia cobrás directo sin comisión de pasarela, el {{ maxCouponPercentTransfer() }}% OFF es el descuento adicional exacto que reduce el cobro al costo estricto del producto ({{ ((lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0)) | currency:'ARS':'symbol-narrow':'1.0-0' }}).
+                          • <strong>En Transferencia (Límite {{ maxCouponPercentTransfer() }}%):</strong> Como en transferencia cobrás directo sin comisión de pasarela, el {{ maxCouponPercentTransfer() }}% OFF es el descuento adicional exacto que reduce el cobro al costo estricto del producto con gastos e impuestos ({{ totalProductBaseCost() | currency:'ARS':'symbol-narrow':'1.0-0' }}).
                         </p>
                       </div>
                     </details>

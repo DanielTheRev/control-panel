@@ -380,12 +380,22 @@ export class ProductCreate {
     return Math.max(0, lp.maxSafeDiscount - discount);
   });
 
+  /** Total product base cost (Provider Cost + Operating Expenses + Taxes/Retentions) */
+  totalProductBaseCost = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown) return 0;
+    const categorizedSum = lp.breakdown
+      .filter((b: any) => b.category === 'provider' || b.category === 'expense' || b.category === 'tax')
+      .reduce((sum: number, b: any) => sum + (b.value || 0), 0);
+    if (categorizedSum > 0) return categorizedSum;
+    return (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0) + (lp.breakdown[2]?.value || 0);
+  });
+
   /** Net profit in hand when paid via transfer */
   transferProfit = computed(() => {
     const lp = this.calculatedListPrice();
-    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
-    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
-    return Math.max(0, this.transferPrice() - totalCost);
+    if (!lp || !lp.breakdown) return 0;
+    return Math.max(0, this.transferPrice() - this.totalProductBaseCost());
   });
 
   /** Interactive simulated coupon percentage (default 10%) */
@@ -394,9 +404,9 @@ export class ProductCreate {
   /** Maximum coupon % discount that List Price (installments) can support before losing money */
   maxCouponPercentList = computed(() => {
     const lp = this.calculatedListPrice();
-    if (!lp || !lp.breakdown || lp.breakdown.length < 4) return 0;
-    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
-    const pasarelaRate = (lp.breakdown[3]?.percentage || 0) / 100;
+    const totalCost = this.totalProductBaseCost();
+    if (!lp || !lp.breakdown || totalCost <= 0 || !lp.listPrice) return 0;
+    const pasarelaRate = (lp.breakdown[3]?.value || 0) / lp.listPrice;
     const netPerSale = lp.listPrice * (1 - pasarelaRate);
     if (netPerSale <= 0) return 0;
     const profitInstallments = Math.max(0, netPerSale - totalCost);
@@ -405,11 +415,9 @@ export class ProductCreate {
 
   /** Maximum coupon % discount that Transfer Price can support before losing money */
   maxCouponPercentTransfer = computed(() => {
-    const lp = this.calculatedListPrice();
-    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
-    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
     const tPrice = this.transferPrice();
-    if (tPrice <= 0) return 0;
+    const totalCost = this.totalProductBaseCost();
+    if (tPrice <= 0 || totalCost <= 0) return 0;
     const profitTransfer = Math.max(0, tPrice - totalCost);
     return Math.floor((profitTransfer / tPrice) * 100);
   });
@@ -417,10 +425,10 @@ export class ProductCreate {
   /** Simulated net profit in hand when a customer buys with the simulated coupon using cards/installments */
   simulatedProfitList = computed(() => {
     const lp = this.calculatedListPrice();
-    if (!lp || !lp.breakdown || lp.breakdown.length < 4) return 0;
+    const totalCost = this.totalProductBaseCost();
+    if (!lp || !lp.breakdown || !lp.listPrice) return 0;
     const coupon = this.simulatedCouponPercent();
-    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
-    const pasarelaRate = (lp.breakdown[3]?.percentage || 0) / 100;
+    const pasarelaRate = (lp.breakdown[3]?.value || 0) / lp.listPrice;
     const discountedPrice = lp.listPrice * (1 - coupon / 100);
     const netReceived = discountedPrice * (1 - pasarelaRate);
     return Math.round(netReceived - totalCost);
@@ -428,11 +436,10 @@ export class ProductCreate {
 
   /** Simulated net profit in hand when a customer buys with the simulated coupon using transfer */
   simulatedProfitTransfer = computed(() => {
-    const lp = this.calculatedListPrice();
-    if (!lp || !lp.breakdown || lp.breakdown.length < 2) return 0;
-    const coupon = this.simulatedCouponPercent();
-    const totalCost = (lp.breakdown[0]?.value || 0) + (lp.breakdown[1]?.value || 0);
     const tPrice = this.transferPrice();
+    const totalCost = this.totalProductBaseCost();
+    if (tPrice <= 0) return 0;
+    const coupon = this.simulatedCouponPercent();
     const discountedTransfer = tPrice * (1 - coupon / 100);
     return Math.round(discountedTransfer - totalCost);
   });
@@ -1148,10 +1155,14 @@ XXL: 58, 76, 52
         if (useCustom) {
           this.productForm.get('customProfitMargin')?.enable();
           this.productForm.get('pricingMethodChoice')?.enable();
+          if (!this.productForm.get('pricingMethodChoice')?.value) {
+            this.productForm.get('pricingMethodChoice')?.setValue(this.globalPricingMethod());
+          }
           this.isUsingGlobalMargin.set(false);
         } else {
           this.productForm.get('customProfitMargin')?.disable();
           this.productForm.get('pricingMethodChoice')?.disable();
+          this.productForm.get('pricingMethodChoice')?.setValue(null);
           this.isUsingGlobalMargin.set(true);
         }
       });
