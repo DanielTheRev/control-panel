@@ -223,7 +223,7 @@ export interface IEcommerceConfig {
       accessToken: string;
       publicKey: string;
       environment?: 'sandbox' | 'production';
-      checkoutMode?: 'transparent' | 'redirect' | 'modal' | 'bricks' | 'pro' | 'api';
+      checkoutMode?: 'transparent' | 'redirect' | 'modal' | 'bricks' | 'pro' | 'api' | 'hybrid';
       webhookSecret?: string;
       maxInstallments: number;
       excludedPaymentMethods?: string[];
