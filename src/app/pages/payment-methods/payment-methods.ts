@@ -100,7 +100,10 @@ export class PaymentMethods implements OnInit {
         maxInstallmentsToAbsorb: [3],
         card1PayDiscount: [false],
         excludedPaymentMethods: [[]],
-        excludedPaymentTypes: [[]]
+        excludedPaymentTypes: [[]],
+        successUrl: [''],
+        failureUrl: [''],
+        pendingUrl: ['']
       }),
       getnet: this.#fb.group({
         active: [false],
@@ -170,7 +173,10 @@ export class PaymentMethods implements OnInit {
               maxInstallmentsToAbsorb: config.pricingStrategy?.maxInstallmentsToAbsorb ?? 3,
               card1PayDiscount: config.pricingStrategy?.card1PayDiscount ?? false,
               excludedPaymentMethods: config.paymentGateways.mercadopago.excludedPaymentMethods || [],
-              excludedPaymentTypes: config.paymentGateways.mercadopago.excludedPaymentTypes || []
+              excludedPaymentTypes: config.paymentGateways.mercadopago.excludedPaymentTypes || [],
+              successUrl: config.paymentGateways.mercadopago.successUrl ?? '',
+              failureUrl: config.paymentGateways.mercadopago.failureUrl ?? '',
+              pendingUrl: config.paymentGateways.mercadopago.pendingUrl ?? ''
             });
           }
           if (config.paymentGateways.getnet) {
@@ -302,7 +308,10 @@ export class PaymentMethods implements OnInit {
             cft12cuotas: Number(mpVal.cft12cuotas) || 0,
             maxInstallments: Number(mpVal.maxInstallments) || 3,
             excludedPaymentMethods,
-            excludedPaymentTypes
+            excludedPaymentTypes,
+            successUrl: mpVal.successUrl ? mpVal.successUrl.trim() : undefined,
+            failureUrl: mpVal.failureUrl ? mpVal.failureUrl.trim() : undefined,
+            pendingUrl: mpVal.pendingUrl ? mpVal.pendingUrl.trim() : undefined
           },
           getnet: {
             ...currentConfig?.paymentGateways?.getnet,

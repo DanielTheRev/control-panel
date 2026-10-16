@@ -506,7 +506,7 @@ export class TechProductCreate implements OnInit {
     concept: string = '',
     value: number = 0,
     type: 'fixed' | 'percent_over_provider' | 'percent_over_price' = 'fixed',
-    category: 'expense' | 'tax' = 'expense',
+    category: 'expense' | 'tax' | 'shipping' = 'expense',
   ) {
     this.additionalCostsControls.push(
       this.fb.group({

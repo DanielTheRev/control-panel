@@ -228,6 +228,9 @@ export interface IEcommerceConfig {
       maxInstallments: number;
       excludedPaymentMethods?: string[];
       excludedPaymentTypes?: string[];
+      successUrl?: string;
+      failureUrl?: string;
+      pendingUrl?: string;
     };
     getnet?: {
       active: boolean;

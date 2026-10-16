@@ -296,6 +296,57 @@
               </div>
             </div>
 
+            <!-- Return URLs para Checkout Pro -->
+            @if (gatewaysForm.get('mercadopago.checkoutMode')?.value === 'pro') {
+              <div class="p-4 bg-primary/5 rounded-xl border border-primary/20 space-y-3">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-[16px]! w-4! h-4! text-primary">link</mat-icon>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/80">URLs de Retorno de Checkout Pro (Back URLs)</h4>
+                </div>
+                <p class="text-[11px] text-base-content/60 leading-relaxed">
+                  Podés personalizar a qué pantalla de tu tienda vuelve el cliente al completar, cancelar o dejar pendiente el pago en Mercado Pago. Si las dejás vacías, se utilizarán automáticamente las pantallas de confirmación por defecto.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-success flex items-center gap-1">
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">check_circle</mat-icon> URL Pago Exitoso (Success)
+                    </label>
+                    <input
+                      type="url"
+                      formControlName="successUrl"
+                      class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                      placeholder="https://tutienda.com/order-confirmed/:id"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-error flex items-center gap-1">
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">cancel</mat-icon> URL Pago Fallido (Failure)
+                    </label>
+                    <input
+                      type="url"
+                      formControlName="failureUrl"
+                      class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                      placeholder="https://tutienda.com/checkout?error=1"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-warning flex items-center gap-1">
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">schedule</mat-icon> URL Pago Pendiente (Pending)
+                    </label>
+                    <input
+                      type="url"
+                      formControlName="pendingUrl"
+                      class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                      placeholder="https://tutienda.com/order-confirmed/:id?payment=pending"
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+
             <!-- Comisiones y Costo Financiero Total (CFT) -->
             <div class="p-4 bg-base-200/40 rounded-xl border border-base-200 space-y-3">
               <div class="flex items-center gap-2">

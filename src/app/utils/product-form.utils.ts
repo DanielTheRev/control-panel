@@ -40,8 +40,8 @@ export class ProductFormUtils {
     const newAdditionalCosts = productData.additionalCosts || [];
 
     // Normalizar costos adicionales para comparación justa
-    const normalizedOrigCosts = JSON.stringify(origAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type })));
-    const normalizedNewCosts = JSON.stringify(newAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type })));
+    const normalizedOrigCosts = JSON.stringify(origAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type, category: c.category || 'expense' })));
+    const normalizedNewCosts = JSON.stringify(newAdditionalCosts.map((c: any) => ({ concept: c.concept, value: Number(c.value), type: c.type, category: c.category || 'expense' })));
 
     // Detectar si ALGO del pricing cambió
     const pricingChanged =
