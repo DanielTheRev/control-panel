@@ -353,6 +353,89 @@ export class ProductList {
     }
   }
 
+  // Auditoría de Vistas y Dispositivos
+  selectedAuditProduct = signal<IProduct | null>(null);
+  isLoadingAudit = signal<boolean>(false);
+  auditData = signal<any | null>(null);
+  isAuditModalOpen = signal<boolean>(false);
+
+  async openViewsAuditModal(product: IProduct) {
+    this.selectedAuditProduct.set(product);
+    this.isAuditModalOpen.set(true);
+    this.isLoadingAudit.set(true);
+    this.auditData.set(null);
+
+    try {
+      const res = await this.#productService.getProductViewsAudit(product._id);
+      if (res && res.data) {
+        this.auditData.set(res.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar auditoría de vistas:', err);
+      this.#snackBar.open('Error al obtener datos de auditoría', 'Cerrar', { duration: 3000 });
+    } finally {
+      this.isLoadingAudit.set(false);
+    }
+  }
+
+  closeViewsAuditModal() {
+    this.isAuditModalOpen.set(false);
+    this.selectedAuditProduct.set(null);
+    this.auditData.set(null);
+  }
+
+  auditFilterTab = signal<'all' | 'bots' | 'humans'>('all');
+  isApprovingView = signal<string | null>(null);
+
+  filteredRecentViews = computed(() => {
+    const data = this.auditData();
+    if (!data || !Array.isArray(data.recentViews)) return [];
+    const filter = this.auditFilterTab();
+    if (filter === 'bots') {
+      return data.recentViews.filter((v: any) => v.isBot && !v.manuallyApproved);
+    }
+    if (filter === 'humans') {
+      return data.recentViews.filter((v: any) => !v.isBot || v.manuallyApproved);
+    }
+    return data.recentViews;
+  });
+
+  async approveViewPointManually(view: any) {
+    const prod = this.selectedAuditProduct();
+    if (!prod || !view.viewedAt) return;
+
+    this.isApprovingView.set(String(view.viewedAt));
+    try {
+      const res = await this.#productService.approveManualViewPoint(prod._id, view.viewedAt);
+      if (res && res.data) {
+        this.auditData.set(res.data);
+        // Actualizar en la lista de ranking también
+        this.rankingProducts.update(prods =>
+          prods.map(p => p._id === prod._id
+            ? { ...p, effectiveScore: res.data.effectiveScore, metrics: { ...p.metrics, viewsCount: res.data.humanViews, botViewsCount: res.data.botViews } }
+            : p
+          )
+        );
+        this.#snackBar.open('✅ Punto de ELO sumado manualmente con éxito (+1 pt)', 'Cerrar', { duration: 3000 });
+      }
+    } catch (err) {
+      console.error('Error al aprobar punto de vista:', err);
+      this.#snackBar.open('Error al aprobar la visita', 'Cerrar', { duration: 3000 });
+    } finally {
+      this.isApprovingView.set(null);
+    }
+  }
+
+  isViewBeingApproved(viewedAt: any): boolean {
+    return this.isApprovingView() === (viewedAt ? String(viewedAt) : '');
+  }
+
+  copyUrlToClipboard(url: string) {
+    if (!url) return;
+    navigator.clipboard?.writeText(url);
+    this.#snackBar.open('📋 URL copiada al portapapeles', undefined, { duration: 2000 });
+  }
+
   onSearch(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.searchSubject.next(value);

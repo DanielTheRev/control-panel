@@ -10,6 +10,6 @@ export const environment = {
   brandName: 'Vexx',
   storeUrl: '',
   MP_MASTER_CLIENT_ID: 8846222731123020,
-  appVersion: 'v2.6.0',
-  buildDate: '09/10/2026'
+  appVersion: 'v2.7.0',
+  buildDate: '16/10/2026'
 };

@@ -1058,7 +1058,7 @@
                     <div class="grid grid-cols-3 gap-1 bg-base-200/60 p-1.5 rounded-xl mt-2 text-center text-[10px]">
                       <div class="flex flex-col">
                         <span class="font-bold text-base-content">{{ product.metrics?.viewsCount || 0 }}</span>
-                        <span class="text-[9px] text-base-content/50">👁️ Vistas</span>
+                        <span class="text-[9px] text-base-content/50">👁️ Reales</span>
                       </div>
                       <div class="flex flex-col border-x border-base-300">
                         <span class="font-bold text-base-content">{{ product.metrics?.cartAddsCount || 0 }}</span>
@@ -1069,6 +1069,26 @@
                         <span class="text-[9px] text-base-content/50">🛍️ Ventas</span>
                       </div>
                     </div>
+
+                    <!-- Botón Auditoría de Dispositivos y Bots -->
+                    <button
+                      type="button"
+                      (click)="openViewsAuditModal(product)"
+                      class="w-full mt-1.5 px-2 py-1 rounded-lg bg-base-200/40 hover:bg-base-200 border border-base-200 hover:border-primary/40 flex items-center justify-between text-[10px] text-base-content/70 hover:text-primary transition-all cursor-pointer group/audit"
+                      title="Auditar qué dispositivos, URLs y bots miraron esta prenda"
+                    >
+                      <span class="inline-flex items-center gap-1">
+                        <mat-icon class="text-[13px]! w-3.5! h-3.5! text-primary">devices</mat-icon>
+                        <span class="font-medium">Dispositivos & URLs</span>
+                      </span>
+                      @if ((product.metrics?.botViewsCount || 0) > 0) {
+                        <span class="badge badge-warning badge-xs font-mono text-[9px] px-1 py-0" title="Bots de Google/crawlers bloqueados del ELO">
+                          🤖 {{ product.metrics?.botViewsCount }}
+                        </span>
+                      } @else {
+                        <span class="text-[9px] opacity-60 group-hover/audit:underline">Auditar</span>
+                      }
+                    </button>
                   </div>
 
                   <!-- Editor Inline de Score Base -->
@@ -2140,6 +2160,299 @@
         >
           <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
           <span>Editar completo</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Modal Auditoría de Vistas, Dispositivos y Anti-Bot -->
+@if (isAuditModalOpen() && selectedAuditProduct(); as prod) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+    <div class="bg-base-100 rounded-3xl border border-base-300 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
+      
+      <!-- Modal Header -->
+      <div class="p-4 sm:p-5 border-b border-base-200 bg-base-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-14 rounded-xl overflow-hidden shrink-0 border border-base-200 bg-base-200">
+            <img [src]="getProductImageUrl(prod)" [alt]="prod.model" class="w-full h-full object-cover" />
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-primary badge-xs uppercase font-bold tracking-wider">{{ prod.brand || 'Vura' }}</span>
+              <span class="text-xs text-base-content/60 truncate">{{ prod.category }}</span>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-base-content truncate mt-0.5">
+              {{ prod.model }}
+            </h3>
+            <p class="text-xs text-base-content/50">Auditoría de Tráfico, Dispositivos y Detección de Bots</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeViewsAuditModal()"
+          class="btn btn-sm btn-circle btn-ghost text-base-content/70 hover:text-base-content cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        
+        @if (isLoadingAudit()) {
+          <div class="py-12 flex flex-col items-center justify-center gap-2 text-base-content/60">
+            <span class="loading loading-spinner loading-md text-primary"></span>
+            <span class="text-xs font-medium">Cargando métricas y registros de visitas...</span>
+          </div>
+        } @else if (auditData(); as data) {
+          
+          <!-- Bento Grid de Dispositivos y Protección Anti-Bot -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            
+            <!-- Celulares -->
+            <div class="p-3 bg-base-200/50 rounded-2xl border border-base-200 flex flex-col items-center text-center">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-1">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">smartphone</mat-icon>
+              </div>
+              <span class="text-lg font-bold font-mono text-base-content">{{ data.viewsByDevice?.mobile || 0 }}</span>
+              <span class="text-[10px] text-base-content/60 uppercase font-bold tracking-wider">Celulares</span>
+            </div>
+
+            <!-- Computadoras -->
+            <div class="p-3 bg-base-200/50 rounded-2xl border border-base-200 flex flex-col items-center text-center">
+              <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center mb-1">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">laptop</mat-icon>
+              </div>
+              <span class="text-lg font-bold font-mono text-base-content">{{ data.viewsByDevice?.desktop || 0 }}</span>
+              <span class="text-[10px] text-base-content/60 uppercase font-bold tracking-wider">Computadoras</span>
+            </div>
+
+            <!-- Tablets -->
+            <div class="p-3 bg-base-200/50 rounded-2xl border border-base-200 flex flex-col items-center text-center">
+              <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-1">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">tablet</mat-icon>
+              </div>
+              <span class="text-lg font-bold font-mono text-base-content">{{ data.viewsByDevice?.tablet || 0 }}</span>
+              <span class="text-[10px] text-base-content/60 uppercase font-bold tracking-wider">Tablets</span>
+            </div>
+
+            <!-- Bots Bloqueados del ELO -->
+            <div class="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex flex-col items-center text-center">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center mb-1">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">smart_toy</mat-icon>
+              </div>
+              <span class="text-lg font-bold font-mono text-amber-700">{{ data.botViews || 0 }}</span>
+              <span class="text-[10px] text-amber-700/80 uppercase font-bold tracking-wider">Bots Bloqueados</span>
+            </div>
+
+          </div>
+
+          <!-- Banner Informativo Algoritmo & ELO -->
+          <div class="p-3 bg-blue-500/5 border border-blue-500/15 rounded-2xl flex items-start gap-2.5 text-xs text-base-content/80">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5! text-blue-500 shrink-0 mt-0.5">verified_user</mat-icon>
+            <div class="space-y-0.5 leading-relaxed">
+              <p class="font-bold text-base-content">Protección Activa de Algoritmo ELO</p>
+              <p class="text-[11px] text-base-content/70">
+                Los rastreadores como <strong>Googlebot, Bingbot, Meta crawler</strong> y scripts automatizados son identificados por su User-Agent. Se registran en esta auditoría para que puedas verlos, pero <strong>tienen prohibido sumar puntos al ELO</strong> y no disparan eventos en Meta Conversions API para no distorsionar tu ranking ni tus métricas de pauta publicitaria.
+              </p>
+            </div>
+          </div>
+
+          <!-- Historial de Visitas Recientes -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
+                <mat-icon class="text-[15px]! w-3.5! h-3.5!">history</mat-icon>
+                <span>Últimas Visitas Registradas (Tiempo Real)</span>
+              </h4>
+              <span class="text-[11px] text-base-content/50 font-mono">
+                {{ data.recentViews?.length || 0 }} eventos
+              </span>
+            </div>
+
+            <!-- Tabs de Filtro de Visitas -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-base-200 pb-2">
+              <div class="inline-flex join bg-base-200/60 p-0.5 rounded-xl text-xs">
+                <button
+                  type="button"
+                  (click)="auditFilterTab.set('all')"
+                  class="join-item btn btn-xs"
+                  [ngClass]="auditFilterTab() === 'all' ? 'btn-primary' : 'btn-ghost text-base-content/70'"
+                >
+                  Todas ({{ data.recentViews?.length || 0 }})
+                </button>
+                <button
+                  type="button"
+                  (click)="auditFilterTab.set('bots')"
+                  class="join-item btn btn-xs"
+                  [ngClass]="auditFilterTab() === 'bots' ? 'btn-warning text-warning-content' : 'btn-ghost text-base-content/70'"
+                >
+                  🛑 Bots Rechazados ({{ data.botViews || 0 }})
+                </button>
+                <button
+                  type="button"
+                  (click)="auditFilterTab.set('humans')"
+                  class="join-item btn btn-xs"
+                  [ngClass]="auditFilterTab() === 'humans' ? 'btn-success text-white' : 'btn-ghost text-base-content/70'"
+                >
+                  ✅ Humanos Aprobados ({{ data.humanViews || 0 }})
+                </button>
+              </div>
+              <span class="text-[11px] text-base-content/50 font-mono">
+                Mostrando {{ filteredRecentViews().length }} visitas
+              </span>
+            </div>
+
+            @if (!data.recentViews || data.recentViews.length === 0) {
+              <div class="p-8 text-center bg-base-200/30 rounded-2xl border border-dashed border-base-300">
+                <p class="text-xs text-base-content/50">Todavía no hay visitas registradas con este sistema para este producto.</p>
+                <p class="text-[11px] text-base-content/40 mt-1">Aparecerán automáticamente a medida que usuarios o buscadores ingresen a la prenda en la tienda.</p>
+              </div>
+            } @else if (filteredRecentViews().length === 0) {
+              <div class="p-6 text-center bg-base-200/20 rounded-2xl border border-base-200">
+                <p class="text-xs text-base-content/50">No hay visitas en este filtro.</p>
+              </div>
+            } @else {
+              <div class="space-y-2.5">
+                @for (view of filteredRecentViews(); track $index) {
+                  <div class="p-3.5 rounded-2xl border transition-all text-xs space-y-2.5 shadow-2xs"
+                    [ngClass]="view.isBot && !view.manuallyApproved ? 'bg-amber-500/5 border-amber-500/30' : 'bg-base-100 border-base-200 hover:border-base-300'">
+                    
+                    <!-- Banner de Decisión Explícito de Algoritmo ELO -->
+                    @if (view.isBot && !view.manuallyApproved) {
+                      <div class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <mat-icon class="text-[16px]! w-4! h-4! text-amber-600 shrink-0">block</mat-icon>
+                          <span class="text-xs font-bold text-amber-900 leading-tight">
+                            🛑 Este no sumó puntos porque es un bot ({{ view.botName || 'Bot detectado' }})
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="approveViewPointManually(view)"
+                          [disabled]="isViewBeingApproved(view.viewedAt)"
+                          class="btn btn-2xs btn-outline border-amber-600/40 hover:bg-amber-600 hover:text-white text-amber-900 text-[10px] font-bold shrink-0 gap-1 cursor-pointer"
+                          title="Si considerás que es un visitante real y el sistema se equivocó, podés sumarle el punto manualmente"
+                        >
+                          @if (isViewBeingApproved(view.viewedAt)) {
+                            <span class="loading loading-spinner loading-2xs"></span>
+                          } @else {
+                            <mat-icon class="text-[12px]! w-3! h-3!">add_circle</mat-icon>
+                            <span>No es bot, sumar punto</span>
+                          }
+                        </button>
+                      </div>
+                    } @else if (view.manuallyApproved) {
+                      <div class="p-2 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center gap-2 text-xs font-bold text-blue-900">
+                        <mat-icon class="text-[16px]! w-4! h-4! text-blue-600 shrink-0">verified</mat-icon>
+                        <span>⚡ Punto sumado manualmente por vos (+1 punto al ELO)</span>
+                      </div>
+                    } @else {
+                      <div class="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-900">
+                        <mat-icon class="text-[16px]! w-4! h-4! text-emerald-600 shrink-0">check_circle</mat-icon>
+                        <span>✅ Este sí sumó +1 punto al ELO (Visitante real en {{ view.device === 'mobile' ? 'Celular' : (view.device === 'tablet' ? 'Tablet' : 'Computadora') }})</span>
+                      </div>
+                    }
+
+                    <!-- Fila Info: Dispositivo / Navegador / Timestamp -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-base-200/60">
+                      <div class="flex items-center gap-2">
+                        @if (view.isBot && !view.manuallyApproved) {
+                          <span class="badge badge-warning badge-sm gap-1 font-bold text-warning-content">
+                            <mat-icon class="text-[13px]! w-3.5! h-3.5!">smart_toy</mat-icon>
+                            <span>{{ view.botName || 'Bot Crawler' }}</span>
+                          </span>
+                        } @else if (view.device === 'mobile') {
+                          <span class="badge badge-success badge-sm text-white gap-1 font-bold">
+                            <mat-icon class="text-[13px]! w-3.5! h-3.5!">smartphone</mat-icon>
+                            <span>Móvil</span>
+                          </span>
+                        } @else if (view.device === 'tablet') {
+                          <span class="badge badge-secondary badge-sm gap-1 font-bold">
+                            <mat-icon class="text-[13px]! w-3.5! h-3.5!">tablet</mat-icon>
+                            <span>Tablet</span>
+                          </span>
+                        } @else {
+                          <span class="badge badge-info badge-sm text-white gap-1 font-bold">
+                            <mat-icon class="text-[13px]! w-3.5! h-3.5!">laptop</mat-icon>
+                            <span>Computadora</span>
+                          </span>
+                        }
+
+                        <span class="font-bold text-base-content">{{ view.browser }}</span>
+                        @if (view.os && view.os !== 'Desconocido') {
+                          <span class="text-base-content/50 text-[11px]">({{ view.os }})</span>
+                        }
+                      </div>
+
+                      <span class="text-base-content/50 font-mono text-[11px]">
+                        {{ view.viewedAt | date:'dd/MM/yyyy HH:mm:ss' }}
+                      </span>
+                    </div>
+
+                    <!-- Fila Detalles: URL Completa, Referrer y User-Agent -->
+                    <div class="space-y-1.5 bg-base-200/40 p-2.5 rounded-xl border border-base-200 text-[11px]">
+                      
+                      <!-- URL Completa -->
+                      <div class="flex items-start gap-1.5 min-w-0">
+                        <span class="font-bold text-base-content/70 shrink-0">🌐 URL:</span>
+                        <span class="font-mono text-base-content/90 break-all select-all flex-1">
+                          {{ view.url }}
+                        </span>
+                        <button
+                          type="button"
+                          (click)="copyUrlToClipboard(view.url)"
+                          class="btn btn-ghost btn-2xs text-base-content/50 hover:text-primary shrink-0"
+                          title="Copiar URL completa"
+                        >
+                          <mat-icon class="text-[12px]! w-3! h-3!">content_copy</mat-icon>
+                        </button>
+                      </div>
+
+                      <!-- Referrer / Origen -->
+                      <div class="flex items-center gap-1.5 text-base-content/70 pt-1 border-t border-base-200/80">
+                        <span class="font-bold">🔗 Origen:</span>
+                        <span class="font-mono text-base-content/90 truncate">
+                          {{ view.referrer || 'Directo / Ninguno' }}
+                        </span>
+                        @if (view.ip && view.ip !== '0.0.0.0') {
+                          <span class="ml-auto text-[10px] text-base-content/40 font-mono">
+                            IP: {{ view.ip }}
+                          </span>
+                        }
+                      </div>
+
+                      <!-- User-Agent Crudo Exacto -->
+                      @if (view.userAgent) {
+                        <div class="pt-1 border-t border-base-200/80 flex items-start gap-1.5 text-[10px] text-base-content/60">
+                          <span class="font-bold shrink-0">🤖 User-Agent:</span>
+                          <span class="font-mono text-base-content/80 break-all select-all flex-1">{{ view.userAgent }}</span>
+                        </div>
+                      }
+
+                    </div>
+
+                  </div>
+                }
+              </div>
+            }
+
+          </div>
+
+        }
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3.5 sm:p-4 border-t border-base-200 bg-base-200/40 flex items-center justify-end">
+        <button
+          type="button"
+          (click)="closeViewsAuditModal()"
+          class="btn btn-sm btn-ghost cursor-pointer font-bold"
+        >
+          Cerrar
         </button>
       </div>
 

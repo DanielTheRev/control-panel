@@ -320,6 +320,21 @@ export class ProductService {
     );
   }
 
+  getProductViewsAudit(id: string) {
+    return firstValueFrom(
+      this.#http.get<{ success: boolean; data: any }>(`${this.#apiUrl}/${id}/views`)
+    );
+  }
+
+  approveManualViewPoint(id: string, viewedAt: string | Date) {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; message: string; data: any }>(
+        `${this.#apiUrl}/${id}/views/approve`,
+        { viewedAt }
+      )
+    );
+  }
+
   getRankingPreviewProducts(options?: { q?: string; category?: string; page?: number; limit?: number }): Promise<IPaginatedResult<IProduct>> {
     let params = new HttpParams()
       .set('page', (options?.page || 1).toString())
