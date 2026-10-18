@@ -198,6 +198,7 @@ export class ProductList {
     'stock',
     'price_cost',
     'price_sale',
+    'profit',
     'actions',
   ];
 
@@ -543,6 +544,74 @@ export class ProductList {
     return product.variants
       ?.filter(v => v.isActive)
       .reduce((sum, v) => sum + v.stock, 0) || 0;
+  }
+
+  getProductProfits(p: IProduct) {
+    const profits = p.finance?.calculatedProfits;
+    if (profits && (profits.transfer !== undefined || profits.card3Installments !== undefined)) {
+      return {
+        transfer: Number(profits.transfer || 0),
+        card3: Number(profits.card3Installments || 0),
+        onePay: Number(profits.card_ticket1Pay || 0),
+        card6: Number(profits.card6Installments || 0),
+      };
+    }
+    // Fallback si no tiene profits calculados aún en BD
+    const costARS = p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0;
+    const cashPrice = p.price?.cashTransferPrice || 0;
+    const listPrice = p.price?.listPrice || 0;
+    const transferEst = cashPrice > costARS ? cashPrice - costARS : 0;
+    const card3Est = listPrice > costARS ? Math.round(listPrice * 0.8478 - costARS) : 0;
+    return {
+      transfer: transferEst,
+      card3: card3Est,
+      onePay: transferEst,
+      card6: Math.round(listPrice * 0.75 - costARS),
+    };
+  }
+
+  getProductRestockAmount(p: IProduct): number {
+    const costs = p.finance?.additionalCosts || (p as any).additionalCosts || [];
+    const restock = costs.find((c: any) => /reposici[oó]n/i.test(c.concept || ''));
+    if (!restock) return 0;
+    if (restock.type === 'fixed') return Number(restock.value || 0);
+    const costARS = p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0;
+    return Math.round((costARS * (Number(restock.value) || 0)) / 100);
+  }
+
+  getProductMargin(p: IProduct): number | null {
+    const val = p.finance?.pricingStrategy?.targetProfit ?? (p as any).customProfitMargin ?? (p as any).customProfitMargin1Pay;
+    return val !== undefined && val !== null ? Number(val) : null;
+  }
+
+  getProductFinanceTooltip(p: IProduct): string {
+    const pf = this.getProductProfits(p);
+    const restock = this.getProductRestockAmount(p);
+    const margin = this.getProductMargin(p);
+    const costARS = p.finance?.providerCost?.inARS || (p.price as any)?.costPrice?.inARS || 0;
+    const costs = p.finance?.additionalCosts || (p as any).additionalCosts || [];
+
+    const lines: string[] = [];
+    lines.push(`📦 COSTO BASE:`);
+    lines.push(`• Costo Proveedor: $${costARS.toLocaleString('es-AR')}`);
+    if (costs.length > 0) {
+      costs.forEach((c: any) => {
+        const valStr = c.type === 'percent' ? `${c.value}%` : `$${Number(c.value || 0).toLocaleString('es-AR')}`;
+        lines.push(`• ${c.concept || 'Adicional'}: ${valStr}`);
+      });
+    }
+    lines.push(`\n💰 GANANCIAS NETAS LIMPIAS:`);
+    if (margin !== null) lines.push(`• Margen comercial: ${margin}%`);
+    lines.push(`• Transferencia: $${pf.transfer.toLocaleString('es-AR')}`);
+    lines.push(`• 1 Pago / Débito: $${pf.onePay.toLocaleString('es-AR')}`);
+    lines.push(`• 3 Cuotas sin interés: $${pf.card3.toLocaleString('es-AR')}`);
+    if (pf.card6) lines.push(`• 6 Cuotas: $${pf.card6.toLocaleString('es-AR')}`);
+    if (restock > 0) {
+      lines.push(`\n🛡️ CAPITAL EN TU CUENTA:`);
+      lines.push(`• Reserva Reposición: +$${restock.toLocaleString('es-AR')}`);
+      lines.push(`• En bolsillo (Transf + Rep): $${(pf.transfer + restock).toLocaleString('es-AR')}`);
+    }
+    return lines.join('\n');
   }
 
   getProductColors(product: IProduct): Array<{ name: string; hex: string }> {
@@ -3307,4 +3376,197 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
       this.aiProcessing.set(false);
     }
   }
+
+  // ==============================================================
+  // QUITAR / RECALCULAR COSTO ADICIONAL MASIVO (CON PREVIEW VISUAL)
+  // ==============================================================
+  showBulkCostModal = signal<boolean>(false);
+  bulkCostQuery = signal<string>('IVA');
+  bulkCostExactMatch = signal<boolean>(false);
+  bulkCostCategoryFilter = signal<string>('');
+  bulkCostStatusFilter = signal<string>('all');
+  bulkCostCustomMargin = signal<number | null>(null);
+  isLoadingBulkCostPreview = signal<boolean>(false);
+  isApplyingBulkCost = signal<boolean>(false);
+  bulkCostPreviewItems = signal<any[]>([]);
+  bulkCostSelectedIds = signal<string[]>([]);
+  bulkCostSearchDone = signal<boolean>(false);
+
+  bulkCostSummary = computed(() => {
+    const items = this.bulkCostPreviewItems();
+    const selectedSet = new Set(this.bulkCostSelectedIds());
+    const selected = items.filter((item) => selectedSet.has(item._id));
+    if (selected.length === 0) {
+      return {
+        selectedCount: 0,
+        avgTransferDrop: 0,
+        avgListDrop: 0,
+        minProfitTransferCoupon10: 0,
+        minProfit3InstallmentsCoupon10: 0,
+        losingMoneyCount: 0,
+      };
+    }
+
+    const totalTransferDrop = selected.reduce((acc, i) => acc + Math.abs(i.diffTransferPrice || 0), 0);
+    const totalListDrop = selected.reduce((acc, i) => acc + Math.abs(i.diffListPrice || 0), 0);
+    const minProfitTransferCoupon10 = Math.min(...selected.map((i) => i.newProfitTransferCoupon10 || 0));
+    const minProfit3InstallmentsCoupon10 = Math.min(...selected.map((i) => i.newProfit3InstallmentsCoupon10 || 0));
+    const losingMoneyCount = selected.filter(
+      (i) => (i.newProfitTransferCoupon10 || 0) <= 0 || (i.newProfit3InstallmentsCoupon10 || 0) <= 0
+    ).length;
+
+    return {
+      selectedCount: selected.length,
+      avgTransferDrop: Math.round(totalTransferDrop / selected.length),
+      avgListDrop: Math.round(totalListDrop / selected.length),
+      minProfitTransferCoupon10,
+      minProfit3InstallmentsCoupon10,
+      losingMoneyCount,
+    };
+  });
+
+  rawAdditionalCostConceptsWithCount = computed(() => {
+    const countMap = new Map<string, number>();
+
+    const prods = this.ProductState.allProducts() || [];
+    prods.forEach((p: any) => {
+      const costs = p.finance?.additionalCosts || (p as any).additionalCosts || [];
+      if (Array.isArray(costs)) {
+        const uniqueInProduct = new Set<string>();
+        costs.forEach((c: any) => {
+          const name = (c.concept || '').trim();
+          if (name) uniqueInProduct.add(name);
+        });
+        uniqueInProduct.forEach((name) => {
+          countMap.set(name, (countMap.get(name) || 0) + 1);
+        });
+      }
+    });
+
+    const storeDefaults = this.#StoreConfigState.StoreConfig()?.config?.defaultAdditionalCosts || [];
+    storeDefaults.forEach((c: any) => {
+      const name = (c.concept || '').trim();
+      if (name && !countMap.has(name)) {
+        countMap.set(name, 0);
+      }
+    });
+
+    return Array.from(countMap.entries())
+      .map(([concept, count]) => ({ concept, count }))
+      .sort((a, b) => b.count - a.count);
+  });
+
+  isBulkCostConceptActive(concept: string): boolean {
+    const q = this.bulkCostQuery().trim();
+    if (!q) return false;
+    if (this.bulkCostExactMatch()) {
+      return q === concept;
+    }
+    const norm = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+    return norm(q) === norm(concept);
+  }
+
+  selectBulkCostConcept(concept: string, exact: boolean = true) {
+    this.bulkCostQuery.set(concept);
+    this.bulkCostExactMatch.set(exact);
+    this.previewBulkCostRemoval();
+  }
+
+  openBulkCostModal() {
+    this.showBulkCostModal.set(true);
+    if (!this.bulkCostSearchDone()) {
+      this.previewBulkCostRemoval();
+    }
+  }
+
+  closeBulkCostModal() {
+    if (this.isApplyingBulkCost()) return;
+    this.showBulkCostModal.set(false);
+  }
+
+  async previewBulkCostRemoval() {
+    const query = this.bulkCostQuery().trim();
+    if (!query) {
+      this.#snackBar.open('Ingresá el nombre del adicional que querés buscar (ej: IVA)', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isLoadingBulkCostPreview.set(true);
+    this.bulkCostSearchDone.set(false);
+    try {
+      const marginVal = this.bulkCostCustomMargin();
+      const res = await this.#productService.previewBulkAdditionalCostRemoval({
+        conceptQuery: query,
+        statusFilter: this.bulkCostStatusFilter(),
+        categoryFilter: this.bulkCostCategoryFilter(),
+        exactMatch: this.bulkCostExactMatch(),
+        ...(marginVal && marginVal > 0 ? { newProfitMargin: marginVal } : {}),
+      });
+      const items = res?.items || [];
+      this.bulkCostPreviewItems.set(items);
+      this.bulkCostSelectedIds.set(items.map((i: any) => i._id));
+      this.bulkCostSearchDone.set(true);
+    } catch (err: any) {
+      this.#snackBar.open(
+        err?.error?.message || err?.message || 'Error al previsualizar los productos con ese adicional',
+        'Cerrar',
+        { duration: 4000 }
+      );
+    } finally {
+      this.isLoadingBulkCostPreview.set(false);
+    }
+  }
+
+  isBulkCostItemSelected(id: string): boolean {
+    return this.bulkCostSelectedIds().includes(id);
+  }
+
+  toggleBulkCostItem(id: string) {
+    this.bulkCostSelectedIds.update((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
+    );
+  }
+
+  isAllBulkCostSelected(): boolean {
+    const items = this.bulkCostPreviewItems();
+    return items.length > 0 && this.bulkCostSelectedIds().length === items.length;
+  }
+
+  toggleAllBulkCostItems() {
+    if (this.isAllBulkCostSelected()) {
+      this.bulkCostSelectedIds.set([]);
+    } else {
+      this.bulkCostSelectedIds.set(this.bulkCostPreviewItems().map((i) => i._id));
+    }
+  }
+
+  async applyBulkCostRemoval() {
+    const ids = this.bulkCostSelectedIds();
+    const query = this.bulkCostQuery().trim();
+    if (ids.length === 0 || !query) return;
+
+    this.isApplyingBulkCost.set(true);
+    try {
+      const marginVal = this.bulkCostCustomMargin();
+      await this.#productService.applyBulkAdditionalCostRemoval({
+        productIds: ids,
+        conceptQuery: query,
+        exactMatch: this.bulkCostExactMatch(),
+        ...(marginVal && marginVal > 0 ? { newProfitMargin: marginVal } : {}),
+      });
+      this.ProductState.reloadProducts();
+      this.showBulkCostModal.set(false);
+      this.bulkCostSearchDone.set(false);
+    } catch (err: any) {
+      console.error('Error al aplicar quita masiva de adicional:', err);
+    } finally {
+      this.isApplyingBulkCost.set(false);
+    }
+  }
 }
+

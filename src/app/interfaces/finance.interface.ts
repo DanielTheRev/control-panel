@@ -21,5 +21,13 @@ export interface IFinanceCost {
     label: string;
     value: number;
     percentage: number;
+    category?: string;
+  }[];
+  processedAdditionalCosts?: {
+    concept: string;
+    type: string;
+    value: number;
+    category?: string;
+    calculatedAmountInARS?: number;
   }[];
 }

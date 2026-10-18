@@ -525,6 +525,11 @@ export class ProductStoreService {
     }
   }
 
+  reloadProducts() {
+    this.#allProductsForStats.reload();
+    this.#fetchedProducts.reload();
+  }
+
   #addProduct(product: IProduct) {
     this.#fetchedProducts.update((state) => {
       if (!state) return state;

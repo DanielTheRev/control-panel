@@ -434,6 +434,33 @@ export class ProductCreate {
     return Math.round(netReceived - totalCost);
   });
 
+  /** Exact MP commission charged when a coupon is applied on List Price */
+  simulatedMpCommission = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || !lp.listPrice) return 0;
+    const coupon = this.simulatedCouponPercent();
+    const pasarelaRate = (lp.breakdown[3]?.value || 0) / lp.listPrice;
+    const discountedPrice = lp.listPrice * (1 - coupon / 100);
+    return Math.round(discountedPrice * pasarelaRate);
+  });
+
+  /** How much MP commission is saved because MP charges its % over the discounted price */
+  mpCommissionSavedOnCoupon = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || !lp.listPrice) return 0;
+    const originalComm = Math.round(lp.breakdown[3]?.value || 0);
+    return Math.max(0, originalComm - this.simulatedMpCommission());
+  });
+
+  /** Net amount deposited by MP after deducting its commission on the discounted price */
+  simulatedNetFromMP = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.breakdown || !lp.listPrice) return 0;
+    const coupon = this.simulatedCouponPercent();
+    const discountedPrice = Math.round(lp.listPrice * (1 - coupon / 100));
+    return Math.max(0, discountedPrice - this.simulatedMpCommission());
+  });
+
   /** Simulated net profit in hand when a customer buys with the simulated coupon using transfer */
   simulatedProfitTransfer = computed(() => {
     const tPrice = this.transferPrice();
@@ -460,6 +487,200 @@ export class ProductCreate {
 
   /** Toggle for detailed educational coupon breakdown */
   showCouponBreakdown = signal<boolean>(true);
+
+  /** Capital reserve accumulated in seller pocket from Reposición concept */
+  restockReserveAmount = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp || !lp.processedAdditionalCosts) return 0;
+    const restock = lp.processedAdditionalCosts.find((c: any) =>
+      this.isRestockConcept(c.concept || '')
+    );
+    return Math.round(Number(restock?.calculatedAmountInARS || 0));
+  });
+
+  isRestockConcept(concept: string): boolean {
+    return /reposici[oó]n/i.test(concept || '');
+  }
+
+  /** Total money in pocket (Clean Profit + Restock Reserve) on Transfer */
+  totalInPocketTransfer = computed(() => {
+    return this.transferProfit() + this.restockReserveAmount();
+  });
+
+  /** Total money in pocket (Clean Profit + Restock Reserve) on Cards/Installments */
+  totalInPocketList = computed(() => {
+    const lp = this.calculatedListPrice();
+    if (!lp) return 0;
+    const baseProfit = (lp.maxInstallments ?? 6) >= 6 ? lp.profits.six_installments : lp.profits.three_installments;
+    return baseProfit + this.restockReserveAmount();
+  });
+
+  /** Simulated total money in pocket with coupon on Transfer */
+  simulatedTotalInPocketTransfer = computed(() => {
+    return this.simulatedProfitTransfer() + this.restockReserveAmount();
+  });
+
+  /** Simulated total money in pocket with coupon on Cards/Installments */
+  simulatedTotalInPocketList = computed(() => {
+    return this.simulatedProfitList() + this.restockReserveAmount();
+  });
+
+  /** Desired net profit target input */
+  desiredProfitInput = signal<number | null>(null);
+
+  /** Profit shortcuts dynamically adapted to store cost currency (USD vs ARS) */
+  desiredProfitShortcuts = computed(() => {
+    if (this.costCurrency() === 'USD') {
+      return [
+        { label: '+$5', value: 5 },
+        { label: '+$10', value: 10 },
+        { label: '+$15', value: 15 },
+        { label: '+$20', value: 20 },
+        { label: '+$30', value: 30 },
+        { label: '+$50', value: 50 },
+      ];
+    }
+    return [
+      { label: '+$5k', value: 5000 },
+      { label: '+$8k', value: 8000 },
+      { label: '+$10k', value: 10000 },
+      { label: '+$12k', value: 12000 },
+      { label: '+$15k', value: 15000 },
+      { label: '+$20k', value: 20000 },
+    ];
+  });
+
+  /** Target payment methods to ensure desired profit */
+  targetProfitInTransfer = signal<boolean>(true);
+  targetProfitInCard = signal<boolean>(true);
+
+  /** Effective Mercado Pago commission rate (base + CFT installments + IVA) */
+  mpGatewayRate = computed(() => {
+    const cfg = this.storeConfig()?.config;
+    const mp = cfg?.paymentGateways?.mercadopago;
+    const baseComm = Number(mp?.baseCommission ?? 3.39) / 100;
+    const cft3 = Number(mp?.cft3cuotas ?? 9.5) / 100;
+    const cft6 = Number(mp?.cft6Cuotas ?? 18.5) / 100;
+    const ivaFactor = 1 + Number(cfg?.taxes?.iva ?? 21) / 100;
+    const maxInstallments = cfg?.pricingStrategy?.maxInstallmentsToAbsorb ?? 3;
+
+    if (maxInstallments >= 6) {
+      return (baseComm + cft6) * ivaFactor;
+    }
+    if (maxInstallments >= 3) {
+      return (baseComm + cft3) * ivaFactor;
+    }
+    return baseComm * ivaFactor;
+  });
+
+  /** Effective Transfer discount rate */
+  transferDiscountRate = computed(() => {
+    const formVal = Number(this.productForm.get('discountPercentageTransfer')?.value);
+    if (!isNaN(formVal) && formVal > 0) return formVal / 100;
+    const cfgVal = Number(this.storeConfig()?.config?.pricingStrategy?.transferDiscountPercentage);
+    if (!isNaN(cfgVal) && cfgVal > 0) return cfgVal / 100;
+    return 0.20;
+  });
+
+  toggleTargetChannel(channel: 'transfer' | 'card') {
+    if (channel === 'transfer') {
+      const next = !this.targetProfitInTransfer();
+      if (!next && !this.targetProfitInCard()) {
+        this.targetProfitInCard.set(true);
+      }
+      this.targetProfitInTransfer.set(next);
+    } else {
+      const next = !this.targetProfitInCard();
+      if (!next && !this.targetProfitInTransfer()) {
+        this.targetProfitInTransfer.set(true);
+      }
+      this.targetProfitInCard.set(next);
+    }
+    if (this.desiredProfitInput()) {
+      this.setDesiredProfit(this.desiredProfitInput()!);
+    }
+  }
+
+  /** Sets the desired profit in cash (adapting to USD or ARS) calibrated to the selected payment method(s) */
+  setDesiredProfit(amount: number) {
+    if (!amount || amount <= 0) return;
+    this.desiredProfitInput.set(amount);
+    const provider = Number(this.productForm.get('price')?.value || 0);
+    if (provider <= 0) {
+      this.#notificationService.info('Primero ingresá el precio de costo del proveedor.');
+      return;
+    }
+
+    const isUSD = this.costCurrency() === 'USD';
+    let totalBase = provider;
+    if (!isUSD) {
+      const cost = this.totalProductBaseCost();
+      totalBase = cost > 0 ? cost : provider;
+    } else {
+      const rawCosts = this.additionalCostsControls.value || [];
+      let addUSD = 0;
+      rawCosts.forEach((c: any) => {
+        if (c.type === 'fixed') addUSD += Number(c.value || 0);
+        else if (c.type === 'percent_over_provider') addUSD += provider * (Number(c.value || 0) / 100);
+      });
+      totalBase = provider + addUSD;
+    }
+
+    const method = (this.productForm.get('pricingMethodChoice')?.value || this.globalPricingMethod()) as 'margin' | 'markup';
+    const T_mp = this.mpGatewayRate();
+    const D = this.transferDiscountRate();
+    const G = amount;
+    const C = totalBase;
+
+    const forTransfer = this.targetProfitInTransfer();
+    const forCard = this.targetProfitInCard();
+
+    let targetMargin = 0;
+
+    if (method === 'margin') {
+      // 1. Margen para Tarjeta / 3 Cuotas:
+      // listPrice * (1 - T_mp) = C + G => listPrice = (C + G) / (1 - T_mp)
+      // C / (1 - T_mp - M) = (C + G) / (1 - T_mp) => M_card = (1 - T_mp) * [G / (C + G)]
+      const mCard = Math.max(0.01, (1 - T_mp) * (G / (C + G)));
+
+      // 2. Margen para Transferencia:
+      // cashTransferPrice = listPrice * (1 - D) = C + G => listPrice = (C + G) / (1 - D)
+      // C / (1 - T_mp - M) = (C + G) / (1 - D) => M_transf = 1 - T_mp - [ C * (1 - D) / (C + G) ]
+      const denomTransf = Math.max(0.01, (C * (1 - D)) / (C + G));
+      const mTransf = Math.max(0.01, 1 - T_mp - denomTransf);
+
+      if (forTransfer && forCard) {
+        targetMargin = Math.round(Math.max(mTransf, mCard) * 100);
+      } else if (forTransfer) {
+        targetMargin = Math.round(mTransf * 100);
+      } else {
+        targetMargin = Math.round(mCard * 100);
+      }
+    } else {
+      // Markup:
+      // Card: listPrice * (1 - T_mp) = C * (1 + M) = C + G => M_card = G / C
+      const mCard = G / C;
+
+      // Transfer: listPrice * (1 - D) = C + G => C * (1 + M) * (1 - D) / (1 - T_mp) = C + G
+      // 1 + M_transf = (1 + G/C) * (1 - T_mp) / (1 - D)
+      const mTransf = Math.max(0.01, ((1 + G / C) * (1 - T_mp)) / (1 - D) - 1);
+
+      if (forTransfer && forCard) {
+        targetMargin = Math.round(Math.max(mTransf, mCard) * 100);
+      } else if (forTransfer) {
+        targetMargin = Math.round(mTransf * 100);
+      } else {
+        targetMargin = Math.round(mCard * 100);
+      }
+    }
+
+    if (targetMargin < 1) targetMargin = 1;
+    if (targetMargin > 95) targetMargin = 95;
+
+    this.productForm.get('useCustomProfit')?.setValue(true);
+    this.productForm.get('customProfitMargin')?.setValue(targetMargin);
+    this.productForm.markAsDirty();
+  }
 
   originalProduct = signal<IProduct | null>(null);
   originalImages = computed(() => this.originalProduct()?.images || []);
@@ -992,6 +1213,43 @@ XXL: 58, 76, 52
     } else {
       this.#notificationService.info('Los gastos configurados por defecto ya están presentes en este producto.');
     }
+  }
+
+  isPresetCostActive(concept: string): boolean {
+    const norm = (s: string) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    const target = norm(concept);
+    return this.additionalCostsControls.controls.some(
+      (ctrl) => norm(ctrl.get('concept')?.value || '') === target
+    );
+  }
+
+  togglePresetCost(preset: any) {
+    const norm = (s: string) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    const target = norm(preset.concept);
+    const idx = this.additionalCostsControls.controls.findIndex(
+      (ctrl) => norm(ctrl.get('concept')?.value || '') === target
+    );
+    if (idx !== -1) {
+      this.removeAdditionalCost(idx);
+    } else {
+      this.addAdditionalCost(
+        preset.concept,
+        preset.value,
+        preset.type,
+        preset.category || (/env[ií]o/i.test(preset.concept || '') ? 'shipping' : 'expense')
+      );
+    }
+    this.productForm.markAsDirty();
   }
 
   get invalidControls(): string[] {

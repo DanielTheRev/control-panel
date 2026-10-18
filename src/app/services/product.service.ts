@@ -356,4 +356,45 @@ export class ProductService {
       )
     );
   }
+
+  previewBulkAdditionalCostRemoval(options: {
+    conceptQuery: string;
+    statusFilter?: string;
+    categoryFilter?: string;
+    newProfitMargin?: number;
+    exactMatch?: boolean;
+  }) {
+    return firstValueFrom(
+      this.#http.post<{
+        conceptQuery: string;
+        totalMatched: number;
+        items: any[];
+      }>(`${this.#apiUrl}/admin/bulk-additional-cost/preview`, options)
+    );
+  }
+
+  applyBulkAdditionalCostRemoval(options: {
+    productIds: string[];
+    conceptQuery: string;
+    newProfitMargin?: number;
+    exactMatch?: boolean;
+  }) {
+    return firstValueFrom(
+      this.#http
+        .post<{
+          success: boolean;
+          updatedCount: number;
+          updatedIds: string[];
+          errors: any[];
+        }>(`${this.#apiUrl}/admin/bulk-additional-cost/apply`, options)
+        .pipe(
+          this.#toast.observe({
+            loading: 'Recalculando precios y quitando adicional seleccionado...',
+            success: (res) => `¡${res.updatedCount} producto(s) recalculados exitosamente!`,
+            error: (err: any) => err?.error?.message || 'Error al recalcular los productos',
+          })
+        )
+    );
+  }
 }
+

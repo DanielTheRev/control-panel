@@ -101,6 +101,17 @@
           }
         </button>
 
+        <!-- Botón Quitar Adicional Masivo (Desktop) -->
+        <button
+          type="button"
+          (click)="openBulkCostModal()"
+          class="hidden sm:inline-flex btn btn-sm bg-amber-600 hover:bg-amber-700 text-white transition-all duration-200 shrink-0 font-bold items-center gap-1.5 shadow-xs cursor-pointer"
+          matTooltip="Quitar un costo adicional (ej: IVA) de forma masiva con vista previa"
+        >
+          <mat-icon class="text-[18px]! w-4.5! h-4.5!">price_change</mat-icon>
+          <span class="hidden xl:inline">Quitar Adicional</span>
+        </button>
+
         <!-- Botón Crear Masivo con IA (Desktop) -->
         <button
           type="button"
@@ -140,6 +151,19 @@
             <span class="text-xs">Acciones</span>
           </button>
           <ul tabindex="0" class="dropdown-content menu p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300 z-50 mt-1.5 space-y-1">
+            <li>
+              <button
+                (click)="openBulkCostModal()"
+                class="flex items-center gap-2.5 py-2.5 text-amber-600 dark:text-amber-400 font-bold active:bg-amber-50"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">price_change</mat-icon>
+                <div class="flex flex-col text-left">
+                  <span>Quitar Adicional Masivo</span>
+                  <span class="text-[10px] font-normal text-base-content/60">Ej: quitar IVA y recalcular precios</span>
+                </div>
+              </button>
+            </li>
+            <li class="border-t border-base-200"></li>
             <li>
               <button
                 (click)="openAiBulkModal('create')"
@@ -644,7 +668,7 @@
             <!-- ====== MODO VISTA TABLA (LIST VIEW) ====== -->
             @if (viewMode() === "list") {
               <div class="flex-1 flex flex-col min-h-0 bg-base-100 border border-base-300 rounded-2xl shadow-xs overflow-hidden">
-                <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                <div class="flex-1 overflow-auto custom-scrollbar min-h-0">
                   <table mat-table [dataSource]="Products.data" class="w-full">
                     <ng-container matColumnDef="select">
                       <th mat-header-cell *matHeaderCellDef class="w-12 px-4 py-3 border-b border-base-300 bg-base-100!">
@@ -722,6 +746,63 @@
                         <div class="flex flex-col gap-0.5 text-xs">
                           <div class="flex items-center gap-1"><span class="text-[9px] font-bold text-base-content/40 uppercase">Efvo:</span><span class="font-extrabold text-base-content">{{ p.price.cashTransferPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span></div>
                           <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Lista: {{ p.price.listPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}</span>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="profit">
+                      <th mat-header-cell *matHeaderCellDef class="px-4 py-3 border-b border-base-300 bg-base-100!">
+                        <div class="flex items-center gap-1.5">
+                          <span>Ganancia Neta</span>
+                          <span class="badge badge-2xs badge-success text-white font-bold text-[8px]">Limpia</span>
+                        </div>
+                      </th>
+                      <td mat-cell *matCellDef="let p" class="px-4 py-2 border-b border-base-300">
+                        @let pf = getProductProfits(p);
+                        @let restock = getProductRestockAmount(p);
+                        @let margin = getProductMargin(p);
+                        <div
+                          class="flex flex-col gap-0.5 text-xs cursor-help p-1 rounded-lg hover:bg-base-200/60 transition-colors"
+                          [matTooltip]="getProductFinanceTooltip(p)"
+                          matTooltipClass="finance-tooltip"
+                          matTooltipPosition="above"
+                          (click)="$event.stopPropagation()"
+                        >
+                          <!-- Fila 1: Transferencia -->
+                          <div class="flex items-center gap-1.5 justify-between">
+                            <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">Transf:</span>
+                            <div class="flex items-center gap-1">
+                              <span class="font-extrabold text-emerald-600 dark:text-emerald-400">
+                                {{ pf.transfer | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                              </span>
+                              @if (margin !== null) {
+                                <span class="badge badge-2xs badge-ghost text-[8.5px] font-bold opacity-70 px-1 py-0" title="Margen fijado">
+                                  {{ margin }}%
+                                </span>
+                              }
+                            </div>
+                          </div>
+
+                          <!-- Fila 2: Tarjeta 3 Cuotas -->
+                          <div class="flex items-center gap-1.5 justify-between">
+                            <span class="text-[9px] font-bold text-info uppercase tracking-tight">3 Cuotas:</span>
+                            <span class="font-bold text-info">
+                              {{ pf.card3 | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                            </span>
+                          </div>
+
+                          <!-- Fila 3: Bolsillo (+reposición) si aplica -->
+                          @if (restock > 0) {
+                            <div class="text-[9px] text-base-content/60 font-medium flex items-center justify-between gap-1 pt-0.5 border-t border-base-200" title="Total en mano sumando ganancia limpia + reserva reposición">
+                              <span class="text-emerald-800 dark:text-emerald-300 font-bold">Bolsillo:</span>
+                              <div class="flex items-center gap-0.5">
+                                <span class="font-black text-base-content/80">
+                                  {{ (pf.transfer + restock) | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                                </span>
+                                <span class="text-[8px] opacity-60">(+rep)</span>
+                              </div>
+                            </div>
+                          }
                         </div>
                       </td>
                     </ng-container>
@@ -2009,6 +2090,40 @@
               </span>
             </div>
           </div>
+
+          <!-- Desglose de Ganancias Netas Limpias -->
+          @let qpf = getProductProfits(p);
+          @let qRestock = getProductRestockAmount(p);
+          @let qMargin = getProductMargin(p);
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center pt-2 border-t border-base-200">
+            <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <span class="text-[9px] text-emerald-800 dark:text-emerald-300 font-bold uppercase block">Ganancia Transf.</span>
+              <span class="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">
+                {{ qpf.transfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+              @if (qMargin !== null) {
+                <span class="text-[8.5px] opacity-75 font-semibold block">Margen: {{ qMargin }}%</span>
+              }
+            </div>
+            <div class="p-2 rounded-xl bg-info/10 border border-info/20">
+              <span class="text-[9px] text-info font-bold uppercase block">Ganancia 3 Cuotas</span>
+              <span class="text-xs sm:text-sm font-black text-info">
+                {{ qpf.card3 | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+              <span class="text-[8.5px] opacity-75 font-semibold block">Sin Interés MP</span>
+            </div>
+            <div class="p-2 rounded-xl bg-base-200/70 border border-base-300 col-span-2 sm:col-span-1">
+              <span class="text-[9px] text-base-content/60 font-bold uppercase block">En tu bolsillo</span>
+              <span class="text-xs sm:text-sm font-black text-base-content">
+                {{ (qpf.transfer + qRestock) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+              @if (qRestock > 0) {
+                <span class="text-[8.5px] text-emerald-600 font-bold block">(+{{ qRestock | currency:'ARS':'symbol-narrow':'1.0-0' }} rep)</span>
+              } @else {
+                <span class="text-[8.5px] opacity-60 block">Sin reposición</span>
+              }
+            </div>
+          </div>
         </div>
 
         <!-- Variantes (Talles / Colores / Stock) -->
@@ -2459,4 +2574,390 @@
     </div>
   </div>
 }
+
+<!-- ============================================================== -->
+<!-- MODAL: QUITAR COSTO ADICIONAL MASIVO Y RECALCULAR PRECIOS      -->
+<!-- ============================================================== -->
+@if (showBulkCostModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+    <div class="bg-base-100 w-full max-w-6xl max-h-[92vh] rounded-3xl shadow-2xl border border-base-300 flex flex-col overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 sm:p-5 border-b border-base-200 bg-linear-to-r from-amber-500/10 via-base-100 to-emerald-500/10 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+            <mat-icon>price_change</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-base-content leading-tight">
+              Quitar Costo Adicional Masivo & Recalcular Precios
+            </h3>
+            <p class="text-xs text-base-content/60">
+              Buscá un concepto (ej: "IVA" o "iva"), revisá la vista previa de precios y ganancias con cupón -10%, y confirmá antes de guardar.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="closeBulkCostModal()"
+          [disabled]="isApplyingBulkCost()"
+          class="btn btn-sm btn-circle btn-ghost"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="p-4 bg-base-200/40 border-b border-base-200 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 items-end">
+          
+          <!-- Concepto a buscar -->
+          <div class="flex flex-col gap-1 lg:col-span-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-base-content/70 uppercase">
+                Nombre del Adicional
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-2xs checkbox-primary"
+                  [checked]="bulkCostExactMatch()"
+                  (change)="bulkCostExactMatch.set($any($event.target).checked); previewBulkCostRemoval()"
+                />
+                <span class="text-[10px] text-base-content/60 font-semibold" title="Distingue mayúsculas, minúsculas y tildes exactas">
+                  Coincidencia exacta
+                </span>
+              </label>
+            </div>
+            <div class="join w-full">
+              <input
+                type="text"
+                class="join-item input input-bordered input-sm w-full font-bold text-xs"
+                placeholder="Ej: IVA, Paqueteria, Arca..."
+                [ngModel]="bulkCostQuery()"
+                (ngModelChange)="bulkCostQuery.set($event)"
+                (keyup.enter)="previewBulkCostRemoval()"
+              />
+              <button
+                type="button"
+                class="join-item btn btn-xs sm:btn-sm btn-primary text-[11px] font-bold"
+                (click)="previewBulkCostRemoval()"
+                [disabled]="isLoadingBulkCostPreview()"
+              >
+                Buscar
+              </button>
+            </div>
+            <!-- Badges seleccionables con contador real en crudo -->
+            @if (rawAdditionalCostConceptsWithCount().length > 0) {
+              <div class="flex flex-wrap items-center gap-1 mt-1">
+                <span class="text-[10px] text-base-content/50 font-medium">Detectados:</span>
+                @for (item of rawAdditionalCostConceptsWithCount(); track item.concept) {
+                  <button
+                    type="button"
+                    class="badge badge-xs font-bold cursor-pointer transition-all hover:scale-105 gap-1 py-1"
+                    [ngClass]="isBulkCostConceptActive(item.concept) ? 'badge-primary shadow-xs' : 'badge-ghost border border-base-300 hover:border-primary text-base-content/75'"
+                    (click)="selectBulkCostConcept(item.concept, true)"
+                    [title]="'Filtrar ' + item.count + ' producto(s) con ' + item.concept"
+                  >
+                    <span>{{ item.concept }}</span>
+                    <span class="opacity-70 font-semibold">({{ item.count }})</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Filtro Categoría -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-bold text-base-content/70 uppercase">Categoría</label>
+            <select
+              class="select select-bordered select-sm w-full text-xs font-semibold"
+              [ngModel]="bulkCostCategoryFilter()"
+              (ngModelChange)="bulkCostCategoryFilter.set($event); previewBulkCostRemoval()"
+            >
+              <option value="">Todas las categorías</option>
+              @for (cat of Categories(); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Margen Opcional -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-bold text-base-content/70 uppercase" title="Dejalo vacío para mantener el margen actual de cada prenda">
+              Margen % (Opcional)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="90"
+              class="input input-bordered input-sm w-full text-xs font-bold"
+              placeholder="Mantener actual"
+              [ngModel]="bulkCostCustomMargin()"
+              (ngModelChange)="bulkCostCustomMargin.set($event ? +$event : null)"
+            />
+          </div>
+
+          <!-- Botón Previsualizar -->
+          <div>
+            <button
+              type="button"
+              (click)="previewBulkCostRemoval()"
+              [disabled]="isLoadingBulkCostPreview() || isApplyingBulkCost()"
+              class="btn btn-sm btn-primary w-full font-bold gap-1.5 cursor-pointer"
+            >
+              @if (isLoadingBulkCostPreview()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Simulando...</span>
+              } @else {
+                <mat-icon class="text-[16px]! w-4! h-4!">visibility</mat-icon>
+                <span>Previsualizar Cambios</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- KPIs de Simulación -->
+        @if (bulkCostPreviewItems().length > 0) {
+          @let summary = bulkCostSummary();
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+            <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 flex flex-col">
+              <span class="text-[10px] font-bold text-base-content/50 uppercase">Prendas Seleccionadas</span>
+              <span class="text-sm sm:text-base font-black text-primary">
+                {{ summary.selectedCount }} de {{ bulkCostPreviewItems().length }}
+              </span>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 flex flex-col">
+              <span class="text-[10px] font-bold text-base-content/50 uppercase">Baja Promedio (Transf. / Lista)</span>
+              <span class="text-sm sm:text-base font-black text-emerald-600">
+                -{{ summary.avgTransferDrop | currency:'ARS':'symbol-narrow':'1.0-0' }} / -{{ summary.avgListDrop | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 flex flex-col">
+              <span class="text-[10px] font-bold text-base-content/50 uppercase">Ganancia Mín. Transf (-10% Cupón)</span>
+              <span class="text-sm sm:text-base font-black" [ngClass]="summary.minProfitTransferCoupon10 > 0 ? 'text-emerald-600' : 'text-error'">
+                {{ summary.minProfitTransferCoupon10 > 0 ? '+' : '' }}{{ summary.minProfitTransferCoupon10 | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 flex flex-col">
+              <span class="text-[10px] font-bold text-base-content/50 uppercase">Ganancia Mín. 3 Cuotas (-10% Cupón)</span>
+              <span class="text-sm sm:text-base font-black" [ngClass]="summary.minProfit3InstallmentsCoupon10 > 0 ? 'text-info' : 'text-error'">
+                {{ summary.minProfit3InstallmentsCoupon10 > 0 ? '+' : '' }}{{ summary.minProfit3InstallmentsCoupon10 | currency:'ARS':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Body / Tabla de Vista Previa -->
+      <div class="flex-1 overflow-y-auto p-4">
+        @if (isLoadingBulkCostPreview()) {
+          <div class="py-16 flex flex-col items-center justify-center gap-3">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-xs font-bold text-base-content/60">
+              Buscando productos con "{{ bulkCostQuery() }}" y simulando nuevos precios y ganancias...
+            </p>
+          </div>
+        } @else if (bulkCostSearchDone() && bulkCostPreviewItems().length === 0) {
+          <div class="py-12 text-center bg-base-200/30 rounded-2xl border border-dashed border-base-300 space-y-2">
+            <mat-icon class="text-4xl text-base-content/30">check_circle</mat-icon>
+            <p class="text-sm font-bold text-base-content/70">
+              No se encontraron productos que tengan el costo adicional "{{ bulkCostQuery() }}"
+            </p>
+            <p class="text-xs text-base-content/50">
+              Probá buscando otro término o cambiando el filtro de categoría.
+            </p>
+          </div>
+        } @else if (bulkCostPreviewItems().length > 0) {
+          <div class="overflow-x-auto border border-base-200 rounded-2xl">
+            <table class="table table-xs sm:table-sm w-full">
+              <thead class="bg-base-200/70 text-[10px] uppercase text-base-content/70">
+                <tr>
+                  <th class="w-8 text-center">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-xs checkbox-primary"
+                      [checked]="isAllBulkCostSelected()"
+                      (change)="toggleAllBulkCostItems()"
+                    />
+                  </th>
+                  <th>Prenda / Costo Kremia</th>
+                  <th>Adicional a Quitar</th>
+                  <th>Precio Transferencia</th>
+                  <th>Precio Lista (3 Cuotas)</th>
+                  <th>Ganancia Limpia Normal</th>
+                  <th>Con Cupón -10% (1ra Compra)</th>
+                  <th class="w-12 text-center">Editar</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-base-200 text-xs">
+                @for (item of bulkCostPreviewItems(); track item._id) {
+                  <tr
+                    class="hover:bg-base-200/30 transition-colors"
+                    [ngClass]="{ 'opacity-50': !isBulkCostItemSelected(item._id) }"
+                  >
+                    <td class="text-center">
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-xs checkbox-primary"
+                        [checked]="isBulkCostItemSelected(item._id)"
+                        (change)="toggleBulkCostItem(item._id)"
+                      />
+                    </td>
+
+                    <!-- Prenda -->
+                    <td>
+                      <div class="flex items-center gap-2.5">
+                        <img
+                          [src]="item.image || '/no-image.jpg'"
+                          [alt]="item.model"
+                          class="w-9 h-9 rounded-lg object-cover border border-base-300 shrink-0"
+                        />
+                        <div class="min-w-0">
+                          <div class="font-bold text-base-content truncate max-w-44" [title]="item.model">
+                            {{ item.model }}
+                          </div>
+                          <div class="text-[10px] text-base-content/60 flex items-center gap-1.5">
+                            <span class="badge badge-2xs badge-ghost">{{ item.category }}</span>
+                            <span>Costo: <strong>{{ item.providerCost | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong></span>
+                            <span>({{ item.newMargin }}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Adicional a quitar y los que quedan -->
+                    <td>
+                      <div class="flex flex-col gap-1">
+                        @for (mc of item.matchedConcepts; track $index) {
+                          <span class="badge badge-xs badge-error text-white font-bold gap-1">
+                            -{{ mc.concept }} ({{ mc.type === 'fixed' ? ('$' + mc.value) : (mc.value + '%') }} = {{ mc.calculatedAmountInARS | currency:'ARS':'symbol-narrow':'1.0-0' }})
+                          </span>
+                        }
+                        <span class="text-[10px] text-base-content/50">
+                          Quedan: {{ item.remainingConcepts.length }} adicionales
+                          @if (item.restockReserveARS > 0) {
+                            · Reposición: +{{ item.restockReserveARS | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                          }
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Precio Transferencia Antes -> Después -->
+                    <td>
+                      <div class="flex flex-col">
+                        <span class="text-[10px] line-through text-base-content/40">
+                          {{ item.oldTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span class="font-black text-emerald-600 text-xs sm:text-sm">
+                          {{ item.newTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span class="text-[10px] font-bold text-emerald-700">
+                          {{ item.diffTransferPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Precio Lista (3 Cuotas) Antes -> Después -->
+                    <td>
+                      <div class="flex flex-col">
+                        <span class="text-[10px] line-through text-base-content/40">
+                          {{ item.oldListPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span class="font-black text-primary text-xs sm:text-sm">
+                          {{ item.newListPrice | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span class="text-[10px] text-base-content/60">
+                          3x {{ (item.newListPrice / 3) | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Ganancia Limpia Normal -->
+                    <td>
+                      <div class="flex flex-col gap-0.5 text-[11px]">
+                        <span class="text-emerald-700 font-bold">
+                          Transf: +{{ item.newProfitTransfer | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span class="text-info font-bold">
+                          3 Cuotas: +{{ item.newProfit3Installments | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Ganancia con Cupón -10% (1ra Compra) -->
+                    <td>
+                      <div class="flex flex-col gap-0.5 text-[11px]">
+                        <span
+                          class="font-bold"
+                          [ngClass]="item.newProfitTransferCoupon10 > 0 ? 'text-emerald-600' : 'text-error'"
+                        >
+                          Transf -10%: {{ item.newProfitTransferCoupon10 > 0 ? '+' : '' }}{{ item.newProfitTransferCoupon10 | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                        <span
+                          class="font-bold"
+                          [ngClass]="item.newProfit3InstallmentsCoupon10 > 0 ? 'text-info' : 'text-error'"
+                        >
+                          3 Cuotas -10%: {{ item.newProfit3InstallmentsCoupon10 > 0 ? '+' : '' }}{{ item.newProfit3InstallmentsCoupon10 | currency:'ARS':'symbol-narrow':'1.0-0' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Editar Prenda Directo -->
+                    <td class="text-center">
+                      <a
+                        [routerLink]="['/home/products/edit', item._id]"
+                        target="_blank"
+                        class="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-primary hover:bg-primary/10"
+                        title="Abrir y editar prenda en nueva pestaña"
+                      >
+                        <mat-icon class="text-[16px]! w-4! h-4!">edit</mat-icon>
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <!-- Footer de Confirmación -->
+      <div class="p-4 border-t border-base-200 bg-base-200/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div class="text-xs text-base-content/70 flex items-center gap-2">
+          <mat-icon class="text-[16px]! w-4! h-4! text-amber-600 shrink-0">verified_user</mat-icon>
+          <span>
+            Nada se modifica hasta que presiones <strong>Confirmar y Guardar</strong>. Se conservarán intactos tus otros costos (Envío, Arca, Paquetería y Reposición).
+          </span>
+        </div>
+        <div class="flex items-center justify-end gap-2 shrink-0">
+          <button
+            type="button"
+            (click)="closeBulkCostModal()"
+            [disabled]="isApplyingBulkCost()"
+            class="btn btn-sm btn-ghost font-bold"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="applyBulkCostRemoval()"
+            [disabled]="bulkCostSelectedIds().length === 0 || isApplyingBulkCost()"
+            class="btn btn-sm btn-success text-white font-bold gap-1.5 shadow-sm cursor-pointer"
+          >
+            @if (isApplyingBulkCost()) {
+              <span class="loading loading-spinner loading-xs"></span>
+              <span>Actualizando {{ bulkCostSelectedIds().length }} prendas...</span>
+            } @else {
+              <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+              <span>Confirmar y Guardar ({{ bulkCostSelectedIds().length }})</span>
+            }
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+}
+
 
