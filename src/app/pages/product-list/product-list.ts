@@ -154,9 +154,26 @@ export class ProductList {
   activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'published');
   statusCounts = this.ProductState.statusCounts;
   activeFilter = signal<string>('all');
-  viewMode = signal<'grid' | 'list'>('grid');
+  viewMode = signal<'grid' | 'list'>(
+    (() => {
+      try {
+        return (localStorage.getItem('admin_products_view_mode') as 'grid' | 'list') === 'list' ? 'list' : 'grid';
+      } catch {
+        return 'grid';
+      }
+    })()
+  );
   showStatsSidebar = signal<boolean>(false);
-  showFiltersSidebar = signal<boolean>(true);
+  showFiltersSidebar = signal<boolean>(
+    (() => {
+      try {
+        const saved = localStorage.getItem('admin_products_show_filters');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    })()
+  );
   showFiltersDrawer = signal<boolean>(false);
   showMobileFilters = signal<boolean>(false);
   showKpiBar = signal<boolean>(false);
@@ -215,6 +232,22 @@ export class ProductList {
 
   constructor() {
     this.#SidebarService.navbarTitle.set({ title: 'Productos' });
+
+    // Persistir preferencia de vista (Grid vs Lista)
+    effect(() => {
+      const mode = this.viewMode();
+      try {
+        localStorage.setItem('admin_products_view_mode', mode);
+      } catch (e) {}
+    });
+
+    // Persistir preferencia de visibilidad de barra lateral de filtros
+    effect(() => {
+      const show = this.showFiltersSidebar();
+      try {
+        localStorage.setItem('admin_products_show_filters', String(show));
+      } catch (e) {}
+    });
 
     this.searchSubject.pipe(
       debounceTime(400),
