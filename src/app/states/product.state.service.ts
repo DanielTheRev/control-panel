@@ -544,6 +544,10 @@ export class ProductStoreService {
     });
   }
 
+  patchProductLocal(product: Partial<IProduct>) {
+    this.#updateProduct(product);
+  }
+
   #updateProduct(product: Partial<IProduct>) {
     this.#fetchedProducts.update((state) => {
       if (!state) return state;

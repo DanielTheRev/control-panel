@@ -401,5 +401,37 @@ export class ProductService {
         )
     );
   }
+
+  updateProductQuickPricing(
+    id: string,
+    modelName: string,
+    data: {
+      providerCost?: number;
+      profitMargin?: number;
+      discountPercentageTransfer?: number;
+      additionalCosts?: any[];
+    }
+  ) {
+    return firstValueFrom(
+      this.#http
+        .patch<{
+          success: boolean;
+          product: {
+            _id: string;
+            brand: string;
+            model: string;
+            price: IProductPrices;
+            finance: IProductFinance;
+          };
+        }>(`${this.#apiUrl}/${id}/quick-pricing`, data)
+        .pipe(
+          this.#toast.observe({
+            loading: `Calibrando precios de ${modelName}...`,
+            success: `¡Precios de ${modelName} calibrados exitosamente!`,
+            error: (err: any) => err?.error?.message || `Error al actualizar precios de ${modelName}`,
+          })
+        )
+    );
+  }
 }
 

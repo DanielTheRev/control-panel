@@ -10,7 +10,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { IProduct, ProductType, ProductStatus, IVariant } from '../../interfaces/product.interface';
+import { IProduct, ProductType, ProductStatus, IVariant, ICostConcept } from '../../interfaces/product.interface';
+import { IFinanceCost } from '../../interfaces/finance.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 import { ProductStoreService } from '../../states/product.state.service';
@@ -254,6 +255,17 @@ export class ProductList {
       distinctUntilChanged()
     ).subscribe(query => {
       this.ProductState.setSearchQuery(query);
+    });
+
+    this.#quickCalcSubject.pipe(
+      debounceTime(200),
+      distinctUntilChanged((prev, curr) =>
+        prev.providerCost === curr.providerCost &&
+        prev.customProfitMargin === curr.customProfitMargin &&
+        JSON.stringify(prev.additionalCosts) === JSON.stringify(curr.additionalCosts)
+      )
+    ).subscribe(data => {
+      this.executeQuickCalculation(data);
     });
   }
 
@@ -3601,6 +3613,309 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
       console.error('Error al aplicar quita masiva de adicional:', err);
     } finally {
       this.isApplyingBulkCost.set(false);
+    }
+  }
+
+  // ==========================================
+  // MODAL DE CALIBRACIÓN RÁPIDA DE PRECIOS
+  // ==========================================
+  showQuickPricingModal = signal<boolean>(false);
+  quickPricingProduct = signal<IProduct | null>(null);
+  quickPricingIndex = signal<number>(-1);
+
+  // Inputs editables
+  quickCostProvider = signal<number>(0);
+  quickProfitMargin = signal<number>(30);
+  quickDiscountTransfer = signal<number>(15);
+  quickSimulatedCoupon = signal<number>(10);
+  quickAdditionalCosts = signal<ICostConcept[]>([]);
+
+  // Estado de cálculo y guardado
+  quickCalculated = signal<IFinanceCost | null>(null);
+  isQuickCalculating = signal<boolean>(false);
+  isQuickSaving = signal<boolean>(false);
+
+  #quickCalcSubject = new Subject<{
+    providerCost: number;
+    additionalCosts: any[];
+    customProfitMargin: number;
+  }>();
+
+  currentProductList = computed(() => this.ProductState.products().data || []);
+
+  hasQuickPrev = computed(() => this.quickPricingIndex() > 0);
+  hasQuickNext = computed(() => {
+    const list = this.currentProductList();
+    const idx = this.quickPricingIndex();
+    return idx >= 0 && idx < list.length - 1;
+  });
+
+  // Redondeos charm (.000, .500, .900)
+  roundCharmPrice(price: number): number {
+    const rounded100 = Math.round(price / 100) * 100;
+    const remainder = rounded100 % 1000;
+    if (remainder >= 800) {
+      return Math.floor(rounded100 / 1000) * 1000 + 900;
+    }
+    if (remainder >= 300 && remainder <= 600) {
+      return Math.floor(rounded100 / 1000) * 1000 + 500;
+    }
+    if (remainder < 300 && rounded100 >= 1000) {
+      return Math.floor(rounded100 / 1000) * 1000;
+    }
+    return rounded100;
+  }
+
+  quickListPrice = computed(() => {
+    return this.quickCalculated()?.listPrice || 0;
+  });
+
+  quickInstallments3 = computed(() => {
+    const lp = this.quickListPrice();
+    return lp > 0 ? Math.round(lp / 3) : 0;
+  });
+
+  quickTransferPrice = computed(() => {
+    const lp = this.quickListPrice();
+    if (lp <= 0) return 0;
+    const disc = this.quickDiscountTransfer();
+    const raw = lp * (1 - disc / 100);
+    return this.roundCharmPrice(raw);
+  });
+
+  quickTransferSavings = computed(() => {
+    return Math.max(0, this.quickListPrice() - this.quickTransferPrice());
+  });
+
+  quickTotalBaseCost = computed(() => {
+    const calc = this.quickCalculated();
+    if (!calc?.breakdown) {
+      const prov = Number(this.quickCostProvider()) || 0;
+      const addSum = this.quickAdditionalCosts().reduce((acc, c) => acc + (Number(c.value) || 0), 0);
+      return prov + addSum;
+    }
+    const catSum = calc.breakdown
+      .filter((b: any) => b.category === 'provider' || b.category === 'expense' || b.category === 'tax')
+      .reduce((sum: number, b: any) => sum + (b.value || 0), 0);
+    if (catSum > 0) return catSum;
+    return (calc.breakdown[0]?.value || 0) + (calc.breakdown[1]?.value || 0) + (calc.breakdown[2]?.value || 0);
+  });
+
+  quickNetProfitTransfer = computed(() => {
+    const tPrice = this.quickTransferPrice();
+    const cost = this.quickTotalBaseCost();
+    return Math.max(0, tPrice - cost);
+  });
+
+  quickNetProfit3Installments = computed(() => {
+    return this.quickCalculated()?.profits?.three_installments || 0;
+  });
+
+  quickRestockReserve = computed(() => {
+    const calc = this.quickCalculated();
+    if (!calc?.processedAdditionalCosts) return 0;
+    const restock = calc.processedAdditionalCosts.find((c: any) =>
+      /reposici[oó]n/i.test(c.concept || '')
+    );
+    return Math.round(Number(restock?.calculatedAmountInARS || 0));
+  });
+
+  quickPocketTransfer = computed(() => {
+    return this.quickNetProfitTransfer() + this.quickRestockReserve();
+  });
+
+  quickPocket3Installments = computed(() => {
+    return this.quickNetProfit3Installments() + this.quickRestockReserve();
+  });
+
+  // Simulación de Cupón
+  quickSimulatedProfitTransfer = computed(() => {
+    const tPrice = this.quickTransferPrice();
+    const cost = this.quickTotalBaseCost();
+    if (tPrice <= 0) return 0;
+    const coupon = this.quickSimulatedCoupon();
+    const discountedTransfer = tPrice * (1 - coupon / 100);
+    return Math.round(discountedTransfer - cost);
+  });
+
+  quickSimulatedProfit3Installments = computed(() => {
+    const calc = this.quickCalculated();
+    const totalCost = this.quickTotalBaseCost();
+    const lp = this.quickListPrice();
+    if (!calc?.breakdown || !lp) return 0;
+    const coupon = this.quickSimulatedCoupon();
+    const pasarelaRate = (calc.breakdown[3]?.value || 0) / lp;
+    const discountedPrice = lp * (1 - coupon / 100);
+    const netReceived = discountedPrice * (1 - pasarelaRate);
+    return Math.round(netReceived - totalCost);
+  });
+
+  quickSimulatedPocketTransfer = computed(() => {
+    return this.quickSimulatedProfitTransfer() + this.quickRestockReserve();
+  });
+
+  quickSimulatedPocket3Installments = computed(() => {
+    return this.quickSimulatedProfit3Installments() + this.quickRestockReserve();
+  });
+
+  openQuickPricing(product: IProduct, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.quickPricingProduct.set(product);
+    const list = this.currentProductList();
+    const idx = list.findIndex(p => p._id === product._id);
+    this.quickPricingIndex.set(idx >= 0 ? idx : 0);
+
+    const cost = product.finance?.providerCost?.inARS || (product.price as any)?.costPrice?.inARS || 0;
+    this.quickCostProvider.set(cost);
+
+    const margin = product.finance?.pricingStrategy?.targetProfit ??
+      (this.#StoreConfigState.StoreConfig()?.config?.profit || 30);
+    this.quickProfitMargin.set(margin);
+
+    const discount = (product.price as any)?.discountPercentageTransfer ?? 15;
+    this.quickDiscountTransfer.set(discount);
+
+    const costs = (product.finance?.additionalCosts || (product as any)?.additionalCosts || []) as ICostConcept[];
+    this.quickAdditionalCosts.set(costs);
+
+    this.showQuickPricingModal.set(true);
+    this.executeQuickCalculation({
+      providerCost: cost,
+      additionalCosts: costs,
+      customProfitMargin: margin
+    });
+  }
+
+  closeQuickPricing() {
+    this.showQuickPricingModal.set(false);
+  }
+
+  onQuickCostChange(newCost: number) {
+    this.quickCostProvider.set(newCost);
+    this.#quickCalcSubject.next({
+      providerCost: Number(newCost) || 0,
+      additionalCosts: this.quickAdditionalCosts(),
+      customProfitMargin: Number(this.quickProfitMargin()) || 0
+    });
+  }
+
+  onQuickMarginChange(newMargin: number) {
+    this.quickProfitMargin.set(newMargin);
+    this.#quickCalcSubject.next({
+      providerCost: Number(this.quickCostProvider()) || 0,
+      additionalCosts: this.quickAdditionalCosts(),
+      customProfitMargin: Number(newMargin) || 0
+    });
+  }
+
+  stepQuickMargin(delta: number) {
+    const updated = Math.max(1, (Number(this.quickProfitMargin()) || 0) + delta);
+    this.quickProfitMargin.set(updated);
+    this.executeQuickCalculation({
+      providerCost: Number(this.quickCostProvider()) || 0,
+      additionalCosts: this.quickAdditionalCosts(),
+      customProfitMargin: updated
+    });
+  }
+
+  setQuickMarginPreset(preset: number) {
+    this.quickProfitMargin.set(preset);
+    this.executeQuickCalculation({
+      providerCost: Number(this.quickCostProvider()) || 0,
+      additionalCosts: this.quickAdditionalCosts(),
+      customProfitMargin: preset
+    });
+  }
+
+  setQuickDiscountPreset(preset: number) {
+    this.quickDiscountTransfer.set(preset);
+  }
+
+  executeQuickCalculation(data: {
+    providerCost: number;
+    additionalCosts: any[];
+    customProfitMargin: number;
+  }) {
+    if (data.providerCost <= 0 || data.customProfitMargin <= 0) return;
+    this.isQuickCalculating.set(true);
+    this.ProductState.calculateListPrice({
+      providerCost: data.providerCost,
+      additionalCosts: data.additionalCosts,
+      useCustomProfit: true,
+      customProfitMargin: data.customProfitMargin,
+      pricingMethodChoice: 'margin',
+      calculate: true
+    }).subscribe({
+      next: (res) => {
+        this.quickCalculated.set(res);
+        this.isQuickCalculating.set(false);
+      },
+      error: (err) => {
+        console.error('Error calculando precio rápido:', err);
+        this.isQuickCalculating.set(false);
+      }
+    });
+  }
+
+  prevQuickPricing() {
+    if (!this.hasQuickPrev()) return;
+    const nextIdx = this.quickPricingIndex() - 1;
+    const prevProd = this.currentProductList()[nextIdx];
+    if (prevProd) {
+      this.openQuickPricing(prevProd);
+    }
+  }
+
+  nextQuickPricing() {
+    if (!this.hasQuickNext()) return;
+    const nextIdx = this.quickPricingIndex() + 1;
+    const nextProd = this.currentProductList()[nextIdx];
+    if (nextProd) {
+      this.openQuickPricing(nextProd);
+    }
+  }
+
+  async saveQuickPricing(andNext: boolean = false) {
+    const prod = this.quickPricingProduct();
+    if (!prod?._id) return;
+
+    this.isQuickSaving.set(true);
+    try {
+      const res = await this.#productService.updateProductQuickPricing(
+        prod._id,
+        prod.model,
+        {
+          providerCost: Number(this.quickCostProvider()),
+          profitMargin: Number(this.quickProfitMargin()),
+          discountPercentageTransfer: Number(this.quickDiscountTransfer()),
+          additionalCosts: this.quickAdditionalCosts()
+        }
+      );
+
+      if (res?.success && res.product) {
+        // Actualizamos estado en memoria inmediatamente
+        this.ProductState.patchProductLocal({
+          _id: prod._id,
+          price: res.product.price,
+          finance: res.product.finance
+        });
+
+        if (andNext && this.hasQuickNext()) {
+          this.nextQuickPricing();
+        } else if (!andNext) {
+          this.showQuickPricingModal.set(false);
+        } else {
+          // andNext pero era el último de la página
+          this.showQuickPricingModal.set(false);
+          this.#snackBar.open('¡Completaste la calibración de todas las prendas de esta página!', 'Genial', { duration: 3500 });
+        }
+      }
+    } catch (err: any) {
+      console.error('Error al guardar calibración rápida de precios:', err);
+    } finally {
+      this.isQuickSaving.set(false);
     }
   }
 }
