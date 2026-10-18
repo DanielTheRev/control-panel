@@ -879,7 +879,7 @@
                             <span class="font-black">{{ totalInPocketTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="text-[8.5px] font-medium opacity-75 text-right">
-                            (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)
+                            (incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)
                           </div>
                         </div>
                       }
@@ -907,7 +907,7 @@
                             <span class="font-black">{{ (lp.profits.one_pay + restockReserveAmount()) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="text-[8.5px] font-medium opacity-75 text-right">
-                            (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)
+                            (incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)
                           </div>
                         </div>
                       }
@@ -931,7 +931,7 @@
                             <span class="font-black">{{ (lp.profits.three_installments + restockReserveAmount()) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="text-[8.5px] font-medium opacity-75 text-right">
-                            (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)
+                            (incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)
                           </div>
                         </div>
                       }
@@ -964,7 +964,7 @@
                             <span class="font-black">{{ (lp.profits.six_installments + restockReserveAmount()) | currency:'ARS':'symbol-narrow':'1.0-0' }}</span>
                           </div>
                           <div class="text-[8.5px] font-medium opacity-75 text-right">
-                            (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)
+                            (incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)
                           </div>
                         </div>
                       }
@@ -1231,7 +1231,7 @@
                           @if (restockReserveAmount() > 0) {
                             <div class="flex items-center justify-between pt-1 border-t border-base-200/80 text-[10px] font-bold text-info">
                               <span>Plata total en tu bolsillo con cupón:</span>
-                              <span>{{ simulatedTotalInPocketList() | currency:'ARS':'symbol-narrow':'1.0-0' }} (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)</span>
+                              <span>{{ simulatedTotalInPocketList() | currency:'ARS':'symbol-narrow':'1.0-0' }} <span class="text-[9px] font-normal opacity-85">(incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)</span></span>
                             </div>
                           }
                         </div>
@@ -1265,7 +1265,7 @@
                           @if (restockReserveAmount() > 0) {
                             <div class="flex items-center justify-between pt-1 border-t border-base-200/80 text-[10px] font-bold text-emerald-700">
                               <span>Plata total en tu bolsillo con cupón:</span>
-                              <span>{{ simulatedTotalInPocketTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }} (+{{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} reposición)</span>
+                              <span>{{ simulatedTotalInPocketTransfer() | currency:'ARS':'symbol-narrow':'1.0-0' }} <span class="text-[9px] font-normal opacity-85">(incluye {{ restockReserveAmount() | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)</span></span>
                             </div>
                           }
                         </div>

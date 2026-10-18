@@ -799,7 +799,7 @@
                                 <span class="font-black text-base-content/80">
                                   {{ (pf.transfer + restock) | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
                                 </span>
-                                <span class="text-[8px] opacity-60">(+rep)</span>
+                                <span class="text-[8px] opacity-60">(inc. rep)</span>
                               </div>
                             </div>
                           }
@@ -2118,7 +2118,7 @@
                 {{ (qpf.transfer + qRestock) | currency:'ARS':'symbol-narrow':'1.0-0' }}
               </span>
               @if (qRestock > 0) {
-                <span class="text-[8.5px] text-emerald-600 font-bold block">(+{{ qRestock | currency:'ARS':'symbol-narrow':'1.0-0' }} rep)</span>
+                <span class="text-[8.5px] text-emerald-600 font-bold block">(incluye {{ qRestock | currency:'ARS':'symbol-narrow':'1.0-0' }} de reposición)</span>
               } @else {
                 <span class="text-[8.5px] opacity-60 block">Sin reposición</span>
               }

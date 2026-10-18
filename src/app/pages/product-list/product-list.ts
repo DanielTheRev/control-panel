@@ -3586,15 +3586,17 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
     this.isApplyingBulkCost.set(true);
     try {
       const marginVal = this.bulkCostCustomMargin();
-      await this.#productService.applyBulkAdditionalCostRemoval({
+      const res = await this.#productService.applyBulkAdditionalCostRemoval({
         productIds: ids,
         conceptQuery: query,
         exactMatch: this.bulkCostExactMatch(),
         ...(marginVal && marginVal > 0 ? { newProfitMargin: marginVal } : {}),
       });
-      this.ProductState.reloadProducts();
-      this.showBulkCostModal.set(false);
-      this.bulkCostSearchDone.set(false);
+      if (res && res.updatedCount > 0) {
+        this.ProductState.reloadProducts();
+        this.showBulkCostModal.set(false);
+        this.bulkCostSearchDone.set(false);
+      }
     } catch (err: any) {
       console.error('Error al aplicar quita masiva de adicional:', err);
     } finally {

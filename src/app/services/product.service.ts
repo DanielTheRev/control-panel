@@ -390,8 +390,13 @@ export class ProductService {
         .pipe(
           this.#toast.observe({
             loading: 'Recalculando precios y quitando adicional seleccionado...',
-            success: (res) => `¡${res.updatedCount} producto(s) recalculados exitosamente!`,
-            error: (err: any) => err?.error?.message || 'Error al recalcular los productos',
+            success: (res) => {
+              if (res.updatedCount === 0 && res.errors?.length > 0) {
+                throw new Error(res.errors[0]?.error || 'No se pudo actualizar ningún producto');
+              }
+              return `¡${res.updatedCount} producto(s) recalculados exitosamente!`;
+            },
+            error: (err: any) => err?.message || err?.error?.message || 'Error al recalcular los productos',
           })
         )
     );
