@@ -68,9 +68,25 @@ export class ExcelExportService {
     const headers = [
       'ID Producto',
       'Modelo / Nombre',
+      'Subtítulo',
+      'Slug / URL',
       'Marca',
       'Categoría',
       'Estado',
+      'Género',
+      'Calce / Fit',
+      'Material',
+      'Composición',
+      'Temporada',
+      'Descripción Corta',
+      'Descripción Larga',
+      'Tags',
+      'Características (Features)',
+      'Especificaciones',
+      'Título SEO',
+      'Descripción SEO',
+      'Imagen SEO (URL)',
+      'Imágenes Producto (URLs)',
       'Proveedor',
       'Link Proveedor',
       'Costo Proveedor ($ ARS)',
@@ -104,6 +120,42 @@ export class ExcelExportService {
         archived: 'Archivado',
       };
       const statusLabel = statusLabels[p.status] || p.status;
+
+      // Subtítulo y Slug
+      const subtitle = p.subtitle || '';
+      const slug = p.slug || '';
+
+      // Atributos de indumentaria
+      const gender = (p as any).gender || '';
+      const fit = (p as any).fit || '';
+      const material = (p as any).material || '';
+      const season = (p as any).season || '';
+
+      const compList = (p as any).composition || [];
+      const composition = Array.isArray(compList)
+        ? compList.map((c: any) => `${c.percentage}% ${c.material}`).join(', ')
+        : '';
+
+      // Descripciones limpias de etiquetas HTML
+      const shortDesc = this.#cleanHtml(p.shortDescription || '');
+      const largeDesc = this.#cleanHtml(p.largeDescription || '');
+
+      // Tags, Features y Especificaciones
+      const tags = Array.isArray(p.tags) ? p.tags.join(', ') : '';
+      const features = Array.isArray(p.features) ? p.features.join(' | ') : '';
+      const specifications = Array.isArray(p.specifications)
+        ? p.specifications.map((s: any) => `${s.key}: ${s.value}`).join(' | ')
+        : '';
+
+      // SEO
+      const seoTitle = p.seo?.metaTitle || '';
+      const seoDesc = p.seo?.metaDescription || '';
+      const seoImage = p.seo?.metaImage?.url || '';
+
+      // Galería de imágenes
+      const imagesUrls = Array.isArray(p.images)
+        ? p.images.map((img: any) => img.url).join(' | ')
+        : '';
 
       // Margen
       const isCustomProfit =
@@ -166,9 +218,25 @@ export class ExcelExportService {
       rows.push([
         p._id || '',
         p.model || '',
+        subtitle,
+        slug,
         p.brand || 'Vura',
         p.category || '',
         statusLabel,
+        gender,
+        fit,
+        material,
+        composition,
+        season,
+        shortDesc,
+        largeDesc,
+        tags,
+        features,
+        specifications,
+        seoTitle,
+        seoDesc,
+        seoImage,
+        imagesUrls,
         p.provider?.name || 'Sin asignar',
         p.linkProductProvider || '',
         p.finance?.providerCost?.inARS || 0,
@@ -299,11 +367,40 @@ export class ExcelExportService {
         if (isHeader) {
           cell.s = headerStyle;
         } else {
-          // Columnas numéricas / monetarias
-          const isCurrencyCol = [7, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22].includes(C);
-          const isPercentCol = [11, 15].includes(C);
-          const isIntegerCol = [23].includes(C);
-          const isCenterCol = [0, 4, 10].includes(C);
+          const headerName = String(data[0]?.[C] || '');
+
+          const isCurrencyCol = [
+            'Costo Proveedor ($ ARS)',
+            'Costo Proveedor (USD)',
+            'Tipo de Cambio ($/USD)',
+            'Precio Venta Transferencia/Efectivo ($)',
+            'Precio Venta Lista ($)',
+            'Precio 1 Pago Débito/Crédito ($)',
+            '3 Cuotas sin interés ($ c/u)',
+            '6 Cuotas sin interés ($ c/u)',
+            'Ganancia Neta Transferencia ($)',
+            'Ganancia Neta 1 Pago ($)',
+            'Ganancia Neta 3 Cuotas ($)',
+            'Ganancia Neta 6 Cuotas ($)',
+          ].includes(headerName);
+
+          const isPercentCol = [
+            'Margen Pretendido (%)',
+            'Descuento Transferencia (%)',
+          ].includes(headerName);
+
+          const isIntegerCol = [
+            'Stock Total (Unidades)',
+          ].includes(headerName);
+
+          const isCenterCol = [
+            'ID Producto',
+            'Estado',
+            'Género',
+            'Calce / Fit',
+            'Temporada',
+            'Estrategia Margen',
+          ].includes(headerName);
 
           let align = 'left';
           if (isCurrencyCol || isPercentCol || isIntegerCol) {
@@ -401,5 +498,19 @@ export class ExcelExportService {
         }
       }
     }
+  }
+
+  #cleanHtml(html: string = ''): string {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 }
