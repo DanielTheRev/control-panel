@@ -22,8 +22,17 @@ export class ShopTheLookStateService {
 
   readonly campaigns = computed(() => {
     const data = this.#fetchedCampaigns.value();
+    const sortedData = data ? [...data].sort((a, b) => {
+      const scoreA = a.effectiveScore ?? a.rankingScore ?? 100;
+      const scoreB = b.effectiveScore ?? b.rankingScore ?? 100;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      return (b.order ?? 0) - (a.order ?? 0);
+    }) : [];
+
     return {
-      data: data || [],
+      data: sortedData,
       isLoading: this.#fetchedCampaigns.isLoading(),
       hasError: !!this.#fetchedCampaigns.error(),
       hasData: this.#fetchedCampaigns.hasValue(),
@@ -58,6 +67,17 @@ export class ShopTheLookStateService {
       const response = await this.#shopTheLookService.update(id, data);
       this.#updateCampaignLocal(response);
       return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateRankingScore(id: string, newScore: number) {
+    try {
+      const response = await this.#shopTheLookService.updateRankingScore(id, newScore);
+      const updated = (response as any)?.data || response;
+      this.#updateCampaignLocal(updated);
+      return updated;
     } catch (error) {
       throw error;
     }

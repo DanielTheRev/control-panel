@@ -1,12 +1,15 @@
 import { IProduct } from './product.interface';
 
-// Imagen alojada en Cloudinary
+// Imagen alojada en Cloudinary con soporte para NgOptimizedImage
 export interface IShopTheLookImage {
   url: string;
   public_id: string;
+  width?: number;
+  height?: number;
+  alt?: string;
 }
 
-// Datos posicionales del Pin
+// Datos posicionales del Pin (Opcional en la foto principal)
 export interface IHotspotPosition {
   x: number; // Porcentaje de 0 a 100
   y: number; // Porcentaje de 0 a 100
@@ -17,33 +20,56 @@ export interface IHotspotColor {
   hex?: string;
 }
 
-// Representación de un Hotspot
-export interface IShopTheLookHotspot {
+// Prenda / Producto vinculado al Outfit
+export interface IShopTheLookProductItem {
   _id?: string;
-  product: IProduct; // ⚠️ En los GET vendrá el Objeto Producto poblado. En los POST/PUT enviarás solo el String (ID del producto).
-  position: IHotspotPosition;
+  product: IProduct | string; // Objeto Producto populado (GET) o ID (POST/PUT)
+  position?: IHotspotPosition; // Opcional
   selectedColor?: IHotspotColor;
   selectedSku?: string;
   variantImage?: IShopTheLookImage;
   isActive: boolean;
 }
 
+// Alias de retrocompatibilidad
+export type IShopTheLookHotspot = IShopTheLookProductItem;
+
 export interface ILookItem {
   _id?: string;
   name?: string;
-  mainImage: IShopTheLookImage; // POST: No necesario si envías un archivo. PUT: Indispensable si NO cambias la imagen.
-  hotspots: IShopTheLookHotspot[];
+  mainImage?: IShopTheLookImage;
+  gallery?: IShopTheLookImage[];
+  hotspots?: IShopTheLookProductItem[];
+  products?: IShopTheLookProductItem[];
   isActive: boolean;
 }
 
-// Documento Principal
+export interface IShopTheLookMetrics {
+  viewsCount?: number;
+  likesCount?: number;
+  sharesCount?: number;
+  cartAddsCount?: number;
+  salesCount?: number;
+}
+
+// Documento Principal: Look / Outfit Independiente
 export interface IShopTheLook {
-  _id: string;
-  title: string;
-  subtitle: string;
-  slug?: string;
+  _id?: string;
+  name: string;
+  title?: string; // Retrocompatibilidad
+  subtitle?: string; // Retrocompatibilidad
+  description?: string;
+  occasion?: string; // Ej: "Día & Tarde", "Noche", "Sastre"
+  slug: string;
+  gallery: IShopTheLookImage[];
+  products: IShopTheLookProductItem[];
+  likes?: number;
+  shares?: number;
+  order?: number;
+  rankingScore?: number;
+  effectiveScore?: number;
+  metrics?: IShopTheLookMetrics;
   isActive: boolean;
-  looks: ILookItem[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

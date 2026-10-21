@@ -1,320 +1,375 @@
 <app-page-layout>
-  <app-page-header header [title]="isEditMode() ? 'Editar Campaña' : 'Nueva Campaña VIP'"
-    subtitle="Comienza armando la campaña base y luego crea múltiples looks para la misma">
-    <div actions class="flex gap-3">
-      <button class="btn btn-ghost" routerLink="/home/shop-the-look" [disabled]="loading()">Cancelar</button>
-      <button class="btn btn-primary shadow-lg shadow-primary/30" (click)="save()"
-        [disabled]="form.invalid || loading()">
-        @if(loading()) { <span class="loading loading-spinner loading-sm"></span> }
-        Guardar Campaña
+  <!-- TOP BAR / HEADER -->
+  <app-page-header header [title]="isEditMode() ? 'Editar Outfit' : 'Nuevo Outfit'"
+    subtitle="Configura la fotografía editorial, ubica los pines interactivos sobre la modelo y asocia las prendas del catálogo.">
+    <div actions class="flex items-center gap-3">
+      <button class="btn btn-ghost btn-sm" routerLink="/home/shop-the-look" [disabled]="loading()">Cancelar</button>
+      
+      @if (form.value.slug) {
+        <button type="button" class="btn btn-outline btn-sm gap-1.5" (click)="copyCampaignLink()" title="Copiar enlace público de la tienda">
+          <mat-icon class="text-sm">content_copy</mat-icon>
+          <span class="hidden sm:inline">Copiar Enlace</span>
+        </button>
+      }
+
+      <button class="btn btn-primary btn-sm shadow-md shadow-primary/20 gap-2" (click)="save()" [disabled]="form.invalid || loading()">
+        @if(loading()) { <span class="loading loading-spinner loading-xs"></span> }
+        <mat-icon class="text-sm">save</mat-icon>
+        <span>Guardar Outfit</span>
       </button>
     </div>
   </app-page-header>
 
   <ng-container content>
+    <!-- MAIN TWO-PANE STUDIO GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
-    <div class="card bg-base-100 shadow-sm border border-base-200 mb-8 w-full rounded-2xl">
-      <div class="card-body p-6 lg:p-8">
-        <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
-          <mat-icon class="text-primary">campaign</mat-icon> Información de Campaña
-        </h3>
-
-        <form [formGroup]="form" class="flex flex-col gap-6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <label class="form-control lg:col-span-4">
-              <span class="label-text font-medium mb-2 text-base-content/70">Título de la Campaña</span>
-              <input type="text" formControlName="title" placeholder="Ej: Look Verano 2026"
-                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors"
-                [class.input-error]="form.get('title')?.invalid && form.get('title')?.touched" />
-            </label>
-
-            <label class="form-control lg:col-span-3">
-              <span class="label-text font-medium mb-2 text-base-content/70">Subtítulo (Opcional)</span>
-              <input type="text" formControlName="subtitle" placeholder="Ej: Especial Ropa Ligera"
-                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors" />
-            </label>
-
-            <label class="form-control lg:col-span-3">
-              <span class="label-text font-medium mb-2 text-base-content/70 flex items-center justify-between">
-                <span>Slug / URL Amigable</span>
-                <span class="text-[10px] text-primary font-mono">/shop-the-look/...</span>
-              </span>
-              <input type="text" formControlName="slug" placeholder="ej: look-verano-2026"
-                class="input input-bordered w-full bg-base-50 focus:bg-base-100 font-mono text-sm transition-colors" />
-            </label>
-
-            <div class="form-control lg:col-span-2 lg:mt-8">
-              <label
-                class="label cursor-pointer justify-center gap-3 bg-base-200/50 hover:bg-base-200 px-4 py-3 rounded-xl border border-base-200 transition-colors">
-                <span class="label-text font-bold">Visible</span>
-                <input type="checkbox" class="toggle toggle-primary" formControlName="isActive" />
-              </label>
+      <!-- ============================================================ -->
+      <!-- PANE IZQUIERDO (COL 5): EL ESTUDIO VISUAL Y PINES INTERACTIVOS -->
+      <!-- ============================================================ -->
+      <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-20">
+        
+        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-3xl overflow-hidden p-5">
+          <!-- Canvas Header -->
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-200">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <mat-icon class="text-lg">photo_camera</mat-icon>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm text-base-content">Foto Editorial</h4>
+                <p class="text-[11px] text-base-content/50">Toca la imagen para ubicar pines</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5">
+              <button type="button" class="btn btn-xs btn-outline gap-1 rounded-lg" (click)="showImagePicker.set(!showImagePicker())">
+                <mat-icon class="text-xs">upload</mat-icon>
+                <span>{{ activeLook.previewImage ? 'Cambiar foto' : 'Subir foto' }}</span>
+              </button>
             </div>
           </div>
 
-          @if (form.value.slug || form.value.title) {
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <div class="text-xs text-base-content/60 flex items-center gap-1.5 bg-base-200/40 px-3 py-1.5 rounded-lg border border-base-200 w-fit">
-                  <mat-icon class="text-sm scale-75 text-primary">link</mat-icon>
-                  <span>Enlace público:</span>
-                  <span class="font-mono text-primary font-bold">/shop-the-look/{{ form.value.slug || '...' }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-xs btn-outline btn-primary gap-1 shadow-sm"
-                  (click)="copyCampaignLink()"
-                  title="Copiar enlace de la campaña al portapapeles">
-                  <mat-icon class="text-[14px]">content_copy</mat-icon> Copiar Enlace
-                </button>
+          <!-- Drawer / Formulario de subida de imagen -->
+          @if (showImagePicker() || !activeLook.previewImage) {
+            <div class="p-4 rounded-2xl bg-base-200/50 border border-base-300 mb-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-bold text-base-content">Elegir Fotografía del Outfit</p>
+                @if (activeLook.previewImage) {
+                  <button type="button" class="btn btn-xs btn-ghost text-base-content/50" (click)="showImagePicker.set(false)">✕ Cerrar</button>
+                }
               </div>
-              @if (isEditMode()) {
-                <span class="text-[11px] text-base-content/50 flex items-center gap-1">
-                  <mat-icon class="text-[14px] text-warning">info</mat-icon>
-                  Si ya compartiste este enlace, cambiarlo dejará inaccesible la URL anterior.
-                </span>
-              }
+              
+              <div class="flex flex-col gap-2">
+                <label class="btn btn-outline btn-sm w-full gap-2 cursor-pointer bg-base-100 border-base-300 hover:border-primary">
+                  <mat-icon class="text-primary text-base">folder_open</mat-icon>
+                  <span>Seleccionar archivo local (JPG, PNG, WEBP)</span>
+                  <input type="file" class="hidden" accept="image/*" (change)="onFileSelected($event)">
+                </label>
+
+                <div class="divider my-0 text-[10px] text-base-content/40 uppercase font-bold">O por URL de imagen</div>
+
+                <div class="join w-full">
+                  <input type="text" #urlInput placeholder="https://res.cloudinary.com/..."
+                    class="input input-sm input-bordered join-item flex-1 text-xs font-mono"
+                    [value]="imageInputUrl()" (keyup.enter)="onUrlSubmit(urlInput.value)">
+                  <button type="button" class="btn btn-sm btn-neutral join-item" (click)="onUrlSubmit(urlInput.value)">
+                    Aplicar
+                  </button>
+                </div>
+              </div>
             </div>
           }
-        </form>
-      </div>
-    </div>
 
-    @if(looks().length === 0) {
-    <div class="card bg-base-100 shadow-sm border border-dashed border-base-300 text-center py-16 rounded-2xl">
-      <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-        <mat-icon class="text-4xl text-primary">collections</mat-icon>
-      </div>
-      <h3 class="text-2xl font-bold font-serif mb-2">Aún no hay Looks</h3>
-      <p class="text-base-content/60 max-w-md mx-auto mb-8">Crea el primer Look, sube la foto de la modelo y comienza a
-        etiquetar los productos del catálogo.</p>
-      <button class="btn btn-primary mx-auto shadow-lg shadow-primary/30" (click)="addLook()">
-        <mat-icon>add</mat-icon> Añadir Primer Look
-      </button>
-    </div>
-    } @else {
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <!-- VISOR DE LA FOTO CON PINES INTERACTIVOS -->
+          <div class="relative w-full rounded-2xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center min-h-[420px] max-h-[68vh] shadow-inner group">
+            
+            @if (activeLook && activeLook.previewImage) {
+              <!-- Imagen y Canvas de Pines -->
+              <div class="relative inline-flex items-center justify-center w-full h-full max-h-[68vh]">
+                <img
+                  #imageContainer
+                  [src]="activeLook.previewImage"
+                  (click)="onImageClick($event)"
+                  (error)="onMainImageError($event)"
+                  class="w-auto max-w-full h-auto max-h-[68vh] object-contain block cursor-crosshair select-none"
+                  alt="Editorial Preview"
+                />
 
-      <div class="lg:col-span-3 space-y-4">
-        <div class="bg-base-100 rounded-2xl p-4 border border-base-200 shadow-sm sticky top-6">
-          <div class="flex items-center justify-between mb-4 px-2">
-            <span class="font-bold text-xs tracking-widest text-base-content/50 uppercase">Tus Looks</span>
-            <button class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" (click)="addLook()">
-              <mat-icon class="text-[16px]">add</mat-icon> Añadir
-            </button>
+                <!-- PINES SOBRE LA FOTO -->
+                @for (hotspot of activeLook.hotspots; track hotspot._id || pinIdx; let pinIdx = $index) {
+                  @let product = asProduct(hotspot.product);
+                  @let isActive = activeHotspotIndex() === pinIdx;
+
+                  <button
+                    type="button"
+                    class="absolute w-8 h-8 rounded-full flex items-center justify-center shadow-2xl cursor-pointer transition-all duration-200 z-20 focus:outline-none"
+                    [ngClass]="isActive ? 'bg-primary text-primary-content ring-4 ring-primary/30 scale-125 z-30' : 'bg-black/90 text-white hover:scale-110 hover:bg-black ring-2 ring-white/90'"
+                    [style.left.%]="hotspot.position?.x ?? 50"
+                    [style.top.%]="hotspot.position?.y ?? 50"
+                    style="transform: translate(-50%, -50%);"
+                    (click)="$event.stopPropagation(); selectHotspot(pinIdx)"
+                    [title]="product?.model || ('Pin ' + (pinIdx + 1))">
+                    
+                    <span class="text-xs font-bold leading-none font-sans">{{ pinIdx + 1 }}</span>
+
+                    @if (isActive) {
+                      <span class="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping z-[-1]"></span>
+                    }
+                  </button>
+                }
+              </div>
+
+              <!-- Floating bottom hint -->
+              <div class="absolute bottom-3 left-3 right-3 pointer-events-none">
+                <div class="bg-black/75 backdrop-blur-md text-white text-[10px] sm:text-xs py-1.5 px-3 rounded-xl text-center shadow-lg font-medium">
+                  💡 Haz clic en la foto para colocar o mover un pin
+                </div>
+              </div>
+            } @else {
+              <!-- Empty State del Visor -->
+              <div class="p-8 text-center flex flex-col items-center justify-center text-base-content/40 space-y-3">
+                <div class="w-16 h-16 rounded-2xl bg-base-300/40 flex items-center justify-center">
+                  <mat-icon class="text-4xl text-base-content/30">add_photo_alternate</mat-icon>
+                </div>
+                <div>
+                  <p class="font-bold text-sm text-base-content/70">Sin fotografía editorial</p>
+                  <p class="text-xs text-base-content/50 max-w-xs mt-0.5">Sube la foto de la modelo usando el botón superior para ubicar los pines interactivos.</p>
+                </div>
+              </div>
+            }
           </div>
 
-          <ul class="menu w-full p-0 gap-2">
-            @for (draft of looks(); track draft.internalId; let i = $index) {
-            <li class="relative group">
-              <a [class.bg-primary]="activeTabIndex() === i" [class.text-primary-content]="activeTabIndex() === i"
-                [class.hover:bg-base-200]="activeTabIndex() !== i" (click)="setActiveTab(i)"
-                class="flex justify-between items-center rounded-xl p-2 transition-all cursor-pointer">
-
-                <div class="flex items-center gap-3 min-w-0">
-                  <div
-                    class="w-10 h-10 rounded-lg shadow-sm bg-base-200 flex items-center justify-center overflow-hidden border border-base-300 shrink-0">
-                    @if (draft.previewImage) {
-                    <img [src]="draft.previewImage" class="w-full h-full object-cover object-top" />
-                    } @else {
-                    <mat-icon class="opacity-30 text-[20px]">image</mat-icon>
-                    }
-                  </div>
-                  <div class="flex flex-col min-w-0">
-                    <span class="font-medium text-sm truncate max-w-[130px]">{{ draft.nameControl.value || ('Look ' + (i + 1)) }}</span>
-                    <span class="text-[10px] opacity-70">{{ draft.hotspots.length }} prendas</span>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-xs text-base-content/60 hover:text-primary"
-                    (click)="$event.stopPropagation(); copyLookLink(i)" title="Copiar enlace directo de este look">
-                    <mat-icon class="text-[17px]">share</mat-icon>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-xs text-error"
-                    (click)="$event.stopPropagation(); removeLook(i)" title="Eliminar look">
-                    <mat-icon class="text-[17px]">delete_outline</mat-icon>
-                  </button>
-                </div>
-              </a>
-            </li>
-            }
-          </ul>
         </div>
+
       </div>
 
-      <div class="lg:col-span-4 space-y-6">
+      <!-- ============================================================ -->
+      <!-- PANE DERECHO (COL 7): CONFIGURACIÓN Y GESTOR DE PRENDAS      -->
+      <!-- ============================================================ -->
+      <div class="lg:col-span-7 space-y-6">
 
-        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl">
-          <div class="card-body p-6">
-            <div class="flex items-center justify-between mb-4 border-b border-base-200 pb-4">
-              <h3 class="font-bold text-lg">Configuración del Look</h3>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  class="btn btn-xs btn-ghost text-base-content/70 hover:text-primary gap-1 border border-base-300"
-                  (click)="copyLookLink(activeTabIndex())"
-                  title="Copiar enlace directo a este look">
-                  <mat-icon class="text-[15px]">share</mat-icon> Copiar Link
-                </button>
-                <label class="cursor-pointer flex items-center gap-1.5 ml-1">
-                  <span class="label-text text-xs font-bold uppercase text-base-content/50">Habilitado</span>
-                  <input type="checkbox" class="toggle toggle-primary toggle-sm" [checked]="activeLook!.isActive"
-                    (change)="toggleActiveLookStatus()" />
+        <!-- CARD 1: INFORMACIÓN DEL OUTFIT -->
+        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-3xl p-6 sm:p-7">
+          <form [formGroup]="form" class="space-y-4">
+            <div class="flex items-center justify-between pb-4 mb-2 border-b border-base-200">
+              <h4 class="font-bold text-base flex items-center gap-2">
+                <mat-icon class="text-primary text-xl">tune</mat-icon>
+                <span>Detalles del Outfit</span>
+              </h4>
+              
+              <label class="label cursor-pointer gap-2 py-0">
+                <span class="label-text font-bold text-xs">Visible en tienda</span>
+                <input type="checkbox" class="toggle toggle-sm toggle-primary" formControlName="isActive">
+              </label>
+            </div>
+            <div>
+              <label class="label py-1">
+                <span class="label-text font-bold text-xs uppercase tracking-wider text-base-content/70">Nombre del Outfit</span>
+              </label>
+              <input type="text" formControlName="title" placeholder="Ej: Celeste en movimiento"
+                class="input input-bordered w-full font-semibold text-base transition-colors"
+                [class.input-error]="form.get('title')?.invalid && form.get('title')?.touched" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label py-1">
+                  <span class="label-text font-bold text-xs uppercase tracking-wider text-base-content/70">Ocasión / Estilo</span>
                 </label>
+                <input type="text" formControlName="subtitle" placeholder="Ej: Día & Tarde / Noche"
+                  class="input input-bordered w-full text-sm transition-colors" />
+              </div>
+
+              <div>
+                <label class="label py-1 flex items-center justify-between">
+                  <span class="label-text font-bold text-xs uppercase tracking-wider text-base-content/70">Slug / URL</span>
+                  <span class="text-[10px] text-primary font-mono">/shop-the-look/...</span>
+                </label>
+                <input type="text" formControlName="slug" placeholder="celeste-en-movimiento"
+                  class="input input-bordered w-full text-sm font-mono transition-colors" />
               </div>
             </div>
 
-            <label class="form-control w-full mb-4">
-              <span class="label-text font-medium mb-1.5 text-base-content/70">Nombre del Look</span>
-              <input type="text" [formControl]="activeLook!.nameControl" placeholder="Ej: Buzo Oversize Washed & Cargo"
-                class="input input-bordered w-full bg-base-50 focus:bg-base-100 transition-colors input-sm" />
-            </label>
-
-            <app-single-image-upload [control]="activeLook!.imageControl" folder="shop-the-look"
-              title="Sube este Outfit" ratioBadge="Vertical: 3:4">
-            </app-single-image-upload>
-          </div>
-        </div>
-
-        @if (activeLook) {
-        <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl">
-          <div class="card-body p-6">
-            <div class="mb-4">
-              <h3 class="font-bold text-lg flex items-center gap-2">
-                <mat-icon class="text-primary">push_pin</mat-icon> Pines de Producto
-              </h3>
-              <p class="text-xs text-base-content/50 mt-1">Haz click en la imagen lateral para clavar un nuevo pin.</p>
-            </div>
-
-            @if (activeLook.hotspots.length === 0) {
-            <div
-              class="text-center py-8 text-base-content/40 border border-dashed border-base-300 rounded-xl bg-base-50">
-              <mat-icon class="opacity-50 text-4xl mb-2">touch_app</mat-icon>
-              <p class="text-sm font-medium">Aún no hay pines en este look.</p>
-            </div>
-            }
-
-            <div class="space-y-3">
-              @for (hotspot of activeLook!.hotspots; track hotspot._id || hIndex; let hIndex = $index) {
-              <div class="p-4 border rounded-xl transition-all relative"
-                [ngClass]="activeHotspotIndex() === hIndex ? 'border-primary bg-primary/5 shadow-sm' : 'border-base-200 hover:border-base-300'">
-
-                <div class="flex justify-between items-center mb-3">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-xs font-bold">{{hIndex
-                      + 1}}</span>
-                    <span class="text-xs font-bold tracking-widest uppercase text-base-content/50">Pin Activo</span>
-                  </div>
-                  <button class="btn btn-circle btn-ghost btn-xs text-error hover:bg-error/10"
-                    (click)="removeHotspot(hIndex)">
-                    <mat-icon class="text-[18px]">close</mat-icon>
-                  </button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+              <div>
+                <label class="label py-1 flex items-center justify-between">
+                  <span class="label-text font-bold text-xs uppercase tracking-wider text-base-content/70">Puntaje ELO Base</span>
+                  <span class="text-[10px] text-primary font-semibold">Inicial: 100</span>
+                </label>
+                <div class="relative">
+                  <input type="number" formControlName="rankingScore" min="0" placeholder="100"
+                    class="input input-bordered w-full text-sm transition-colors pl-8 font-mono" />
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-base-content/40">★</span>
                 </div>
+                <label class="label py-0.5">
+                  <span class="label-text-alt text-[10px] text-base-content/50">Auto-ranking: Vistas (+1), Likes (+3), Shares (+5), Carritos (+10), Ventas (+30).</span>
+                </label>
+              </div>
 
-                @let product = hotspot?.product;
-                @if (product) {
-                <div class="flex items-center gap-3 bg-base-100 p-2 rounded-lg border border-base-200">
-                  <div class="w-12 h-12 rounded bg-base-200 shrink-0 overflow-hidden border border-base-300">
-                    <img [src]="hotspot.variantImage?.url || product?.images?.[0]?.url || ''"
-                      (error)="onHotspotImageError($event, hotspot)"
-                      class="w-full h-full object-cover rounded" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold truncate text-base-content">{{ product?.model || 'Producto' }}</p>
-                    <p class="text-xs text-base-content/50 truncate">
-                      {{ product?.brand }} 
-                      @if (hotspot.selectedColor?.name) {
-                        · <span class="font-semibold text-primary">{{ hotspot.selectedColor?.name }}</span>
-                      }
-                    </p>
-                  </div>
-                  <button type="button" class="btn btn-ghost btn-xs text-primary gap-1" (click)="openProductSearch(hIndex)" title="Cambiar Producto">
-                    <mat-icon class="text-[16px]">swap_horiz</mat-icon>
-                  </button>
-                </div>
-
-                <!-- Selector de Variante / Color que lleva la modelo -->
-                @let colors = getProductColors(product);
-                @if (colors.length > 0) {
-                  <div class="mt-3 pt-2.5 border-t border-base-200">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 mb-2">Color que lleva la modelo en este look:</p>
-                    <div class="flex flex-wrap gap-1.5">
-                      @for (col of colors; track col.name) {
-                        @let isSelected = hotspot.selectedColor?.name?.trim()?.toLowerCase() === col.name.trim().toLowerCase();
-                        <button type="button"
-                          class="btn btn-xs gap-1.5 rounded-md transition-all cursor-pointer"
-                          [ngClass]="isSelected ? 'btn-neutral border-black shadow-xs font-bold text-white' : 'btn-ghost border border-base-300 hover:border-base-400 font-normal text-base-content'"
-                          (click)="selectHotspotColor(hIndex, col)">
-                          @if (col.hex) {
-                            <span class="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0" [style.backgroundColor]="col.hex"></span>
-                          }
-                          <span>{{ col.name }}</span>
-                          @if (isSelected) {
-                            <mat-icon class="text-[14px] h-3.5 w-3.5">check</mat-icon>
-                          }
-                        </button>
-                      }
+              <div class="flex flex-col justify-start">
+                @if (isEditMode() && originalCampaign()?.effectiveScore !== undefined) {
+                  <label class="label py-1">
+                    <span class="label-text font-bold text-xs uppercase tracking-wider text-base-content/70">Rendimiento ELO</span>
+                  </label>
+                  <div class="p-3 rounded-2xl bg-base-200/60 border border-base-200 flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] uppercase font-bold tracking-wider text-base-content/50">ELO Total</p>
+                      <p class="text-xl font-bold font-mono text-primary flex items-center gap-1">
+                        <span>★</span>
+                        <span>{{ originalCampaign()?.effectiveScore }}</span>
+                      </p>
+                    </div>
+                    <div class="text-right text-[10px] text-base-content/70 space-y-0.5 font-mono">
+                      <p>❤️ {{ originalCampaign()?.likes || originalCampaign()?.metrics?.likesCount || 0 }} likes</p>
+                      <p>↗️ {{ originalCampaign()?.shares || originalCampaign()?.metrics?.sharesCount || 0 }} shares</p>
+                      <p>🛍️ {{ originalCampaign()?.metrics?.salesCount || 0 }} ventas</p>
                     </div>
                   </div>
                 }
-                } @else {
-                <button class="btn btn-outline btn-sm w-full gap-2" (click)="openProductSearch(hIndex)">
-                  <mat-icon class="text-[18px]">search</mat-icon> Asignar Producto
+              </div>
+            </div>
+
+            @if (form.value.slug || form.value.title) {
+              <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-base-200/50 border border-base-200 mt-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <mat-icon class="text-xs text-primary scale-90 shrink-0">link</mat-icon>
+                  <span class="text-xs text-base-content/60">Tienda:</span>
+                  <span class="text-xs font-mono font-bold text-primary truncate">/shop-the-look/{{ form.value.slug }}</span>
+                </div>
+                <button type="button" class="btn btn-xs btn-ghost gap-1 shrink-0" (click)="copyCampaignLink()">
+                  <mat-icon class="text-xs">content_copy</mat-icon> Copiar
                 </button>
+              </div>
+            }
+          </form>
+        </div>
+
+        <!-- CARD 2: PRENDAS ASOCIADAS (PINES) -->
+        @if (activeLook) {
+          <div class="card bg-base-100 shadow-sm border border-base-200 rounded-3xl p-6 sm:p-7">
+            
+            <div class="flex items-center justify-between pb-4 mb-5 border-b border-base-200">
+              <div>
+                <h4 class="font-bold text-base flex items-center gap-2">
+                  <mat-icon class="text-primary text-xl">style</mat-icon>
+                  <span>Prendas en este Outfit</span>
+                  <span class="badge badge-neutral badge-sm">{{ activeLook.hotspots.length }}</span>
+                </h4>
+                <p class="text-xs text-base-content/50 mt-0.5">Asigna los productos que la clienta comprará con un clic</p>
+              </div>
+
+              <button type="button" class="btn btn-sm btn-primary gap-1 shadow-sm" (click)="addEmptyHotspot()">
+                <mat-icon class="text-base">add</mat-icon> Añadir Prenda
+              </button>
+            </div>
+
+            <!-- Lista de Hotspots / Pines -->
+            @if (activeLook.hotspots.length === 0) {
+              <div class="p-8 text-center rounded-2xl border-2 border-dashed border-base-300 bg-base-50/50 space-y-2">
+                <mat-icon class="text-3xl text-base-content/30">touch_app</mat-icon>
+                <p class="text-xs font-semibold text-base-content/70">Aún no hay prendas asociadas a este outfit</p>
+                <p class="text-[11px] text-base-content/50 max-w-xs mx-auto">
+                  Haz clic sobre la foto editorial de la izquierda para fijar el primer pin, o presiona "Añadir Prenda".
+                </p>
+              </div>
+            } @else {
+              <div class="space-y-4">
+                @for (hotspot of activeLook.hotspots; track hotspot._id || hIndex; let hIndex = $index) {
+                  @let product = asProduct(hotspot.product);
+                  @let isActive = activeHotspotIndex() === hIndex;
+
+                  <div
+                    class="p-4 sm:p-5 rounded-2xl border transition-all duration-200"
+                    [ngClass]="isActive ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs' : 'border-base-200 bg-base-50/50 hover:bg-base-100'">
+                    
+                    <!-- Header del Hotspot -->
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="badge badge-sm font-bold gap-1" [ngClass]="isActive ? 'badge-primary' : 'badge-neutral'">
+                          Pin {{ hIndex + 1 }}
+                        </span>
+                        <span class="text-[11px] font-mono text-base-content/40">
+                          ({{ hotspot.position?.x }}%, {{ hotspot.position?.y }}%)
+                        </span>
+                      </div>
+
+                      <div class="flex items-center gap-1">
+                        <button type="button" class="btn btn-xs btn-ghost text-error" (click)="removeHotspot(hIndex)" title="Eliminar prenda">
+                          <mat-icon class="text-base">delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Datos del Producto -->
+                    @if (product) {
+                      <div class="flex items-center gap-3.5">
+                        <div class="w-14 h-16 rounded-xl bg-base-200 overflow-hidden border border-base-300 shrink-0 shadow-2xs">
+                          <img [src]="getProductImageUrl(product, hotspot.variantImage)"
+                            (error)="onHotspotImageError($event, hotspot)"
+                            class="w-full h-full object-cover" />
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm font-bold text-base-content truncate">{{ product.model }}</p>
+                          <p class="text-xs text-base-content/60 truncate">
+                            {{ product.brand }}
+                            @if (hotspot.selectedColor?.name) {
+                              · <span class="font-semibold text-primary">{{ hotspot.selectedColor?.name }}</span>
+                            }
+                          </p>
+                          @if (product.price) {
+                            <p class="text-xs font-mono font-bold text-base-content/80 mt-0.5">
+                              ${{ (product.price.cashTransferPrice || product.price.listPrice) | number }}
+                            </p>
+                          }
+                        </div>
+
+                        <button type="button" class="btn btn-xs btn-outline btn-ghost gap-1 shrink-0" (click)="openProductSearch(hIndex)">
+                          <mat-icon class="text-xs">swap_horiz</mat-icon> Cambiar
+                        </button>
+                      </div>
+
+                      <!-- Selector de Variante / Color -->
+                      @let colors = getProductColors(product);
+                      @if (colors.length > 0) {
+                        <div class="mt-3.5 pt-3 border-t border-base-200/80">
+                          <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 mb-2">Color que lleva la modelo:</p>
+                          <div class="flex flex-wrap gap-1.5">
+                            @for (col of colors; track col.name) {
+                              @let isSelected = hotspot.selectedColor?.name?.trim()?.toLowerCase() === col.name.trim().toLowerCase();
+                              <button type="button"
+                                class="btn btn-xs gap-1.5 rounded-lg transition-all cursor-pointer"
+                                [ngClass]="isSelected ? 'btn-neutral text-white font-bold shadow-xs' : 'btn-ghost border border-base-300 hover:border-base-400 font-normal text-base-content'"
+                                (click)="selectHotspotColor(hIndex, col)">
+                                @if (col.hex) {
+                                  <span class="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0" [style.backgroundColor]="col.hex"></span>
+                                }
+                                <span>{{ col.name }}</span>
+                                @if (isSelected) {
+                                  <mat-icon class="text-[12px] h-3 w-3">check</mat-icon>
+                                }
+                              </button>
+                            }
+                          </div>
+                        </div>
+                      }
+                    } @else {
+                      <!-- Botón para asignar producto -->
+                      <button type="button" class="btn btn-outline btn-primary btn-sm w-full gap-2 rounded-xl" (click)="openProductSearch(hIndex)">
+                        <mat-icon class="text-base">search</mat-icon> Asignar Prenda del Catálogo
+                      </button>
+                    }
+                  </div>
                 }
               </div>
-              }
-            </div>
-          </div>
-        </div>
-        }
-      </div>
-
-      <div class="lg:col-span-5">
-        <div
-          class="bg-base-200/50 rounded-3xl border border-base-200 h-full min-h-150 flex items-center justify-center p-6 sticky top-6 shadow-inner">
-
-          @if (activeLook && activeLook.previewImage) {
-          <div class="relative inline-flex mx-auto shadow-2xl rounded-2xl overflow-hidden group">
-            <img [src]="activeLook.previewImage" #imageContainer (click)="onImageClick($event)"
-              class="w-auto max-w-full h-auto max-h-[70vh] block cursor-crosshair transition-transform duration-700"
-              alt="Preview" />
-
-            @for (hotspot of activeLook.hotspots; track hotspot._id || pinIndex; let pinIndex = $index) {
-            @let product = hotspot?.product;
-
-            <button
-              class="absolute w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center border-2 transition-all cursor-pointer z-10"
-              [ngClass]="activeHotspotIndex() === pinIndex ? 'border-primary text-primary scale-110' : 'border-base-300 text-base-content hover:scale-105'"
-              [style.left.%]="hotspot.position.x" [style.top.%]="hotspot.position.y"
-              style="transform: translate(-50%, -50%);" (click)="$event.stopPropagation(); selectHotspot(pinIndex)"
-              [title]="product?.model || 'Sin producto'">
-
-              <span class="font-bold text-xs">{{pinIndex + 1}}</span>
-
-              @if (activeHotspotIndex() === pinIndex) {
-              <span class="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping z-[-1]"></span>
-              }
-            </button>
             }
+
           </div>
-          } @else {
-          <div class="text-center text-base-content/30 flex flex-col items-center">
-            <mat-icon class="text-6xl mb-4 opacity-30">portrait</mat-icon>
-            <p class="font-medium text-lg">Editor Visual Inactivo</p>
-            <p class="text-sm">Sube la foto del look para comenzar a etiquetar.</p>
-          </div>
-          }
-        </div>
+        }
+
       </div>
 
     </div>
-    }
   </ng-container>
 </app-page-layout>

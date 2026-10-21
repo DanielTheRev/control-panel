@@ -1,81 +1,157 @@
 <app-page-layout>
-  <app-page-header header title="Campañas Shop The Look" subtitle="Gestiona las imágenes interactivas con productos asociados">
-    <div actions>
-      <a routerLink="create" class="btn btn-primary">
-        <mat-icon>add</mat-icon>
-        Nueva Campaña
+  <app-page-header header title="Gestor de Outfits" subtitle="Crea y gestiona los looks editoriales de VURA, sus prendas del catálogo y pines interactivos.">
+    <div actions class="flex items-center gap-3">
+      <a routerLink="create" class="btn btn-primary btn-sm gap-2 shadow-sm shadow-primary/20">
+        <mat-icon class="text-sm">add</mat-icon>
+        Nuevo Outfit
       </a>
     </div>
   </app-page-header>
 
   <ng-container content>
-    <div class="card bg-base-100 shadow-sm border border-base-300">
-      <div class="overflow-x-auto">
-        <table class="table w-full">
-          <thead>
-            <tr>
-              <th>Imagen</th>
-              <th>Título</th>
-              <th>Looks</th>
-              <th>Estado</th>
-              <th class="text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (campaign of campaigns().data; track campaign._id) {
-              <tr class="hover">
-                <td>
-                  <div class="avatar my-2">
-                    <div class="w-24 h-16 rounded bg-base-200">
-                      <img [src]="campaign.looks[0]?.mainImage?.url || ''" [alt]="campaign.title" class="object-cover w-full h-full rounded" />
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="font-bold">{{ campaign.title }}</div>
-                  @if(campaign.subtitle) {
-                    <div class="text-xs text-base-content/50">{{ campaign.subtitle }}</div>
-                  }
-                  @if(campaign.slug) {
-                    <div class="text-[11px] font-mono text-primary/80">/shop-the-look/{{ campaign.slug }}</div>
-                  }
-                </td>
-                  <span class="badge badge-neutral badge-sm">{{ campaign.looks.length || 0 }} looks</span>
-                <td>
-                  <span class="badge" [class.badge-success]="campaign.isActive" [class.badge-ghost]="!campaign.isActive">
-                    {{ campaign.isActive ? 'Activo' : 'Inactivo' }}
+    @if (campaigns().isLoading) {
+      <div class="py-24 text-center text-base-content/50">
+        <span class="loading loading-spinner loading-lg text-primary mb-3"></span>
+        <p class="text-sm font-medium">Cargando catálogo de outfits...</p>
+      </div>
+    } @else if (campaigns().data.length === 0) {
+      <div class="card bg-base-100 border border-dashed border-base-300 p-12 text-center rounded-3xl max-w-lg mx-auto">
+        <div class="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+          <mat-icon class="text-4xl">checkroom</mat-icon>
+        </div>
+        <h3 class="font-bold text-xl text-base-content mb-1">Aún no hay Outfits creados</h3>
+        <p class="text-sm text-base-content/60 mb-6">Comienza armando tu primer conjunto con fotografía editorial y prendas del catálogo.</p>
+        <a routerLink="create" class="btn btn-primary btn-sm gap-2 mx-auto">
+          <mat-icon>add</mat-icon> Crear Primer Outfit
+        </a>
+      </div>
+    } @else {
+      <!-- Grilla de Tarjetas Editoriales de Outfits -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for (look of campaigns().data; track look._id; let idx = $index) {
+          <div class="card bg-base-100 border border-base-200 shadow-xs hover:shadow-md transition-all duration-300 rounded-3xl overflow-hidden flex flex-col group">
+            
+            <!-- Foto de Portada con badges flotantes -->
+            <div class="relative w-full aspect-3/4 bg-base-200 overflow-hidden">
+              @if (getCoverImage(look)) {
+                <img
+                  [src]="getCoverImage(look)"
+                  [alt]="look.name || look.title"
+                  (error)="onImageError($event)"
+                  class="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+              } @else {
+                <div class="w-full h-full flex flex-col items-center justify-center text-base-content/30 gap-2">
+                  <mat-icon class="text-4xl">broken_image</mat-icon>
+                  <span class="text-xs font-mono">Sin foto</span>
+                </div>
+              }
+
+              <!-- Badges Superiores -->
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                <div class="flex items-center gap-1.5 pointer-events-auto">
+                  <span class="badge badge-sm shadow-sm" [ngClass]="idx === 0 ? 'bg-amber-400 text-amber-950 font-black' : 'bg-black/70 backdrop-blur-xs text-white font-bold'">
+                    #{{ idx + 1 }}
                   </span>
-                </td>
-                <td class="text-right">
-                  <button (click)="copyLink(campaign)" class="btn btn-sm btn-ghost btn-circle" title="Copiar enlace público de la campaña">
-                    <mat-icon class="text-base-content/60">content_copy</mat-icon>
-                  </button>
-                  <a [routerLink]="['edit', campaign._id]" class="btn btn-sm btn-ghost btn-circle" title="Editar">
-                    <mat-icon class="text-base-content/50">edit</mat-icon>
-                  </a>
-                  <button (click)="deleteCampaign(campaign._id!)" class="btn btn-sm btn-ghost btn-circle text-error" title="Eliminar">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                  <span class="badge badge-sm font-bold shadow-sm" [ngClass]="look.isActive ? 'badge-success text-success-content' : 'badge-ghost bg-black/60 text-white backdrop-blur-xs'">
+                    {{ look.isActive ? 'Activo' : 'Oculto' }}
+                  </span>
+                </div>
 
-        @if (campaigns().data.length === 0 && !campaigns().isLoading) {
-          <div class="p-8 text-center text-base-content/50">
-            <mat-icon class="text-4xl mb-2 opacity-50">style</mat-icon>
-            <p>No hay campañas configuradas.</p>
-          </div>
-        }
+                <div class="flex items-center gap-1.5">
+                  <span class="badge badge-sm bg-primary text-primary-content border-none font-bold shadow-sm gap-0.5" title="Puntaje ELO dinámico total">
+                    <span>★</span>
+                    <span>{{ look.effectiveScore ?? look.rankingScore ?? 100 }}</span>
+                  </span>
+                  <span class="badge badge-sm bg-black/70 backdrop-blur-xs text-white border-none font-bold shadow-sm gap-1">
+                    <span>🛍️</span>
+                    <span>{{ getProductsCount(look) }}</span>
+                  </span>
+                </div>
+              </div>
 
-        @if (campaigns().isLoading) {
-          <div class="p-8 text-center text-base-content/50">
-            <span class="loading loading-spinner loading-md"></span>
-            <p>Cargando campañas...</p>
+              <!-- Gradiente sutil inferior con métricas -->
+              <div class="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/80 via-black/30 to-transparent flex items-center justify-between text-white text-xs font-mono">
+                <div class="flex items-center gap-2.5">
+                  <span title="Me gusta">❤️ {{ look.likes || look.metrics?.likesCount || 0 }}</span>
+                  <span title="Compartidos">↗️ {{ look.shares || look.metrics?.sharesCount || 0 }}</span>
+                  @if (look.metrics?.salesCount) {
+                    <span title="Ventas">🛍️ {{ look.metrics?.salesCount }}</span>
+                  }
+                </div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-white/80">
+                  {{ getPhotosCount(look) }} {{ getPhotosCount(look) === 1 ? 'foto' : 'fotos' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Cuerpo de la tarjeta -->
+            <div class="p-5 flex-1 flex flex-col justify-between gap-4">
+              <div>
+                @if (look.occasion || look.subtitle) {
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-primary truncate mb-1">
+                    {{ look.occasion || look.subtitle }}
+                  </p>
+                }
+                <h3 class="font-bold text-base text-base-content truncate group-hover:text-primary transition-colors">
+                  {{ look.name || look.title }}
+                </h3>
+
+                @if (look.slug) {
+                  <div class="flex items-center gap-1.5 mt-2 text-xs text-base-content/50 font-mono truncate">
+                    <mat-icon class="text-xs text-primary scale-90 shrink-0">link</mat-icon>
+                    <span class="truncate">/shop-the-look/{{ look.slug }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Control rápido de ELO Base -->
+              <div class="flex items-center justify-between bg-base-200/50 hover:bg-base-200/80 transition-colors rounded-2xl px-3 py-2 border border-base-300/60">
+                <div class="flex flex-col">
+                  <span class="text-[11px] font-bold text-base-content/80 flex items-center gap-1">
+                    <span class="text-amber-500">★</span> ELO Base:
+                  </span>
+                  <span class="text-[10px] text-base-content/50">Total con interacciones: {{ look.effectiveScore ?? look.rankingScore ?? 100 }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <input
+                    #scoreInput
+                    type="number"
+                    min="0"
+                    [value]="look.rankingScore ?? 100"
+                    (keydown.enter)="onScoreChange(look, scoreInput.value)"
+                    (blur)="onScoreChange(look, scoreInput.value)"
+                    [disabled]="updatingScoreId() === look._id"
+                    class="input input-xs input-bordered w-20 text-center font-bold font-mono text-xs rounded-xl focus:input-primary"
+                    title="Escribe el nuevo ELO y presiona Enter para ver cómo se reordena en vivo"
+                  />
+                  @if (updatingScoreId() === look._id) {
+                    <span class="loading loading-spinner loading-xs text-primary"></span>
+                  }
+                </div>
+              </div>
+
+              <!-- Acciones inferiores -->
+              <div class="pt-3 border-t border-base-200/80 flex items-center gap-2">
+                <a [routerLink]="['edit', look._id]" class="btn btn-sm btn-primary flex-1 gap-1.5 rounded-xl shadow-xs">
+                  <mat-icon class="text-sm">edit</mat-icon>
+                  <span>Editar</span>
+                </a>
+
+                <button type="button" (click)="copyLink(look)" class="btn btn-sm btn-outline btn-square rounded-xl" title="Copiar enlace de tienda">
+                  <mat-icon class="text-sm">content_copy</mat-icon>
+                </button>
+
+                <button type="button" (click)="deleteCampaign(look._id!)" class="btn btn-sm btn-ghost btn-square text-error rounded-xl hover:bg-error/10" title="Eliminar outfit">
+                  <mat-icon class="text-sm">delete</mat-icon>
+                </button>
+              </div>
+
+            </div>
+
           </div>
         }
       </div>
-    </div>
+    }
   </ng-container>
 </app-page-layout>

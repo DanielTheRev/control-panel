@@ -57,6 +57,18 @@ export class ShopTheLookService {
     );
   }
 
+  updateRankingScore(id: string, rankingScore: number) {
+    return firstValueFrom(
+      this.#http.patch<{ success: boolean; data: IShopTheLook }>(`${this.#apiUrl}/${id}/ranking-score`, { rankingScore }).pipe(
+        this.#toast.observe({
+          loading: { content: 'Actualizando ELO...', position: 'top-right', theme: 'snackbar' },
+          success: { content: 'Puntaje ELO actualizado', position: 'top-right', theme: 'snackbar' },
+          error: { content: 'Error al actualizar ELO', position: 'top-right', theme: 'snackbar' }
+        })
+      )
+    );
+  }
+
   delete(id: string) {
     return firstValueFrom(
       this.#http.delete<{ message: string }>(`${this.#apiUrl}/${id}`).pipe(

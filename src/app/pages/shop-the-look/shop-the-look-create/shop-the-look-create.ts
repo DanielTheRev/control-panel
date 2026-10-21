@@ -1,18 +1,17 @@
-import { NgClass } from '@angular/common';
+import { DecimalPipe, NgClass } from '@angular/common';
 import { Component, ElementRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterModule } from '@angular/router';
 import { IProduct } from '../../../interfaces/product.interface';
-import { ILookItem, IShopTheLook, IShopTheLookHotspot, IShopTheLookImage } from '../../../interfaces/shop-the-look.interface';
+import { IShopTheLook, IShopTheLookHotspot, IShopTheLookImage } from '../../../interfaces/shop-the-look.interface';
 import { NotificationsService } from '../../../services/notifications.service';
 import { ProductService } from '../../../services/product.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { PageLayout } from '../../../shared/components/page-layout/page-layout';
 import { ProductSearchDialogComponent } from '../../../shared/components/product-search-dialog/product-search-dialog';
-import { SingleImageUpload } from '../../../shared/components/single-image-upload/single-image-upload';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
 import { getStoreUrl } from '../../../utils/tenant.utils';
 
@@ -36,8 +35,8 @@ interface ILookDraft {
     MatIconModule,
     PageLayout,
     PageHeader,
-    SingleImageUpload,
-    NgClass
+    NgClass,
+    DecimalPipe
   ],
   templateUrl: './shop-the-look-create.html',
   styles: [`
@@ -60,7 +59,9 @@ export class ShopTheLookCreateComponent implements OnInit {
     title: ['', Validators.required],
     subtitle: [''],
     slug: [''],
-    isActive: [true]
+    isActive: [true],
+    rankingScore: [100, [Validators.min(0)]],
+    order: [0]
   });
 
   isEditMode = signal(false);
@@ -72,12 +73,15 @@ export class ShopTheLookCreateComponent implements OnInit {
   activeTabIndex = signal<number>(0);
   activeHotspotIndex = signal<number | null>(null);
 
+  showImagePicker = signal(false);
+  imageInputUrl = signal('');
+
   @ViewChild('imageContainer') imageContainer!: ElementRef<HTMLDivElement>;
 
   #dialog = inject(MatDialog);
 
   constructor() {
-    this.#sidebarService.navbarTitle.set({ title: 'Gestionar Shop The Look' });
+    this.#sidebarService.navbarTitle.set({ title: 'Gestionar Outfits' });
   }
 
   ngOnInit() {
@@ -85,6 +89,8 @@ export class ShopTheLookCreateComponent implements OnInit {
     if (id) {
       this.isEditMode.set(true);
       this.loadCampaign(id);
+    } else {
+      this.addLook();
     }
 
     this.form.get('title')?.valueChanges.subscribe(val => {
@@ -104,7 +110,13 @@ export class ShopTheLookCreateComponent implements OnInit {
 
   generateInternalId() { return Math.random().toString(36).substring(2, 9); }
 
-  addLook(initialData?: Partial<ILookItem>) {
+  addLook(initialData?: {
+    _id?: string;
+    name?: string;
+    mainImage?: IShopTheLookImage;
+    hotspots?: IShopTheLookHotspot[];
+    isActive?: boolean;
+  }) {
     const nameControl = new FormControl(initialData?.name || '');
     const control = new FormControl(initialData?.mainImage?.url || '', Validators.required);
     const internalId = this.generateInternalId();
@@ -216,14 +228,30 @@ export class ShopTheLookCreateComponent implements OnInit {
       if (campaign) {
         this.originalCampaign.set(campaign);
         this.form.patchValue({
-          title: campaign.title,
-          subtitle: campaign.subtitle,
+          title: campaign.name || campaign.title || '',
+          subtitle: campaign.occasion || campaign.subtitle || '',
           slug: campaign.slug || '',
-          isActive: campaign.isActive !== undefined ? campaign.isActive : true
-        });
+          isActive: campaign.isActive !== undefined ? campaign.isActive : true,
+        rankingScore: campaign.rankingScore !== undefined ? campaign.rankingScore : 100,
+        order: campaign.order !== undefined ? campaign.order : 0
+      });
 
-        // Load items mapped to drafts
-        campaign.looks.forEach(look => this.addLook(look));
+        // Cargar galería y productos del outfit autónomo
+        const gallery = campaign.gallery || [];
+        const products = campaign.products || [];
+        this.addLook({
+          name: campaign.name || campaign.title,
+          mainImage: gallery[0] || { url: '', public_id: '' },
+          hotspots: products.map((p: any) => ({
+            _id: p._id,
+            product: p.product,
+            position: p.position || { x: 50, y: 50 },
+            selectedColor: p.selectedColor,
+            selectedSku: p.selectedSku,
+            variantImage: p.variantImage,
+            isActive: p.isActive !== false
+          }))
+        });
         this.activeTabIndex.set(0);
       }
     } catch (error) {
@@ -263,6 +291,83 @@ export class ShopTheLookCreateComponent implements OnInit {
     this.activeHotspotIndex.set(this.activeLook.hotspots.length - 1);
   }
 
+  addEmptyHotspot() {
+    const newHotspot: IShopTheLookHotspot = {
+      _id: Math.random().toString(36).substring(2, 9),
+      position: { x: 50, y: 50 },
+      product: null as any,
+      isActive: true
+    };
+    this.looks.update(drafts => {
+      const updated = [...drafts];
+      const current = { ...updated[this.activeTabIndex()] };
+      current.hotspots = [...current.hotspots, newHotspot];
+      updated[this.activeTabIndex()] = current;
+      return updated;
+    });
+    this.activeHotspotIndex.set(this.activeLook ? this.activeLook.hotspots.length - 1 : 0);
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const look = this.activeLook;
+    if (!look) return;
+
+    look.imageControl.setValue(file);
+    const blobUrl = URL.createObjectURL(file);
+    this.looks.update(drafts => {
+      const idx = this.activeTabIndex();
+      if (!drafts[idx]) return drafts;
+      const updated = [...drafts];
+      updated[idx] = { ...updated[idx], previewImage: blobUrl };
+      return updated;
+    });
+    this.showImagePicker.set(false);
+  }
+
+  onUrlSubmit(url: string) {
+    if (!url || !url.trim()) return;
+    const cleanUrl = url.trim();
+    const look = this.activeLook;
+    if (!look) return;
+
+    look.imageControl.setValue(cleanUrl);
+    this.looks.update(drafts => {
+      const idx = this.activeTabIndex();
+      if (!drafts[idx]) return drafts;
+      const updated = [...drafts];
+      updated[idx] = { ...updated[idx], previewImage: cleanUrl };
+      return updated;
+    });
+    this.imageInputUrl.set('');
+    this.showImagePicker.set(false);
+  }
+
+  onMainImageError(event: Event) {
+    const target = event.target as HTMLImageElement;
+    if (target.dataset['hasError'] === 'true') return;
+    target.dataset['hasError'] = 'true';
+    target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22800%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_1%20text%20%7B%20fill%3A%23999%3Bfont-weight%3Anormal%3Bfont-family%3Asans-serif%3Bfont-size%3A24pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_1%22%3E%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23f3f4f6%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22160%22%20y%3D%22410%22%3EImagen%20no%20disponible%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E';
+  }
+
+  asProduct(product: any): IProduct | null {
+    if (product && typeof product === 'object' && ('model' in product || 'images' in product || '_id' in product)) {
+      return product as IProduct;
+    }
+    return null;
+  }
+
+  getProductImageUrl(product: any, variantImage?: { url?: string }): string {
+    if (variantImage?.url) return variantImage.url;
+    const prod = this.asProduct(product);
+    if (!prod || !prod.images || prod.images.length === 0) return '';
+    const first: any = prod.images[0];
+    if (typeof first === 'string') return first;
+    return first?.url || '';
+  }
+
   selectHotspot(index: number) { this.activeHotspotIndex.set(index); }
 
   removeHotspot(index: number) {
@@ -290,11 +395,12 @@ export class ShopTheLookCreateComponent implements OnInit {
     });
   }
 
-  getProductColors(product: IProduct): Array<{ name: string; hex?: string; image?: string; public_id?: string; sku?: string }> {
-    if (!product?.variants || !Array.isArray(product.variants)) return [];
+  getProductColors(product: any): Array<{ name: string; hex?: string; image?: string; public_id?: string; sku?: string }> {
+    const prod = this.asProduct(product);
+    if (!prod || !prod.variants || !Array.isArray(prod.variants)) return [];
 
     // Extract valid images from product.images
-    const prodImages = (product.images || []).map((img: any) => ({
+    const prodImages = (prod.images || []).map((img: any) => ({
       url: (typeof img === 'string' ? img : img?.url || '').trim(),
       public_id: (typeof img === 'string' ? '' : img?.public_id || '').trim()
     })).filter(i => Boolean(i.url));
@@ -305,11 +411,11 @@ export class ShopTheLookCreateComponent implements OnInit {
     
     // Check how many unique color names exist
     const uniqueColorNames = new Set(
-      product.variants.map((v: any) => v.color?.name?.trim()).filter(Boolean)
+      prod.variants.map((v: any) => v.color?.name?.trim()).filter(Boolean)
     );
     const isSingleColor = uniqueColorNames.size <= 1;
 
-    product.variants.forEach((v: any) => {
+    prod.variants.forEach((v: any) => {
       const colorName = v.color?.name?.trim();
       if (colorName && !colorsMap.has(colorName)) {
         let variantImgUrl = v.imageReference?.url?.trim() || '';
@@ -352,8 +458,9 @@ export class ShopTheLookCreateComponent implements OnInit {
       const updatedHotspots = [...current.hotspots];
       const targetHotspot = updatedHotspots[hotspotIndex];
 
-      const fallbackImg = targetHotspot.product?.images?.[0]?.url || (typeof targetHotspot.product?.images?.[0] === 'string' ? targetHotspot.product.images[0] : '');
-      const fallbackPubId = targetHotspot.product?.images?.[0]?.public_id || '';
+      const prod = this.asProduct(targetHotspot.product);
+      const fallbackImg = prod?.images?.[0]?.url || (typeof prod?.images?.[0] === 'string' ? prod.images[0] : '');
+      const fallbackPubId = prod?.images?.[0]?.public_id || '';
 
       const finalImgUrl = (color.image?.trim() || fallbackImg || '').trim();
       const finalPubId = (color.public_id?.trim() || fallbackPubId || '').trim();
@@ -401,7 +508,8 @@ export class ShopTheLookCreateComponent implements OnInit {
 
   onHotspotImageError(event: Event, hotspot: IShopTheLookHotspot) {
     const target = event.target as HTMLImageElement;
-    const fallback = hotspot.product?.images?.[0]?.url || (typeof hotspot.product?.images?.[0] === 'string' ? hotspot.product.images[0] : '');
+    const prod = this.asProduct(hotspot.product);
+    const fallback = prod?.images?.[0]?.url || (typeof prod?.images?.[0] === 'string' ? prod.images[0] : '');
     if (fallback && target.src !== fallback) {
       target.src = fallback;
     }
@@ -424,17 +532,17 @@ export class ShopTheLookCreateComponent implements OnInit {
     }
 
     const currentLooks = this.looks();
+    const activeDraft = currentLooks[0];
 
-    // Validations
-    const invalidDrafts = currentLooks.filter(d => d.imageControl.invalid);
-    if (invalidDrafts.length > 0) {
-      this.#notificationService.warning('Asegúrate de haber subido una imagen obligatoria para todos los Looks creados.');
+    // Validaciones del Outfit
+    if (!activeDraft || (!activeDraft.imageControl.value && !activeDraft.previewImage)) {
+      this.#notificationService.warning('Asegúrate de haber subido una fotografía editorial para el Outfit.');
       return;
     }
 
-    const draftsMissingProducts = currentLooks.some(d => d.hotspots.some(h => !h.product));
+    const draftsMissingProducts = activeDraft.hotspots.some(h => !h.product);
     if (draftsMissingProducts) {
-      this.#notificationService.warning('Hay pines sin producto asignado. Por favor complétalos o elimínelos en los Looks correspondientes.');
+      this.#notificationService.warning('Hay pines sin producto asignado. Por favor complétalos o elimínalos.');
       return;
     }
 
@@ -443,55 +551,51 @@ export class ShopTheLookCreateComponent implements OnInit {
     try {
       const formData = new FormData();
       formData.append('title', this.form.value.title);
-      if (this.form.value.subtitle) formData.append('subtitle', this.form.value.subtitle);
+      formData.append('name', this.form.value.title);
+      if (this.form.value.subtitle) {
+        formData.append('subtitle', this.form.value.subtitle);
+        formData.append('occasion', this.form.value.subtitle);
+      }
       if (this.form.value.slug) formData.append('slug', this.form.value.slug.trim().toLowerCase());
       formData.append('isActive', this.form.value.isActive);
+      if (this.form.value.rankingScore !== undefined && this.form.value.rankingScore !== null) {
+        formData.append('rankingScore', String(this.form.value.rankingScore));
+      }
+      if (this.form.value.order !== undefined && this.form.value.order !== null) {
+        formData.append('order', String(this.form.value.order));
+      }
 
-      // JSON Array construction
-      const finalLooksData = currentLooks.map((draft, index) => {
-        const hData = draft.hotspots
-          .filter(h => h && h.product)
-          .map(h => {
-            const mapped: any = {
-              ...h,
-              product: h.product._id || (h.product as any)
-            };
-            // Eliminamos el _id temporal generado en frontend (7 caracteres) 
-            // para evitar que Mongoose falle al parsearlo como ObjectId
-            if (mapped._id && mapped._id.length < 24) {
-               delete mapped._id;
-            }
-            return mapped;
-          });
+      // Guardar prendas / productos del outfit
+      const productsData = (activeDraft.hotspots || [])
+        .filter(h => h && h.product)
+        .map(h => {
+          const prod = this.asProduct(h.product);
+          const mapped: any = {
+            product: prod?._id || (h.product as any)?._id || (typeof h.product === 'string' ? h.product : ''),
+            position: h.position || { x: 50, y: 50 },
+            selectedColor: h.selectedColor,
+            selectedSku: h.selectedSku,
+            variantImage: h.variantImage,
+            isActive: h.isActive !== false
+          };
+          if (h._id && String(h._id).length === 24) {
+            mapped._id = h._id;
+          }
+          return mapped;
+        });
+      formData.append('products', JSON.stringify(productsData));
 
-        const lookPayload: any = {
-          name: draft.nameControl.value?.trim() || '',
-          isActive: draft.isActive,
-          hotspots: hData
-        };
-
-        if (draft.dbId) lookPayload._id = draft.dbId;
-
-        const controlValue = draft.imageControl.value;
-        if (typeof controlValue === 'string' && controlValue.trim() !== '' && draft.originalImage && controlValue === draft.originalImage.url) {
-          // Preserving original cloud image
-          lookPayload.mainImage = draft.originalImage;
-        } else if (!lookPayload.mainImage && typeof controlValue === 'string' && controlValue.trim() !== '') {
-          lookPayload.mainImage = draft.originalImage || { url: controlValue, public_id: '' };
-        }
-
-        return lookPayload;
-      });
-
-      formData.append('looks', JSON.stringify(finalLooksData));
-
-      // Append Files
-      currentLooks.forEach((draft, index) => {
-        const controlValue = draft.imageControl.value;
-        if (controlValue instanceof File) {
-          formData.append(`image_${index}`, controlValue);
-        }
-      });
+      // Guardar galería / fotografía editorial
+      const controlVal = activeDraft.imageControl.value;
+      if (typeof controlVal === 'string' && controlVal.trim() !== '') {
+        const galleryItem = activeDraft.originalImage || { url: controlVal.trim(), public_id: '' };
+        formData.append('gallery', JSON.stringify([galleryItem]));
+      } else if (controlVal instanceof File) {
+        formData.append('gallery_0', controlVal);
+      } else if (activeDraft.previewImage && typeof activeDraft.previewImage === 'string') {
+        const galleryItem = activeDraft.originalImage || { url: activeDraft.previewImage.trim(), public_id: '' };
+        formData.append('gallery', JSON.stringify([galleryItem]));
+      }
 
       if (this.isEditMode()) {
         await this.#shopTheLookState.updateCampaign(this.lookID()!, formData);
