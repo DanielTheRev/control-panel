@@ -303,11 +303,19 @@
 
                     <!-- Datos del Producto -->
                     @if (product) {
+                      @let hasImg = !!hotspot.variantImage?.url && !isImageBroken(hIndex);
                       <div class="flex items-center gap-3.5">
-                        <div class="w-14 h-16 rounded-xl bg-base-200 overflow-hidden border border-base-300 shrink-0 shadow-2xs">
-                          <img [src]="getProductImageUrl(product, hotspot.variantImage)"
-                            (error)="onHotspotImageError($event, hotspot)"
-                            class="w-full h-full object-cover" />
+                        <div class="w-14 h-16 rounded-xl bg-base-200 overflow-hidden border border-base-300 shrink-0 shadow-2xs flex items-center justify-center">
+                          @if (hasImg) {
+                            <img [src]="hotspot.variantImage!.url"
+                              (error)="onHotspotImageError(hIndex)"
+                              class="w-full h-full object-cover" />
+                          } @else {
+                            <div class="flex flex-col items-center justify-center p-1 text-center text-error">
+                              <mat-icon class="text-base">broken_image</mat-icon>
+                              <span class="text-[8px] font-bold leading-tight">Sin foto</span>
+                            </div>
+                          }
                         </div>
 
                         <div class="flex-1 min-w-0">
@@ -329,6 +337,13 @@
                           <mat-icon class="text-xs">swap_horiz</mat-icon> Cambiar
                         </button>
                       </div>
+
+                      @if (!hasImg) {
+                        <div class="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-error/10 border border-error/20 text-error text-[11px] font-semibold">
+                          <mat-icon class="text-sm shrink-0">error_outline</mat-icon>
+                          <span>Esta variante no tiene foto asignada en el producto.</span>
+                        </div>
+                      }
 
                       <!-- Selector de Variante / Color -->
                       @let colors = getProductColors(product);
