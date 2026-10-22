@@ -75,28 +75,11 @@ export class ShopTheLookCreateComponent implements OnInit {
 
   showImagePicker = signal(false);
   imageInputUrl = signal('');
-  brokenHotspotKeys = signal<Set<string>>(new Set());
 
   @ViewChild('imageContainer') imageContainer!: ElementRef<HTMLDivElement>;
 
-  isImageBroken(hIndex: number): boolean {
-    return this.brokenHotspotKeys().has(`${this.activeTabIndex()}_${hIndex}`);
-  }
-
-  onHotspotImageError(hIndex: number) {
-    this.brokenHotspotKeys.update(set => {
-      const next = new Set(set);
-      next.add(`${this.activeTabIndex()}_${hIndex}`);
-      return next;
-    });
-  }
-
-  clearImageBroken(hIndex: number) {
-    this.brokenHotspotKeys.update(set => {
-      const next = new Set(set);
-      next.delete(`${this.activeTabIndex()}_${hIndex}`);
-      return next;
-    });
+  onHotspotImageError(hotspot: IShopTheLookHotspot) {
+    hotspot.imageHasError = true;
   }
 
   #dialog = inject(MatDialog);
@@ -452,9 +435,9 @@ export class ShopTheLookCreateComponent implements OnInit {
         ...targetHotspot,
         selectedColor: { name: color.name, hex: color.hex },
         selectedSku: color.sku,
-        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined
+        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined,
+        imageHasError: false
       };
-      this.clearImageBroken(hotspotIndex);
       current.hotspots = updatedHotspots;
       updated[activeIdx] = current;
       return updated;
@@ -480,9 +463,9 @@ export class ShopTheLookCreateComponent implements OnInit {
         product,
         selectedColor: defaultColor ? { name: defaultColor.name, hex: defaultColor.hex } : undefined,
         selectedSku: defaultColor?.sku,
-        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined
+        variantImage: finalImgUrl ? { url: finalImgUrl, public_id: finalPubId } : undefined,
+        imageHasError: false
       };
-      this.clearImageBroken(index);
       current.hotspots = updatedHotspots;
       updated[activeIdx] = current;
       return updated;

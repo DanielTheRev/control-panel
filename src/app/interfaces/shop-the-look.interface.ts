@@ -29,6 +29,7 @@ export interface IShopTheLookProductItem {
   selectedSku?: string;
   variantImage?: IShopTheLookImage;
   isActive: boolean;
+  imageHasError?: boolean;
 }
 
 // Alias de retrocompatibilidad
