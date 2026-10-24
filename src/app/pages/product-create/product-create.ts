@@ -1677,20 +1677,34 @@ XXL: 58, 76, 52
 
         groupedVariants.forEach((variants, colorName) => {
           const firstV = variants[0];
-          let imgIdx = 0;
-          if (firstV.imageIndex !== undefined && firstV.imageIndex !== null && Number(firstV.imageIndex) >= 0) {
-            imgIdx = Number(firstV.imageIndex);
-          } else if (firstV.imageReference?.url && product.images) {
+          let imgIdx: number | null = null;
+          let hasOrphanedImage = false;
+
+          if (firstV.imageReference?.url && product.images) {
             const found = product.images.findIndex(
               (img: any) => (img.url || img) === firstV.imageReference.url,
             );
-            if (found !== -1) imgIdx = found;
+            if (found !== -1) {
+              imgIdx = found;
+            } else {
+              hasOrphanedImage = true;
+            }
+          } else if (firstV.imageIndex !== undefined && firstV.imageIndex !== null && Number(firstV.imageIndex) >= 0) {
+            const candidateIdx = Number(firstV.imageIndex);
+            if (product.images && product.images[candidateIdx]) {
+              imgIdx = candidateIdx;
+            } else {
+              hasOrphanedImage = true;
+            }
+          } else if (product.images && product.images.length > 0) {
+            hasOrphanedImage = true;
           }
 
           const colorGroup = this.#fb.group({
-            colorName: [colorName],
+            colorName: [colorName, Validators.required],
             colorHex: [firstV.color?.hex || '#000000'],
-            imageIndex: [imgIdx],
+            imageIndex: [imgIdx, Validators.required],
+            hasOrphanedImage: [hasOrphanedImage],
             variants: this.#fb.array([]),
           });
 
@@ -1866,36 +1880,39 @@ XXL: 58, 76, 52
     this.#clampColorGroupImageIndices();
   }
 
-  /** Safely get the image link for a color group's selected image */
+  /** Safely get the image link for a color group's selected image (sin fallbacks silenciosos) */
   getColorGroupImageLink(group: any): string {
     const images = this.imagesControls.value;
     if (!images || images.length === 0) return '';
-    let idx = Number(group.get('imageIndex')?.value ?? 0);
-    if (isNaN(idx) || idx < 0) idx = 0;
-    if (idx >= images.length) {
-      idx = images.length - 1;
-    }
+    const rawIdx = group.get('imageIndex')?.value;
+    if (rawIdx === null || rawIdx === undefined || isNaN(Number(rawIdx))) return '';
+    const idx = Number(rawIdx);
+    if (idx < 0 || idx >= images.length) return '';
     return images[idx]?.link || '';
   }
 
   /** Cycle to next uploaded image when clicking on the color's thumbnail */
   cycleColorGroupImage(group: any) {
     const total = this.imagesControls.length;
-    if (total <= 1) return;
-    let current = Number(group.get('imageIndex')?.value ?? 0);
-    if (isNaN(current)) current = 0;
+    if (total === 0) return;
+    let current = Number(group.get('imageIndex')?.value ?? -1);
+    if (isNaN(current) || current < 0) current = -1;
     const next = (current + 1) % total;
     group.get('imageIndex')?.setValue(next);
+    group.get('hasOrphanedImage')?.setValue(false);
     group.markAsDirty();
   }
 
-  /** Clamp all color group imageIndex values to valid range after images change */
+  /** Al eliminar o alterar fotos de la galería, marcamos las variantes afectadas con alerta en vez de taparlo con fallback */
   #clampColorGroupImageIndices() {
     const maxIndex = this.imagesControls.length - 1;
     this.colorGroupsControls.controls.forEach((group: any) => {
       const imageIndexCtrl = group.get('imageIndex');
-      if (imageIndexCtrl && imageIndexCtrl.value > maxIndex) {
-        imageIndexCtrl.setValue(Math.max(0, maxIndex));
+      if (imageIndexCtrl) {
+        if (maxIndex < 0 || imageIndexCtrl.value === null || imageIndexCtrl.value === undefined || Number(imageIndexCtrl.value) > maxIndex) {
+          imageIndexCtrl.setValue(null);
+          group.get('hasOrphanedImage')?.setValue(true);
+        }
       }
     });
   }
@@ -2035,15 +2052,17 @@ XXL: 58, 76, 52
 
     this.colorGroupsControls.value.forEach((group: any) => {
       (group.variants || []).forEach((v: any) => {
+        const rawGroupIdx = group.imageIndex;
+        const validIdx = rawGroupIdx !== null && rawGroupIdx !== undefined && !isNaN(Number(rawGroupIdx))
+          ? Number(rawGroupIdx)
+          : null;
+
         const variant: any = {
           stock: Number(v.stock),
           reservedStock: 0,
           isActive: v.isActive !== false,
           images: [],
-          imageIndex:
-            group.imageIndex !== null && group.imageIndex !== undefined
-              ? Number(group.imageIndex) || 0
-              : 0,
+          imageIndex: validIdx,
         };
 
         if (v._id) variant._id = v._id;
@@ -2145,6 +2164,25 @@ XXL: 58, 76, 52
 
   async saveProduct() {
     this.updateValidatorsForType(this.selectedType());
+
+    // Validación estricta: ninguna variante de indumentaria/tech puede quedar sin foto asignada
+    const type = this.selectedType();
+    if (type === ProductType.CLOTHING || type === ProductType.TECH) {
+      const invalidGroup = this.colorGroupsControls.controls.find((g: any) => {
+        const rawIdx = g.get('imageIndex')?.value;
+        const total = this.imagesControls.length;
+        return g.get('hasOrphanedImage')?.value || rawIdx === null || rawIdx === undefined || isNaN(Number(rawIdx)) || Number(rawIdx) < 0 || Number(rawIdx) >= total;
+      });
+
+      if (invalidGroup) {
+        const colorName = (invalidGroup as any).get('colorName')?.value || 'sin nombre';
+        this.#notificationService.error(
+          `El color "${colorName}" no tiene una foto válida asignada de la galería. Seleccioná una foto antes de guardar.`
+        );
+        return;
+      }
+    }
+
     if (this.productForm.invalid || !this.isSizeGuideValid()) {
       this.productForm.markAllAsTouched();
       return;

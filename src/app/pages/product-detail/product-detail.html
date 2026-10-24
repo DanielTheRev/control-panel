@@ -52,11 +52,18 @@
                     [src]="p.images[selectedImageIndex()]?.url || p.images[0]?.url"
                     class="w-full h-full object-cover object-top transition-all duration-300"
                     alt="{{ p.model }}"
+                    (error)="$any($event.target).classList.add('hidden'); $any($event.target).nextElementSibling?.classList.remove('hidden')"
                   />
+                  <div class="hidden w-full h-full flex flex-col items-center justify-center bg-error/15 text-error gap-2 p-4 text-center">
+                    <mat-icon class="text-5xl! w-12! h-12!">broken_image</mat-icon>
+                    <span class="text-sm font-bold uppercase tracking-wide">Error al cargar foto (404)</span>
+                    <span class="text-xs opacity-75">La imagen no existe en Cloudinary o el enlace está roto</span>
+                  </div>
                 } @else {
-                  <div class="flex flex-col items-center justify-center text-base-content/30 gap-2">
-                    <mat-icon class="text-6xl! w-16! h-16!">image</mat-icon>
-                    <span class="text-xs">Sin imágenes</span>
+                  <div class="flex flex-col items-center justify-center text-error bg-error/10 gap-2 w-full h-full p-4 text-center">
+                    <mat-icon class="text-5xl! w-12! h-12!">broken_image</mat-icon>
+                    <span class="text-sm font-bold uppercase">Sin imágenes</span>
+                    <span class="text-xs opacity-75">Este producto no tiene fotos en su galería</span>
                   </div>
                 }
 
@@ -379,8 +386,16 @@
                   @for (item of combinedItems(); track item.key) {
                     <div class="p-2.5 rounded-xl bg-base-200/40 border border-base-200/80 hover:border-secondary/40 transition-all flex items-center justify-between gap-3 group">
                       <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-content/10 shrink-0">
-                          <img [src]="item.image" class="w-full h-full object-cover" [alt]="item.model" />
+                        <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border shrink-0 flex items-center justify-center"
+                             [ngClass]="item.image && item.image !== '/no-image.jpg' ? 'border-base-content/10' : 'border-error/40 bg-error/10 text-error'">
+                          @if (item.image && item.image !== '/no-image.jpg') {
+                            <img [src]="item.image" class="w-full h-full object-cover" [alt]="item.model" />
+                          } @else {
+                            <div class="flex flex-col items-center justify-center p-1 text-center" title="Variante o prenda sin foto válida">
+                              <mat-icon class="text-[18px]! w-4.5! h-4.5!">broken_image</mat-icon>
+                              <span class="text-[7px] font-bold uppercase leading-tight">Sin foto</span>
+                            </div>
+                          }
                         </div>
                         <div class="min-w-0 flex flex-col">
                           <span class="text-xs font-black text-base-content truncate group-hover:text-primary transition-colors">
@@ -390,16 +405,21 @@
                             @if (item.brand) { <span class="font-bold text-base-content/80">{{ item.brand }}</span> }
                             @if (item.category) { <span>· {{ item.category }}</span> }
                           </div>
-                          @if (item.color) {
-                            <div class="mt-1 flex items-center gap-1">
+                          <div class="mt-1 flex flex-wrap items-center gap-1">
+                            @if (item.color) {
                               <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-secondary/10 text-secondary text-[10px] font-semibold">
                                 @if (item.colorHex) {
                                   <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="item.colorHex"></span>
                                 }
                                 {{ item.color }}
                               </span>
-                            </div>
-                          }
+                            }
+                            @if (!item.image || item.image === '/no-image.jpg') {
+                              <span class="badge badge-error badge-2xs font-semibold py-0.5 px-1.5 text-[9px] gap-0.5">
+                                <mat-icon class="text-[9px]! w-2.5! h-2.5!">warning</mat-icon> Sin foto
+                              </span>
+                            }
+                          </div>
                         </div>
                       </div>
                       <div class="flex flex-col items-end shrink-0 gap-1">

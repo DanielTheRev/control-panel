@@ -114,7 +114,7 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
     const items = this.selectedCombineItems;
     return items.map((item) => {
       const prod = map.get(item.product);
-      let image = '/no-image.jpg';
+      let image = '';
       let colorHex: string | undefined = undefined;
 
       if (prod) {
@@ -123,13 +123,13 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
             (v: any) => v.color?.name?.toLowerCase() === item.color?.toLowerCase(),
           );
           if (matchVar) {
-            image = matchVar.imageReference?.url || this.getProductImage(prod);
+            image = matchVar.imageReference?.url || '';
             colorHex = matchVar.color?.hex;
           } else {
-            image = this.getProductImage(prod);
+            image = '';
           }
         } else {
-          image = this.getProductImage(prod);
+          image = '';
         }
       }
 
@@ -184,7 +184,7 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
               product: p,
               colorName,
               colorHex: v.color?.hex,
-              image: v.imageReference?.url || this.getProductImage(p),
+              image: v.imageReference?.url || '',
               key,
             });
           }
@@ -366,9 +366,9 @@ export class ClothingProductForm implements OnInit, OnChanges, OnDestroy {
   }
 
   getProductImage(product: any): string {
-    if (!product?.images?.length) return '/no-image.jpg';
+    if (!product?.images?.length) return '';
     const first = product.images[0];
-    return typeof first === 'string' ? first : (first?.secure_url || first?.url || '/no-image.jpg');
+    return typeof first === 'string' ? first : (first?.secure_url || first?.url || '');
   }
 
   addFit() {

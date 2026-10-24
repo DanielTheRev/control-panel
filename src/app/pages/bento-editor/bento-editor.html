@@ -71,9 +71,22 @@
                 }"
                 class="group relative overflow-hidden rounded-xl block bg-base-300 cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 border border-black/10">
 
-                <img [src]="getPreviewUrl(i) || '/no-image.jpg'"
-                  [alt]="itemGroup.get('title')?.value || 'Visual Menu Item'"
-                  class="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.03]">
+                @if (getPreviewUrl(i)) {
+                  <img [src]="getPreviewUrl(i)"
+                    [alt]="itemGroup.get('title')?.value || 'Visual Menu Item'"
+                    (error)="$any($event.target).classList.add('hidden'); $any($event.target).nextElementSibling?.classList.remove('hidden')"
+                    class="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.03]">
+                  <div class="hidden absolute inset-0 flex flex-col items-center justify-center bg-error/20 text-error p-4 text-center z-10">
+                    <mat-icon class="text-3xl! w-8! h-8!">broken_image</mat-icon>
+                    <span class="text-xs font-bold uppercase mt-1">Error al cargar foto (404)</span>
+                  </div>
+                } @else {
+                  <div class="absolute inset-0 flex flex-col items-center justify-center bg-error/15 border-2 border-dashed border-error/40 text-error p-4 text-center z-10">
+                    <mat-icon class="text-3xl! w-8! h-8!">broken_image</mat-icon>
+                    <span class="text-xs font-bold uppercase mt-1">Sin foto asociada</span>
+                    <span class="text-[10px] opacity-80">Subí una foto para esta tarjeta</span>
+                  </div>
+                }
 
                 <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent opacity-85 group-hover:opacity-95 transition-opacity duration-500"></div>
 

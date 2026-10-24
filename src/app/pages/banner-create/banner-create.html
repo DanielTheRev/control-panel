@@ -423,7 +423,18 @@
                     <div class="flex items-center justify-between p-2.5 bg-primary/10 border border-primary/20 rounded-xl">
                       <div class="flex items-center gap-2">
                         @if (selectedLinkProduct().images?.[0]?.url) {
-                          <img [src]="selectedLinkProduct().images[0].url" class="w-8 h-8 rounded-lg object-cover" />
+                          <img
+                            [src]="selectedLinkProduct().images[0].url"
+                            class="w-8 h-8 rounded-lg object-cover"
+                            (error)="$any($event.target).classList.add('hidden'); $any($event.target).nextElementSibling?.classList.remove('hidden')"
+                          />
+                          <div class="hidden w-8 h-8 rounded-lg bg-error/15 border border-error/30 text-error flex items-center justify-center shrink-0" title="Foto 404">
+                            <mat-icon class="text-xs">broken_image</mat-icon>
+                          </div>
+                        } @else {
+                          <div class="w-8 h-8 rounded-lg bg-error/15 border border-error/30 text-error flex items-center justify-center shrink-0" title="Producto sin foto">
+                            <mat-icon class="text-xs">broken_image</mat-icon>
+                          </div>
                         }
                         <div>
                           <span class="text-xs font-bold block">{{ selectedLinkProduct().brand }} {{ selectedLinkProduct().model }}</span>

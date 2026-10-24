@@ -1414,9 +1414,9 @@
                                     </div>
                                   </div>
                                 } @else {
-                                  <div class="w-20 sm:w-24 h-28 sm:h-32 rounded-2xl bg-base-200 border-2 border-dashed border-base-300 flex flex-col items-center justify-center text-base-content/30 group-hover/pic:text-primary group-hover/pic:border-primary transition-all p-2 text-center" title="Sin foto asociada">
-                                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">add_photo_alternate</mat-icon>
-                                    <span class="text-[9px] font-bold mt-1 leading-tight">Sin Foto</span>
+                                  <div class="w-20 sm:w-24 h-28 sm:h-32 rounded-2xl bg-error/10 border-2 border-dashed border-error/40 flex flex-col items-center justify-center text-error group-hover/pic:border-error transition-all p-2 text-center" title="Foto requerida">
+                                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">broken_image</mat-icon>
+                                    <span class="text-[9px] font-bold mt-1 leading-tight uppercase">Sin Foto</span>
                                   </div>
                                 }
                               </div>
@@ -1427,12 +1427,19 @@
                                   <select
                                     formControlName="imageIndex"
                                     class="select select-xs select-bordered font-bold text-xs h-8 min-h-0 bg-base-100 rounded-lg max-w-40"
+                                    [ngClass]="{'select-error border-error bg-error/5 text-error': !getColorGroupImageLink(group)}"
                                     title="Foto de la galería que se muestra al hacer clic en este color en la web"
                                   >
+                                    <option [ngValue]="null" disabled selected>Seleccioná foto...</option>
                                     @for (img of imagesControls.controls; track $index; let imgIdx = $index) {
                                       <option [value]="imgIdx">Foto #{{ imgIdx + 1 }} {{ imgIdx === 0 ? '(Portada)' : '' }}</option>
                                     }
                                   </select>
+                                  @if (!getColorGroupImageLink(group)) {
+                                    <span class="badge badge-error badge-xs font-semibold py-1 gap-1 text-[9px]">
+                                      <mat-icon class="text-[10px]! w-2.5! h-2.5!">warning</mat-icon> Foto requerida
+                                    </span>
+                                  }
                                   <button
                                     type="button"
                                     class="btn btn-ghost btn-xs text-[10px] text-base-content/60 hover:text-primary gap-1 px-1 h-5 min-h-0 self-start"

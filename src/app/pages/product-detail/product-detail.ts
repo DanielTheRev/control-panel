@@ -103,13 +103,14 @@ export class ProductDetail implements OnInit {
             (v: any) => v.color?.name?.toLowerCase() === color?.toLowerCase()
           );
           if (matchVar) {
-            image = matchVar.imageReference?.url || (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            // Sin fallback: si la variante seleccionada no tiene foto o tiene referencia rota, que quede vacío y se alerte en la UI
+            image = matchVar.imageReference?.url || '';
             colorHex = matchVar.color?.hex;
           } else {
-            image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            image = '';
           }
         } else {
-          image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+          image = (prodObj.images && prodObj.images[0]?.url) || '';
         }
       }
 

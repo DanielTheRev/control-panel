@@ -91,10 +91,16 @@
                         @if (fav.product.images.length > 0) {
                         <img [src]="fav.product.images[0].url"
                           [alt]="fav.product.model"
-                          class="w-full h-full object-cover" />
+                          class="w-full h-full object-cover"
+                          (error)="$any($event.target).classList.add('hidden'); $any($event.target).nextElementSibling?.classList.remove('hidden')" />
+                        <div class="hidden w-full h-full bg-error/15 text-error flex flex-col items-center justify-center p-0.5" title="Error 404 al cargar foto">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">broken_image</mat-icon>
+                          <span class="text-[7px] font-bold">404</span>
+                        </div>
                         } @else {
-                        <div class="w-full h-full flex items-center justify-center">
-                          <mat-icon class="text-[18px]! w-5! h-5! text-base-content/20">image</mat-icon>
+                        <div class="w-full h-full bg-error/10 text-error flex flex-col items-center justify-center p-0.5" title="Sin foto">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">broken_image</mat-icon>
+                          <span class="text-[7px] font-bold">Sin foto</span>
                         </div>
                         }
                       </div>
@@ -225,10 +231,16 @@
                   @if (fav.product.images.length > 0) {
                   <img [src]="fav.product.images[0].url"
                     [alt]="fav.product.model"
-                    class="w-full h-full object-cover" />
+                    class="w-full h-full object-cover"
+                    (error)="$any($event.target).classList.add('hidden'); $any($event.target).nextElementSibling?.classList.remove('hidden')" />
+                  <div class="hidden w-full h-full bg-error/15 text-error flex flex-col items-center justify-center p-0.5" title="Error 404 al cargar foto">
+                    <mat-icon class="text-[16px]! w-4! h-4!">broken_image</mat-icon>
+                    <span class="text-[7px] font-bold">404</span>
+                  </div>
                   } @else {
-                  <div class="w-full h-full flex items-center justify-center">
-                    <mat-icon class="text-[20px]! text-base-content/20">image</mat-icon>
+                  <div class="w-full h-full bg-error/10 text-error flex flex-col items-center justify-center p-0.5" title="Sin foto">
+                    <mat-icon class="text-[16px]! w-4! h-4!">broken_image</mat-icon>
+                    <span class="text-[7px] font-bold">Sin foto</span>
                   </div>
                   }
                 </div>

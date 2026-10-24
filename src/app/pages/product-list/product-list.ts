@@ -146,10 +146,10 @@ export class ProductList {
   }
 
   getProductImageUrl(product: any): string {
-    if (!product?.images || product.images.length === 0) return '/no-image.jpg';
+    if (!product?.images || product.images.length === 0) return '';
     const first = product.images[0];
     if (typeof first === 'string') return first;
-    return first?.url || '/no-image.jpg';
+    return first?.url || '';
   }
 
   activeStatusTab = computed(() => this.ProductState.currentStatusFilter() || 'published');
@@ -800,13 +800,14 @@ export class ProductList {
             (v: any) => v.color?.name?.toLowerCase() === color?.toLowerCase()
           );
           if (matchVar) {
-            image = matchVar.imageReference?.url || (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            // Sin fallbacks: si la variante no tiene imagen válida, se deja vacío para alertar en UI
+            image = matchVar.imageReference?.url || '';
             colorHex = matchVar.color?.hex;
           } else {
-            image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+            image = '';
           }
         } else {
-          image = (prodObj.images && prodObj.images[0]?.url) || '/no-image.jpg';
+          image = (prodObj.images && prodObj.images[0]?.url) || '';
         }
       }
 
@@ -3349,7 +3350,7 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
             model: orig?.model || item.model || item._id,
             category: orig?.category || item.category || '',
             brand: orig?.brand || item.brand || '',
-            imageUrl: orig?.images?.[0]?.url || '/no-image.jpg',
+            imageUrl: orig?.images?.[0]?.url || '',
             changes: changes.length > 0 ? changes : [{ label: 'Modificación', text: 'Propiedades actualizadas', icon: 'check' }],
             raw: item
           });

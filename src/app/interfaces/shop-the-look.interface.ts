@@ -1,4 +1,4 @@
-import { IProduct } from './product.interface';
+import { IProduct, IProductSeo } from './product.interface';
 
 // Imagen alojada en Cloudinary con soporte para NgOptimizedImage
 export interface IShopTheLookImage {
@@ -70,6 +70,7 @@ export interface IShopTheLook {
   rankingScore?: number;
   effectiveScore?: number;
   metrics?: IShopTheLookMetrics;
+  seo?: IProductSeo;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

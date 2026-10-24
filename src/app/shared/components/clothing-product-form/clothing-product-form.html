@@ -91,8 +91,15 @@
                 @if (selectedCombinedDisplayList().length > 0) {
                     <div class="flex flex-wrap gap-2.5 mb-4">
                         @for (item of selectedCombinedDisplayList(); track item.key) {
-                            <div class="inline-flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-2xl bg-base-100 border border-base-300 text-xs text-base-content shadow-xs group hover:border-secondary/40 transition-colors">
-                                <img [src]="item.image" class="w-8 h-8 rounded-xl object-cover bg-base-200 border border-base-content/10 shrink-0" alt="" />
+                            <div class="inline-flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-2xl bg-base-100 border text-xs text-base-content shadow-xs group transition-colors"
+                                 [ngClass]="item.image && item.image !== '/no-image.jpg' ? 'border-base-300 hover:border-secondary/40' : 'border-error/50 bg-error/5'">
+                                @if (item.image && item.image !== '/no-image.jpg') {
+                                    <img [src]="item.image" class="w-8 h-8 rounded-xl object-cover bg-base-200 border border-base-content/10 shrink-0" alt="" />
+                                } @else {
+                                    <div class="w-8 h-8 rounded-xl bg-error/15 border border-error/30 text-error flex items-center justify-center shrink-0" title="Variante o prenda sin foto">
+                                        <mat-icon class="text-[16px]! w-4! h-4!">broken_image</mat-icon>
+                                    </div>
+                                }
                                 <div class="flex flex-col min-w-0 pr-1">
                                     <span class="font-bold text-xs max-w-[170px] truncate text-base-content">{{ item.model }}</span>
                                     <div class="flex items-center gap-1.5 text-[10px] text-base-content/60">
@@ -102,6 +109,11 @@
                                                     <span class="w-2 h-2 rounded-full border border-black/20" [style.backgroundColor]="item.colorHex"></span>
                                                 }
                                                 {{ item.color }}
+                                            </span>
+                                        }
+                                        @if (!item.image || item.image === '/no-image.jpg') {
+                                            <span class="badge badge-error badge-2xs font-semibold py-0.5 px-1.5 text-[9px] gap-0.5">
+                                                <mat-icon class="text-[10px]! w-2.5! h-2.5!">warning</mat-icon> Sin foto
                                             </span>
                                         }
                                         @if (item.brand) { <span class="font-semibold">{{ item.brand }}</span> }
@@ -147,7 +159,14 @@
                                     class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/80 transition-colors text-left text-xs text-base-content cursor-pointer"
                                     (mousedown)="addCombinedProduct(opt.product, opt.colorName)"
                                 >
-                                    <img [src]="opt.image" class="w-10 h-10 rounded-lg object-cover bg-base-200 flex-shrink-0 border border-base-content/10" alt="" />
+                                    @if (opt.image && opt.image !== '/no-image.jpg') {
+                                        <img [src]="opt.image" class="w-10 h-10 rounded-lg object-cover bg-base-200 flex-shrink-0 border border-base-content/10" alt="" />
+                                    } @else {
+                                        <div class="w-10 h-10 rounded-lg bg-error/15 border border-error/30 text-error flex flex-col items-center justify-center shrink-0" title="Sin foto asociada">
+                                            <mat-icon class="text-[16px]! w-4! h-4!">broken_image</mat-icon>
+                                            <span class="text-[8px] font-bold">Sin foto</span>
+                                        </div>
+                                    }
                                     <div class="flex-1 min-w-0">
                                         <div class="font-bold text-sm truncate text-base-content flex items-center gap-2">
                                             <span>{{ opt.product.model }}</span>

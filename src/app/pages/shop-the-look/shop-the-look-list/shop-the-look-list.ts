@@ -55,13 +55,13 @@ export class ShopTheLookListComponent implements OnInit {
     const target = event.target as HTMLImageElement;
     target.style.display = 'none';
     const parent = target.parentElement;
-    if (parent && !parent.querySelector('.placeholder-fallback')) {
-      const fallback = document.createElement('div');
-      fallback.className =
-        'placeholder-fallback w-full h-full flex flex-col items-center justify-center bg-base-300/50 text-base-content/40 p-4 text-center';
-      fallback.innerHTML =
-        '<span style="font-size: 28px; margin-bottom: 4px;">👗</span><span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Foto no disponible</span>';
-      parent.appendChild(fallback);
+    if (parent && !parent.querySelector('.broken-image-alert')) {
+      const alert = document.createElement('div');
+      alert.className =
+        'broken-image-alert w-full h-full flex flex-col items-center justify-center bg-error/15 border-2 border-dashed border-error/40 text-error p-4 text-center';
+      alert.innerHTML =
+        '<span style="font-size: 26px; margin-bottom: 4px;">⚠️</span><span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Foto Rota (404)</span><span style="font-size: 9px; opacity: 0.8; margin-top: 2px;">La imagen no existe en Cloudinary</span>';
+      parent.appendChild(alert);
     }
   }
 

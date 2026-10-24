@@ -1,5 +1,5 @@
 import { DecimalPipe, NgClass } from '@angular/common';
-import { Component, ElementRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,7 @@ import { SidebarService } from '../../../services/sidebar.service';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { PageLayout } from '../../../shared/components/page-layout/page-layout';
 import { ProductSearchDialogComponent } from '../../../shared/components/product-search-dialog/product-search-dialog';
+import { SingleImageUpload } from '../../../shared/components/single-image-upload/single-image-upload';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
 import { getStoreUrl } from '../../../utils/tenant.utils';
 
@@ -36,7 +37,8 @@ interface ILookDraft {
     PageLayout,
     PageHeader,
     NgClass,
-    DecimalPipe
+    DecimalPipe,
+    SingleImageUpload
   ],
   templateUrl: './shop-the-look-create.html',
   styles: [`
@@ -61,8 +63,16 @@ export class ShopTheLookCreateComponent implements OnInit {
     slug: [''],
     isActive: [true],
     rankingScore: [100, [Validators.min(0)]],
-    order: [0]
+    order: [0],
+    seo: this.#fb.group({
+      metaTitle: [''],
+      metaDescription: ['']
+    })
   });
+
+  // SEO Social Image Control
+  seoImageControl = new FormControl<string | File | null>(null);
+  deletedSeoOgImage = signal<string | null>(null);
 
   isEditMode = signal(false);
   loading = signal(false);
@@ -72,6 +82,78 @@ export class ShopTheLookCreateComponent implements OnInit {
   looks = signal<ILookDraft[]>([]);
   activeTabIndex = signal<number>(0);
   activeHotspotIndex = signal<number | null>(null);
+
+  hasBrokenHotspots = computed(() => {
+    const list = this.looks();
+    const draft = list[this.activeTabIndex()];
+    if (!draft) return false;
+    return draft.hotspots.some(h => !h.product || !h.variantImage?.url || h.imageHasError);
+  });
+
+  // Previsualizaciones reactivas de los datos SEO por defecto (cuando no se completan manualmente)
+  computedDefaultMetaTitle = computed(() => {
+    const title = this.form.get('title')?.value?.trim();
+    return title ? `Vura | Shop The Look - ${title}` : 'Vura | Shop The Look - Outfit';
+  });
+
+  computedDefaultMetaDescription = computed(() => {
+    const title = this.form.get('title')?.value?.trim();
+    const subtitle = this.form.get('subtitle')?.value?.trim();
+    if (subtitle) {
+      return `${subtitle} - Descubrí el look ${title || 'en tendencia'} y comprá cada prenda en Vura.`;
+    }
+    return title
+      ? `Descubrí el outfit ${title} y comprá cada prenda directamente desde la foto en Vura.`
+      : 'Descubrí este outfit y comprá cada prenda directamente desde la foto en Vura.';
+  });
+
+  computedDefaultMetaImage = computed(() => {
+    const list = this.looks();
+    const draft = list[0];
+    if (draft?.previewImage && typeof draft.previewImage === 'string') {
+      return draft.previewImage;
+    }
+    if (draft?.imageControl?.value && typeof draft.imageControl.value === 'string') {
+      return draft.imageControl.value;
+    }
+    return null;
+  });
+
+  effectiveMetaTitle = computed(() => {
+    const custom = this.form.get('seo.metaTitle')?.value?.trim();
+    return custom || this.computedDefaultMetaTitle();
+  });
+
+  effectiveMetaDescription = computed(() => {
+    const custom = this.form.get('seo.metaDescription')?.value?.trim();
+    return custom || this.computedDefaultMetaDescription();
+  });
+
+  effectiveMetaImage = computed(() => {
+    const controlVal = this.seoImageControl.value;
+    if (typeof controlVal === 'string' && controlVal.trim()) {
+      return controlVal.trim();
+    }
+    return this.computedDefaultMetaImage();
+  });
+
+  hasCustomSeoTitle = computed(() => {
+    return !!this.form.get('seo.metaTitle')?.value?.trim();
+  });
+
+  hasCustomSeoDescription = computed(() => {
+    return !!this.form.get('seo.metaDescription')?.value?.trim();
+  });
+
+  hasCustomSeoImage = computed(() => {
+    return !!this.seoImageControl.value;
+  });
+
+  onSeoImagePreviewChange(previewUrl: string | null) {
+    if (!previewUrl && this.originalCampaign()?.seo?.metaImage?.public_id) {
+      this.deletedSeoOgImage.set(this.originalCampaign()!.seo!.metaImage.public_id);
+    }
+  }
 
   showImagePicker = signal(false);
   imageInputUrl = signal('');
@@ -236,9 +318,22 @@ export class ShopTheLookCreateComponent implements OnInit {
           subtitle: campaign.occasion || campaign.subtitle || '',
           slug: campaign.slug || '',
           isActive: campaign.isActive !== undefined ? campaign.isActive : true,
-        rankingScore: campaign.rankingScore !== undefined ? campaign.rankingScore : 100,
-        order: campaign.order !== undefined ? campaign.order : 0
-      });
+          rankingScore: campaign.rankingScore !== undefined ? campaign.rankingScore : 100,
+          order: campaign.order !== undefined ? campaign.order : 0
+        });
+
+        // Cargar datos de SEO si existen
+        if (campaign.seo) {
+          this.form.patchValue({
+            seo: {
+              metaTitle: campaign.seo.metaTitle || '',
+              metaDescription: campaign.seo.metaDescription || ''
+            }
+          });
+          if (campaign.seo.metaImage?.url) {
+            this.seoImageControl.setValue(campaign.seo.metaImage.url);
+          }
+        }
 
         // Cargar galería y productos del outfit autónomo
         const gallery = campaign.gallery || [];
@@ -503,6 +598,16 @@ export class ShopTheLookCreateComponent implements OnInit {
       return;
     }
 
+    const brokenHotspots = activeDraft.hotspots.filter(
+      h => !h.product || !h.variantImage?.url || h.imageHasError
+    );
+    if (brokenHotspots.length > 0) {
+      this.#notificationService.error(
+        'Hay prendas asignadas con variantes sin foto o con link roto (404). Seleccioná una variante con foto válida antes de guardar.'
+      );
+      return;
+    }
+
     this.loading.set(true);
 
     try {
@@ -552,6 +657,26 @@ export class ShopTheLookCreateComponent implements OnInit {
       } else if (activeDraft.previewImage && typeof activeDraft.previewImage === 'string') {
         const galleryItem = activeDraft.originalImage || { url: activeDraft.previewImage.trim(), public_id: '' };
         formData.append('gallery', JSON.stringify([galleryItem]));
+      }
+
+      // Guardar datos de SEO si existen (opcionales)
+      const seoVal = this.form.value.seo;
+      if (seoVal && (seoVal.metaTitle?.trim() || seoVal.metaDescription?.trim() || this.seoImageControl.value)) {
+        formData.append('seo', JSON.stringify({
+          metaTitle: seoVal.metaTitle?.trim() || '',
+          metaDescription: seoVal.metaDescription?.trim() || '',
+          metaImage: (typeof this.seoImageControl.value === 'string' && this.seoImageControl.value.trim())
+            ? { url: this.seoImageControl.value.trim(), public_id: '' }
+            : undefined
+        }));
+      }
+
+      if (this.seoImageControl.value instanceof File) {
+        formData.append('seoImage', this.seoImageControl.value);
+      }
+
+      if (this.deletedSeoOgImage()) {
+        formData.append('deletedSeoOgImage', this.deletedSeoOgImage()!);
       }
 
       if (this.isEditMode()) {

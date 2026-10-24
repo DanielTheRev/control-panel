@@ -328,6 +328,18 @@ export class BentoEditorComponent implements OnInit {
       return;
     }
 
+    const itemsRaw = this.itemsFormArray.value;
+    const activeMissingImage = itemsRaw.find((item: any) => {
+      if (!item.isActive) return false;
+      const hasImg = (item.imageDesktop instanceof File) || (typeof item.imageDesktop === 'object' && item.imageDesktop?.url) || (typeof item.imageDesktop === 'string' && item.imageDesktop.trim().length > 0);
+      return !hasImg;
+    });
+
+    if (activeMissingImage) {
+      this.#notificationsService.error(`La tarjeta "${activeMissingImage.title || 'sin título'}" no tiene imagen asignada. Subí una imagen antes de guardar.`);
+      return;
+    }
+
     this.loading.set(true);
 
     try {
