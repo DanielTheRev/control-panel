@@ -83,6 +83,27 @@ export class ShopTheLookStateService {
     }
   }
 
+  async resetAllRankingScores(resetBaseTo100: boolean = false) {
+    try {
+      const res = await this.#shopTheLookService.resetAllRankingScores(resetBaseTo100);
+      this.#fetchedCampaigns.reload();
+      return res;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resetLookRankingScore(id: string, resetBaseTo100: boolean = false) {
+    try {
+      const response = await this.#shopTheLookService.resetLookRankingScore(id, resetBaseTo100);
+      const updated = (response as any)?.data || response;
+      this.#updateCampaignLocal(updated);
+      return updated;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async deleteCampaign(id: string) {
     const previousState = this.#fetchedCampaigns.value();
     this.#deleteCampaignLocal(id);

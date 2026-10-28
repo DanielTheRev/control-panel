@@ -69,6 +69,30 @@ export class ShopTheLookService {
     );
   }
 
+  resetAllRankingScores(resetBaseTo100: boolean = false) {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; message: string; updatedCount: number }>(`${this.#apiUrl}/reset-ranking-base`, { resetBaseTo100 }).pipe(
+        this.#toast.observe({
+          loading: { content: 'Reiniciando puntajes ELO...', position: 'top-right', theme: 'snackbar' },
+          success: { content: 'Puntajes ELO reiniciados a base', position: 'top-right', theme: 'snackbar' },
+          error: { content: 'Error al reiniciar puntajes ELO', position: 'top-right', theme: 'snackbar' }
+        })
+      )
+    );
+  }
+
+  resetLookRankingScore(id: string, resetBaseTo100: boolean = false) {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; data: IShopTheLook; message: string }>(`${this.#apiUrl}/${id}/ranking-score/reset`, { resetBaseTo100 }).pipe(
+        this.#toast.observe({
+          loading: { content: 'Reiniciando ELO...', position: 'top-right', theme: 'snackbar' },
+          success: { content: 'ELO reiniciado a base', position: 'top-right', theme: 'snackbar' },
+          error: { content: 'Error al reiniciar ELO', position: 'top-right', theme: 'snackbar' }
+        })
+      )
+    );
+  }
+
   delete(id: string) {
     return firstValueFrom(
       this.#http.delete<{ message: string }>(`${this.#apiUrl}/${id}`).pipe(

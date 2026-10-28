@@ -185,4 +185,10 @@ export class StoreConfigService {
       this.#http.post<{ success: boolean; message: string; updatedCount: number }>(`${this.#apiUrl}/catalog-ranking/recalculate`, {})
     );
   }
+
+  async resetRankingScores(resetBaseTo100: boolean = false): Promise<{ success: boolean; message: string; updatedCount: number }> {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; message: string; updatedCount: number }>(`${this.#apiUrl}/catalog-ranking/reset-base`, { resetBaseTo100 })
+    );
+  }
 }

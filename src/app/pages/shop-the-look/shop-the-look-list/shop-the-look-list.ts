@@ -30,6 +30,8 @@ export class ShopTheLookListComponent implements OnInit {
 
   campaigns = this.#shopTheLookState.campaigns;
   updatingScoreId = signal<string | null>(null);
+  isResettingAll = signal<boolean>(false);
+  resettingLookId = signal<string | null>(null);
 
   constructor() {
     this.#sidebarService.navbarTitle.set({
@@ -62,6 +64,37 @@ export class ShopTheLookListComponent implements OnInit {
       alert.innerHTML =
         '<span style="font-size: 26px; margin-bottom: 4px;">⚠️</span><span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Foto Rota (404)</span><span style="font-size: 9px; opacity: 0.8; margin-top: 2px;">La imagen no existe en Cloudinary</span>';
       parent.appendChild(alert);
+    }
+  }
+
+  async resetAllLooksRanking(resetBaseTo100: boolean = false) {
+    const confirmMsg = resetBaseTo100
+      ? "¿Estás seguro de restablecer TODOS los outfits a ELO 100 y limpiar métricas?"
+      : "¿Estás seguro de reiniciar el ELO de todos los outfits a su puntaje base y limpiar métricas?";
+    if (!confirm(confirmMsg)) return;
+
+    this.isResettingAll.set(true);
+    try {
+      const res = await this.#shopTheLookState.resetAllRankingScores(resetBaseTo100);
+      this.#notificationService.success(res.message || "Puntajes ELO de outfits reiniciados a base");
+    } catch {
+      this.#notificationService.error("Error al reiniciar los puntajes ELO");
+    } finally {
+      this.isResettingAll.set(false);
+    }
+  }
+
+  async resetSingleLookRanking(look: IShopTheLook, resetBaseTo100: boolean = false) {
+    if (!look._id) return;
+    this.resettingLookId.set(look._id);
+    try {
+      await this.#shopTheLookState.resetLookRankingScore(look._id, resetBaseTo100);
+      const targetBase = resetBaseTo100 ? 100 : (look.rankingScore ?? 100);
+      this.#notificationService.success(`ELO de "${look.name || look.title}" reiniciado a su base (${targetBase})`);
+    } catch {
+      this.#notificationService.error("Error al reiniciar el puntaje ELO del outfit");
+    } finally {
+      this.resettingLookId.set(null);
     }
   }
 

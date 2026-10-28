@@ -970,6 +970,21 @@
             <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
               <button
                 type="button"
+                (click)="triggerResetRankingBase(false)"
+                [disabled]="isResettingRanking()"
+                class="btn btn-sm btn-ghost border border-base-300 hover:border-warning hover:text-warning gap-1.5 text-xs font-bold cursor-pointer"
+                matTooltip="Vuelve el effectiveScore de todos los productos a su puntaje base y limpia las métricas acumuladas"
+              >
+                @if (isResettingRanking()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                } @else {
+                  <mat-icon class="text-[16px]! w-4! h-4!">restart_alt</mat-icon>
+                }
+                <span>Reiniciar ELOs a Base</span>
+              </button>
+
+              <button
+                type="button"
                 (click)="triggerRecalculateScores()"
                 [disabled]="isRecalculatingRanking()"
                 class="btn btn-sm btn-ghost border border-base-300 hover:border-primary gap-1.5 text-xs font-bold"
@@ -1233,7 +1248,7 @@
                       />
                       <button
                         type="button"
-                        [disabled]="updatingScoreProductId() === product._id"
+                        [disabled]="updatingScoreProductId() === product._id || resettingScoreProductId() === product._id"
                         (click)="updateProductScore(product, scoreInput.value)"
                         class="btn btn-xs btn-primary font-bold px-2.5 shrink-0 cursor-pointer"
                         title="Guardar nuevo score base"
@@ -1242,6 +1257,20 @@
                           <span class="loading loading-spinner loading-xs"></span>
                         } @else {
                           <mat-icon class="text-[14px]! w-3.5! h-3.5!">check</mat-icon>
+                        }
+                      </button>
+
+                      <button
+                        type="button"
+                        [disabled]="resettingScoreProductId() === product._id || updatingScoreProductId() === product._id"
+                        (click)="resetSingleProductRanking(product)"
+                        class="btn btn-xs btn-ghost border border-base-300 hover:border-warning hover:text-warning px-2 shrink-0 cursor-pointer"
+                        title="Reiniciar este producto a su puntaje base y limpiar métricas"
+                      >
+                        @if (resettingScoreProductId() === product._id) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">restart_alt</mat-icon>
                         }
                       </button>
                     </div>

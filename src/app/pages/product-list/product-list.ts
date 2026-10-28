@@ -70,6 +70,8 @@ export class ProductList {
   });
   isSavingRankingConfig = signal<boolean>(false);
   isRecalculatingRanking = signal<boolean>(false);
+  isResettingRanking = signal<boolean>(false);
+  resettingScoreProductId = signal<string | null>(null);
 
   // Lista de productos para la Vista Tienda & Ranking
   rankingProducts = signal<IProduct[]>([]);
@@ -234,6 +236,22 @@ export class ProductList {
   constructor() {
     this.#SidebarService.navbarTitle.set({ title: 'Productos' });
 
+    // Cargar inmediatamente la configuración de ranking para que el badge refleje el estado real
+    this.loadRankingConfig();
+
+    // Sincronizar reactivamente si StoreConfigState provee la configuración
+    effect(() => {
+      const cfg = this.#StoreConfigState.StoreConfig()?.config?.catalogRanking;
+      if (cfg) {
+        this.rankingConfig.set({
+          active: !!cfg.active,
+          viewWeight: cfg.viewWeight ?? 1,
+          cartWeight: cfg.cartWeight ?? 5,
+          saleWeight: cfg.saleWeight ?? 25,
+        });
+      }
+    });
+
     // Persistir preferencia de vista (Grid vs Lista)
     effect(() => {
       const mode = this.viewMode();
@@ -347,6 +365,68 @@ export class ProductList {
       console.error(err);
     } finally {
       this.isSavingRankingConfig.set(false);
+    }
+  }
+
+  async triggerResetRankingBase(resetBaseTo100: boolean = false) {
+    const confirmMsg = resetBaseTo100
+      ? "¿Estás seguro de restablecer TODO el catálogo a ELO 100 y limpiar métricas acumuladas?"
+      : "¿Estás seguro de reiniciar el ELO de todos los productos a su puntaje base y limpiar métricas acumuladas?";
+    if (!confirm(confirmMsg)) return;
+
+    this.isResettingRanking.set(true);
+    try {
+      const res = await this.#storeConfigService.resetRankingScores(resetBaseTo100);
+      this.#snackBar.open(
+        `✓ ${res.message || "Scores reiniciados a base con éxito"}`,
+        "Cerrar",
+        { duration: 4000 }
+      );
+      await this.loadRankingProducts();
+    } catch (err) {
+      this.#snackBar.open("Error al reiniciar scores de ranking", "Cerrar", { duration: 3000 });
+      console.error(err);
+    } finally {
+      this.isResettingRanking.set(false);
+    }
+  }
+
+  async resetSingleProductRanking(product: IProduct, resetBaseTo100: boolean = false) {
+    if (!product._id) return;
+    this.resettingScoreProductId.set(product._id);
+    try {
+      await this.#productService.resetProductRankingScore(product._id, resetBaseTo100);
+      const targetBase = resetBaseTo100 ? 100 : (product.rankingScore ?? 100);
+
+      this.rankingProducts.update(prods =>
+        prods.map(p => p._id === product._id
+          ? {
+              ...p,
+              rankingScore: targetBase,
+              effectiveScore: targetBase,
+              metrics: {
+                ...(p.metrics || {}),
+                viewsCount: 0,
+                botViewsCount: 0,
+                cartAddsCount: 0,
+                salesCount: 0,
+                viewsByDevice: { mobile: 0, desktop: 0, tablet: 0, bot: 0 }
+              }
+            }
+          : p
+        ).sort((a, b) => (b.effectiveScore ?? 0) - (a.effectiveScore ?? 0))
+      );
+
+      this.#snackBar.open(
+        `✓ ELO de "${product.model}" reiniciado a su base (${targetBase})`,
+        "Cerrar",
+        { duration: 3000 }
+      );
+    } catch (err) {
+      this.#snackBar.open("Error al reiniciar score del producto", "Cerrar", { duration: 3000 });
+      console.error(err);
+    } finally {
+      this.resettingScoreProductId.set(null);
     }
   }
 

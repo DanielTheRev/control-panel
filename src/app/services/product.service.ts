@@ -320,6 +320,12 @@ export class ProductService {
     );
   }
 
+  resetProductRankingScore(id: string, resetBaseTo100: boolean = false) {
+    return firstValueFrom(
+      this.#http.post<{ success: boolean; data: IProduct; message: string }>(`${this.#apiUrl}/${id}/ranking-score/reset`, { resetBaseTo100 })
+    );
+  }
+
   getProductViewsAudit(id: string) {
     return firstValueFrom(
       this.#http.get<{ success: boolean; data: any }>(`${this.#apiUrl}/${id}/views`)

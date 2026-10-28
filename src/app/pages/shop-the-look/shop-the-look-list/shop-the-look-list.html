@@ -1,6 +1,21 @@
 <app-page-layout>
   <app-page-header header title="Gestor de Outfits" subtitle="Crea y gestiona los looks editoriales de VURA, sus prendas del catálogo y pines interactivos.">
     <div actions class="flex items-center gap-3">
+      <button
+        type="button"
+        (click)="resetAllLooksRanking(false)"
+        [disabled]="isResettingAll() || campaigns().data.length === 0"
+        class="btn btn-sm btn-ghost border border-base-300 hover:border-warning hover:text-warning gap-1.5 text-xs font-bold cursor-pointer"
+        matTooltip="Vuelve el effectiveScore de todos los outfits a su puntaje base y limpia las métricas acumuladas"
+      >
+        @if (isResettingAll()) {
+          <span class="loading loading-spinner loading-xs"></span>
+        } @else {
+          <mat-icon class="text-[16px]! w-4! h-4!">restart_alt</mat-icon>
+        }
+        <span>Reiniciar ELOs a Base</span>
+      </button>
+
       <a routerLink="create" class="btn btn-primary btn-sm gap-2 shadow-sm shadow-primary/20">
         <mat-icon class="text-sm">add</mat-icon>
         Nuevo Outfit
@@ -121,10 +136,23 @@
                     [value]="look.rankingScore ?? 100"
                     (keydown.enter)="onScoreChange(look, scoreInput.value)"
                     (blur)="onScoreChange(look, scoreInput.value)"
-                    [disabled]="updatingScoreId() === look._id"
-                    class="input input-xs input-bordered w-20 text-center font-bold font-mono text-xs rounded-xl focus:input-primary"
+                    [disabled]="updatingScoreId() === look._id || resettingLookId() === look._id"
+                    class="input input-xs input-bordered w-16 text-center font-bold font-mono text-xs rounded-xl focus:input-primary"
                     title="Escribe el nuevo ELO y presiona Enter para ver cómo se reordena en vivo"
                   />
+                  <button
+                    type="button"
+                    [disabled]="resettingLookId() === look._id || updatingScoreId() === look._id"
+                    (click)="resetSingleLookRanking(look)"
+                    class="btn btn-xs btn-ghost border border-base-300 hover:border-warning hover:text-warning px-1.5 shrink-0 cursor-pointer"
+                    title="Reiniciar este outfit a su puntaje base y limpiar métricas"
+                  >
+                    @if (resettingLookId() === look._id) {
+                      <span class="loading loading-spinner loading-xs"></span>
+                    } @else {
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">restart_alt</mat-icon>
+                    }
+                  </button>
                   @if (updatingScoreId() === look._id) {
                     <span class="loading loading-spinner loading-xs text-primary"></span>
                   }
