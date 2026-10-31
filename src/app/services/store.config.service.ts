@@ -85,6 +85,17 @@ export class StoreConfigService {
     return firstValueFrom(this.#http.put<IUpdateMPConfigDTO>(`${this.#apiUrl}/mercadopago`, config));
   }
 
+  signMercadoPago() {
+      this.#http.get<{ authUrl: string }>(`${environment.apiUrl}/config/mercadopago/auth-url`).subscribe({
+        next: (res) => {
+          if (res.authUrl) {
+            window.location.href = res.authUrl;
+          }
+        },
+        error: (err) => console.error('Error al iniciar vinculación con Mercado Pago:', err)
+      });
+    }
+
   async getMercadoPagoMethods(): Promise<IAggregatedPaymentMethodsResponse['automaticGateways']['mercadopago']['availableMethods']> {
     const response = await firstValueFrom(this.#http.get<IAggregatedPaymentMethodsResponse>(`${this.#apiUrl}/mercadopago-methods`));
     return response.automaticGateways.mercadopago.availableMethods;

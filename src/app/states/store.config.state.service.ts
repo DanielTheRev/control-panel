@@ -7,17 +7,20 @@ import { httpResource } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class StoreConfigStateService {
   #configService = inject(StoreConfigService);
   #notificationService = inject(NotificationsService);
   #debug = inject(DebugService);
-  #RsState = httpResource<IEcommerceConfig>(() => ({
-    url: this.#configService.getConfigString(),
-  }), {
-    parse: value => value as any
-  });
+  #RsState = httpResource<IEcommerceConfig>(
+    () => ({
+      url: this.#configService.getConfigString(),
+    }),
+    {
+      parse: (value) => value as any,
+    },
+  );
 
   readonly StoreConfig = computed(() => ({
     hasData: this.#RsState.hasValue(),
@@ -56,14 +59,20 @@ export class StoreConfigStateService {
     try {
       const res = await this.#configService.regenerateApiKey();
       if (res.success && this.connectionSettings()) {
-        this.connectionSettings.update(curr => curr ? { ...curr, apiKey: res.apiKey } : null);
-        this.#notificationService.success('Nueva llave de conexión generada exitosamente');
+        this.connectionSettings.update((curr) =>
+          curr ? { ...curr, apiKey: res.apiKey } : null,
+        );
+        this.#notificationService.success(
+          'Nueva llave de conexión generada exitosamente',
+        );
         return true;
       }
       return false;
     } catch (error) {
       this.#debug.error('Error regenerating API key', error);
-      this.#notificationService.error('Error al regenerar la llave de conexión');
+      this.#notificationService.error(
+        'Error al regenerar la llave de conexión',
+      );
       return false;
     }
   }
@@ -72,7 +81,9 @@ export class StoreConfigStateService {
     try {
       const res = await this.#configService.updateAllowedOrigins(origins);
       if (res.success && this.connectionSettings()) {
-        this.connectionSettings.update(curr => curr ? { ...curr, allowedOrigins: res.allowedOrigins } : null);
+        this.connectionSettings.update((curr) =>
+          curr ? { ...curr, allowedOrigins: res.allowedOrigins } : null,
+        );
         this.#notificationService.success('Dominios autorizados actualizados');
         return true;
       }
@@ -85,15 +96,12 @@ export class StoreConfigStateService {
   }
 
   signMercadoPago() {
-    const clientId = this.#configService.getMasterClientID();
-    const tenantSlug = this.#configService.getTenantID() || localStorage.getItem('lastTenantSlug') || 'vura';
-    const redirectUri = `${environment.apiUrl}/config/mercadopago/callback`;
-
-    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${tenantSlug}`;
-    window.location.href = authUrl;
+    this.#configService.signMercadoPago();
   }
 
-  async saveConfig(newConfig: Partial<IEcommerceConfig>): Promise<{ success: boolean; shouldRecalculate: boolean }> {
+  async saveConfig(
+    newConfig: Partial<IEcommerceConfig>,
+  ): Promise<{ success: boolean; shouldRecalculate: boolean }> {
     try {
       const response = await this.#configService.updateConfig(newConfig);
       this.#notificationService.success('Configuración guardada correctamente');
@@ -123,7 +131,9 @@ export class StoreConfigStateService {
   async recalculatePrices(): Promise<boolean> {
     try {
       const response = await this.#configService.recalculatePrices();
-      this.#notificationService.success(response.message || 'Precios recalculados correctamente');
+      this.#notificationService.success(
+        response.message || 'Precios recalculados correctamente',
+      );
       return true;
     } catch (error) {
       this.#debug.error('Error recalculating prices', error);
