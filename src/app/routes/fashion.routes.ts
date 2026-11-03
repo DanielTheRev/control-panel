@@ -9,7 +9,7 @@ import { businessTypeGuard } from '../guards/business-type.guard';
 export const fashionRoutes: Routes = [
   {
     path: 'shipping-options',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     children: [
       {
         path: '',
@@ -29,12 +29,12 @@ export const fashionRoutes: Routes = [
   {
     path: 'home-layout',
     title: 'Diseño del Home',
-    canActivate: [businessTypeGuard(['fashion', 'general', 'tech_electronics'])],
+    canActivate: [businessTypeGuard(['fashion', 'tech_electronics'])],
     loadComponent: () => import('../pages/home-layout/home-layout').then(c => c.HomeLayoutComponent),
   },
   {
     path: 'banners',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     children: [
       {
         path: '',
@@ -53,7 +53,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'menus',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     children: [
       {
         path: '',
@@ -77,7 +77,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'hero',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     children: [
       {
         path: '',
@@ -96,7 +96,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'shop-the-look',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     children: [
       {
         path: '',
@@ -116,31 +116,31 @@ export const fashionRoutes: Routes = [
   {
     path: 'recommendations',
     title: 'Recomendaciones',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     loadComponent: () => import('../pages/recommendations/recommendations').then(c => c.RecommendationsComponent)
   },
   {
     path: 'emails',
     title: 'Emails & Plantillas',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     loadComponent: () => import('../pages/emails/emails').then(c => c.EmailsComponent)
   },
   {
     path: 'coupons',
     title: 'Cupones de Descuento',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     loadComponent: () => import('../pages/coupons/coupons').then(c => c.CouponsComponent)
   },
   {
     path: 'subscribers',
     title: 'Suscriptores Newsletter',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     loadComponent: () => import('../pages/newsletter/newsletter').then(c => c.NewsletterComponent)
   },
   {
     path: 'favorites',
     title: 'Favoritos',
-    canActivate: [businessTypeGuard(['fashion', 'general'])],
+    canActivate: [businessTypeGuard(['fashion'])],
     loadComponent: () => import('../pages/favorites/favorites').then(c => c.FavoritesComponent)
   },
 ];

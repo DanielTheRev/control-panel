@@ -132,7 +132,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   readonly showTabShipping = computed(() => !this.isCounterProfile());
   readonly showTabEmails = computed(() => !this.isCounterProfile());
   readonly showTabContact = computed(() => !this.isCounterProfile());
-  readonly showTabClothing = computed(() => this.isFashionProfile() || this.selectedBusinessType() === 'general');
+  readonly showTabClothing = computed(() => this.isFashionProfile());
 
   // Protección contra cambios sin guardar (CanDeactivate & BeforeUnload)
   showUnsavedModal = signal<boolean>(false);
@@ -155,7 +155,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   confirmDiscardChanges(): void {
     // 1. Revertir tema y perfil al rubro original guardado en el servidor
     const savedType =
-      this.configState.StoreConfig().config?.businessType || 'general';
+      this.configState.StoreConfig().config?.businessType || 'kiosk_grocery';
     this.businessProfile.applyTheme(savedType);
     this.selectedBusinessType.set(savedType);
 
@@ -196,7 +196,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     // aseguramos restaurar el tema y perfil original guardado
     if (this.hasUnsavedChanges()) {
       const savedType =
-        this.configState.StoreConfig().config?.businessType || 'general';
+        this.configState.StoreConfig().config?.businessType || 'kiosk_grocery';
       this.businessProfile.applyTheme(savedType);
     }
   }
@@ -222,95 +222,105 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     label: string;
     icon: string;
     badge: string;
-    colorName: string;
-    previewHex: string;
     desc: string;
+    highlights: string[];
   }[] = [
     {
       value: 'kiosk_grocery',
       label: BUSINESS_THEMES.kiosk_grocery.label,
       icon: 'storefront',
       badge: BUSINESS_THEMES.kiosk_grocery.badge,
-      colorName: BUSINESS_THEMES.kiosk_grocery.colorName,
-      previewHex: BUSINESS_THEMES.kiosk_grocery.previewHex,
       desc: 'Optimizado para mostrador rápido, lector de códigos de barras, golosinas, bebidas, cigarrillos y venta fraccionada por peso (fiambrería).',
+      highlights: [
+        'Mostrador POS Rápido',
+        'Lector de Códigos de Barras',
+        'Venta Fraccionada por Peso',
+        'Control de Caja & Turnos',
+        'Facturación Fiscal ARCA',
+      ],
     },
     {
       value: 'fashion',
       label: BUSINESS_THEMES.fashion.label,
       icon: 'checkroom',
       badge: BUSINESS_THEMES.fashion.badge,
-      colorName: BUSINESS_THEMES.fashion.colorName,
-      previewHex: BUSINESS_THEMES.fashion.previewHex,
       desc: 'Catálogo de ropa y calzado con variantes de talles, colores, colecciones de temporada, banners, Shop The Look y cupones.',
+      highlights: [
+        'Catálogo Visual & Temporadas',
+        'Variantes de Talles & Colores',
+        'Shop The Look Interactivo',
+        'Banners & Sliders Hero',
+        'Envíos & Logística Integrada',
+      ],
     },
     {
       value: 'butcher',
       label: BUSINESS_THEMES.butcher.label,
       icon: 'restaurant',
       badge: BUSINESS_THEMES.butcher.badge,
-      colorName: BUSINESS_THEMES.butcher.colorName,
-      previewHex: BUSINESS_THEMES.butcher.previewHex,
       desc: 'Enfocado en cortes vacunos, cerdo, pollo y embutidos por kilo, gramajes exactos y cálculo dinámico de balanza en mostrador.',
+      highlights: [
+        'Cortes por Kilo / Balanza',
+        'Cálculo Dinámico de Gramaje',
+        'Mostrador POS Rápido',
+        'Facturación Fiscal ARCA',
+      ],
     },
     {
       value: 'bakery',
       label: BUSINESS_THEMES.bakery.label,
       icon: 'bakery_dining',
       badge: BUSINESS_THEMES.bakery.badge,
-      colorName: BUSINESS_THEMES.bakery.colorName,
-      previewHex: BUSINESS_THEMES.bakery.previewHex,
       desc: 'Venta ágil de pan por peso, facturas y medialunas por docena o unidad, masas finas, sándwiches de miga y despacho.',
+      highlights: [
+        'Panificados por Peso / Balanza',
+        'Venta por Docena y Unidad',
+        'Mostrador POS Rápido',
+        'Despacho y Encomiendas',
+      ],
     },
     {
       value: 'tech_electronics',
       label: BUSINESS_THEMES.tech_electronics.label,
       icon: 'devices',
       badge: BUSINESS_THEMES.tech_electronics.badge,
-      colorName: BUSINESS_THEMES.tech_electronics.colorName,
-      previewHex: BUSINESS_THEMES.tech_electronics.previewHex,
       desc: 'Gestión con control de especificaciones técnicas, números de serie (IMEI) y marcas de electrónica.',
+      highlights: [
+        'Números de Serie & IMEI',
+        'Gestión de Garantías',
+        'Fichas Técnicas Detalladas',
+        'Mostrador POS & Catálogo Web',
+      ],
     },
     {
       value: 'gastronomy',
       label: BUSINESS_THEMES.gastronomy.label,
       icon: 'lunch_dining',
       badge: BUSINESS_THEMES.gastronomy.badge,
-      colorName: BUSINESS_THEMES.gastronomy.colorName,
-      previewHex: BUSINESS_THEMES.gastronomy.previewHex,
       desc: 'Comandas para cocina, barra de cafetería, platos, bebidas y despacho para consumo en el local o delivery.',
-    },
-    {
-      value: 'general',
-      label: BUSINESS_THEMES.general.label,
-      icon: 'store',
-      badge: BUSINESS_THEMES.general.badge,
-      colorName: BUSINESS_THEMES.general.colorName,
-      previewHex: BUSINESS_THEMES.general.previewHex,
-      desc: 'Todas las funcionalidades habilitadas tanto para mostrador presencial como para catálogo e-commerce.',
+      highlights: [
+        'Comandas de Cocina & Barra',
+        'Gestión de Mesas & Mostrador',
+        'Platos, Bebidas & Opciones',
+        'Consumo en Salón & Delivery',
+      ],
     },
   ];
 
-  selectBusinessType(type: BusinessType) {
-    this.configForm.get('businessType')?.setValue(type);
-    this.configForm.markAsDirty();
-    this.selectedBusinessType.set(type);
-    // Cambia el color de la aplicación inmediatamente en tiempo real
-    this.businessProfile.applyTheme(type);
+  readonly currentBusinessTypeInfo = computed(() => {
+    const current = this.selectedBusinessType();
+    return (
+      this.businessTypeOptions.find((opt) => opt.value === current) ||
+      this.businessTypeOptions[0]
+    );
+  });
 
-    // Si la pestaña actual no corresponde al perfil seleccionado, regresar a 'general'
-    const current = this.activeTab();
-    const isCounter = type === 'kiosk_grocery' || type === 'butcher' || type === 'bakery' || type === 'gastronomy';
-    if (isCounter && ['auth', 'integrations', 'shipping', 'emails', 'contact', 'clothing'].includes(current)) {
-      this.activeTab.set('general');
-    } else if (type === 'tech_electronics' && current === 'clothing') {
-      this.activeTab.set('general');
-    }
+  selectBusinessType(_type: BusinessType) {
+    // Inmutable desde el panel de la tienda; solo modificable por SuperAdmin
   }
 
   getSelectedRubroLabel(): string {
-    const val = (this.configForm.get('businessType')?.value as BusinessType) || 'general';
-    return (BUSINESS_THEMES[val] || BUSINESS_THEMES['general']).label;
+    return this.currentBusinessTypeInfo().label;
   }
 
   // Conexión & Tienda Web (API Keys & Dominios)
@@ -520,7 +530,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
 
     this.configForm = this.#fb.group({
       name: [''],
-      businessType: ['general'],
+      businessType: [{ value: 'kiosk_grocery', disabled: true }],
       costCurrency: ['USD'],
 
       integrations: this.#fb.group({
@@ -1116,7 +1126,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     }
     await this.saveSlice('general', {
       name: this.configForm.get('name')?.value,
-      businessType: this.configForm.get('businessType')?.value,
+
       costCurrency: this.configForm.get('costCurrency')?.value,
       shippingConfig: this.configForm.get('shippingConfig')?.value,
       workingHours: this.configForm.get('workingHours')?.value,

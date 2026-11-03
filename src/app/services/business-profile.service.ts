@@ -84,14 +84,6 @@ export const BUSINESS_THEMES: Record<BusinessType, BusinessThemeConfig> = {
     colorName: 'Naranja Gastronómico',
     previewHex: '#ea580c',
   },
-  general: {
-    primary: 'oklch(53% 0.22 265)',
-    primaryContent: '#ffffff',
-    label: 'Comercio General / Polirrubro',
-    badge: 'Multirrubro & Bazar',
-    colorName: 'Azul Cobalto',
-    previewHex: '#4f46e5',
-  },
 };
 
 @Injectable({
@@ -101,7 +93,7 @@ export class BusinessProfileService {
   readonly #configState = inject(StoreConfigStateService);
 
   readonly businessType = computed<BusinessType>(() => {
-    return this.#configState.StoreConfig().config?.businessType || 'general';
+    return this.#configState.StoreConfig().config?.businessType || 'kiosk_grocery';
   });
 
   constructor() {
@@ -116,7 +108,7 @@ export class BusinessProfileService {
    * Aplica dinámicamente el color primario y contraste en CSS `:root` / `<html>`
    */
   applyTheme(type: BusinessType): void {
-    const theme = BUSINESS_THEMES[type] || BUSINESS_THEMES['general'];
+    const theme = BUSINESS_THEMES[type] || BUSINESS_THEMES.kiosk_grocery;
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
       root.style.setProperty('--color-primary', theme.primary);
@@ -129,7 +121,7 @@ export class BusinessProfileService {
    * Retorna la configuración de tema para un rubro específico
    */
   getThemeConfig(type: BusinessType): BusinessThemeConfig {
-    return BUSINESS_THEMES[type] || BUSINESS_THEMES['general'];
+    return BUSINESS_THEMES[type] || BUSINESS_THEMES.kiosk_grocery;
   }
 
   /**
@@ -160,7 +152,7 @@ export class BusinessProfileService {
    */
   readonly canSellByWeight = computed(() => {
     const t = this.businessType();
-    return t === 'butcher' || t === 'bakery' || t === 'kiosk_grocery' || t === 'general';
+    return t === 'butcher' || t === 'bakery' || t === 'kiosk_grocery';
   });
 
   /**
@@ -188,14 +180,14 @@ export class BusinessProfileService {
       showSettingsShipping: !isCounter,
       showSettingsEmails: !isCounter,
       showSettingsContact: !isCounter,
-      showSettingsClothing: isFashion || this.businessType() === 'general',
+      showSettingsClothing: isFashion,
     };
   });
 
   /**
    * Ruta de aterrizaje recomendada por perfil de negocio:
    * - Kiosco / Almacén / Mostrador: va directo al Mostrador POS
-   * - Moda / Retail / General: va a Ventas & Métricas
+   * - Moda / Retail: va a Ventas & Métricas
    */
   readonly defaultLandingRoute = computed(() => {
     return this.isKioskOrCounter() ? '/home/pos' : '/home/sales';
@@ -206,6 +198,6 @@ export class BusinessProfileService {
    */
   readonly businessTypeLabel = computed(() => {
     const t = this.businessType();
-    return (BUSINESS_THEMES[t] || BUSINESS_THEMES['general']).label;
+    return (BUSINESS_THEMES[t] || BUSINESS_THEMES.kiosk_grocery).label;
   });
 }

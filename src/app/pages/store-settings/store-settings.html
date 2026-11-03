@@ -164,72 +164,68 @@
         <!-- ========================================================================= -->
         @if (activeTab() === 'general') {
           <div class="space-y-6">
-            <!-- RUBRO & PERFIL DE NEGOCIO -->
+            <!-- RUBRO & PERFIL DE NEGOCIO (INMUTABLE / INFORMATIVO) -->
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-base-200 gap-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    <mat-icon class="text-[20px]! w-5! h-5!">category</mat-icon>
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">category</mat-icon>
                   </div>
                   <div>
                     <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Rubro & Perfil de Negocio</h3>
-                    <p class="text-xs text-base-content/50">El panel adapta dinámicamente sus menús, rutas y herramientas para ajustarse a tu rubro.</p>
+                    <p class="text-xs text-base-content/50">Vertical comercial asignada a esta tienda para adaptar herramientas, catálogo y mostrador.</p>
                   </div>
                 </div>
-                <div class="badge badge-primary font-bold text-xs py-3 px-3.5 gap-2 shadow-xs">
-                  <span class="w-2 h-2 rounded-full bg-primary-content animate-pulse"></span>
-                  <span>Rubro Activo: {{ getSelectedRubroLabel() }}</span>
+                <div class="badge badge-primary font-bold text-xs py-3 px-3.5 gap-2 shadow-xs self-start sm:self-auto">
+                  <span class="w-2 h-2 rounded-full bg-primary-content"></span>
+                  <span>Rubro Asignado: {{ currentBusinessTypeInfo().label }}</span>
                 </div>
               </div>
 
-              <!-- Grid de Rubros Seleccionables con Tema Dinámico -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                @for (opt of businessTypeOptions; track opt.value) {
-                  @let isSelected = configForm.get('businessType')?.value === opt.value;
-                  <div
-                    (click)="selectBusinessType(opt.value)"
-                    class="relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col justify-between gap-3 text-left group hover:scale-[1.01]"
-                    [class.border-primary]="isSelected"
-                    [class.bg-primary/5]="isSelected"
-                    [class.shadow-md]="isSelected"
-                    [class.shadow-primary/10]="isSelected"
-                    [class.border-base-200]="!isSelected"
-                    [class.bg-base-100]="!isSelected"
-                    [class.hover:border-primary/40]="!isSelected"
-                    [class.hover:bg-base-200/30]="!isSelected"
-                  >
-                    <div class="flex items-start justify-between gap-2">
-                      <div class="flex items-center gap-3">
-                        <div
-                          class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-xs"
-                          [style.background-color]="isSelected ? 'var(--color-primary)' : opt.previewHex + '18'"
-                          [style.color]="isSelected ? 'var(--color-primary-content)' : opt.previewHex"
-                        >
-                          <mat-icon class="text-[20px]! w-5! h-5!">{{ opt.icon }}</mat-icon>
-                        </div>
-                        <div>
-                          <span class="text-xs font-bold block text-base-content leading-tight">{{ opt.label }}</span>
-                          <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                            <span class="badge badge-xs text-[9px] font-bold px-1.5 py-0.5" [class.badge-primary]="isSelected" [class.badge-ghost]="!isSelected">
-                              {{ opt.badge }}
-                            </span>
-                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-base-content/60">
-                              <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="opt.previewHex"></span>
-                              {{ opt.colorName }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <input
-                        type="radio"
-                        [name]="'businessTypeRadio'"
-                        [checked]="isSelected"
-                        class="radio radio-primary radio-xs shrink-0 pointer-events-none mt-1"
-                      />
+              <!-- Ficha Informativa del Rubro Activo -->
+              <div class="p-5 rounded-2xl border border-base-200 bg-base-200/40 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div class="flex items-start gap-4">
+                    <div
+                      class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm bg-primary text-primary-content"
+                    >
+                      <mat-icon class="text-[26px]! w-6.5! h-6.5!">{{ currentBusinessTypeInfo().icon }}</mat-icon>
                     </div>
-                    <p class="text-[11px] text-base-content/65 leading-relaxed">{{ opt.desc }}</p>
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="text-base font-bold text-base-content">{{ currentBusinessTypeInfo().label }}</h4>
+                        <span class="badge badge-sm badge-outline font-semibold text-[10px]">
+                          {{ currentBusinessTypeInfo().badge }}
+                        </span>
+                      </div>
+                      <p class="text-xs text-base-content/70 leading-relaxed max-w-2xl">
+                        {{ currentBusinessTypeInfo().desc }}
+                      </p>
+                    </div>
                   </div>
-                }
+                </div>
+
+                <!-- Capacidades y Herramientas Habilitadas para este Rubro -->
+                <div class="pt-3 border-t border-base-300/60 flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-bold text-base-content/60 uppercase tracking-wider mr-1">Herramientas activas:</span>
+                  @for (cap of currentBusinessTypeInfo().highlights; track cap) {
+                    <span class="badge badge-sm bg-base-100 border-base-300 text-base-content/80 text-[11px] font-medium gap-1">
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5! text-success">check_circle</mat-icon>
+                      {{ cap }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Aviso de Seguridad / Inmutabilidad -->
+              <div class="flex items-start gap-3 p-3.5 rounded-xl bg-info/10 border border-info/20 text-info-content text-xs">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-info shrink-0 mt-0.5">lock</mat-icon>
+                <div class="space-y-0.5">
+                  <span class="font-bold text-info block">Rubro comercial fijo y protegido</span>
+                  <p class="text-[11px] text-base-content/70 leading-relaxed">
+                    El rubro comercial no puede modificarse desde el panel de la tienda para garantizar la integridad de datos, facturación y catálogo. Si requerís dar de alta una nueva sucursal o necesitás cambiar de rubro, contactate con el <strong>SuperAdmin</strong> desde la administración central.
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -325,17 +325,57 @@
             }
           </div>
 
-          <!-- Selector de Cliente (Search in Existing / Cliente) -->
+          <!-- Selector de Cliente (Libreta / Cuenta Corriente) -->
           <div class="space-y-1">
-            <div class="relative">
-              <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">person</mat-icon>
-              <input
-                type="text"
-                [(ngModel)]="customerName"
-                placeholder="Nombre o DNI del cliente..."
-                class="input input-xs input-bordered w-full pl-7 rounded-lg text-xs font-bold text-base-content focus:border-primary"
-              />
-            </div>
+            @if (selectedClient(); as client) {
+              <div class="flex items-center justify-between p-2 rounded-xl bg-primary/10 border border-primary/20">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    {{ client.name.charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-black text-base-content truncate">{{ client.name }} {{ client.lastName || '' }}</p>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                      <span class="text-base-content/60">{{ client.phone || client.dni || 'Sin teléfono' }}</span>
+                      @if (client.currentAccount?.balance; as bal) {
+                        @if (bal > 0) {
+                          <span class="font-bold text-error">Debe: ${{ bal | number:'1.0-0' }}</span>
+                        } @else {
+                          <span class="font-bold text-success">Al día</span>
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    (click)="openClientSearchModal()"
+                    class="btn btn-ghost btn-2xs btn-circle text-primary hover:bg-primary/20"
+                    title="Cambiar cliente">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">swap_horiz</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="clearSelectedClient()"
+                    class="btn btn-ghost btn-2xs btn-circle text-base-content/50 hover:text-error"
+                    title="Quitar cliente (Consumidor Final)">
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button
+                type="button"
+                (click)="openClientSearchModal()"
+                class="w-full flex items-center justify-between py-1.5 px-2.5 rounded-lg border border-dashed border-base-300 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center text-base-content/40 group-hover:text-primary">person_add</mat-icon>
+                  <span class="text-xs font-bold text-base-content/70 group-hover:text-primary">Consumidor Final</span>
+                </div>
+                <span class="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">Asignar Cliente / Fiado →</span>
+              </button>
+            }
           </div>
 
           <!-- Lista de Items en Carrito (Scrollable) -->
@@ -605,58 +645,71 @@
             </div>
           </div>
 
-          <!-- 4 Métodos de Cobro (RestroBit Tabs) -->
-          <div class="grid grid-cols-4 gap-1 p-1 bg-base-200 rounded-xl">
+          <!-- 5 Métodos de Cobro (RestroBit Tabs + Fiado Kiosco) -->
+          <div class="grid grid-cols-5 gap-1 p-1 bg-base-200 rounded-xl">
             <button
               type="button"
               (click)="selectMethod('EFECTIVO')"
-              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
               [class.bg-base-100]="selectedMethod() === 'EFECTIVO'"
               [class.shadow-2xs]="selectedMethod() === 'EFECTIVO'"
               [class.text-primary]="selectedMethod() === 'EFECTIVO'"
               [class.text-base-content]="selectedMethod() !== 'EFECTIVO'"
               [class.opacity-60]="selectedMethod() !== 'EFECTIVO'">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">payments</mat-icon>
-              <span class="text-[10px]">Efectivo</span>
+              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">payments</mat-icon>
+              <span class="text-[9px]">Efectivo</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('QR')"
-              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
               [class.bg-base-100]="selectedMethod() === 'QR'"
               [class.shadow-2xs]="selectedMethod() === 'QR'"
               [class.text-primary]="selectedMethod() === 'QR'"
               [class.text-base-content]="selectedMethod() !== 'QR'"
               [class.opacity-60]="selectedMethod() !== 'QR'">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
-              <span class="text-[10px]">QR MP</span>
+              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
+              <span class="text-[9px]">QR MP</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('TRANSFERENCIA')"
-              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
               [class.bg-base-100]="selectedMethod() === 'TRANSFERENCIA'"
               [class.shadow-2xs]="selectedMethod() === 'TRANSFERENCIA'"
               [class.text-primary]="selectedMethod() === 'TRANSFERENCIA'"
               [class.text-base-content]="selectedMethod() !== 'TRANSFERENCIA'"
               [class.opacity-60]="selectedMethod() !== 'TRANSFERENCIA'">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">account_balance</mat-icon>
-              <span class="text-[10px]">Transf.</span>
+              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">account_balance</mat-icon>
+              <span class="text-[9px]">Transf.</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('TARJETA')"
-              class="py-2.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
               [class.bg-base-100]="selectedMethod() === 'TARJETA'"
               [class.shadow-2xs]="selectedMethod() === 'TARJETA'"
               [class.text-primary]="selectedMethod() === 'TARJETA'"
               [class.text-base-content]="selectedMethod() !== 'TARJETA'"
               [class.opacity-60]="selectedMethod() !== 'TARJETA'">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">credit_card</mat-icon>
-              <span class="text-[10px]">Tarjeta</span>
+              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">credit_card</mat-icon>
+              <span class="text-[9px]">Tarjeta</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="selectMethod('FIADO')"
+              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
+              [class.bg-base-100]="selectedMethod() === 'FIADO'"
+              [class.shadow-2xs]="selectedMethod() === 'FIADO'"
+              [class.text-amber-600]="selectedMethod() === 'FIADO'"
+              [class.text-base-content]="selectedMethod() !== 'FIADO'"
+              [class.opacity-60]="selectedMethod() !== 'FIADO'">
+              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">menu_book</mat-icon>
+              <span class="text-[9px]">Fiado</span>
             </button>
           </div>
 
@@ -782,6 +835,90 @@
             </div>
           }
 
+          <!-- ── TAB 5: FIADO / LIBRETA DE CUENTA CORRIENTE ────────────────────── -->
+          @if (selectedMethod() === 'FIADO') {
+            <div class="space-y-3 bg-amber-500/5 p-3.5 rounded-xl border border-amber-500/20">
+              @if (selectedClient(); as client) {
+                <!-- Cliente Asignado -->
+                <div class="flex items-center justify-between bg-base-100 p-2.5 rounded-xl border border-base-200">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-black text-sm">
+                      {{ client.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <p class="text-xs font-black text-base-content">{{ client.name }} {{ client.lastName || '' }}</p>
+                      <p class="text-[10px] text-base-content/50">{{ client.phone || client.dni || 'Sin teléfono' }}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="openClientSearchModal()"
+                    class="btn btn-outline btn-2xs font-bold rounded-lg text-primary">
+                    Cambiar
+                  </button>
+                </div>
+
+                <!-- Detalle Financiero del Fiado -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="p-2 rounded-lg bg-base-100 border border-base-200">
+                    <span class="text-[9px] font-bold uppercase text-base-content/40 block">Deuda Actual</span>
+                    <span class="font-black tabular-nums text-error">${{ (client.currentAccount?.balance || 0) | number:'1.0-0' }}</span>
+                  </div>
+                  <div class="p-2 rounded-lg bg-base-100 border border-base-200">
+                    <span class="text-[9px] font-bold uppercase text-base-content/40 block">Nuevo Saldo</span>
+                    <span class="font-black tabular-nums text-primary">${{ ((client.currentAccount?.balance || 0) + total()) | number:'1.0-0' }}</span>
+                  </div>
+                </div>
+
+                <!-- Estado del Crédito -->
+                @let account = client.currentAccount;
+                @let isBlocked = account?.isCreditAllowed === false;
+                @let limit = account?.creditLimit || 0;
+                @let exceeds = limit > 0 && ((account?.balance || 0) + total()) > limit;
+
+                @if (isBlocked) {
+                  <div class="flex items-center gap-2 p-2 rounded-lg bg-error/10 text-error text-xs font-bold border border-error/20">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">block</mat-icon>
+                    <span>Este cliente tiene el crédito / fiado SUSPENDIDO.</span>
+                  </div>
+                } @else if (exceeds) {
+                  <div class="flex items-center gap-2 p-2 rounded-lg bg-warning/10 text-warning-content text-xs font-bold border border-warning/20">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">warning</mat-icon>
+                    <span>Supera el límite asignado (${{ limit | number:'1.0-0' }}).</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-xs font-bold border border-emerald-500/20">
+                    <div class="flex items-center gap-1.5">
+                      <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">check_circle</mat-icon>
+                      <span>Crédito Aprobado</span>
+                    </div>
+                    <span class="text-[10px] text-base-content/50">
+                      {{ limit > 0 ? ('Límite: $' + (limit | number:'1.0-0')) : 'Sin límite' }}
+                    </span>
+                  </div>
+                }
+              } @else {
+                <!-- Sin cliente seleccionado -->
+                <div class="text-center py-4 space-y-2.5">
+                  <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+                    <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">person_search</mat-icon>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-black text-base-content">¿A quién se le anota el fiado?</h4>
+                    <p class="text-[11px] text-base-content/60">Seleccioná o registrá el cliente en la libreta para cargar la deuda.</p>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="openClientSearchModal()"
+                    class="btn btn-primary btn-sm rounded-xl font-black gap-1.5 shadow-xs">
+                    <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">search</mat-icon>
+                    <span>Buscar / Elegir Cliente</span>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
           <!-- Botones Finales Modal -->
           <div class="flex gap-2 pt-2 border-t border-base-200">
             <button
@@ -794,7 +931,7 @@
             <button
               type="button"
               (click)="processSale()"
-              [disabled]="isProcessing() || (selectedMethod() === 'EFECTIVO' && cashReceived() < total())"
+              [disabled]="isProcessing() || (selectedMethod() === 'EFECTIVO' && cashReceived() < total()) || (selectedMethod() === 'FIADO' && (!selectedClient() || selectedClient()?.currentAccount?.isCreditAllowed === false || ((selectedClient()?.currentAccount?.creditLimit || 0) > 0 && ((selectedClient()?.currentAccount?.balance || 0) + total()) > (selectedClient()?.currentAccount?.creditLimit || 0))))"
               class="btn btn-primary btn-sm rounded-xl font-black flex-[2] gap-1.5 shadow-sm cursor-pointer flex items-center justify-center">
               @if (isProcessing()) {
                 <span class="loading loading-spinner loading-xs"></span>
@@ -1264,6 +1401,200 @@
                 <mat-icon class="text-[16px]!">add_shopping_cart</mat-icon>
                 <span>Sumar ${{ globalProductPrice() | number:'1.0-0' }} al Carrito</span>
               }
+            </button>
+          </div>
+
+        </div>
+      </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: BÚSQUEDA Y SELECCIÓN DE CLIENTE (LIBRETA DE FIADOS / CTA. CTE.)     -->
+    <!-- ========================================================================= -->
+    @if (showClientSearchModal()) {
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="closeClientSearchModal()">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-lg w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-base-200 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">menu_book</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-base-content">Libreta de Clientes / Cuenta Corriente</h3>
+                <p class="text-[10px] text-base-content/50">Seleccioná un cliente para asignarlo a la venta o cargar el fiado</p>
+              </div>
+            </div>
+            <button (click)="closeClientSearchModal()" class="btn btn-ghost btn-2xs btn-circle text-base-content/50">
+              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Buscador y Botón Nuevo -->
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">search</mat-icon>
+              <input
+                type="text"
+                [(ngModel)]="clientSearchQuery"
+                (input)="onClientSearchInput()"
+                placeholder="Buscar por nombre, apellido, DNI o teléfono..."
+                class="input input-sm input-bordered w-full pl-9 rounded-xl text-xs font-bold text-base-content"
+                autofocus
+              />
+            </div>
+            <button
+              type="button"
+              (click)="toggleCreateClientForm()"
+              class="btn btn-sm btn-primary rounded-xl font-bold gap-1 text-xs shrink-0">
+              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">
+                {{ showCreateClientForm() ? 'expand_less' : 'person_add' }}
+              </mat-icon>
+              <span>{{ showCreateClientForm() ? 'Ocultar' : 'Nuevo' }}</span>
+            </button>
+          </div>
+
+          <!-- Formulario de Alta Rápida de Cliente -->
+          @if (showCreateClientForm()) {
+            <div class="p-3.5 rounded-xl bg-base-200/50 border border-base-200 space-y-3 animate-fade-in">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-base-content">Alta Rápida de Cliente</span>
+                <span class="text-[10px] text-base-content/50">Se registrará en tu comercio</span>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Nombre *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="newClientName"
+                    placeholder="Ej. Juan"
+                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Apellido</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="newClientLastName"
+                    placeholder="Ej. Pérez"
+                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Teléfono / WhatsApp</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="newClientPhone"
+                    placeholder="Ej. 1122334455"
+                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">DNI</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="newClientDni"
+                    placeholder="Ej. 38445123"
+                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
+                  />
+                </div>
+                <div class="col-span-2">
+                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Límite de Fiado ($) - 0 = Ilimitado</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="newClientCreditLimit"
+                    placeholder="10000"
+                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
+                  />
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  (click)="showCreateClientForm.set(false)"
+                  class="btn btn-2xs btn-ghost font-bold">
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  (click)="saveQuickClient()"
+                  [disabled]="isCreatingClient() || !newClientName().trim()"
+                  class="btn btn-2xs btn-primary font-black rounded-lg gap-1">
+                  @if (isCreatingClient()) {
+                    <span class="loading loading-spinner loading-2xs"></span>
+                  }
+                  <span>Guardar y Seleccionar</span>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Lista de Clientes Resultados -->
+          <div class="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+            @if (isSearchingClients()) {
+              <div class="py-8 text-center text-base-content/50 space-y-2">
+                <span class="loading loading-spinner loading-sm"></span>
+                <p class="text-xs">Buscando clientes...</p>
+              </div>
+            } @else if (clientSearchResults().length === 0) {
+              <div class="py-8 text-center text-base-content/40 space-y-2">
+                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center mx-auto">people_outline</mat-icon>
+                <p class="text-xs font-bold">No se encontraron clientes</p>
+                <p class="text-[10px]">Escribí un nombre o creá uno nuevo con el botón "+ Nuevo"</p>
+              </div>
+            } @else {
+              @for (client of clientSearchResults(); track client._id) {
+                <div
+                  (click)="selectClient(client)"
+                  class="flex items-center justify-between p-2.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-base-200 group-hover:bg-primary group-hover:text-white flex items-center justify-center font-black text-xs transition-colors shrink-0">
+                      {{ client.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-xs font-black text-base-content group-hover:text-primary transition-colors truncate">
+                        {{ client.name }} {{ client.lastName || '' }}
+                      </p>
+                      <div class="flex items-center gap-2 text-[10px] text-base-content/50">
+                        <span>{{ client.phone || client.dni || 'Sin datos de contacto' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-right shrink-0">
+                    @let debt = client.currentAccount?.balance || 0;
+                    @if (debt > 0) {
+                      <span class="text-xs font-black text-error block tabular-nums">Debe: ${{ debt | number:'1.0-0' }}</span>
+                    } @else {
+                      <span class="text-xs font-bold text-success block">Al día ($0)</span>
+                    }
+                    @if (client.currentAccount?.isCreditAllowed === false) {
+                      <span class="badge badge-2xs badge-error font-bold">Fiado Suspendido</span>
+                    } @else if ((client.currentAccount?.creditLimit || 0) > 0) {
+                      <span class="text-[9px] text-base-content/40 block">Lím: ${{ (client.currentAccount?.creditLimit || 0) | number:'1.0-0' }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Footer Modal -->
+          <div class="flex justify-between items-center pt-2 border-t border-base-200">
+            <button
+              type="button"
+              (click)="clearSelectedClient(); closeClientSearchModal()"
+              class="btn btn-ghost btn-xs text-base-content/60 font-bold">
+              Continuar como Consumidor Final
+            </button>
+            <button
+              type="button"
+              (click)="closeClientSearchModal()"
+              class="btn btn-sm btn-outline rounded-xl text-xs font-bold">
+              Cerrar
             </button>
           </div>
 

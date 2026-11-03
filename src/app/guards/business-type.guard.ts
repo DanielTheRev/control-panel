@@ -13,7 +13,7 @@ export const businessTypeGuard = (allowedTypes: BusinessType[]): CanActivateFn =
     const router = inject(Router);
 
     const currentType = profile.businessType();
-    if (allowedTypes.includes(currentType) || currentType === 'general') {
+    if (allowedTypes.includes(currentType)) {
       return true;
     }
 

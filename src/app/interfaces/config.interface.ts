@@ -152,8 +152,7 @@ export type BusinessType =
   | 'tech_electronics'
   | 'butcher'
   | 'bakery'
-  | 'gastronomy'
-  | 'general';
+  | 'gastronomy';
 
 export interface IEcommerceConfig {
   name: string;

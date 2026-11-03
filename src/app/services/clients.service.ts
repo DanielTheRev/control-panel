@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { IClientResponse } from '../interfaces/client.interface';
+import { IClient, IClientResponse } from '../interfaces/client.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -25,5 +25,10 @@ export class ClientsService {
     return this._http.get<IClientResponse>(
       `${this.endpoint}/clients?${queryParams.toString()}`
     );
+  }
+
+  /** Da de alta un nuevo cliente rápido desde el mostrador */
+  createClient(data: { name: string; lastName?: string; dni?: string; phone?: string; email?: string; creditLimit?: number }): Observable<{ status: string; data: IClient }> {
+    return this._http.post<{ status: string; data: IClient }>(`${this.endpoint}/clients`, data);
   }
 }

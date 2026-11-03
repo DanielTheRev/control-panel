@@ -1,0 +1,174 @@
+@if (!isMobile()) {
+  <!-- ============================================== -->
+  <!-- 1. DESKTOP / TABLET SIDEBAR                    -->
+  <!-- ============================================== -->
+  <aside
+    class="flex flex-col shrink-0 h-full bg-base-100 border-r border-base-200 z-20 transition-all duration-300 select-none"
+    [class.w-64]="isExpanded()"
+    [class.w-20]="isCollapsed()"
+  >
+    <!-- Header: Logo / Brand & Toggle (Matching Navbar h-14) -->
+    <div
+      class="h-14 flex items-center px-4 border-b border-base-200 shrink-0"
+      [class.justify-center]="isCollapsed()"
+      [class.justify-between]="isExpanded()"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Logo Button that toggles collapse -->
+        <div
+          class="flex items-center justify-center size-8 cursor-pointer"
+          (click)="sidebarService.toggleExpanded()"
+          [title]="isExpanded() ? 'Colapsar menú' : 'Expandir menú'"
+        >
+          @let storeCnfg = storeConfig();
+          @if (!storeCnfg.isLoading && storeCnfg.hasData && !storeCnfg.hasError && storeCnfg.config.logo) {
+            <img [src]="storeCnfg.config.logo" class="size-8 rounded-lg object-contain" />
+          } @else {
+            <div class="size-8 rounded-xl bg-primary text-primary-content flex items-center justify-center shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+          }
+        </div>
+
+        @if (isExpanded()) {
+          <div class="flex flex-col min-w-0 overflow-hidden">
+            <span class="text-sm font-bold tracking-tight text-base-content truncate">{{ brandName }}</span>
+            <span class="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">{{ profile.businessTypeLabel() }}</span>
+          </div>
+        }
+      </div>
+
+      @if (isExpanded()) {
+        <button
+          class="btn btn-ghost btn-xs btn-circle text-base-content/40 hover:text-base-content"
+          (click)="sidebarService.toggleExpanded()"
+          title="Colapsar menú"
+        >
+          <mat-icon class="text-[18px]">chevron_left</mat-icon>
+        </button>
+      }
+    </div>
+
+    <!-- Navigation Groups (Custom Slim Scroll) -->
+    <nav class="grow px-3 py-3 overflow-y-auto custom-sidebar-scroll flex flex-col gap-4">
+      @for (group of visibleGroups(); track group.id) {
+        <div class="flex flex-col gap-0.5">
+          @if (isExpanded()) {
+            <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">
+              {{ group.title }}
+            </span>
+          }
+          @for (item of group.items; track item.id) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="menu-item"
+              [class.bg-primary/10]="item.highlight"
+              [class.text-primary]="item.highlight"
+              [class.hover:bg-primary/20]="item.highlight"
+              [class.font-semibold]="item.highlight"
+              [class.justify-center]="isCollapsed()"
+              [matTooltip]="isCollapsed() ? item.label : ''"
+              matTooltipPosition="right"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              @if (isExpanded()) {
+                <span class="menu-text">{{ item.label }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <!-- Bottom Collapse Bar & Version -->
+    <div class="p-2 border-t border-base-200 shrink-0 flex flex-col gap-1">
+      <button
+        class="menu-item w-full"
+        [class.justify-center]="isCollapsed()"
+        (click)="sidebarService.toggleExpanded()"
+      >
+        <mat-icon
+          class="transition-transform duration-300"
+          [style.transform]="isExpanded() ? 'rotate(0deg)' : 'rotate(180deg)'"
+        >
+          chevron_left
+        </mat-icon>
+        @if (isExpanded()) {
+          <span class="menu-text text-xs text-base-content/60">Colapsar menú</span>
+        }
+      </button>
+
+      @if (isExpanded()) {
+        <div class="px-2.5 py-1 flex items-center justify-between text-[10px] font-mono text-base-content/40 select-none">
+          <span>Vexx</span>
+          <span class="badge badge-xs badge-neutral font-mono opacity-80" [title]="'Build: ' + buildDate">{{ appVersion }}</span>
+        </div>
+      } @else {
+        <div
+          class="text-center text-[9px] font-mono text-base-content/30 py-0.5 select-none"
+          [matTooltip]="'Vexx ' + appVersion + ' (' + buildDate + ')'"
+          matTooltipPosition="right"
+        >
+          {{ appVersion }}
+        </div>
+      }
+    </div>
+  </aside>
+} @else {
+  <!-- ============================================== -->
+  <!-- 2. MOBILE DRAWER CONTENT                       -->
+  <!-- ============================================== -->
+  <aside class="flex flex-col h-full bg-base-100 border-r border-base-300 select-none">
+    <!-- Mobile Header -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-base-300 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-content shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="font-bold text-sm text-base-content truncate">{{ brandName }}</span>
+          <span class="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">{{ profile.businessTypeLabel() }}</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-circle" (click)="sidebarService.closeMobile()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Mobile Nav Links -->
+    <nav class="grow px-3 py-4 overflow-y-auto flex flex-col gap-4">
+      @for (group of visibleGroups(); track group.id) {
+        <div class="flex flex-col gap-0.5">
+          <span class="px-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mb-1">
+            {{ group.title }}
+          </span>
+          @for (item of group.items; track item.id) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              (click)="onItemClick()"
+              class="menu-item"
+              [class.bg-primary/10]="item.highlight"
+              [class.text-primary]="item.highlight"
+              [class.font-semibold]="item.highlight"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span class="menu-text">{{ item.label }}</span>
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <!-- Mobile Drawer Footer with Version -->
+    <div class="p-3 border-t border-base-300 shrink-0 flex items-center justify-between text-xs text-base-content/50 font-mono">
+      <span>Vexx</span>
+      <span class="badge badge-sm badge-neutral font-mono">{{ appVersion }}</span>
+    </div>
+  </aside>
+}

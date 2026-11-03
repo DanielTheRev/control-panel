@@ -17,6 +17,8 @@ import { NotificationsService } from '../../services/notifications.service';
 import { BusinessProfileService } from '../../services/business-profile.service';
 import { ProductStoreService } from '../../states/product.state.service';
 import { MasterCatalogService, MasterCatalogProduct } from '../../services/master-catalog.service';
+import { ClientsService } from '../../services/clients.service';
+import { IClient } from '../../interfaces/client.interface';
 import { environment } from '../../../environments/environment';
 
 export interface CartItem {
@@ -52,6 +54,7 @@ export class PosComponent implements OnInit {
   public profile = inject(BusinessProfileService);
   private productState = inject(ProductStoreService);
   private masterCatalogService = inject(MasterCatalogService);
+  private clientsService = inject(ClientsService);
 
   // Catálogo Global en Mostrador POS
   showGlobalProductModal = signal<boolean>(false);
@@ -80,6 +83,22 @@ export class PosComponent implements OnInit {
   // Customer & Ticket
   customerName = signal<string>('Consumidor Final');
   currentTicketNumber = signal<string>('ORD-' + Math.floor(1000 + Math.random() * 9000));
+
+  // Cliente & Fiado / Cuenta Corriente (Libreta de Kiosco)
+  selectedClient = signal<IClient | null>(null);
+  clientSearchQuery = signal<string>('');
+  clientSearchResults = signal<IClient[]>([]);
+  isSearchingClients = signal<boolean>(false);
+  showClientSearchModal = signal<boolean>(false);
+
+  // Alta Rápida de Cliente en Mostrador
+  showCreateClientForm = signal<boolean>(false);
+  newClientName = signal<string>('');
+  newClientLastName = signal<string>('');
+  newClientPhone = signal<string>('');
+  newClientDni = signal<string>('');
+  newClientCreditLimit = signal<number>(10000);
+  isCreatingClient = signal<boolean>(false);
 
   // Search & Filters
   searchQuery = signal('');
@@ -140,7 +159,7 @@ export class PosComponent implements OnInit {
   // Weight & Fractional Sale Modal (Venta por Balanza / Peso / Fraccionado)
   showWeightModal = signal<boolean>(false);
   weightProduct = signal<any>(null);
-  weightInputMode = signal<'money' | 'weight'>('money'); // 'money' ($) o 'weight' (gramos)
+  weightInputMode = signal<'money' | 'weight'>('money');
   weightMoneyAmount = signal<number>(1000);
   weightGramsAmount = signal<number>(250);
 
@@ -169,7 +188,7 @@ export class PosComponent implements OnInit {
 
   // Payment Modal
   showPaymentModal = signal(false);
-  selectedMethod = signal<'EFECTIVO' | 'QR' | 'TRANSFERENCIA' | 'TARJETA' | 'SPLIT'>('EFECTIVO');
+  selectedMethod = signal<'EFECTIVO' | 'QR' | 'TRANSFERENCIA' | 'TARJETA' | 'SPLIT' | 'FIADO'>('EFECTIVO');
   isProcessing = signal(false);
   autoPrintAfterSale = signal<boolean>(false);
   notes = signal('');
@@ -215,7 +234,6 @@ export class PosComponent implements OnInit {
   }
 
   setupBarcodeScanner(): void {
-    // Sincronizar terminal de mostrador en la sala de WebSocket
     this.wsService.joinPosTerminal(this.terminalId());
 
     this.wsService
@@ -223,7 +241,6 @@ export class PosComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ barcode }) => {
         if (barcode) {
-          // Bip acústico de mostrador / pistola láser en parlantes de la PC
           this.soundService.playScannerBeep();
           this.notifications.info(`📷 Escaneado desde móvil: ${barcode}`);
           this.handleScannedBarcode(barcode.trim());
@@ -243,7 +260,6 @@ export class PosComponent implements OnInit {
           this.pairingLoading.set(false);
         },
         error: () => {
-          // Fallback offline con carga local
           const serverUrl = environment.apiUrl.replace(/\/api$/, '');
           const fallbackData = {
             tenantSlug: 'vura',
@@ -268,6 +284,92 @@ export class PosComponent implements OnInit {
 
   closePairingModal(): void {
     this.showPairingModal.set(false);
+  }
+
+  // Métodos de Gestión de Clientes en POS
+  openClientSearchModal(): void {
+    this.showClientSearchModal.set(true);
+    this.showCreateClientForm.set(false);
+    this.searchClients(this.clientSearchQuery());
+  }
+
+  closeClientSearchModal(): void {
+    this.showClientSearchModal.set(false);
+    this.showCreateClientForm.set(false);
+  }
+
+  searchClients(query: string = ''): void {
+    this.isSearchingClients.set(true);
+    this.clientsService.getClients({ page: 1, limit: 15, q: query.trim() || undefined }).subscribe({
+      next: (res) => {
+        this.clientSearchResults.set(res.data || []);
+        this.isSearchingClients.set(false);
+      },
+      error: (err) => {
+        this.clientSearchResults.set([]);
+        this.isSearchingClients.set(false);
+        this.notifications.error(err.error?.message || 'Error al buscar clientes en la libreta');
+      },
+    });
+  }
+
+  onClientSearchInput(): void {
+    this.searchClients(this.clientSearchQuery());
+  }
+
+  selectClient(client: IClient): void {
+    this.selectedClient.set(client);
+    const fullName = `${client.name} ${client.lastName || ''}`.trim();
+    this.customerName.set(fullName);
+    this.closeClientSearchModal();
+    this.notifications.success(`Cliente seleccionado: ${fullName}`);
+  }
+
+  clearSelectedClient(): void {
+    this.selectedClient.set(null);
+    this.customerName.set('Consumidor Final');
+    if (this.selectedMethod() === 'FIADO') {
+      this.selectedMethod.set('EFECTIVO');
+    }
+  }
+
+  toggleCreateClientForm(): void {
+    this.showCreateClientForm.update((v) => !v);
+  }
+
+  saveQuickClient(): void {
+    const name = this.newClientName().trim();
+    if (!name) {
+      this.notifications.warning('Por favor ingresá el nombre del cliente.');
+      return;
+    }
+
+    this.isCreatingClient.set(true);
+    this.clientsService
+      .createClient({
+        name,
+        lastName: this.newClientLastName().trim() || undefined,
+        phone: this.newClientPhone().trim() || undefined,
+        dni: this.newClientDni().trim() || undefined,
+        creditLimit: Number(this.newClientCreditLimit()) || 0,
+      })
+      .subscribe({
+        next: (res) => {
+          this.isCreatingClient.set(false);
+          this.selectClient(res.data);
+          this.notifications.success(`Cliente "${name}" registrado correctamente.`);
+          this.newClientName.set('');
+          this.newClientLastName.set('');
+          this.newClientPhone.set('');
+          this.newClientDni.set('');
+          this.newClientCreditLimit.set(10000);
+          this.showCreateClientForm.set(false);
+        },
+        error: (err) => {
+          this.isCreatingClient.set(false);
+          this.notifications.error(err.error?.message || 'Error al registrar cliente');
+        },
+      });
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -309,7 +411,6 @@ export class PosComponent implements OnInit {
   handleScannedBarcode(barcode: string): void {
     if (!barcode) return;
 
-    // 1. Buscar en el catálogo local cargado
     const localProduct = this.products().find((p) => {
       if (p.barcode === barcode) return true;
       return p.variants?.some((v: any) => v.barcode === barcode);
@@ -327,7 +428,6 @@ export class PosComponent implements OnInit {
       return;
     }
 
-    // 2. Buscar en el backend mediante el endpoint de tienda
     this.productService.getProductByBarcode(barcode).subscribe({
       next: ({ product, matchedVariant }) => {
         if (product) {
@@ -372,7 +472,7 @@ export class PosComponent implements OnInit {
       formData.append('model', gp.name);
       formData.append('category', gp.category || 'Almacén');
       formData.append('brand', gp.brand || 'Genérico');
-      formData.append('price', String(Math.round(price * 0.7))); // Costo estimado
+      formData.append('price', String(Math.round(price * 0.7)));
       formData.append('status', 'published');
       formData.append('barcode', gp.barcode);
       formData.append('isSoldByWeight', String(!!gp.isSoldByWeight));
@@ -551,7 +651,7 @@ export class PosComponent implements OnInit {
   }
 
   addQuickWeightMoney(delta: number): void {
-    this.weightMoneyAmount.update(curr => Math.max(0, curr + delta));
+    this.weightMoneyAmount.update((curr) => Math.max(0, curr + delta));
   }
 
   setQuickWeightGrams(grams: number): void {
@@ -559,7 +659,7 @@ export class PosComponent implements OnInit {
   }
 
   addQuickWeightGrams(delta: number): void {
-    this.weightGramsAmount.update(curr => Math.max(0, curr + delta));
+    this.weightGramsAmount.update((curr) => Math.max(0, curr + delta));
   }
 
   weightKeypadPress(key: string): void {
@@ -625,7 +725,7 @@ export class PosComponent implements OnInit {
       totalMoneyAmount: finalMoney,
     };
 
-    this.cart.update(curr => [...curr, newItem]);
+    this.cart.update((curr) => [...curr, newItem]);
     this.soundService.playScannerBeep();
     this.notifications.success(`Agregado: ${finalGrams}g de "${product.model}" por $${finalMoney.toLocaleString('es-AR')}`);
     this.closeWeightModal();
@@ -672,7 +772,6 @@ export class PosComponent implements OnInit {
         this.cart.set(currentCart);
         return;
       }
-      // Re-abrir modal para editar peso o monto
       this.openWeightModal(item.product, item.totalMoneyAmount, item.weightGrams);
       currentCart.splice(index, 1);
       this.cart.set(currentCart);
@@ -734,7 +833,7 @@ export class PosComponent implements OnInit {
     }
   }
 
-  selectMethod(method: 'EFECTIVO' | 'QR' | 'TRANSFERENCIA' | 'TARJETA' | 'SPLIT'): void {
+  selectMethod(method: 'EFECTIVO' | 'QR' | 'TRANSFERENCIA' | 'TARJETA' | 'SPLIT' | 'FIADO'): void {
     this.selectedMethod.set(method);
     if (method === 'EFECTIVO') {
       this.cashReceived.set(this.total());
@@ -743,6 +842,10 @@ export class PosComponent implements OnInit {
     } else if (method === 'SPLIT') {
       this.splitPayments.set([]);
       this.splitAmount.set(this.total());
+    } else if (method === 'FIADO') {
+      if (!this.selectedClient()) {
+        this.openClientSearchModal();
+      }
     }
   }
 
@@ -827,6 +930,26 @@ export class PosComponent implements OnInit {
       finalSplitPayments = [{ method: 'Transferencia', amount: this.total() }];
     } else if (method === 'TARJETA') {
       finalSplitPayments = [{ method: 'Tarjeta', amount: this.total() }];
+    } else if (method === 'FIADO') {
+      const client = this.selectedClient();
+      if (!client) {
+        this.notifications.warning('Para fiar o anotar en libreta, seleccioná un cliente registrado.');
+        this.openClientSearchModal();
+        return;
+      }
+      const account = client.currentAccount;
+      if (account && account.isCreditAllowed === false) {
+        this.notifications.error(`El cliente ${client.name} tiene el crédito / fiado SUSPENDIDO.`);
+        return;
+      }
+      const currentBalance = account?.balance || 0;
+      const creditLimit = account?.creditLimit || 0;
+      if (creditLimit > 0 && (currentBalance + this.total()) > creditLimit) {
+        const available = Math.max(0, creditLimit - currentBalance);
+        this.notifications.error(`La compra supera el límite de crédito del cliente. Disponible: $${available.toLocaleString('es-AR')}`);
+        return;
+      }
+      finalSplitPayments = [{ method: 'CURRENT_ACCOUNT', amount: this.total() }];
     } else if (method === 'SPLIT') {
       if (this.getRemainingSplitAmount() > 0) {
         this.notifications.error('El total de los pagos divididos no cubre el total de la orden.');
@@ -837,7 +960,7 @@ export class PosComponent implements OnInit {
 
     this.isProcessing.set(true);
 
-    const saleData = {
+    const saleData: { items: any[]; splitPayments: any[]; notes?: string; userId?: string } = {
       items: this.cart().map((item) => ({
         _id: item.product._id,
         sku: item.variant?.sku || '',
@@ -846,6 +969,10 @@ export class PosComponent implements OnInit {
       splitPayments: finalSplitPayments,
       notes: this.notes(),
     };
+
+    if (this.selectedClient()?._id) {
+      saleData.userId = this.selectedClient()!._id;
+    }
 
     try {
       const res = await this.ordersService.registerLocalSale(saleData);
@@ -895,6 +1022,7 @@ export class PosComponent implements OnInit {
     this.lastCompletedOrder.set(null);
     this.activeTab.set('catalog');
     this.searchQuery.set('');
+    this.clearSelectedClient();
     this.loadInitialCatalog();
   }
 }

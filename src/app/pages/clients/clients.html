@@ -1,252 +1,667 @@
 <app-page-layout>
-  <app-page-header header title="Clientes" [withMB]="false" [subtitle]="
-    isLoading()
-      ? 'Cargando clientes...'
-      : pagination().total + ' clientes registrados'
-  ">
-    <div actions class="flex items-center gap-2">
-      <!-- Search -->
-      <label class="input input-sm input-bordered flex items-center gap-2 focus-within:outline-none w-52">
-        <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
-        <input type="text" class="grow text-xs" placeholder="Buscar por nombre o email..."
-          [value]="search()"
-          (input)="updateSearch($any($event.target).value)" />
-        @if (search()) {
-        <button class="btn btn-ghost btn-xs btn-circle" (click)="clearSearch()">
-          <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
-        </button>
-        }
-      </label>
+  <app-page-header
+    header
+    title="Clientes & Cuentas Corrientes"
+    [withMB]="false"
+    [subtitle]="
+      activeTab() === 'all'
+        ? (isLoading() ? 'Cargando clientes...' : pagination().total + ' clientes registrados')
+        : (isLoadingDebtors() ? 'Calculando saldos...' : debtorsData().debtorCount + ' clientes con deuda activa')
+    "
+  >
+    <!-- Sub-Menú Tabs -->
+    <div sub-menu class="inline-flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs">
+      <button
+        type="button"
+        (click)="setTab('all')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [class.btn-primary]="activeTab() === 'all'"
+        [class.shadow-xs]="activeTab() === 'all'"
+        [class.btn-ghost]="activeTab() !== 'all'"
+        [class.text-base-content]="activeTab() !== 'all'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">people</mat-icon>
+        <span>Todos los Clientes</span>
+        <span class="badge badge-xs bg-base-200 text-base-content/70 font-mono">{{ pagination().total }}</span>
+      </button>
 
-      <div class="flex gap-1">
-        <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-sm btn-ghost btn-square" title="Actualizar">
+      <button
+        type="button"
+        (click)="setTab('debtors')"
+        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
+        [class.btn-primary]="activeTab() === 'debtors'"
+        [class.shadow-xs]="activeTab() === 'debtors'"
+        [class.btn-ghost]="activeTab() !== 'debtors'"
+        [class.text-base-content]="activeTab() !== 'debtors'"
+      >
+        <mat-icon class="text-[13px]! w-3.5! h-3.5!">account_balance_wallet</mat-icon>
+        <span>Cuentas Corrientes & Fiados</span>
+        @if (debtorsData().debtorCount > 0) {
+          <span class="badge badge-xs badge-error text-white font-mono font-bold animate-pulse">
+            {{ debtorsData().debtorCount }}
+          </span>
+        }
+      </button>
+    </div>
+
+    <!-- Actions Header -->
+    <div actions class="flex items-center gap-2">
+      @if (activeTab() === 'all') {
+        <!-- Search Clientes Generales -->
+        <label class="input input-sm input-bordered flex items-center gap-2 focus-within:outline-none w-52 rounded-xl">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
+          <input
+            type="text"
+            class="grow text-xs"
+            placeholder="Buscar por nombre o email..."
+            [value]="search()"
+            (input)="updateSearch($any($event.target).value)"
+          />
+          @if (search()) {
+            <button class="btn btn-ghost btn-xs btn-circle" (click)="clearSearch()">
+              <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+            </button>
+          }
+        </label>
+
+        <button (click)="refreshData()" [disabled]="isLoading()" class="btn btn-sm btn-ghost btn-square rounded-xl" title="Actualizar">
           <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading()">refresh</mat-icon>
         </button>
-      </div>
+      } @else {
+        <!-- Search Fiados / Cuentas Corrientes -->
+        <label class="input input-sm input-bordered flex items-center gap-2 focus-within:outline-none w-56 rounded-xl">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">search</mat-icon>
+          <input
+            type="text"
+            class="grow text-xs"
+            placeholder="Buscar deudor por nombre o tel..."
+            [value]="debtorsSearch()"
+            (input)="updateDebtorsSearch($any($event.target).value)"
+          />
+          @if (debtorsSearch()) {
+            <button class="btn btn-ghost btn-xs btn-circle" (click)="clearDebtorsSearch()">
+              <mat-icon class="text-[12px]! w-3! h-3!">close</mat-icon>
+            </button>
+          }
+        </label>
+
+        <button (click)="loadDebtors(debtorsSearch())" [disabled]="isLoadingDebtors()" class="btn btn-sm btn-ghost btn-square rounded-xl" title="Actualizar saldos">
+          <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoadingDebtors()">refresh</mat-icon>
+        </button>
+      }
     </div>
   </app-page-header>
 
   <ng-container content>
-    <!-- Error -->
-    @if (hasError()) {
-    <div class="flex flex-col items-center justify-center py-16 gap-3">
-      <div class="bg-error/10 rounded-full p-4">
-        <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
-      </div>
-      <h2 class="text-base font-bold text-base-content">Error al cargar clientes</h2>
-      <p class="text-sm text-base-content/50">No se pudieron cargar los datos. Intentá de nuevo.</p>
-      <button class="btn btn-sm btn-primary" (click)="refreshData()">
-        <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon> Reintentar
-      </button>
-    </div>
-    }
-
-    <!-- Loading Skeleton -->
-    @if (isLoading() && !hasData()) {
-    <div class="p-3 space-y-2">
-      @for (i of [1,2,3,4,5,6,7,8]; track i) {
-      <div class="skeleton w-full h-12 rounded-lg"></div>
+    <!-- ========================================================================= -->
+    <!-- TAB 1: TODOS LOS CLIENTES                                                 -->
+    <!-- ========================================================================= -->
+    @if (activeTab() === 'all') {
+      <!-- Error -->
+      @if (hasError()) {
+        <div class="flex flex-col items-center justify-center py-16 gap-3">
+          <div class="bg-error/10 rounded-full p-4">
+            <mat-icon class="text-4xl! w-10! h-10! text-error">error_outline</mat-icon>
+          </div>
+          <h2 class="text-base font-bold text-base-content">Error al cargar clientes</h2>
+          <p class="text-sm text-base-content/50">No se pudieron cargar los datos. Intentá de nuevo.</p>
+          <button class="btn btn-sm btn-primary rounded-xl" (click)="refreshData()">
+            <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon> Reintentar
+          </button>
+        </div>
       }
-    </div>
+
+      <!-- Loading Skeleton -->
+      @if (isLoading() && !hasData()) {
+        <div class="p-3 space-y-2">
+          @for (i of [1,2,3,4,5,6]; track i) {
+            <div class="skeleton w-full h-12 rounded-xl"></div>
+          }
+        </div>
+      }
+
+      <!-- Empty State -->
+      @if (!isLoading() && !hasData() && !hasError()) {
+        <div class="flex flex-col items-center justify-center py-16 gap-3">
+          <div class="bg-base-200 rounded-full p-5">
+            <mat-icon class="text-5xl! w-12! h-12! text-base-content/30">people_outline</mat-icon>
+          </div>
+          <h2 class="text-base font-bold text-base-content">Sin clientes</h2>
+          <p class="text-sm text-base-content/50 max-w-xs text-center">
+            @if (search()) {
+              No se encontraron clientes con "{{ search() }}".
+            } @else {
+              No hay clientes registrados todavía.
+            }
+          </p>
+          @if (search()) {
+            <button class="btn btn-sm btn-ghost rounded-xl" (click)="clearSearch()">
+              <mat-icon class="text-[16px]! w-4! h-4!">filter_alt_off</mat-icon> Limpiar búsqueda
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Clients Table -->
+      @if (hasData()) {
+        <div class="flex flex-col flex-1 min-h-0">
+          <div class="flex flex-col flex-1 min-h-0 overflow-auto mx-3 mt-3">
+            <div class="rounded-2xl border border-base-200 bg-base-100 overflow-hidden shadow-xs">
+              <div class="overflow-x-auto">
+                <table class="table table-sm w-full">
+                  <thead>
+                    <tr class="bg-base-200/50">
+                      <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider pl-4 py-2.5">Cliente</th>
+                      <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Email / Teléfono</th>
+                      <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Registro</th>
+                      <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5 text-right pr-4">Saldo Fiado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (client of clients(); track client._id) {
+                      <tr class="hover:bg-base-200/30 transition-colors border-b border-base-200 last:border-0">
+                        <td class="pl-4 py-2.5">
+                          <div class="flex items-center gap-2.5">
+                            @if (client.profilePhoto) {
+                              <img [src]="client.profilePhoto" [alt]="client.name" class="w-8 h-8 rounded-xl object-cover shrink-0" />
+                            } @else {
+                              <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                                {{ getInitials(client.name) }}
+                              </div>
+                            }
+                            <div class="min-w-0">
+                              <span class="text-xs font-bold text-base-content block truncate">{{ client.name }} {{ client.lastName || '' }}</span>
+                              @if (client.dni) {
+                                <span class="text-[10px] text-base-content/40 font-mono">DNI: {{ client.dni }}</span>
+                              }
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-2.5 text-xs text-base-content/70">
+                          <div>{{ client.email }}</div>
+                          @if (client.phone) {
+                            <span class="text-[11px] text-base-content/50 font-mono">{{ client.phone }}</span>
+                          }
+                        </td>
+                        <td class="py-2.5 text-xs text-base-content/60 font-mono">
+                          {{ client.createdAt | date:'dd/MM/yyyy' }}
+                        </td>
+                        <td class="py-2.5 text-right pr-4">
+                          @if ((client.currentAccount?.balance || 0) > 0) {
+                            <span class="badge badge-error badge-sm font-bold text-white tabular-nums">
+                              ${{ (client.currentAccount?.balance || 0) | number:'1.0-0' }}
+                            </span>
+                          } @else {
+                            <span class="badge badge-ghost badge-sm text-base-content/40 text-[10px]">Al día</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     }
 
-    <!-- Empty State -->
-    @if (!isLoading() && !hasData() && !hasError()) {
-    <div class="flex flex-col items-center justify-center py-16 gap-3">
-      <div class="bg-base-200 rounded-full p-5">
-        <mat-icon class="text-5xl! w-12! h-12! text-base-content/30">people_outline</mat-icon>
-      </div>
-      <h2 class="text-base font-bold text-base-content">Sin clientes</h2>
-      <p class="text-sm text-base-content/50 max-w-xs text-center">
-        @if (search()) {
-          No se encontraron clientes con "{{ search() }}".
-        } @else {
-          No hay clientes registrados todavía.
+    <!-- ========================================================================= -->
+    <!-- TAB 2: CUENTAS CORRIENTES & FIADOS ("LIBRETA DEL KIOSCO")                 -->
+    <!-- ========================================================================= -->
+    @if (activeTab() === 'debtors') {
+      <div class="p-3 sm:p-5 w-full max-w-6xl mx-auto space-y-5">
+        <!-- Banner Métrico Superior -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Tarjeta 1: Total en la Calle -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 p-4 sm:p-5 shadow-xs flex items-center justify-between">
+            <div class="space-y-1">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Total Fiado / En la Calle</span>
+              <div class="text-2xl sm:text-3xl font-black text-error tabular-nums">
+                ${{ debtorsData().totalDebt | number:'1.0-0' }}
+              </div>
+              <p class="text-[11px] text-base-content/60">Saldo total pendiente de cobro acumulado.</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center shrink-0">
+              <mat-icon class="text-[28px]! w-7! h-7!">account_balance_wallet</mat-icon>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Cantidad de Deudores -->
+          <div class="bg-base-100 rounded-2xl border border-base-200 p-4 sm:p-5 shadow-xs flex items-center justify-between">
+            <div class="space-y-1">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Clientes con Saldo Deudor</span>
+              <div class="text-2xl sm:text-3xl font-black text-base-content tabular-nums">
+                {{ debtorsData().debtorCount }}
+              </div>
+              <p class="text-[11px] text-base-content/60">Vecinos o clientes con compras fiadas abiertas.</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <mat-icon class="text-[28px]! w-7! h-7!">people</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        @if (isLoadingDebtors()) {
+          <div class="space-y-2">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="skeleton w-full h-16 rounded-2xl"></div>
+            }
+          </div>
         }
-      </p>
-      @if (search()) {
-      <button class="btn btn-sm btn-ghost" (click)="clearSearch()">
-        <mat-icon class="text-[16px]! w-4! h-4!">filter_alt_off</mat-icon> Limpiar búsqueda
-      </button>
-      }
-    </div>
+
+        <!-- Empty State Fiados -->
+        @if (!isLoadingDebtors() && debtorsData().debtors.length === 0) {
+          <div class="bg-base-100 rounded-2xl border border-base-200 p-12 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-success/10 text-success flex items-center justify-center mx-auto">
+              <mat-icon class="text-3xl! w-8! h-8!">check_circle</mat-icon>
+            </div>
+            <h3 class="text-base font-bold text-base-content">¡Excelente! No hay fiados pendientes</h3>
+            <p class="text-xs text-base-content/60 max-w-sm mx-auto">
+              Todos tus clientes están al día con sus pagos o no registran deuda en su cuenta corriente.
+            </p>
+          </div>
+        }
+
+        <!-- Tabla de Deudores -->
+        @if (!isLoadingDebtors() && debtorsData().debtors.length > 0) {
+          <div class="bg-base-100 rounded-2xl border border-base-200 overflow-hidden shadow-xs">
+            <div class="overflow-x-auto">
+              <table class="table w-full">
+                <thead>
+                  <tr class="bg-base-200/50 text-base-content/60">
+                    <th class="text-[10px] font-bold uppercase tracking-wider pl-4">Cliente</th>
+                    <th class="text-[10px] font-bold uppercase tracking-wider">Teléfono / WhatsApp</th>
+                    <th class="text-[10px] font-bold uppercase tracking-wider">Saldo Pendiente</th>
+                    <th class="text-[10px] font-bold uppercase tracking-wider">Límite Permitido</th>
+                    <th class="text-[10px] font-bold uppercase tracking-wider text-right pr-4">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (debtor of debtorsData().debtors; track debtor._id) {
+                    <tr class="hover:bg-base-200/30 transition-colors border-b border-base-200 last:border-0">
+                      <!-- Nombre -->
+                      <td class="pl-4 py-3">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-9 h-9 rounded-xl bg-error/10 text-error flex items-center justify-center text-xs font-bold shrink-0">
+                            {{ getInitials(debtor.name) }}
+                          </div>
+                          <div>
+                            <span class="text-xs font-bold text-base-content block">{{ debtor.name }} {{ debtor.lastName || '' }}</span>
+                            <span class="text-[10px] text-base-content/40 block">{{ debtor.email }}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Teléfono -->
+                      <td class="py-3 text-xs font-mono">
+                        @if (debtor.phone) {
+                          <span class="text-base-content/80">{{ debtor.phone }}</span>
+                        } @else {
+                          <span class="text-base-content/30 italic text-[11px]">Sin teléfono</span>
+                        }
+                      </td>
+
+                      <!-- Saldo Deudor -->
+                      <td class="py-3">
+                        <span class="text-sm font-black text-error tabular-nums block">
+                          ${{ debtor.balance | number:'1.0-0' }}
+                        </span>
+                        @if (!debtor.isCreditAllowed) {
+                          <span class="badge badge-xs badge-error text-white text-[9px] font-bold">Crédito Suspendido</span>
+                        }
+                      </td>
+
+                      <!-- Límite de Crédito -->
+                      <td class="py-3 text-xs text-base-content/70 tabular-nums">
+                        @if (debtor.creditLimit && debtor.creditLimit > 0) {
+                          <span>${{ debtor.creditLimit | number:'1.0-0' }}</span>
+                        } @else {
+                          <span class="text-base-content/40 italic">Sin límite</span>
+                        }
+                      </td>
+
+                      <!-- Acciones -->
+                      <td class="py-3 text-right pr-4">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <!-- Botón Cobrar -->
+                          <button
+                            type="button"
+                            (click)="openPaymentModal(debtor)"
+                            class="btn btn-xs btn-success font-bold text-white rounded-lg gap-1 shadow-2xs"
+                            title="Registrar cobro o entrega"
+                          >
+                            <mat-icon class="text-[14px]! w-3.5! h-3.5!">paid</mat-icon>
+                            <span>Cobrar</span>
+                          </button>
+
+                          <!-- Botón Ver Libreta / Historial -->
+                          <button
+                            type="button"
+                            (click)="openHistoryModal(debtor)"
+                            class="btn btn-xs btn-ghost border border-base-200 rounded-lg gap-1"
+                            title="Ver libreta e historial de compras fiadas"
+                          >
+                            <mat-icon class="text-[14px]! w-3.5! h-3.5!">menu_book</mat-icon>
+                            <span>Libreta</span>
+                          </button>
+
+                          <!-- Botón Recordatorio WhatsApp -->
+                          @if (debtor.phone) {
+                            <button
+                              type="button"
+                              (click)="sendWhatsAppReminder(debtor)"
+                              class="btn btn-xs btn-ghost text-emerald-600 hover:bg-emerald-500/10 rounded-lg"
+                              title="Enviar recordatorio por WhatsApp"
+                            >
+                              <mat-icon class="text-[15px]! w-4! h-4!">chat</mat-icon>
+                            </button>
+                          }
+
+                          <!-- Botón Configurar Límite -->
+                          <button
+                            type="button"
+                            (click)="openCreditLimitModal(debtor)"
+                            class="btn btn-xs btn-ghost text-base-content/50 hover:text-base-content rounded-lg"
+                            title="Modificar límite de fiado"
+                          >
+                            <mat-icon class="text-[15px]! w-4! h-4!">tune</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
     }
+  </ng-container>
+</app-page-layout>
 
-    <!-- Clients Table -->
-    @if (hasData()) {
-    <div class="flex flex-col flex-1 min-h-0">
+<!-- ========================================================================= -->
+<!-- MODAL: REGISTRAR COBRO / ENTREGA DE DINERO                                -->
+<!-- ========================================================================= -->
+@if (selectedDebtorForPayment()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-md rounded-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-base-200">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-success/10 text-success flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">payments</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Registrar Cobro / Abono</h3>
+            <p class="text-xs text-base-content/50">{{ selectedDebtorForPayment()?.name }} {{ selectedDebtorForPayment()?.lastName }}</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="closePaymentModal()">
+          <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+        </button>
+      </div>
 
-      <!-- Desktop Table: md+ -->
-      <div class="hidden md:flex flex-col flex-1 min-h-0 overflow-auto mx-3 mt-3">
-        <div class="rounded-xl border border-base-300 overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="table table-sm w-full">
+      <!-- Saldo Actual y Botón Pagar Total -->
+      <div class="p-3.5 rounded-xl bg-error/5 border border-error/15 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold text-error uppercase block">Deuda Pendiente</span>
+          <span class="text-lg font-black text-error tabular-nums">${{ selectedDebtorForPayment()?.balance | number:'1.0-0' }}</span>
+        </div>
+        <button type="button" (click)="setFullPayment()" class="btn btn-xs btn-outline btn-error rounded-lg font-bold">
+          Pagar Total
+        </button>
+      </div>
+
+      <!-- Formulario de Cobro -->
+      <div class="space-y-3">
+        <!-- Monto a abonar -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-base-content block">Monto a Abonar ($)</label>
+          <input
+            type="number"
+            class="input input-bordered w-full text-base font-bold tabular-nums rounded-xl"
+            [ngModel]="paymentAmount()"
+            (ngModelChange)="paymentAmount.set($event)"
+            min="1"
+            [max]="selectedDebtorForPayment()?.balance || 999999"
+          />
+        </div>
+
+        <!-- Método de Pago -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-base-content block">Medio de Pago</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              (click)="paymentMethod.set('CASH')"
+              class="btn btn-sm rounded-xl font-bold gap-1"
+              [class.btn-primary]="paymentMethod() === 'CASH'"
+              [class.btn-ghost]="paymentMethod() !== 'CASH'"
+              [class.border-base-200]="paymentMethod() !== 'CASH'"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">payments</mat-icon> Efectivo
+            </button>
+            <button
+              type="button"
+              (click)="paymentMethod.set('TRANSFER')"
+              class="btn btn-sm rounded-xl font-bold gap-1"
+              [class.btn-primary]="paymentMethod() === 'TRANSFER'"
+              [class.btn-ghost]="paymentMethod() !== 'TRANSFER'"
+              [class.border-base-200]="paymentMethod() !== 'TRANSFER'"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">account_balance</mat-icon> Transf.
+            </button>
+            <button
+              type="button"
+              (click)="paymentMethod.set('CARD')"
+              class="btn btn-sm rounded-xl font-bold gap-1"
+              [class.btn-primary]="paymentMethod() === 'CARD'"
+              [class.btn-ghost]="paymentMethod() !== 'CARD'"
+              [class.border-base-200]="paymentMethod() !== 'CARD'"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">credit_card</mat-icon> Tarjeta
+            </button>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-base-content block">Notas / Observaciones (opcional)</label>
+          <input
+            type="text"
+            class="input input-sm input-bordered w-full text-xs rounded-xl"
+            placeholder="Ej: Entrega a cuenta en billetes..."
+            [ngModel]="paymentNotes()"
+            (ngModelChange)="paymentNotes.set($event)"
+          />
+        </div>
+      </div>
+
+      <!-- Acciones Modal -->
+      <div class="modal-action pt-2 border-t border-base-200">
+        <button type="button" class="btn btn-sm btn-ghost rounded-xl" (click)="closePaymentModal()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-success text-white font-bold rounded-xl gap-1"
+          [disabled]="isSubmittingPayment() || paymentAmount() <= 0"
+          (click)="submitPayment()"
+        >
+          @if (isSubmittingPayment()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          } @else {
+            <mat-icon class="text-[16px]! w-4! h-4!">check</mat-icon>
+          }
+          <span>Confirmar Cobro</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODAL: HISTORIAL DE LIBRETA / MOVIMIENTOS                                  -->
+<!-- ========================================================================= -->
+@if (selectedDebtorForHistory()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-2xl rounded-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-base-200">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">menu_book</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Libreta de Cuenta Corriente</h3>
+            <p class="text-xs text-base-content/50">{{ selectedDebtorForHistory()?.name }} {{ selectedDebtorForHistory()?.lastName }}</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="closeHistoryModal()">
+          <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+        </button>
+      </div>
+
+      @if (isLoadingHistory()) {
+        <div class="p-8 text-center space-y-2">
+          <span class="loading loading-spinner loading-md text-primary"></span>
+          <p class="text-xs text-base-content/50">Cargando movimientos de la libreta...</p>
+        </div>
+      } @else {
+        <div class="space-y-4">
+          <!-- Saldo Actual -->
+          <div class="flex items-center justify-between p-3.5 rounded-xl bg-base-200/50">
+            <div>
+              <span class="text-[10px] font-bold text-base-content/40 uppercase block">Saldo Actual Adeudado</span>
+              <span class="text-xl font-black text-error tabular-nums">
+                ${{ clientAccountDetails()?.client?.currentAccount?.balance | number:'1.0-0' }}
+              </span>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] font-bold text-base-content/40 uppercase block">Límite Permitido</span>
+              <span class="text-xs font-bold text-base-content tabular-nums">
+                {{ clientAccountDetails()?.client?.currentAccount?.creditLimit ? ('$' + (clientAccountDetails()?.client?.currentAccount?.creditLimit | number:'1.0-0')) : 'Sin límite' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Tabla de Movimientos -->
+          <div class="max-h-72 overflow-y-auto rounded-xl border border-base-200">
+            <table class="table table-xs w-full">
               <thead>
-                <tr class="bg-base-200/60">
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider pl-4 py-2.5">Cliente</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Email</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Registro</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Método</th>
-                  <th class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider py-2.5">Estado</th>
+                <tr class="bg-base-200/60 sticky top-0">
+                  <th class="py-2 pl-3">Fecha</th>
+                  <th class="py-2">Tipo / Concepto</th>
+                  <th class="py-2 text-right">Monto</th>
+                  <th class="py-2 text-right pr-3">Nuevo Saldo</th>
                 </tr>
               </thead>
               <tbody>
-                @for (client of clients(); track client._id) {
-                <tr class="hover:bg-base-200/40 transition-colors border-b border-base-200 last:border-0">
-
-                  <!-- Cliente -->
-                  <td class="pl-4 py-2.5">
-                    <div class="flex items-center gap-2.5">
-                      @if (client.profilePhoto) {
-                      <div class="w-8 h-8 rounded-full overflow-hidden shrink-0">
-                        <img [src]="client.profilePhoto" [alt]="client.name" class="w-full h-full object-cover" />
+                @for (mov of clientAccountDetails()?.movements; track mov._id) {
+                  <tr class="border-b border-base-200 last:border-0 hover:bg-base-200/30">
+                    <td class="py-2 pl-3 text-base-content/60 font-mono text-[11px]">
+                      {{ mov.createdAt | date:'dd/MM/yy HH:mm' }}
+                    </td>
+                    <td class="py-2">
+                      <div class="flex items-center gap-1.5">
+                        @if (mov.type === 'CHARGE') {
+                          <span class="badge badge-xs badge-error text-white font-bold">Compra</span>
+                        } @else if (mov.type === 'PAYMENT') {
+                          <span class="badge badge-xs badge-success text-white font-bold">Abono</span>
+                        } @else {
+                          <span class="badge badge-xs badge-neutral font-bold">Ajuste</span>
+                        }
+                        <span class="text-xs text-base-content/80">{{ mov.notes }}</span>
                       </div>
-                      } @else {
-                      <div class="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
-                        <span class="text-[11px] font-bold text-primary">
-                          {{ getInitials(client.name) }}
-                        </span>
-                      </div>
-                      }
-                      <span class="font-semibold text-xs text-base-content leading-tight truncate max-w-[200px]">
-                        {{ client.name }}
-                      </span>
-                    </div>
-                  </td>
-
-                  <!-- Email -->
-                  <td class="py-2.5">
-                    <span class="text-xs text-base-content/60 truncate max-w-[220px] block">{{ client.email }}</span>
-                  </td>
-
-                  <!-- Registro -->
-                  <td class="py-2.5">
-                    <div class="flex flex-col">
-                      <span class="text-xs text-base-content">{{ client.createdAt | date:'dd/MM/yy' }}</span>
-                      <span class="text-[10px] text-base-content/40">{{ client.createdAt | date:'HH:mm' }}</span>
-                    </div>
-                  </td>
-
-                  <!-- Método de login -->
-                  <td class="py-2.5">
-                    @if (client.googleID) {
-                    <div class="flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      <span class="text-[11px] text-base-content/50">Google</span>
-                    </div>
-                    } @else {
-                    <div class="flex items-center gap-1.5">
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5! text-base-content/40">email</mat-icon>
-                      <span class="text-[11px] text-base-content/50">Email</span>
-                    </div>
-                    }
-                  </td>
-
-                  <!-- Estado -->
-                  <td class="py-2.5">
-                    @if (client.isActive) {
-                    <span class="badge badge-xs border-0 bg-green-100 text-green-800 font-medium">Activo</span>
-                    } @else {
-                    <span class="badge badge-xs border-0 bg-red-100 text-red-800 font-medium">Inactivo</span>
-                    }
-                  </td>
-
-                </tr>
+                    </td>
+                    <td class="py-2 text-right font-black tabular-nums text-xs"
+                      [class.text-error]="mov.type === 'CHARGE'"
+                      [class.text-success]="mov.type === 'PAYMENT'"
+                    >
+                      {{ mov.type === 'PAYMENT' ? '-' : '+' }}${{ mov.amount | number:'1.0-0' }}
+                    </td>
+                    <td class="py-2 text-right pr-3 font-mono text-xs tabular-nums text-base-content/70">
+                      ${{ mov.newBalance | number:'1.0-0' }}
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
           </div>
         </div>
-      </div>
+      }
 
-      <!-- Mobile Cards: < md -->
-      <div class="flex md:hidden flex-col flex-1 min-h-0 bg-base-200">
-        <div class="overflow-y-auto flex-1 min-h-0 p-2">
-          <div class="grid grid-cols-1 gap-2 content-start">
-            @for (client of clients(); track client._id) {
-            <div class="flex items-center gap-3 p-3 rounded-xl border border-base-300 bg-base-100 shadow-sm">
-              <!-- Avatar -->
-              @if (client.profilePhoto) {
-              <div class="w-10 h-10 rounded-full overflow-hidden shrink-0">
-                <img [src]="client.profilePhoto" [alt]="client.name" class="w-full h-full object-cover" />
-              </div>
-              } @else {
-              <div class="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center shrink-0">
-                <span class="text-xs font-bold text-primary">
-                  {{ getInitials(client.name) }}
-                </span>
-              </div>
-              }
-
-              <!-- Info -->
-              <div class="flex flex-col flex-1 min-w-0">
-                <span class="font-semibold text-sm text-base-content leading-tight truncate">{{ client.name }}</span>
-                <span class="text-[11px] text-base-content/40 truncate">{{ client.email }}</span>
-              </div>
-
-              <!-- Right side -->
-              <div class="flex flex-col items-end gap-1 shrink-0">
-                <span class="text-[10px] text-base-content/40">{{ client.createdAt | date:'dd/MM/yy' }}</span>
-                <div class="flex items-center gap-1">
-                  @if (client.googleID) {
-                  <svg class="w-3 h-3" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  } @else {
-                  <mat-icon class="text-[12px]! w-3! h-3! text-base-content/30">email</mat-icon>
-                  }
-                  @if (client.isActive) {
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  } @else {
-                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                  }
-                </div>
-              </div>
-            </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="shrink-0 px-3 py-2 flex justify-between items-center border-t border-base-200">
-        <span class="text-xs text-base-content/40">
-          {{ (pagination().page - 1) * pagination().limit + 1 }}–{{ Math.min(pagination().page * pagination().limit, pagination().total) }}
-          de {{ pagination().total }}
-        </span>
-        <div class="flex items-center gap-1">
-          @for (p of getPageNumbers(); track p) {
-          <button
-            class="btn btn-xs"
-            [class.btn-primary]="p === pagination().page"
-            [class.btn-ghost]="p !== pagination().page"
-            (click)="changePage(p)">
-            {{ p }}
-          </button>
-          }
-        </div>
-        <div class="join">
-          <button class="join-item btn btn-xs btn-ghost" [disabled]="pagination().page === 1"
-            (click)="changePage(pagination().page - 1)">
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_left</mat-icon>
-          </button>
-          <button class="join-item btn btn-xs btn-ghost"
-            [disabled]="pagination().page === pagination().totalPages"
-            (click)="changePage(pagination().page + 1)">
-            <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
-          </button>
-        </div>
+      <div class="modal-action pt-2 border-t border-base-200">
+        <button type="button" class="btn btn-sm btn-ghost rounded-xl" (click)="closeHistoryModal()">Cerrar</button>
       </div>
     </div>
-    }
-  </ng-container>
+  </div>
+}
 
-</app-page-layout>
+<!-- ========================================================================= -->
+<!-- MODAL: CONFIGURAR LÍMITE DE CRÉDITO Y PERMISO DE FIAR                      -->
+<!-- ========================================================================= -->
+@if (selectedDebtorForLimit()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-sm rounded-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-base-200">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <mat-icon class="text-[20px]! w-5! h-5!">tune</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-base-content">Configuración de Fiado</h3>
+            <p class="text-xs text-base-content/50">{{ selectedDebtorForLimit()?.name }}</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="closeCreditLimitModal()">
+          <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Input Límite -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-base-content block">Límite de Crédito ($)</label>
+          <input
+            type="number"
+            class="input input-bordered w-full text-base font-bold tabular-nums rounded-xl"
+            [ngModel]="creditLimitInput()"
+            (ngModelChange)="creditLimitInput.set($event)"
+            min="0"
+            placeholder="0 = Sin límite"
+          />
+          <p class="text-[11px] text-base-content/50">Ingresá 0 para otorgar fiado ilimitado sin tope.</p>
+        </div>
+
+        <!-- Toggle Permitir Fiado -->
+        <div class="p-3 rounded-xl bg-base-200/50 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-base-content block">Habilitar Cuenta Corriente</span>
+            <span class="text-[10px] text-base-content/50">Si lo desactivás, no podrá fiar en mostrador.</span>
+          </div>
+          <input
+            type="checkbox"
+            class="toggle toggle-primary toggle-sm"
+            [checked]="isCreditAllowedInput()"
+            (change)="isCreditAllowedInput.set($any($event.target).checked)"
+          />
+        </div>
+      </div>
+
+      <div class="modal-action pt-2 border-t border-base-200">
+        <button type="button" class="btn btn-sm btn-ghost rounded-xl" (click)="closeCreditLimitModal()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary rounded-xl font-bold"
+          [disabled]="isSubmittingLimit()"
+          (click)="submitCreditLimit()"
+        >
+          @if (isSubmittingLimit()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          }
+          <span>Guardar Ajustes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
