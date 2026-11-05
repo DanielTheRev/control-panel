@@ -184,7 +184,7 @@ export class ProductCreate {
   providers = this.#ProviderState.ProviderState;
 
   productForm: FormGroup = this.#fb.group({
-    productType: ['', Validators.required],
+    productType: [ProductType.CLOTHING, Validators.required],
     provider: ['', Validators.required],
     linkProductProvider: [''],
     model: ['', Validators.required],
@@ -247,7 +247,7 @@ export class ProductCreate {
         typeSpecific = this.clothingInitialValue();
       } else if (this.selectedType() === ProductType.BEAUTY) {
         typeSpecific = this.beautyInitialValue();
-      } else if (this.selectedType() === ProductType.GENERAL) {
+      } else if (this.selectedType() === ProductType.KIOSK) {
         typeSpecific = this.generalInitialValue();
       } else {
         typeSpecific = {};
@@ -289,7 +289,7 @@ export class ProductCreate {
         typeSpecific = this.clothingInitialValue();
       } else if (this.selectedType() === ProductType.BEAUTY) {
         typeSpecific = this.beautyInitialValue();
-      } else if (this.selectedType() === ProductType.GENERAL) {
+      } else if (this.selectedType() === ProductType.KIOSK) {
         typeSpecific = this.generalInitialValue();
       } else {
         typeSpecific = {};
@@ -310,13 +310,13 @@ export class ProductCreate {
   });
 
   // Route inputs
-  productID = input.required<string>();
-  /** Provided when creating (from type-selector route), e.g. 'TechProduct' | 'ClothingProduct' */
+  productID = input<string | null>(null);
+  /** Provided when creating (from type-selector route), e.g. 'indumentaria' | 'ClothingProduct' */
   typeParam = input<string>('');
   /** Expose Math to template for Math.ceil() etc. */
   protected readonly Math = Math;
 
-  isEditMode = computed(() => this.productID() !== null);
+  isEditMode = computed(() => Boolean(this.productID()));
   calculatedPrices = signal<{
     price: IProductPrices;
     finance: IProductFinance;
@@ -742,7 +742,7 @@ export class ProductCreate {
   });
 
   isSectionInvalid(sectionId: string): boolean {
-    const isGeneral = this.selectedType() === ProductType.GENERAL;
+    const isGeneral = this.selectedType() === ProductType.KIOSK;
     const c = this.productForm.controls;
     if (sectionId === 'info') {
       if (isGeneral) {
@@ -1253,7 +1253,7 @@ XXL: 58, 76, 52
   }
 
   get invalidControls(): string[] {
-    const isGeneral = this.selectedType() === ProductType.GENERAL;
+    const isGeneral = this.selectedType() === ProductType.KIOSK;
     const translations: Record<string, string> = {
       productType: 'Tipo',
       model: isGeneral ? 'Nombre del producto' : 'Modelo',
@@ -1458,7 +1458,7 @@ XXL: 58, 76, 52
   }
 
   updateValidatorsForType(type: string) {
-    const isGeneral = type === ProductType.GENERAL;
+    const isGeneral = type === ProductType.KIOSK;
     const c = this.productForm.controls;
 
     if (isGeneral) {
@@ -1483,12 +1483,16 @@ XXL: 58, 76, 52
   }
 
   #initCreateMode(profit: number) {
-    const type = this.typeParam();
-    if (type) {
-      this.selectedType.set(type);
-      this.productForm.patchValue({ productType: type });
-      this.updateValidatorsForType(type);
-    }
+    const rawParam = this.typeParam();
+    const resolvedType =
+      rawParam === ProductType.TECH || rawParam === 'tecnologia'
+        ? ProductType.TECH
+        : rawParam === ProductType.BEAUTY || rawParam === 'perfumeria'
+          ? ProductType.BEAUTY
+          : ProductType.CLOTHING;
+    this.selectedType.set(resolvedType);
+    this.productForm.patchValue({ productType: resolvedType });
+    this.updateValidatorsForType(resolvedType);
 
     this.isUsingGlobalMargin.set(true);
     this.productForm.patchValue({
@@ -1543,7 +1547,7 @@ XXL: 58, 76, 52
           applicationArea: product.applicationArea || '',
           scentNotes: product.scentNotes,
         });
-      } else if (type === ProductType.GENERAL) {
+      } else if (type === ProductType.KIOSK) {
         this.generalInitialValue.set({
           barcode: (product as any).barcode || product.variants?.[0]?.barcode || '',
           stock: product.variants?.[0]?.stock ?? product.totalStock ?? 0,
@@ -2011,7 +2015,7 @@ XXL: 58, 76, 52
           isActive: [true],
         }),
       );
-    } else if (type === ProductType.GENERAL) {
+    } else if (type === ProductType.KIOSK) {
       variantsArray.push(
         this.#fb.group({
           _id: [''],
@@ -2208,7 +2212,7 @@ XXL: 58, 76, 52
         changes.formData.forEach((value, key) => this.#debug.log(`${key}:`, value));
         this.#debug.log(this.calculatedListPrice());
         await this.#productState.updateProduct(
-          this.productID(),
+          this.productID()!,
           changes.formData,
         );
         this.#router.navigate(['/home/products', this.productID()]);
@@ -2298,7 +2302,7 @@ XXL: 58, 76, 52
       formData.append('linkProductProvider', data.linkProductProvider);
     }
     formData.append('model', data.model);
-    formData.append('brand', data.brand || (data.productType === ProductType.GENERAL ? 'Genérico' : ''));
+    formData.append('brand', data.brand || (data.productType === ProductType.KIOSK ? 'Genérico' : ''));
     formData.append('category', data.category);
     formData.append('price', data.price);
 
@@ -2342,7 +2346,7 @@ XXL: 58, 76, 52
 
     // Variants handling:
     let variants = this.parseVariants();
-    if (data.productType === ProductType.GENERAL && (!variants || variants.length === 0)) {
+    if (data.productType === ProductType.KIOSK && (!variants || variants.length === 0)) {
       const cleanModel = (data.model || 'GEN').replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toUpperCase();
       const sku = `${cleanModel}-${Date.now().toString().slice(-4)}`;
       const genVals = this.#typeSpecificValues() as GeneralFormValue;
@@ -2388,7 +2392,7 @@ XXL: 58, 76, 52
         }
       }
 
-      if (data.productType === ProductType.GENERAL) {
+      if (data.productType === ProductType.KIOSK) {
         const genVals = this.#typeSpecificValues() as GeneralFormValue;
         const barcode = data.barcode || genVals?.barcode;
         const isSoldByWeight = data.isSoldByWeight !== undefined ? data.isSoldByWeight : genVals?.isSoldByWeight;

@@ -1,53 +1,49 @@
 @let session = cashStore.session();
 @let isLoadingSession = cashStore.isLoading();
 
-<app-page-layout>
+<app-page-layout [flush]="true">
   <!-- ========================================================================= -->
-  <!-- HEADER POS & TOP ACTIONS                                                  -->
+  <!-- 1. HEADER POS UNIFICADO DE BORDE A BORDE                                  -->
   <!-- ========================================================================= -->
-  <app-page-header header title="Punto de Venta (POS)" subtitle="Terminal de mostrador y cobro multicanal">
-    <div actions class="flex items-center flex-wrap gap-2.5">
-
-      <!-- Selector Tarifa Rápida (Segmented Switch Moderno en Tailwind puro) -->
-      <div class="inline-flex p-1 bg-base-200 rounded-xl border border-base-300/80 shadow-2xs gap-1.5">
+  <app-page-header
+    header
+    title="Punto de Venta (POS)"
+    [subtitle]="posSubtitle()"
+    [inlineSubtitle]="true"
+  >
+    <div actions class="flex items-center flex-wrap gap-2">
+      <!-- Selector de Tarifa (Segmented Switch alineado con ProductList) -->
+      <div class="inline-flex items-center p-0.5 rounded-lg bg-base-200/70 border border-base-200/80">
         <button
           type="button"
           (click)="setPaymentType('cash')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
-          [class.bg-base-100]="selectedPaymentType() === 'cash'"
-          [class.text-primary]="selectedPaymentType() === 'cash'"
-          [class.shadow-2xs]="selectedPaymentType() === 'cash'"
-          [class.text-base-content]="selectedPaymentType() !== 'cash'"
-          [class.opacity-60]="selectedPaymentType() !== 'cash'"
-          [class.hover:opacity-100]="selectedPaymentType() !== 'cash'">
-          <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">payments</mat-icon>
+          class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+          [ngClass]="selectedPaymentType() === 'cash' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+        >
+          <mat-icon class="text-[15px]! w-4! h-4! text-emerald-600">payments</mat-icon>
           <span>Precio Efectivo</span>
         </button>
 
         <button
           type="button"
           (click)="setPaymentType('card')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
-          [class.bg-base-100]="selectedPaymentType() === 'card'"
-          [class.text-primary]="selectedPaymentType() === 'card'"
-          [class.shadow-2xs]="selectedPaymentType() === 'card'"
-          [class.text-base-content]="selectedPaymentType() !== 'card'"
-          [class.opacity-60]="selectedPaymentType() !== 'card'"
-          [class.hover:opacity-100]="selectedPaymentType() !== 'card'">
-          <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">credit_card</mat-icon>
+          class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+          [ngClass]="selectedPaymentType() === 'card' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+        >
+          <mat-icon class="text-[15px]! w-4! h-4! text-primary">credit_card</mat-icon>
           <span>Precio Lista</span>
         </button>
       </div>
 
       <!-- Estado de la Caja -->
       @if (session) {
-        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/20 text-xs font-bold shadow-2xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-500/25 text-xs font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Caja Abierta</span>
         </div>
       } @else if (!isLoadingSession) {
-        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 text-warning rounded-xl border border-warning/20 text-xs font-bold shadow-2xs">
-          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">lock</mat-icon>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-500/25 text-xs font-semibold">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5!">lock</mat-icon>
           <span>Caja Cerrada</span>
         </div>
       }
@@ -57,527 +53,769 @@
         <button
           type="button"
           (click)="openPairingModal()"
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/20 text-xs font-bold shadow-2xs hover:bg-emerald-500/20 transition-colors cursor-pointer"
+          class="btn btn-sm h-8 min-h-8 px-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 rounded-lg text-xs font-semibold gap-1.5 cursor-pointer"
           title="Celular emparejado como pistola escáner. Clic para ver detalles o vincular otro."
         >
           <span class="relative flex h-2 w-2">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">smartphone</mat-icon>
+          <mat-icon class="text-[15px]! w-4! h-4!">smartphone</mat-icon>
           <span>{{ wsService.activeScannersCount() }} Móvil Activo</span>
         </button>
       } @else {
         <button
           type="button"
           (click)="openPairingModal()"
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-base-200 text-base-content/70 hover:text-base-content hover:bg-base-300 rounded-xl border border-base-300/80 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+          class="btn btn-sm h-8 min-h-8 px-2.5 btn-ghost border border-base-300/90 bg-base-100 hover:bg-base-200/60 text-base-content/80 rounded-lg text-xs font-semibold gap-1.5 cursor-pointer"
           title="Clic para mostrar código QR y vincular celular como lector de código de barras"
         >
-          <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
-          <span>Vincular Celular</span>
+          <mat-icon class="text-[15px]! w-4! h-4!">qr_code_scanner</mat-icon>
+          <span class="hidden sm:inline">Vincular Celular</span>
         </button>
       }
 
-      <button
-        type="button"
-        (click)="clearCart()"
-        [disabled]="cart().length === 0"
-        class="btn btn-sm btn-ghost rounded-xl text-xs font-bold gap-1.5 text-base-content/70 hover:text-error cursor-pointer">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">restart_alt</mat-icon>
-        <span class="hidden sm:inline">Limpiar</span>
-      </button>
-
+      @if (cart().length > 0) {
+        <button
+          type="button"
+          (click)="clearCart()"
+          class="btn btn-sm h-8 min-h-8 px-2.5 btn-ghost text-error hover:bg-error/10 rounded-lg text-xs font-semibold gap-1 cursor-pointer"
+          title="Vaciar orden actual"
+        >
+          <mat-icon class="text-[16px]! w-4! h-4!">restart_alt</mat-icon>
+          <span class="hidden sm:inline">Reiniciar</span>
+        </button>
+      }
     </div>
   </app-page-header>
 
-  <div content class="flex flex-col h-full w-full min-h-0 pb-20 lg:pb-0">
+  <!-- ========================================================================= -->
+  <!-- 2. WORKSPACE DIVIDIDO DE BORDE A BORDE (CATÁLOGO + TICKET ACTUAL)         -->
+  <!-- ========================================================================= -->
+  <div content class="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden pb-16 lg:pb-0">
 
-    <!-- ── Main Workspace Bento (RestroBit Grid) ────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
+    <!-- ======================================================================= -->
+    <!-- PANEL IZQUIERDO: CATÁLOGO, BARRA DE HERRAMIENTAS & CATEGORÍAS           -->
+    <!-- ======================================================================= -->
+    <div
+      class="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden bg-base-100"
+      [class.max-lg:hidden]="activeTab() !== 'catalog'"
+    >
+      <!-- Fila 1: Buscador Amplio + Selector de Marca + Conmutador de Vista -->
+      <div class="px-4 sm:px-6 py-2.5 border-b border-base-300/80 bg-base-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 shrink-0">
+        <!-- Buscador Principal con soporte de Lector de Código de Barras -->
+        <label
+          for="pos-search-input"
+          class="flex items-center gap-2.5 px-3 h-8 flex-1 min-w-[200px] rounded-lg border border-base-300 bg-base-200/25 focus-within:bg-base-100 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all cursor-text"
+        >
+          <mat-icon class="text-base-content/45 text-[16px]! w-4! h-4! shrink-0 pointer-events-none">search</mat-icon>
+          <input
+            id="pos-search-input"
+            type="text"
+            class="flex-1 min-w-0 bg-transparent border-none outline-none text-xs text-base-content placeholder:text-base-content/45"
+            [placeholder]="searchPlaceholder()"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); onSearchInput()"
+            (keydown.enter)="onSearchEnter()"
+          />
+          @if (searchQuery()) {
+            <button
+              type="button"
+              (click)="searchQuery.set(''); onSearchInput()"
+              class="text-base-content/40 hover:text-base-content cursor-pointer flex items-center justify-center shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
+            </button>
+          } @else {
+            <span class="hidden xl:inline-flex items-center gap-1 text-[10px] font-medium text-base-content/40 px-1.5 py-0.5 rounded bg-base-200/60 shrink-0 select-none">
+              <mat-icon class="text-[12px]! w-3! h-3!">barcode_scanner</mat-icon>
+              <span>Lector activo</span>
+            </span>
+          }
+        </label>
 
-      <!-- ===================================================================== -->
-      <!-- COLUMNA IZQUIERDA: CATÁLOGO, BUSCADOR & CATEGORÍAS                     -->
-      <!-- ===================================================================== -->
-      <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-3 min-h-0"
-        [class.max-lg:hidden]="activeTab() !== 'catalog'">
-
-        <!-- 1. Barra de Búsqueda y Selectores (Estilo RestroBit) -->
-        <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 shadow-2xs flex flex-col sm:flex-row items-center gap-2">
-          <div class="relative w-full flex-1">
-            <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">search</mat-icon>
-            <input
-              type="text"
-              class="input input-sm input-bordered w-full pl-9 pr-8 rounded-lg text-xs font-medium focus:border-primary"
-              [placeholder]="profile.isKioskOrCounter() ? 'Buscar producto por nombre, código de barra o marca...' : 'Buscar prenda por modelo, categoría, código o SKU...'"
-              [ngModel]="searchQuery()"
-              (ngModelChange)="searchQuery.set($event); onSearchInput()"
-            />
-            @if (searchQuery()) {
-              <button (click)="searchQuery.set(''); onSearchInput()" class="btn btn-ghost btn-2xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 flex items-center justify-center cursor-pointer">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
-              </button>
-            }
-          </div>
-
+        <!-- Controles derechos de la barra -->
+        <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
           @if (brands().length > 0) {
             <select
               [ngModel]="selectedBrand()"
               (ngModelChange)="selectedBrand.set($event)"
-              class="select select-sm select-bordered rounded-lg text-xs font-bold text-base-content/70 w-full sm:w-auto shrink-0">
-              <option value="all">Todas las marcas</option>
+              class="select select-bordered select-sm h-8 min-h-8 text-xs rounded-lg focus:outline-none focus:border-primary font-medium bg-base-100 max-w-44"
+              title="Filtrar por marca"
+            >
+              <option value="all">Marca: Todas</option>
               @for (b of brands(); track b) {
                 <option [value]="b">{{ b }}</option>
               }
             </select>
           }
-        </div>
 
-        <!-- 2. Barra de Categorías (Botón Todos Fijo + Scroll Sin Barra) -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          
-          <!-- Botón Todos Fijo a la Izquierda -->
           <button
             type="button"
-            (click)="selectedCategory.set('all')"
-            class="btn btn-sm rounded-lg font-bold text-xs gap-1 transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0"
-            [class.btn-primary]="selectedCategory() === 'all'"
-            [class.btn-ghost]="selectedCategory() !== 'all'"
-            [class.bg-base-100]="selectedCategory() !== 'all'"
-            [class.border]="selectedCategory() !== 'all'"
-            [class.border-base-200]="selectedCategory() !== 'all'">
-            <span>Todos</span>
-            <span class="badge badge-xs font-mono ml-0.5" [class.badge-primary-content]="selectedCategory() === 'all'">{{ products().length }}</span>
+            (click)="loadInitialCatalog()"
+            [disabled]="loadingProducts()"
+            class="btn btn-sm h-8 min-h-8 px-2 btn-ghost border border-base-300/90 rounded-lg text-base-content/65 hover:text-base-content cursor-pointer"
+            title="Recargar catálogo"
+          >
+            <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="loadingProducts()">refresh</mat-icon>
           </button>
 
-          <!-- Categorías Scrolleables Horizontalmente Sin Barra -->
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
-            @for (cat of categories(); track cat) {
-              <button
-                type="button"
-                (click)="selectedCategory.set(cat)"
-                class="btn btn-sm rounded-lg font-bold text-xs gap-1 transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0"
-                [class.btn-primary]="selectedCategory() === cat"
-                [class.btn-ghost]="selectedCategory() !== cat"
-                [class.bg-base-100]="selectedCategory() !== cat"
-                [class.border]="selectedCategory() !== cat"
-                [class.border-base-200]="selectedCategory() !== cat">
-                <span>{{ cat }}</span>
-              </button>
-            }
+          <!-- Selector de Vista (Tarjetas vs Lista Rápida) -->
+          <div class="inline-flex items-center p-0.5 rounded-lg border border-base-300/90 bg-base-200/40 shrink-0">
+            <button
+              type="button"
+              class="p-1 rounded-md flex items-center justify-center transition-colors cursor-pointer"
+              [ngClass]="catalogViewMode() === 'grid' ? 'bg-base-100 text-base-content shadow-2xs' : 'text-base-content/45 hover:text-base-content'"
+              (click)="setCatalogViewMode('grid')"
+              title="Vista de tarjetas"
+            >
+              <mat-icon class="text-[17px]! w-4.5! h-4.5!">grid_view</mat-icon>
+            </button>
+            <button
+              type="button"
+              class="p-1 rounded-md flex items-center justify-center transition-colors cursor-pointer"
+              [ngClass]="catalogViewMode() === 'list' ? 'bg-base-100 text-base-content shadow-2xs' : 'text-base-content/45 hover:text-base-content'"
+              (click)="setCatalogViewMode('list')"
+              title="Vista de lista rápida"
+            >
+              <mat-icon class="text-[17px]! w-4.5! h-4.5!">view_list</mat-icon>
+            </button>
           </div>
         </div>
-
-        <!-- 3. Grilla de Productos (Estilo RestroBit) -->
-        <div class="flex-1 overflow-y-auto pr-1">
-          @if (loadingProducts()) {
-            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-              @for (i of [1,2,3,4,5,6,7,8]; track i) {
-                <div class="bg-base-100 rounded-xl p-3 border border-base-200 space-y-2">
-                  <div class="skeleton w-full aspect-square rounded-lg"></div>
-                  <div class="skeleton h-3 w-3/4 rounded"></div>
-                  <div class="skeleton h-4 w-1/2 rounded"></div>
-                </div>
-              }
-            </div>
-          } @else if (filteredProducts().length === 0) {
-            <div class="bg-base-100 rounded-xl border border-base-200 p-8 text-center space-y-2 flex flex-col items-center justify-center">
-              <div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-base-content/30">
-                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center">search_off</mat-icon>
-              </div>
-              <h4 class="text-xs font-bold text-base-content">No se encontraron productos</h4>
-              <p class="text-[11px] text-base-content/50 max-w-xs">Probá cambiando el término de búsqueda o seleccionando otra categoría.</p>
-              <button (click)="searchQuery.set(''); selectedCategory.set('all'); selectedBrand.set('all'); onSearchInput()" class="btn btn-xs btn-ghost text-primary font-bold mt-1">
-                Restablecer filtros
-              </button>
-            </div>
-          } @else {
-            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-              @for (p of filteredProducts(); track p._id) {
-                @let stock = getProductStock(p);
-                @let price = getProductPrice(p);
-                @let imgUrl = getProductMainImage(p);
-
-                <div
-                  (click)="onProductCardClick(p)"
-                  class="bg-base-100 rounded-xl border border-base-200 hover:border-primary/50 hover:shadow-md transition-all duration-200 p-2.5 flex flex-col justify-between group cursor-pointer relative select-none">
-                  
-                  <!-- Imagen & Badges Superiores -->
-                  <div class="relative aspect-square rounded-lg overflow-hidden bg-base-200/30 mb-2 flex items-center justify-center">
-                    @if (imgUrl) {
-                      <img [src]="imgUrl" [alt]="p.model" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                    } @else {
-                      <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-base-content/20">
-                        {{ p.isSoldByWeight ? 'scale' : (profile.isKioskOrCounter() ? 'inventory_2' : 'checkroom') }}
-                      </mat-icon>
-                    }
-
-                    <!-- Stock Badge -->
-                    <span
-                      class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs"
-                      [class.bg-emerald-500]="stock > 3"
-                      [class.text-white]="stock > 0"
-                      [class.bg-amber-500]="stock > 0 && stock <= 3"
-                      [class.bg-red-500]="stock === 0"
-                      [class.text-white]="stock === 0">
-                      @if (p.isSoldByWeight) {
-                        {{ stock > 0 ? (stock | number:'1.0-2') + ' ' + (p.unit || 'kg') : 'Agotado' }}
-                      } @else {
-                        {{ stock > 0 ? stock + ' disp.' : 'Agotado' }}
-                      }
-                    </span>
-
-                    <!-- Category / Brand / Variants / Weight Pill -->
-                    <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-1">
-                      @if (p.isSoldByWeight) {
-                        <span class="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-2xs flex items-center gap-0.5">
-                          <mat-icon class="text-[10px]! w-2.5! h-2.5!">scale</mat-icon>
-                          AL PESO
-                        </span>
-                      }
-                      @if (p.brand || p.category) {
-                        <span class="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded">
-                          {{ p.brand || p.category }}
-                        </span>
-                      }
-                      @if (p.variants && p.variants.length > 1) {
-                        <span class="bg-primary text-primary-content text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
-                          {{ p.variants.length }} {{ profile.isFashion() ? 'talles' : 'variantes' }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- Datos del Producto -->
-                  <div class="space-y-1 min-w-0">
-                    <h4 class="text-xs font-bold text-base-content truncate group-hover:text-primary transition-colors leading-tight" [title]="p.model">
-                      {{ p.model }}
-                    </h4>
-                    
-                    <div class="flex items-center justify-between pt-1">
-                      <div>
-                        <span class="text-xs sm:text-sm font-black text-primary tabular-nums">
-                          ${{ price | number:'1.0-0' }}
-                        </span>
-                        @if (p.isSoldByWeight) {
-                          <span class="text-[10px] text-base-content/60 font-semibold"> /{{ p.unit || 'kg' }}</span>
-                        }
-                        @if (selectedPaymentType() === 'cash' && p.price?.listPrice && p.price.listPrice > price) {
-                          <span class="text-[9px] text-base-content/40 line-through block -mt-0.5">
-                            ${{ p.price.listPrice | number:'1.0-0' }}
-                          </span>
-                        }
-                      </div>
-
-                      <!-- Botón de Acción '+' o 'Balanza' Estilo POS Tactil Cuadrado Limpio -->
-                      <button
-                        type="button"
-                        (click)="onPlusButtonClick(p, $event)"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
-                        [class.bg-amber-500]="p.isSoldByWeight"
-                        [class.hover:bg-amber-600]="p.isSoldByWeight"
-                        [class.text-white]="p.isSoldByWeight"
-                        [class.bg-primary]="!p.isSoldByWeight"
-                        [class.hover:bg-primary/90]="!p.isSoldByWeight"
-                        [class.text-primary-content]="!p.isSoldByWeight"
-                        [title]="p.isSoldByWeight ? 'Calcular peso o dinero' : 'Agregar a la orden'">
-                        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">
-                          {{ p.isSoldByWeight ? 'scale' : 'add' }}
-                        </mat-icon>
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              }
-            </div>
-          }
-        </div>
-
       </div>
 
-      <!-- ===================================================================== -->
-      <!-- COLUMNA DERECHA: BILL DETAILS & TICKET DE VENTA (ESTILO RESTROBIT)    -->
-      <!-- ===================================================================== -->
-      <div class="lg:col-span-5 xl:col-span-4 flex flex-col h-full min-h-0"
-        [class.max-lg:hidden]="activeTab() !== 'cart'">
+      <!-- Fila 2: Pestañas de Categorías (Estilo ProductList Status Tabs) -->
+      <div class="px-4 sm:px-6 py-2 border-b border-base-300/80 bg-base-100 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+        <button
+          type="button"
+          (click)="selectedCategory.set('all')"
+          class="px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          [ngClass]="selectedCategory() === 'all' ? 'bg-base-content text-base-100 font-bold' : 'text-base-content/65 hover:text-base-content hover:bg-base-200/70'"
+        >
+          <span>Todos</span>
+          <span class="text-[10.5px] font-mono opacity-75">{{ products().length }}</span>
+        </button>
 
-        <div class="bg-base-100 rounded-xl border border-base-200 shadow-2xs p-3.5 sm:p-4 flex flex-col h-full min-h-0 space-y-3">
-          
-          <!-- Header de la Orden (RestroBit Order #XX) -->
-          <div class="flex items-center justify-between border-b border-base-200 pb-2.5">
-            <div class="flex items-center gap-2">
-              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center text-primary">receipt_long</mat-icon>
-              <h3 class="text-xs font-black uppercase tracking-wider text-base-content">
-                Orden #{{ currentTicketNumber() }}
-              </h3>
+        @for (cat of categories(); track cat) {
+          <button
+            type="button"
+            (click)="selectedCategory.set(cat)"
+            class="px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            [ngClass]="selectedCategory() === cat ? 'bg-base-content text-base-100 font-bold' : 'text-base-content/65 hover:text-base-content hover:bg-base-200/70'"
+          >
+            <span>{{ cat }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Fila 3: Área Scrolleable de Productos con Contraste de Superficie -->
+      <div class="pos-catalog-canvas flex-1 overflow-y-auto custom-scrollbar min-h-0">
+        @if (loadingProducts()) {
+          <div class="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+              <div class="pos-card p-3 space-y-2.5">
+                <div class="skeleton w-full aspect-square rounded-lg bg-base-200"></div>
+                <div class="skeleton h-3 w-2/3 rounded bg-base-200"></div>
+                <div class="skeleton h-4 w-1/2 rounded bg-base-200"></div>
+              </div>
+            }
+          </div>
+        } @else if (filteredProducts().length === 0) {
+          <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-base-200/80 flex items-center justify-center mb-3 text-base-content/40">
+              <mat-icon class="text-2xl! w-6! h-6!">search_off</mat-icon>
             </div>
-
-            @if (cart().length > 0) {
-              <button
-                type="button"
-                (click)="clearCart()"
-                class="btn btn-ghost btn-xs text-error hover:bg-error/10 font-bold rounded-lg flex items-center gap-1 cursor-pointer"
-                title="Vaciar ticket completo">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">delete_sweep</mat-icon>
-                <span>Vaciar</span>
-              </button>
-            }
+            <h4 class="text-sm font-bold text-base-content">No se encontraron artículos</h4>
+            <p class="text-xs text-base-content/50 max-w-xs mt-1 mb-4">
+              Probá cambiando el término de búsqueda o seleccionando otra categoría.
+            </p>
+            <button
+              type="button"
+              (click)="searchQuery.set(''); selectedCategory.set('all'); selectedBrand.set('all'); onSearchInput()"
+              class="btn btn-sm btn-outline border-base-300 rounded-lg text-xs font-semibold gap-1.5"
+            >
+              <mat-icon class="text-[15px]! w-4! h-4!">filter_alt_off</mat-icon>
+              <span>Restablecer filtros</span>
+            </button>
           </div>
+        } @else if (catalogViewMode() === 'grid') {
+          <!-- =============================================================== -->
+          <!-- VISTA EN TARJETAS (GRID) ALINEADA CON PRODUCT-LIST              -->
+          <!-- =============================================================== -->
+          <div class="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
+            @for (p of filteredProducts(); track p._id) {
+              @let stock = getProductStock(p);
+              @let price = getProductPrice(p);
+              @let imgUrl = getProductMainImage(p);
+              @let colors = getProductColors(p);
+              @let sizes = getProductSizesPreview(p);
 
-          <!-- Selector de Cliente (Libreta / Cuenta Corriente) -->
-          <div class="space-y-1">
-            @if (selectedClient(); as client) {
-              <div class="flex items-center justify-between p-2 rounded-xl bg-primary/10 border border-primary/20">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {{ client.name.charAt(0).toUpperCase() }}
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-xs font-black text-base-content truncate">{{ client.name }} {{ client.lastName || '' }}</p>
-                    <div class="flex items-center gap-1.5 text-[10px]">
-                      <span class="text-base-content/60">{{ client.phone || client.dni || 'Sin teléfono' }}</span>
-                      @if (client.currentAccount?.balance; as bal) {
-                        @if (bal > 0) {
-                          <span class="font-bold text-error">Debe: ${{ bal | number:'1.0-0' }}</span>
-                        } @else {
-                          <span class="font-bold text-success">Al día</span>
-                        }
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1">
-                  <button
-                    type="button"
-                    (click)="openClientSearchModal()"
-                    class="btn btn-ghost btn-2xs btn-circle text-primary hover:bg-primary/20"
-                    title="Cambiar cliente">
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">swap_horiz</mat-icon>
-                  </button>
-                  <button
-                    type="button"
-                    (click)="clearSelectedClient()"
-                    class="btn btn-ghost btn-2xs btn-circle text-base-content/50 hover:text-error"
-                    title="Quitar cliente (Consumidor Final)">
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
-                  </button>
-                </div>
-              </div>
-            } @else {
-              <button
-                type="button"
-                (click)="openClientSearchModal()"
-                class="w-full flex items-center justify-between py-1.5 px-2.5 rounded-lg border border-dashed border-base-300 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group cursor-pointer">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center text-base-content/40 group-hover:text-primary">person_add</mat-icon>
-                  <span class="text-xs font-bold text-base-content/70 group-hover:text-primary">Consumidor Final</span>
-                </div>
-                <span class="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">Asignar Cliente / Fiado →</span>
-              </button>
-            }
-          </div>
-
-          <!-- Lista de Items en Carrito (Scrollable) -->
-          <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[140px]">
-            @if (cart().length === 0) {
-              <div class="h-full flex flex-col items-center justify-center text-center p-6 space-y-2 opacity-40">
-                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-3xl!">shopping_bag</mat-icon>
-                <p class="text-xs font-bold">El ticket está vacío</p>
-                <p class="text-[10px] text-base-content/60">Toca prendas del catálogo para sumarlas.</p>
-              </div>
-            } @else {
-              @for (item of cart(); track item.cartItemId; let idx = $index) {
-                @let itemImg = getProductMainImage(item.product);
-
-                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-base-200/40 border border-base-200 hover:border-primary/30 transition-all">
-                  
-                  <!-- Miniatura & Título -->
-                  <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div class="w-9 h-9 rounded-lg bg-base-200 overflow-hidden shrink-0 flex items-center justify-center border border-base-300/60">
-                      @if (itemImg) {
-                        <img [src]="itemImg" [alt]="item.product.model" class="w-full h-full object-cover" />
-                      } @else {
-                        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center text-base-content/30">checkroom</mat-icon>
-                      }
-                    </div>
-
-                    <div class="min-w-0">
-                      <h5 class="text-xs font-bold text-base-content truncate leading-tight">{{ item.product.model }}</h5>
-                      @if (item.variant && !item.isSoldByWeight) {
-                        <p class="text-[10px] text-base-content/60 font-semibold truncate mt-0.5">
-                          Talle {{ item.variant.size || 'Único' }} {{ item.variant.color?.name ? '· ' + item.variant.color.name : '' }}
-                        </p>
-                      }
-                      @if (item.isSoldByWeight) {
-                        <p class="text-[11px] font-black text-primary tabular-nums mt-0.5 flex items-center gap-1.5 flex-wrap">
-                          <span class="badge badge-xs bg-amber-500/10 text-amber-700 font-mono font-bold">{{ item.weightGrams }}g</span>
-                          <span class="text-base-content/60 font-semibold text-[10px]">× ${{ item.price | number:'1.0-0' }}/{{ item.unit || 'kg' }}</span>
-                          <span class="text-base-content/30">=</span>
-                          <span class="font-black text-primary text-xs">${{ (item.totalMoneyAmount || (item.price * item.quantity)) | number:'1.0-0' }}</span>
-                        </p>
-                      } @else {
-                        <p class="text-[11px] font-black text-primary tabular-nums mt-0.5">
-                          ${{ item.price | number:'1.0-0' }} × {{ item.quantity }} = ${{ (item.price * item.quantity) | number:'1.0-0' }}
-                        </p>
-                      }
-                    </div>
-                  </div>
-
-                  @if (item.isSoldByWeight) {
-                    <!-- Botón táctil para editar peso o monto -->
-                    <button
-                      type="button"
-                      (click)="updateQuantity(idx, 0)"
-                      class="px-2 py-1 rounded-lg bg-base-100 hover:bg-base-200 border border-base-300 text-xs font-bold text-base-content flex items-center gap-1 shrink-0 shadow-2xs cursor-pointer active:scale-95"
-                      title="Tocar para editar peso o dinero">
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5! text-amber-600">scale</mat-icon>
-                      <span>{{ item.weightGrams }}g</span>
-                    </button>
+              <div
+                (click)="onProductCardClick(p)"
+                class="pos-card flex flex-col justify-between group cursor-pointer relative overflow-hidden select-none"
+                [class.opacity-60]="stock === 0 && !p.isSoldByWeight"
+              >
+                <!-- Imagen & Badges Superiores/Inferiores -->
+                <div class="relative aspect-[4/4] w-full overflow-hidden bg-base-200/40 border-b border-base-200/70 flex items-center justify-center">
+                  @if (imgUrl) {
+                    <img
+                      [src]="imgUrl"
+                      [alt]="p.model"
+                      loading="lazy"
+                      class="w-full h-full object-cover object-top group-hover:scale-104 transition-transform duration-300"
+                    />
                   } @else {
-                    <!-- Stepper RestroBit [-] Qty [+] -->
-                    <div class="flex items-center bg-base-100 rounded-lg border border-base-300 p-0.5 shrink-0 shadow-2xs">
-                      <button
-                        type="button"
-                        (click)="updateQuantity(idx, -1)"
-                        class="w-6 h-6 rounded-md bg-base-200 hover:bg-base-300 text-base-content flex items-center justify-center transition-colors cursor-pointer active:scale-95"
-                        title="Restar una unidad">
-                        <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">remove</mat-icon>
-                      </button>
-                      <span class="w-6 text-center text-xs font-black text-base-content tabular-nums">{{ item.quantity }}</span>
-                      <button
-                        type="button"
-                        (click)="updateQuantity(idx, 1)"
-                        class="w-6 h-6 rounded-md bg-primary hover:bg-primary/90 text-primary-content flex items-center justify-center transition-colors cursor-pointer active:scale-95 shadow-2xs"
-                        title="Sumar una unidad">
-                        <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
-                      </button>
+                    <div class="flex flex-col items-center justify-center text-base-content/30 gap-1 p-2">
+                      <mat-icon class="text-2xl! w-6! h-6!">{{ getProductFallbackIcon(p) }}</mat-icon>
+                      <span class="text-[9.5px] font-semibold uppercase tracking-wider">Sin imagen</span>
                     </div>
                   }
 
-                  <!-- Botón Eliminar Item -->
-                  <button
-                    type="button"
-                    (click)="updateQuantity(idx, -item.quantity)"
-                    class="w-7 h-7 rounded-lg bg-error/10 hover:bg-error hover:text-white text-error flex items-center justify-center transition-all cursor-pointer shrink-0"
-                    title="Quitar prenda del ticket">
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">delete_outline</mat-icon>
-                  </button>
+                  <!-- Fila Superior sobre Imagen: Venta al Peso o Variantes/Talles -->
+                  <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-none z-10">
+                    @if (p.isSoldByWeight) {
+                      <span class="bg-amber-500/95 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-2xs flex items-center gap-1 backdrop-blur-xs">
+                        <mat-icon class="text-[11px]! w-3! h-3!">scale</mat-icon>
+                        <span>Al peso</span>
+                      </span>
+                    } @else {
+                      <span></span>
+                    }
 
+                    @if (p.variants && p.variants.length > 1) {
+                      <span class="bg-base-content/85 text-base-100 text-[9.5px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        {{ p.variants.length }} {{ profile.isFashion() ? 'talles' : 'opc.' }}
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Fila Inferior sobre Imagen: Stock Badge (Estilo ProductList) -->
+                  <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+                    <span></span>
+                    <span
+                      class="text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md border tabular-nums"
+                      [ngClass]="{
+                        'bg-error/90 text-white border-error': stock === 0 && !p.isSoldByWeight,
+                        'bg-amber-500/90 text-white border-amber-500': stock > 0 && stock <= 3 && !p.isSoldByWeight,
+                        'bg-base-100/90 text-base-content border-base-300/80': stock > 3 || p.isSoldByWeight
+                      }"
+                    >
+                      @if (p.isSoldByWeight) {
+                        {{ stock > 0 ? (stock | number:'1.0-2') + ' ' + (p.unit || 'kg') : (p.unit || 'kg') }}
+                      } @else {
+                        {{ stock > 0 ? stock + ' disp.' : 'Sin stock' }}
+                      }
+                    </span>
+                  </div>
                 </div>
-              }
-            }
-          </div>
 
-          <!-- Desglose Financiero (Bill Summary estilo RestroBit) -->
-          <div class="bg-base-200/40 p-3 rounded-lg border border-base-200 space-y-1.5 shrink-0">
-            <div class="flex justify-between items-center text-xs text-base-content/70">
-              <span>Sub total :</span>
-              <span class="font-bold text-base-content tabular-nums">${{ subtotal() | number:'1.0-0' }}</span>
-            </div>
+                <!-- Cuerpo de la Tarjeta -->
+                <div class="p-3 flex-1 flex flex-col justify-between min-w-0 gap-2">
+                  <div class="min-w-0">
+                    <!-- Marca · Categoría + Swatches de Color -->
+                    <div class="flex items-center justify-between gap-1 text-[10px] font-semibold text-base-content/45 uppercase tracking-wider truncate mb-0.5">
+                      <span class="truncate">{{ p.brand || p.category || 'General' }}</span>
+                      @if (colors.length > 0) {
+                        <div class="flex items-center -space-x-1 shrink-0">
+                          @for (c of colors.slice(0, 4); track c.name) {
+                            <span
+                              class="w-2.5 h-2.5 rounded-full border border-base-100 ring-1 ring-base-content/15 inline-block"
+                              [style.backgroundColor]="c.hex"
+                              [title]="c.name"
+                            ></span>
+                          }
+                        </div>
+                      }
+                    </div>
 
-            @if (discountCoupon() > 0) {
-              <div class="flex justify-between items-center text-xs text-emerald-600 font-bold">
-                <span>Descuento :</span>
-                <span class="tabular-nums">-${{ discountCoupon() | number:'1.0-0' }}</span>
+                    <!-- Nombre / Modelo -->
+                    <h4
+                      class="text-[13px] font-semibold text-base-content group-hover:text-primary transition-colors truncate leading-snug"
+                      [title]="p.model"
+                    >
+                      {{ p.model }}
+                    </h4>
+
+                    <!-- Preview de Talles disponibles (Solo Indumentaria/Calzado cuando hay talles) -->
+                    @if (profile.isFashion() && sizes.length > 0) {
+                      <div class="flex items-center gap-1 flex-wrap mt-1.5">
+                        @for (sz of sizes.slice(0, 5); track sz) {
+                          <span class="text-[9.5px] font-mono font-semibold px-1.5 py-0.2 rounded bg-base-200/70 text-base-content/70 border border-base-300/60">
+                            {{ sz }}
+                          </span>
+                        }
+                        @if (sizes.length > 5) {
+                          <span class="text-[9px] text-base-content/45 font-mono">+{{ sizes.length - 5 }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Precio + Botón de Acción Rápida -->
+                  <div class="pt-2 border-t border-base-200/70 flex items-end justify-between gap-2">
+                    <div class="min-w-0">
+                      <div class="text-sm sm:text-[15px] font-bold text-base-content tabular-nums leading-none">
+                        ${{ price | number:'1.0-0' }}
+                        @if (p.isSoldByWeight) {
+                          <span class="text-[10px] font-medium text-base-content/50">/{{ p.unit || 'kg' }}</span>
+                        }
+                      </div>
+                      @if (selectedPaymentType() === 'cash' && p.price?.listPrice && p.price.listPrice > price) {
+                        <div class="text-[10px] text-base-content/45 tabular-nums mt-0.5 truncate">
+                          Lista ${{ p.price.listPrice | number:'1.0-0' }}
+                        </div>
+                      }
+                    </div>
+
+                    <button
+                      type="button"
+                      (click)="onPlusButtonClick(p, $event)"
+                      class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
+                      [ngClass]="p.isSoldByWeight ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-base-200/80 group-hover:bg-primary group-hover:text-primary-content text-base-content'"
+                      [title]="p.isSoldByWeight ? 'Calcular peso o monto' : 'Agregar al ticket'"
+                    >
+                      <mat-icon class="text-[16px]! w-4! h-4!">
+                        {{ p.isSoldByWeight ? 'scale' : 'add' }}
+                      </mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             }
-
-            <div class="flex justify-between items-center pt-1.5 border-t border-base-300">
-              <span class="text-xs font-black uppercase tracking-wider text-base-content">Total :</span>
-              <span class="text-xl font-black text-primary tabular-nums">${{ total() | number:'1.0-0' }}</span>
-            </div>
           </div>
+        } @else {
+          <!-- =============================================================== -->
+          <!-- VISTA DE LISTA RÁPIDA (IDEAL PARA MOSTRADOR / KIOSCO / LECTURA) -->
+          <!-- =============================================================== -->
+          <div class="bg-base-100 divide-y divide-base-200/70">
+            @for (p of filteredProducts(); track p._id) {
+              @let stock = getProductStock(p);
+              @let price = getProductPrice(p);
+              @let imgUrl = getProductMainImage(p);
+              @let sizes = getProductSizesPreview(p);
 
-          <!-- Botones de Cobro Duales (Estilo RestroBit: Cobrar / Cobrar e Imprimir) -->
-          <div class="grid grid-cols-2 gap-2.5 shrink-0">
-            <button
-              type="button"
-              [disabled]="cart().length === 0 || isProcessing()"
-              (click)="openCheckout(false)"
-              class="btn btn-primary h-11 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-40">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">payments</mat-icon>
-              <span>Cobrar</span>
-            </button>
+              <div
+                (click)="onProductCardClick(p)"
+                class="pos-row px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 cursor-pointer select-none group"
+              >
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  <div class="w-10 h-10 rounded-lg bg-base-200/60 border border-base-300/70 overflow-hidden shrink-0 flex items-center justify-center">
+                    @if (imgUrl) {
+                      <img [src]="imgUrl" [alt]="p.model" loading="lazy" class="w-full h-full object-cover" />
+                    } @else {
+                      <mat-icon class="text-base-content/30 text-[18px]! w-4.5! h-4.5!">{{ getProductFallbackIcon(p) }}</mat-icon>
+                    }
+                  </div>
 
-            <button
-              type="button"
-              [disabled]="cart().length === 0 || isProcessing()"
-              (click)="openCheckout(true)"
-              class="btn btn-success text-white h-11 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-40">
-              <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">print</mat-icon>
-              <span>Cobrar & Imprimir</span>
-            </button>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs sm:text-[13px] font-semibold text-base-content group-hover:text-primary transition-colors truncate">
+                        {{ p.model }}
+                      </h4>
+                      @if (p.isSoldByWeight) {
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-amber-500/15 text-amber-700 border border-amber-500/25 shrink-0">
+                          Al peso
+                        </span>
+                      }
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] text-base-content/50 truncate mt-0.5">
+                      <span>{{ p.brand || 'General' }}</span>
+                      @if (p.category) {
+                        <span>· {{ p.category }}</span>
+                      }
+                      @if (p.barcode) {
+                        <span class="font-mono text-[10px] text-base-content/40">· {{ p.barcode }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Talles o Variantes en Desktop -->
+                <div class="hidden md:flex items-center gap-1 shrink-0">
+                  @if (profile.isFashion() && sizes.length > 0) {
+                    @for (sz of sizes.slice(0, 4); track sz) {
+                      <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-base-200/70 text-base-content/70 border border-base-300/60">
+                        {{ sz }}
+                      </span>
+                    }
+                  } @else if (p.variants && p.variants.length > 1) {
+                    <span class="text-[10.5px] font-medium text-base-content/60 bg-base-200/60 px-2 py-0.5 rounded-md">
+                      {{ p.variants.length }} variantes
+                    </span>
+                  }
+                </div>
+
+                <!-- Stock -->
+                <div class="text-right shrink-0 w-20 hidden sm:block">
+                  <span
+                    class="text-[11px] font-semibold tabular-nums"
+                    [ngClass]="{
+                      'text-error': stock === 0 && !p.isSoldByWeight,
+                      'text-amber-600': stock > 0 && stock <= 3 && !p.isSoldByWeight,
+                      'text-emerald-600': stock > 3 || p.isSoldByWeight
+                    }"
+                  >
+                    @if (p.isSoldByWeight) {
+                      {{ stock > 0 ? (stock | number:'1.0-2') + ' ' + (p.unit || 'kg') : 'Por peso' }}
+                    } @else {
+                      {{ stock > 0 ? stock + ' uds' : 'Sin stock' }}
+                    }
+                  </span>
+                </div>
+
+                <!-- Precio + Botón -->
+                <div class="flex items-center gap-3 shrink-0">
+                  <div class="text-right">
+                    <div class="text-xs sm:text-sm font-bold text-base-content tabular-nums">
+                      ${{ price | number:'1.0-0' }}
+                    </div>
+                    @if (selectedPaymentType() === 'cash' && p.price?.listPrice && p.price.listPrice > price) {
+                      <div class="text-[10px] text-base-content/45 tabular-nums">
+                        Lista ${{ p.price.listPrice | number:'1.0-0' }}
+                      </div>
+                    }
+                  </div>
+
+                  <button
+                    type="button"
+                    (click)="onPlusButtonClick(p, $event)"
+                    class="w-7 h-7 rounded-lg bg-base-200/80 group-hover:bg-primary group-hover:text-primary-content text-base-content flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <mat-icon class="text-[16px]! w-4! h-4!">{{ p.isSoldByWeight ? 'scale' : 'add' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+            }
           </div>
-
-        </div>
-
+        }
       </div>
-
     </div>
 
-    <!-- ── Mobile Bottom Navigation Bar (Floating Island Dock < lg) ──────────── -->
-    <div class="lg:hidden fixed bottom-3.5 left-3.5 right-3.5 z-30 bg-base-100/95 backdrop-blur-md border border-base-200 shadow-2xl rounded-2xl p-1.5 flex items-center gap-1.5 mb-[env(safe-area-inset-bottom,0px)]">
+    <!-- ======================================================================= -->
+    <!-- PANEL DERECHO: TICKET DE VENTA / COMANDA CON SEPARACIÓN VISUAL NÍTIDA   -->
+    <!-- ======================================================================= -->
+    <aside
+      class="pos-ticket-pane w-full lg:w-[380px] xl:w-[420px] shrink-0 bg-base-100 flex flex-col h-full min-h-0"
+      [class.max-lg:hidden]="activeTab() !== 'cart'"
+    >
+      <!-- 1. Cabecera del Ticket (Alto Contraste para anclar la zona de cobro) -->
+      <div class="px-4 py-3 bg-base-content text-base-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! opacity-80">receipt_long</mat-icon>
+          <span class="text-xs font-bold uppercase tracking-wider">
+            Orden #{{ currentTicketNumber() }}
+          </span>
+          @if (totalItems() > 0) {
+            <span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-base-100/15 text-base-100 tabular-nums">
+              {{ totalItems() }} {{ totalItems() === 1 ? 'ítem' : 'ítems' }}
+            </span>
+          }
+        </div>
+
+        @if (cart().length > 0) {
+          <button
+            type="button"
+            (click)="clearCart()"
+            class="text-xs font-semibold text-red-300 hover:text-red-200 flex items-center gap-1 cursor-pointer transition-colors"
+            title="Vaciar ticket completo"
+          >
+            <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete_sweep</mat-icon>
+            <span>Vaciar</span>
+          </button>
+        } @else {
+          <span class="text-[10.5px] font-medium opacity-60">En espera</span>
+        }
+      </div>
+
+      <!-- 2. Selector de Cliente / Cuenta Corriente (Libreta) -->
+      <div class="px-4 py-2.5 border-b border-base-300/85 bg-base-200/45 shrink-0">
+        @if (selectedClient(); as client) {
+          <div class="flex items-center justify-between p-2 rounded-lg bg-base-100 border border-primary/30 shadow-2xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-7 h-7 rounded-md bg-primary text-primary-content flex items-center justify-center font-bold text-xs shrink-0">
+                {{ client.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-base-content truncate">
+                  {{ client.name }} {{ client.lastName || '' }}
+                </p>
+                <div class="flex items-center gap-1.5 text-[10.5px] tabular-nums">
+                  <span class="text-base-content/55 truncate">{{ client.phone || client.dni || 'Cliente registrado' }}</span>
+                  @if (client.currentAccount?.balance; as bal) {
+                    <span>·</span>
+                    @if (bal > 0) {
+                      <span class="font-semibold text-error">Deuda: ${{ bal | number:'1.0-0' }}</span>
+                    } @else {
+                      <span class="font-semibold text-emerald-600">Al día</span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-0.5 shrink-0">
+              <button
+                type="button"
+                (click)="openClientSearchModal()"
+                class="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-primary"
+                title="Cambiar cliente"
+              >
+                <mat-icon class="text-[15px]! w-4! h-4!">swap_horiz</mat-icon>
+              </button>
+              <button
+                type="button"
+                (click)="clearSelectedClient()"
+                class="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-error"
+                title="Quitar cliente (Consumidor Final)"
+              >
+                <mat-icon class="text-[15px]! w-4! h-4!">close</mat-icon>
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button
+            type="button"
+            (click)="openClientSearchModal()"
+            class="w-full flex items-center justify-between py-1.5 px-3 rounded-lg border border-base-300 bg-base-100 hover:border-primary/60 shadow-2xs transition-colors text-left group cursor-pointer"
+          >
+            <div class="flex items-center gap-2 min-w-0">
+              <mat-icon class="text-[16px]! w-4! h-4! text-base-content/55 group-hover:text-primary">person_outline</mat-icon>
+              <span class="text-xs font-semibold text-base-content/85 group-hover:text-base-content truncate">
+                Consumidor Final
+              </span>
+            </div>
+            <span class="text-[11px] font-semibold text-primary flex items-center gap-0.5 shrink-0">
+              <span>Asignar cliente</span>
+              <mat-icon class="text-[14px]! w-3.5! h-3.5!">chevron_right</mat-icon>
+            </span>
+          </button>
+        }
+      </div>
+
+      <!-- 3. Lista de Ítems del Ticket (Scrolleable) -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-300/70 min-h-0 bg-base-100">
+        @if (cart().length === 0) {
+          <div class="h-full flex flex-col items-center justify-center text-center p-6">
+            <div class="w-12 h-12 rounded-2xl bg-base-200 border border-base-300/80 text-base-content/45 flex items-center justify-center mb-3">
+              <mat-icon class="text-2xl! w-6! h-6!">shopping_bag</mat-icon>
+            </div>
+            <p class="text-xs font-bold text-base-content/80">El ticket está vacío</p>
+            <p class="text-[11px] text-base-content/55 max-w-[230px] mt-1 leading-relaxed">
+              {{ emptyTicketMessage() }}
+            </p>
+          </div>
+        } @else {
+          @for (item of cart(); track item.cartItemId; let idx = $index) {
+            @let itemImg = getProductMainImage(item.product);
+            @let variantLabel = getVariantDisplayLabel(item.variant);
+
+            <div class="px-4 py-3 flex items-center justify-between gap-2.5 hover:bg-base-200/25 transition-colors">
+              <!-- Miniatura + Datos del Ítem -->
+              <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-base-200/60 overflow-hidden shrink-0 flex items-center justify-center border border-base-300/60">
+                  @if (itemImg) {
+                    <img [src]="itemImg" [alt]="item.product.model" class="w-full h-full object-cover" />
+                  } @else {
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5! text-base-content/35">
+                      {{ getProductFallbackIcon(item.product) }}
+                    </mat-icon>
+                  }
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <h5 class="text-xs font-semibold text-base-content truncate leading-tight">
+                    {{ item.product.model }}
+                  </h5>
+
+                  @if (item.isSoldByWeight) {
+                    <div class="flex items-center gap-1.5 mt-0.5 text-[11px] tabular-nums">
+                      <span class="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 font-mono font-bold text-[10px]">
+                        {{ item.weightGrams }}g
+                      </span>
+                      <span class="text-base-content/50">× ${{ item.price | number:'1.0-0' }}/{{ item.unit || 'kg' }}</span>
+                    </div>
+                  } @else if (variantLabel) {
+                    <p class="text-[10.5px] text-base-content/50 font-medium truncate mt-0.5">
+                      {{ variantLabel }}
+                    </p>
+                  }
+
+                  <div class="text-xs font-bold text-base-content tabular-nums mt-0.5">
+                    @if (item.isSoldByWeight) {
+                      ${{ (item.totalMoneyAmount || (item.price * item.quantity)) | number:'1.0-0' }}
+                    } @else {
+                      ${{ (item.price * item.quantity) | number:'1.0-0' }}
+                      @if (item.quantity > 1) {
+                        <span class="text-[10px] font-normal text-base-content/45 ml-1">
+                          (${{ item.price | number:'1.0-0' }} c/u)
+                        </span>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Controles de Cantidad / Peso + Eliminar -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                @if (item.isSoldByWeight) {
+                  <button
+                    type="button"
+                    (click)="updateQuantity(idx, 0)"
+                    class="px-2 py-1 rounded-lg bg-base-100 hover:bg-base-200 border border-base-300 text-xs font-semibold text-base-content flex items-center gap-1 cursor-pointer"
+                    title="Editar peso o monto"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5! text-amber-600">scale</mat-icon>
+                    <span class="tabular-nums">{{ item.weightGrams }}g</span>
+                  </button>
+                } @else {
+                  <div class="inline-flex items-center bg-base-100 rounded-lg border border-base-300/90 p-0.5">
+                    <button
+                      type="button"
+                      (click)="updateQuantity(idx, -1)"
+                      class="w-6 h-6 rounded-md hover:bg-base-200 text-base-content/75 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Restar 1"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">remove</mat-icon>
+                    </button>
+                    <span class="w-6 text-center text-xs font-bold text-base-content tabular-nums">
+                      {{ item.quantity }}
+                    </span>
+                    <button
+                      type="button"
+                      (click)="updateQuantity(idx, 1)"
+                      class="w-6 h-6 rounded-md hover:bg-base-200 text-base-content/75 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Sumar 1"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+                    </button>
+                  </div>
+                }
+
+                <button
+                  type="button"
+                  (click)="updateQuantity(idx, -item.quantity)"
+                  class="w-7 h-7 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Quitar del ticket"
+                >
+                  <mat-icon class="text-[15px]! w-4! h-4!">close</mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- 4. Resumen Financiero & Botones de Cobro de Alto Contraste -->
+      <div class="p-4 border-t border-base-300 bg-base-200/55 space-y-3 shrink-0">
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between items-center text-base-content/65">
+            <span>Subtotal ({{ selectedPaymentType() === 'cash' ? 'Tarifa Efectivo' : 'Tarifa Lista' }})</span>
+            <span class="font-semibold text-base-content tabular-nums">${{ subtotal() | number:'1.0-0' }}</span>
+          </div>
+
+          @if (discountCoupon() > 0) {
+            <div class="flex justify-between items-center text-emerald-600 font-semibold">
+              <span>Descuento</span>
+              <span class="tabular-nums">-${{ discountCoupon() | number:'1.0-0' }}</span>
+            </div>
+          }
+
+          <div class="flex justify-between items-baseline pt-2 border-t border-base-300">
+            <span class="text-xs font-bold uppercase tracking-wider text-base-content">Total a cobrar</span>
+            <span class="text-xl font-bold text-base-content tabular-nums">${{ total() | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Botones Duales con Contraste Legible en Activo e Inactivo -->
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            [disabled]="cart().length === 0 || isProcessing()"
+            (click)="openCheckout(false)"
+            class="h-10 rounded-xl font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-1.5 transition-all"
+            [ngClass]="cart().length === 0 || isProcessing() ? 'bg-base-100/80 text-base-content/45 border border-base-300 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 text-primary-content shadow-xs cursor-pointer active:scale-98'"
+          >
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">payments</mat-icon>
+            <span>Cobrar</span>
+          </button>
+
+          <button
+            type="button"
+            [disabled]="cart().length === 0 || isProcessing()"
+            (click)="openCheckout(true)"
+            class="h-10 rounded-xl font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-1.5 transition-all"
+            [ngClass]="cart().length === 0 || isProcessing() ? 'bg-base-100/80 text-base-content/45 border border-base-300 cursor-not-allowed' : 'bg-base-content hover:bg-base-content/90 text-base-100 shadow-xs cursor-pointer active:scale-98'"
+          >
+            <mat-icon class="text-[18px]! w-4.5! h-4.5!">print</mat-icon>
+            <span>Cobrar & Imprimir</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ======================================================================= -->
+    <!-- BARRA DE NAVEGACIÓN INFERIOR PARA MOBILE (< lg)                         -->
+    <!-- ======================================================================= -->
+    <div class="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-base-100/95 backdrop-blur-md border border-base-300 shadow-xl rounded-xl p-1 flex items-center gap-1">
       <button
         type="button"
         (click)="activeTab.set('catalog')"
-        class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-95"
-        [class.bg-primary]="activeTab() === 'catalog'"
-        [class.text-primary-content]="activeTab() === 'catalog'"
-        [class.text-base-content]="activeTab() !== 'catalog'"
-        [class.hover:bg-base-200]="activeTab() !== 'catalog'">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">storefront</mat-icon>
+        class="flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+        [ngClass]="activeTab() === 'catalog' ? 'bg-base-content text-base-100' : 'text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[17px]! w-4! h-4!">storefront</mat-icon>
         <span>Catálogo ({{ filteredProducts().length }})</span>
       </button>
 
       <button
         type="button"
         (click)="activeTab.set('cart')"
-        class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer relative shadow-2xs active:scale-95"
-        [class.bg-primary]="activeTab() === 'cart'"
-        [class.text-primary-content]="activeTab() === 'cart'"
-        [class.text-base-content]="activeTab() !== 'cart'"
-        [class.hover:bg-base-200]="activeTab() !== 'cart'">
-        <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">receipt_long</mat-icon>
-        <span>Ticket ({{ totalItems() }}) · ${{ total() | number:'1.0-0' }}</span>
+        class="flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer relative"
+        [ngClass]="activeTab() === 'cart' ? 'bg-primary text-primary-content' : 'text-base-content/70 hover:bg-base-200'"
+      >
+        <mat-icon class="text-[17px]! w-4! h-4!">receipt_long</mat-icon>
+        <span class="tabular-nums">Ticket ({{ totalItems() }}) · ${{ total() | number:'1.0-0' }}</span>
         @if (totalItems() > 0 && activeTab() !== 'cart') {
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-base-100 absolute top-2 right-3 animate-ping"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-base-100 absolute top-2 right-3"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-2.5 animate-ping"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-2.5"></span>
         }
       </button>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL: SELECCIÓN DE VARIANTE (TALLES Y COLORES - DENTRO DE CONTENT)       -->
+    <!-- MODAL 1: SELECCIÓN DE VARIANTE (ADAPTATIVO POR RUBRO: TALLES VS VARIANTES)-->
     <!-- ========================================================================= -->
     @if (showVariantModal() && selectedProduct(); as prod) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="showVariantModal.set(false)">
-        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
-          
-          <!-- Header Modal Variante -->
-          <div class="flex items-center justify-between border-b border-base-200 pb-3">
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="showVariantModal.set(false)">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full overflow-hidden animate-scale-up" (click)="$event.stopPropagation()">
+          <!-- Header -->
+          <div class="px-5 py-4 border-b border-base-200 flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
               @let prodImg = getProductMainImage(prod);
               <div class="w-11 h-11 rounded-xl bg-base-200 overflow-hidden shrink-0 flex items-center justify-center border border-base-300/60">
                 @if (prodImg) {
                   <img [src]="prodImg" [alt]="prod.model" class="w-full h-full object-cover" />
                 } @else {
-                  <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center text-primary">checkroom</mat-icon>
+                  <mat-icon class="text-[20px]! w-5! h-5! text-primary">{{ getProductFallbackIcon(prod) }}</mat-icon>
                 }
               </div>
               <div class="min-w-0">
-                <h3 class="text-sm font-black text-base-content truncate">{{ prod.model }}</h3>
-                <p class="text-[10px] text-base-content/60 font-bold uppercase tracking-wider">{{ prod.brand || prod.category || 'Seleccionar Talle' }}</p>
+                <h3 class="text-sm font-bold text-base-content truncate">{{ prod.model }}</h3>
+                <p class="text-[11px] text-base-content/50 font-medium truncate">
+                  {{ prod.brand || prod.category || (profile.isFashion() ? 'Seleccionar talle y color' : 'Seleccionar opción') }}
+                </p>
               </div>
             </div>
-            <button (click)="showVariantModal.set(false)" class="btn btn-ghost btn-sm btn-circle text-base-content/50 hover:text-base-content flex items-center justify-center cursor-pointer">
-              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">close</mat-icon>
+            <button (click)="showVariantModal.set(false)" class="btn btn-ghost btn-sm btn-circle text-base-content/50">
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">close</mat-icon>
             </button>
           </div>
 
           <!-- Lista de Variantes -->
-          <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-            <p class="text-[10px] font-black uppercase tracking-wider text-base-content/40">Talles y Colores Disponibles:</p>
+          <div class="p-5 space-y-2.5 max-h-[55vh] overflow-y-auto custom-scrollbar">
+            <p class="text-[10.5px] font-bold uppercase tracking-wider text-base-content/45">
+              {{ profile.isFashion() ? 'Talles y colores disponibles' : 'Variantes disponibles' }}
+            </p>
 
             <div class="grid grid-cols-1 gap-2">
               @for (v of prod.variants; track v._id || v.sku) {
@@ -585,187 +823,173 @@
                   type="button"
                   [disabled]="v.stock <= 0"
                   (click)="addVariantToCart(prod, v)"
-                  class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:border-primary hover:bg-primary/5 transition-all text-left group cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs">
-                  
-                  <div class="flex items-center gap-2.5">
+                  class="flex items-center justify-between p-3 rounded-xl border border-base-200/90 hover:border-primary/60 hover:bg-base-200/30 transition-all text-left group cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
                     @if (v.color?.hex) {
-                      <span class="w-5 h-5 rounded-full border border-black/20 shrink-0 shadow-2xs" [style.background-color]="v.color.hex"></span>
+                      <span class="w-4 h-4 rounded-full border border-black/15 shrink-0" [style.background-color]="v.color.hex"></span>
                     }
-                    <div>
-                      <span class="text-xs font-black text-base-content group-hover:text-primary block">
-                        Talle {{ v.size || 'Único' }} {{ v.color?.name ? '· ' + v.color.name : '' }}
+                    <div class="min-w-0">
+                      <span class="text-xs font-bold text-base-content group-hover:text-primary block truncate">
+                        {{ getVariantDisplayLabel(v) }}
                       </span>
-                      <span class="text-[9px] font-mono text-base-content/40">SKU: {{ v.sku || 'N/A' }}</span>
+                      <span class="text-[10px] font-mono text-base-content/45">SKU: {{ v.sku || 'S/N' }}</span>
                     </div>
                   </div>
 
-                  <div class="text-right flex items-center gap-3">
+                  <div class="text-right flex items-center gap-3 shrink-0">
                     <div>
-                      <span class="badge badge-xs font-bold text-[9px]" [class.badge-success]="v.stock > 2" [class.badge-warning]="v.stock <= 2 && v.stock > 0" [class.badge-error]="v.stock === 0">
-                        {{ v.stock > 0 ? v.stock + ' disp.' : 'Agotado' }}
+                      <span
+                        class="text-[10px] font-bold px-2 py-0.5 rounded-md tabular-nums"
+                        [ngClass]="{
+                          'bg-emerald-500/10 text-emerald-700': v.stock > 2,
+                          'bg-amber-500/15 text-amber-700': v.stock <= 2 && v.stock > 0,
+                          'bg-error/10 text-error': v.stock === 0
+                        }"
+                      >
+                        {{ v.stock > 0 ? v.stock + ' disp.' : 'Sin stock' }}
                       </span>
-                      <span class="text-xs font-black text-primary block mt-0.5 tabular-nums">
+                      <span class="text-xs font-bold text-base-content block mt-1 tabular-nums">
                         ${{ getProductPrice(prod) | number:'1.0-0' }}
                       </span>
                     </div>
-                    <div class="w-7 h-7 rounded-lg bg-primary group-hover:bg-primary/90 text-primary-content flex items-center justify-center transition-all shadow-2xs">
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">add</mat-icon>
+                    <div class="w-7 h-7 rounded-lg bg-base-200 group-hover:bg-primary group-hover:text-primary-content text-base-content flex items-center justify-center transition-colors">
+                      <mat-icon class="text-[15px]! w-4! h-4!">add</mat-icon>
                     </div>
                   </div>
                 </button>
               }
             </div>
           </div>
-
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL: COBRO TÁCTIL (COLLECT PAYMENT ESTILO RESTROBIT)                    -->
+    <!-- MODAL 2: COBRO TÁCTIL MULTICANAL                                          -->
     <!-- ========================================================================= -->
     @if (showPaymentModal()) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="showPaymentModal.set(false)">
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="closePaymentModal()">
         <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
-          
           <!-- Header Modal Cobro -->
           <div class="flex items-center justify-between border-b border-base-200 pb-3">
             <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">point_of_sale</mat-icon>
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <mat-icon class="text-[20px]! w-5! h-5!">point_of_sale</mat-icon>
               </div>
               <div>
-                <h3 class="text-xs font-black text-base-content">Cobrar Venta #{{ currentTicketNumber() }}</h3>
-                <p class="text-[10px] text-base-content/50 font-bold">Cliente: {{ customerName() }}</p>
+                <h3 class="text-sm font-bold text-base-content">Cobrar Orden #{{ currentTicketNumber() }}</h3>
+                <p class="text-[11px] text-base-content/50 font-medium">Cliente: {{ customerName() }}</p>
               </div>
             </div>
             <div class="text-right">
-              <span class="text-[9px] font-bold uppercase text-base-content/40 block">Total a Pagar</span>
-              <span class="text-base font-black text-primary tabular-nums">${{ total() | number:'1.0-0' }}</span>
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-base-content/45 block">Total</span>
+              <span class="text-lg font-bold text-base-content tabular-nums">${{ total() | number:'1.0-0' }}</span>
             </div>
           </div>
 
-          <!-- 5 Métodos de Cobro (RestroBit Tabs + Fiado Kiosco) -->
-          <div class="grid grid-cols-5 gap-1 p-1 bg-base-200 rounded-xl">
+          <!-- 5 Métodos de Cobro -->
+          <div class="grid grid-cols-5 gap-1 p-1 bg-base-200/70 rounded-xl border border-base-200">
             <button
               type="button"
               (click)="selectMethod('EFECTIVO')"
-              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-              [class.bg-base-100]="selectedMethod() === 'EFECTIVO'"
-              [class.shadow-2xs]="selectedMethod() === 'EFECTIVO'"
-              [class.text-primary]="selectedMethod() === 'EFECTIVO'"
-              [class.text-base-content]="selectedMethod() !== 'EFECTIVO'"
-              [class.opacity-60]="selectedMethod() !== 'EFECTIVO'">
-              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">payments</mat-icon>
-              <span class="text-[9px]">Efectivo</span>
+              class="py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [ngClass]="selectedMethod() === 'EFECTIVO' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">payments</mat-icon>
+              <span class="text-[10px]">Efectivo</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('QR')"
-              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-              [class.bg-base-100]="selectedMethod() === 'QR'"
-              [class.shadow-2xs]="selectedMethod() === 'QR'"
-              [class.text-primary]="selectedMethod() === 'QR'"
-              [class.text-base-content]="selectedMethod() !== 'QR'"
-              [class.opacity-60]="selectedMethod() !== 'QR'">
-              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">qr_code_2</mat-icon>
-              <span class="text-[9px]">QR MP</span>
+              class="py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [ngClass]="selectedMethod() === 'QR' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">qr_code_2</mat-icon>
+              <span class="text-[10px]">QR MP</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('TRANSFERENCIA')"
-              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-              [class.bg-base-100]="selectedMethod() === 'TRANSFERENCIA'"
-              [class.shadow-2xs]="selectedMethod() === 'TRANSFERENCIA'"
-              [class.text-primary]="selectedMethod() === 'TRANSFERENCIA'"
-              [class.text-base-content]="selectedMethod() !== 'TRANSFERENCIA'"
-              [class.opacity-60]="selectedMethod() !== 'TRANSFERENCIA'">
-              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">account_balance</mat-icon>
-              <span class="text-[9px]">Transf.</span>
+              class="py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [ngClass]="selectedMethod() === 'TRANSFERENCIA' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">account_balance</mat-icon>
+              <span class="text-[10px]">Transf.</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('TARJETA')"
-              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-              [class.bg-base-100]="selectedMethod() === 'TARJETA'"
-              [class.shadow-2xs]="selectedMethod() === 'TARJETA'"
-              [class.text-primary]="selectedMethod() === 'TARJETA'"
-              [class.text-base-content]="selectedMethod() !== 'TARJETA'"
-              [class.opacity-60]="selectedMethod() !== 'TARJETA'">
-              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">credit_card</mat-icon>
-              <span class="text-[9px]">Tarjeta</span>
+              class="py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [ngClass]="selectedMethod() === 'TARJETA' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">credit_card</mat-icon>
+              <span class="text-[10px]">Tarjeta</span>
             </button>
 
             <button
               type="button"
               (click)="selectMethod('FIADO')"
-              class="py-2 px-0.5 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-              [class.bg-base-100]="selectedMethod() === 'FIADO'"
-              [class.shadow-2xs]="selectedMethod() === 'FIADO'"
-              [class.text-amber-600]="selectedMethod() === 'FIADO'"
-              [class.text-base-content]="selectedMethod() !== 'FIADO'"
-              [class.opacity-60]="selectedMethod() !== 'FIADO'">
-              <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">menu_book</mat-icon>
-              <span class="text-[9px]">Fiado</span>
+              class="py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+              [ngClass]="selectedMethod() === 'FIADO' ? 'bg-base-100 text-amber-600 shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            >
+              <mat-icon class="text-[18px]! w-4.5! h-4.5!">menu_book</mat-icon>
+              <span class="text-[10px]">Fiado</span>
             </button>
           </div>
 
-          <!-- ── TAB 1: EFECTIVO (TECLADO NUMÉRICO & BILLETES ESTILO RESTROBIT) ── -->
+          <!-- TAB 1: EFECTIVO -->
           @if (selectedMethod() === 'EFECTIVO') {
-            <div class="space-y-2.5 bg-base-200/30 p-3.5 rounded-xl border border-base-200">
-              
-              <!-- Input Monto Recibido & Vuelto -->
+            <div class="space-y-3 bg-base-200/25 p-3.5 rounded-xl border border-base-200">
               <div class="grid grid-cols-2 gap-2">
                 <div class="bg-base-100 p-2.5 rounded-lg border border-base-200">
-                  <span class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block">Efectivo Recibido</span>
-                  <span class="text-base font-black text-base-content tabular-nums">${{ cashReceived() | number:'1.0-0' }}</span>
+                  <span class="text-[10px] font-semibold uppercase tracking-wider text-base-content/45 block">Efectivo recibido</span>
+                  <span class="text-base font-bold text-base-content tabular-nums">${{ cashReceived() | number:'1.0-0' }}</span>
                 </div>
 
-                <div class="p-2.5 rounded-lg border transition-colors"
-                  [class.bg-emerald-500/10]="cashReceived() >= total()"
-                  [class.border-emerald-500/30]="cashReceived() >= total()"
-                  [class.text-emerald-600]="cashReceived() >= total()"
-                  [class.bg-error/10]="cashReceived() < total()"
-                  [class.border-error/30]="cashReceived() < total()"
-                  [class.text-error]="cashReceived() < total()">
-                  <span class="text-[9px] font-bold uppercase tracking-wider opacity-70 block">
-                    {{ cashReceived() >= total() ? 'Vuelto a Entregar' : 'Faltan' }}
+                <div
+                  class="p-2.5 rounded-lg border transition-colors"
+                  [ngClass]="cashReceived() >= total() ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-error/10 border-error/30 text-error'"
+                >
+                  <span class="text-[10px] font-semibold uppercase tracking-wider opacity-75 block">
+                    {{ cashReceived() >= total() ? 'Vuelto a entregar' : 'Faltan' }}
                   </span>
-                  <span class="text-base font-black tabular-nums">
+                  <span class="text-base font-bold tabular-nums">
                     ${{ (cashReceived() >= total() ? cashChange() : (total() - cashReceived())) | number:'1.0-0' }}
                   </span>
                 </div>
               </div>
 
-              <!-- Billetes Rápidos Argentinos -->
+              <!-- Billetes Rápidos -->
               <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                <button (click)="setQuickCash(total())" class="btn btn-2xs btn-primary rounded-lg font-bold text-[10px]">
+                <button (click)="setQuickCash(total())" class="btn btn-xs btn-primary rounded-lg font-semibold text-[11px]">
                   Exacto (${{ total() | number:'1.0-0' }})
                 </button>
-                <button (click)="setQuickCash(10000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                <button (click)="setQuickCash(10000)" class="btn btn-xs btn-outline border-base-300 rounded-lg font-semibold text-[11px] tabular-nums">
                   $10.000
                 </button>
-                <button (click)="setQuickCash(20000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                <button (click)="setQuickCash(20000)" class="btn btn-xs btn-outline border-base-300 rounded-lg font-semibold text-[11px] tabular-nums">
                   $20.000
                 </button>
-                <button (click)="setQuickCash(50000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                <button (click)="setQuickCash(50000)" class="btn btn-xs btn-outline border-base-300 rounded-lg font-semibold text-[11px] tabular-nums">
                   $50.000
                 </button>
-                <button (click)="setQuickCash(100000)" class="btn btn-2xs btn-outline rounded-lg font-bold text-[10px]">
+                <button (click)="setQuickCash(100000)" class="btn btn-xs btn-outline border-base-300 rounded-lg font-semibold text-[11px] tabular-nums">
                   $100.000
                 </button>
               </div>
 
-              <!-- Teclado Numérico Táctil RestroBit (Keypad) -->
+              <!-- Teclado Numérico -->
               <div class="grid grid-cols-3 gap-1.5 pt-0.5">
                 @for (k of ['1','2','3','4','5','6','7','8','9','C','0','⌫']; track k) {
                   <button
                     type="button"
                     (click)="keypadPress(k)"
-                    class="btn btn-sm bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg font-black text-sm transition-all active:scale-95 shadow-2xs flex items-center justify-center">
+                    class="btn btn-sm bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg font-bold text-sm transition-all active:scale-95 flex items-center justify-center tabular-nums"
+                  >
                     {{ k }}
                   </button>
                 }
@@ -773,52 +997,46 @@
             </div>
           }
 
-          <!-- ── TAB 2: QR DINÁMICO ─────────────────────────────────────────────── -->
+          <!-- TAB 2: QR DINÁMICO -->
           @if (selectedMethod() === 'QR') {
-            <div class="p-3 bg-base-200/30 rounded-xl border border-base-200 text-center space-y-2 flex flex-col items-center">
-              <span class="text-xs font-bold text-base-content/70">Escaneá con Mercado Pago o cualquier app bancaria</span>
-              
-              <div class="p-2.5 bg-white rounded-xl shadow-2xs inline-block">
+            <div class="p-4 bg-base-200/25 rounded-xl border border-base-200 text-center space-y-2.5 flex flex-col items-center">
+              <span class="text-xs font-medium text-base-content/70">Escaneá con Mercado Pago o cualquier billetera virtual</span>
+              <div class="p-2.5 bg-white rounded-xl border border-base-200 inline-block">
                 <img [src]="qrImageUrl()" alt="QR Cobro" class="w-44 h-44 object-contain" />
               </div>
-
-              <span class="text-xs font-black text-primary">Monto Exacto: ${{ total() | number:'1.0-0' }}</span>
+              <span class="text-xs font-bold text-base-content tabular-nums">Monto exacto: ${{ total() | number:'1.0-0' }}</span>
             </div>
           }
 
-          <!-- ── TAB 3: TRANSFERENCIA BANCARIA (ALIAS + FOTO COMPROBANTE) ───────── -->
+          <!-- TAB 3: TRANSFERENCIA BANCARIA -->
           @if (selectedMethod() === 'TRANSFERENCIA') {
-            <div class="space-y-2.5 bg-base-200/30 p-3.5 rounded-xl border border-base-200">
-              
-              <!-- Datos Alias -->
+            <div class="space-y-3 bg-base-200/25 p-3.5 rounded-xl border border-base-200">
               <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-100 border border-base-200">
                 <div>
-                  <span class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block">Alias del Negocio</span>
-                  <span class="text-xs font-black text-base-content font-mono">{{ storeAlias() }}</span>
+                  <span class="text-[10px] font-semibold uppercase tracking-wider text-base-content/45 block">Alias del comercio</span>
+                  <span class="text-xs font-bold text-base-content font-mono">{{ storeAlias() }}</span>
                 </div>
-                <button (click)="copyAlias()" class="btn btn-ghost btn-2xs btn-circle text-primary flex items-center justify-center cursor-pointer" title="Copiar Alias">
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">content_copy</mat-icon>
+                <button (click)="copyAlias()" class="btn btn-ghost btn-xs btn-circle text-primary" title="Copiar Alias">
+                  <mat-icon class="text-[15px]! w-4! h-4!">content_copy</mat-icon>
                 </button>
               </div>
 
-              <!-- Captura de Comprobante por Cámara o Archivo -->
               <div>
-                <label class="text-[9px] font-bold uppercase tracking-wider text-base-content/40 block mb-1">
-                  Foto del Comprobante (Cámara / Subir)
+                <label class="text-[10px] font-semibold uppercase tracking-wider text-base-content/45 block mb-1.5">
+                  Comprobante de transferencia (opcional)
                 </label>
 
                 @if (!transferReceiptPreview()) {
-                  <label class="flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-dashed border-base-300 hover:border-primary/50 bg-base-100 cursor-pointer transition-colors group text-center space-y-1">
-                    <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center text-primary">photo_camera</mat-icon>
-                    <span class="text-xs font-bold text-base-content/80 group-hover:text-primary">Tomar Foto con Cámara / Subir</span>
-                    <span class="text-[9px] text-base-content/40">Saca foto a la pantalla del cliente</span>
+                  <label class="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-base-300 hover:border-primary/50 bg-base-100 cursor-pointer transition-colors group text-center space-y-1">
+                    <mat-icon class="text-[24px]! w-6! h-6! text-primary">photo_camera</mat-icon>
+                    <span class="text-xs font-semibold text-base-content/80 group-hover:text-primary">Tomar foto o subir comprobante</span>
                     <input type="file" accept="image/*" capture="environment" (change)="onReceiptFileSelected($event)" class="hidden" />
                   </label>
                 } @else {
                   <div class="relative rounded-xl overflow-hidden border border-base-300 bg-black aspect-16/9 flex items-center justify-center">
                     <img [src]="transferReceiptPreview()" alt="Comprobante Adjunto" class="w-full h-full object-contain" />
-                    <button (click)="removeReceipt()" class="btn btn-error btn-2xs btn-circle absolute top-1.5 right-1.5 text-white flex items-center justify-center cursor-pointer">
-                      <mat-icon class="text-[14px]! w-3.5! h-3.5! leading-none flex items-center justify-center">close</mat-icon>
+                    <button (click)="removeReceipt()" class="btn btn-error btn-xs btn-circle absolute top-2 right-2 text-white">
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">close</mat-icon>
                     </button>
                   </div>
                 }
@@ -826,171 +1044,360 @@
             </div>
           }
 
-          <!-- ── TAB 4: TARJETA / POS ───────────────────────────────────────────── -->
+          <!-- TAB 4: TARJETA / POINT -->
           @if (selectedMethod() === 'TARJETA') {
-            <div class="p-5 bg-base-200/30 rounded-xl border border-base-200 text-center space-y-2">
-              <mat-icon class="text-[36px]! w-9! h-9! leading-none flex items-center justify-center text-primary mx-auto">credit_card</mat-icon>
-              <p class="text-xs font-bold text-base-content">Cobro por Terminal POS / Tarjeta</p>
-              <p class="text-xs text-base-content/50">Cobrá el monto de ${{ total() | number:'1.0-0' }} en el posnet físico y confirma.</p>
+            <div class="space-y-3 bg-base-200/25 p-3.5 rounded-xl border border-base-200">
+              <div class="flex items-center p-0.5 bg-base-200 rounded-lg text-xs font-semibold gap-1">
+                <button
+                  type="button"
+                  (click)="setPointMode('point')"
+                  class="flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  [ngClass]="pointMode() === 'point' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60'"
+                >
+                  <mat-icon class="text-[15px]! w-4! h-4!">point_of_sale</mat-icon>
+                  <span>Terminal Point</span>
+                </button>
+
+                <button
+                  type="button"
+                  (click)="setPointMode('manual')"
+                  class="flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  [ngClass]="pointMode() === 'manual' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60'"
+                >
+                  <mat-icon class="text-[15px]! w-4! h-4!">credit_card</mat-icon>
+                  <span>Posnet Manual</span>
+                </button>
+              </div>
+
+              @if (pointMode() === 'manual') {
+                <div class="p-4 bg-base-100 rounded-xl border border-base-200 text-center space-y-2">
+                  <div class="w-10 h-10 rounded-full bg-base-200 text-base-content/70 flex items-center justify-center mx-auto">
+                    <mat-icon class="text-[20px]! w-5! h-5!">credit_card</mat-icon>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-base-content">Posnet Externo o Tarjeta Manual</h4>
+                    <p class="text-[11px] text-base-content/60 mt-0.5">
+                      Cobrá ${{ total() | number:'1.0-0' }} en tu terminal física habitual y presioná "Confirmar Venta".
+                    </p>
+                  </div>
+                </div>
+              }
+
+              @if (pointMode() === 'point') {
+                @if (isLoadingPointDevices()) {
+                  <div class="py-6 text-center space-y-2">
+                    <span class="loading loading-spinner loading-md text-primary"></span>
+                    <p class="text-xs font-medium text-base-content/70">Detectando terminales Point...</p>
+                  </div>
+                } @else if (pointDevices().length === 0) {
+                  <div class="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center space-y-2.5">
+                    <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center mx-auto">
+                      <mat-icon class="text-[20px]! w-5! h-5!">phonelink_erase</mat-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-amber-700 dark:text-amber-400">No se detectó ninguna terminal Point</h4>
+                      <p class="text-[11px] text-base-content/70 mt-1">
+                        Verificá que tu terminal Point esté encendida y vinculada a tu cuenta de Mercado Pago.
+                      </p>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 pt-1">
+                      <button type="button" (click)="loadPointDevices()" class="btn btn-outline btn-xs rounded-lg text-primary gap-1">
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">refresh</mat-icon>
+                        <span>Reintentar</span>
+                      </button>
+                      <button type="button" (click)="setPointMode('manual')" class="btn btn-ghost btn-xs text-base-content/70">
+                        Usar Cobro Manual
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  @if (pointOrderStatus() === 'idle') {
+                    <div class="space-y-3">
+                      <div class="bg-base-100 p-2.5 rounded-xl border border-base-200 space-y-2">
+                        <div class="flex items-center justify-between text-[11px]">
+                          <span class="font-semibold text-base-content/60">Terminal seleccionada:</span>
+                          <span class="badge badge-xs badge-success gap-1 text-[10px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            En línea
+                          </span>
+                        </div>
+
+                        <select
+                          class="select select-sm select-bordered w-full text-xs font-semibold rounded-lg focus:outline-none"
+                          [value]="selectedPointDevice()?.id"
+                          (change)="selectPointDevice(pointDevices()[$any($event.target).selectedIndex])"
+                        >
+                          @for (device of pointDevices(); track device.id) {
+                            <option [value]="device.id">
+                              {{ device.posId ? 'Point #' + device.posId : (device.name || device.id) }} ({{ device.operatingMode || 'PDV' }})
+                            </option>
+                          }
+                        </select>
+
+                        <label class="flex items-center gap-2 cursor-pointer pt-1 text-[11px] text-base-content/70 select-none">
+                          <input
+                            type="checkbox"
+                            [checked]="printTicketOnPoint()"
+                            (change)="printTicketOnPoint.set(!printTicketOnPoint())"
+                            class="checkbox checkbox-xs checkbox-primary rounded"
+                          />
+                          <span>Imprimir comprobante en papel del Point</span>
+                        </label>
+                      </div>
+
+                      @if (pointErrorMessage()) {
+                        <div class="p-2.5 bg-error/10 border border-error/20 rounded-xl text-error text-[11px] flex items-center gap-2">
+                          <mat-icon class="text-[16px]! w-4! h-4! shrink-0">error_outline</mat-icon>
+                          <span class="flex-1">{{ pointErrorMessage() }}</span>
+                        </div>
+                      }
+
+                      <button
+                        type="button"
+                        (click)="sendPointCharge()"
+                        [disabled]="isDispatchingPointOrder() || !selectedPointDevice()"
+                        class="btn btn-primary w-full rounded-xl font-bold text-xs gap-2 h-10"
+                      >
+                        @if (isDispatchingPointOrder()) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                          <span>Conectando con la terminal...</span>
+                        } @else {
+                          <mat-icon class="text-[18px]! w-4.5! h-4.5!">contactless</mat-icon>
+                          <span>Enviar cobro al Point (${{ total() | number:'1.0-0' }})</span>
+                        }
+                      </button>
+                    </div>
+                  } @else if (pointOrderStatus() === 'at_terminal') {
+                    <div class="p-4 bg-primary/5 border border-primary/20 rounded-2xl text-center space-y-3 relative overflow-hidden">
+                      <div class="point-radar-container mx-auto my-1">
+                        <div class="point-radar-circle"></div>
+                        <div class="point-radar-circle delay-1"></div>
+                        <div class="point-radar-circle delay-2"></div>
+                        <div class="point-radar-icon">
+                          <mat-icon class="text-[24px]! w-6! h-6! text-primary">contactless</mat-icon>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider mb-1">
+                          <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                          Esperando tarjeta en terminal
+                        </div>
+                        <h4 class="text-sm font-bold text-base-content mt-1">Cobro enviado a la pantalla del Point</h4>
+                        <p class="text-xl font-bold text-base-content tabular-nums mt-0.5">${{ total() | number:'1.0-0' }}</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        (click)="cancelPointCharge()"
+                        class="btn btn-ghost btn-xs text-error font-semibold rounded-lg border border-error/20 hover:bg-error/10"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">cancel</mat-icon>
+                        <span>Cancelar cobro en terminal</span>
+                      </button>
+                    </div>
+                  } @else if (pointOrderStatus() === 'processed') {
+                    <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center space-y-2 animate-scale-up">
+                      <div class="w-11 h-11 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center mx-auto">
+                        <mat-icon class="text-[24px]! w-6! h-6!">task_alt</mat-icon>
+                      </div>
+                      <h4 class="text-sm font-bold text-emerald-700 dark:text-emerald-400">¡Pago aprobado en la terminal!</h4>
+                      <p class="text-base font-bold text-base-content tabular-nums">${{ total() | number:'1.0-0' }}</p>
+                    </div>
+                  } @else if (pointOrderStatus() === 'failed' || pointOrderStatus() === 'cancelled') {
+                    <div class="p-4 bg-error/10 border border-error/30 rounded-2xl text-center space-y-2.5">
+                      <div class="w-10 h-10 rounded-full bg-error/20 text-error flex items-center justify-center mx-auto">
+                        <mat-icon class="text-[22px]! w-5.5! h-5.5!">highlight_off</mat-icon>
+                      </div>
+                      <h4 class="text-xs font-bold text-error">Operación no completada</h4>
+                      <p class="text-[11px] text-base-content/70">{{ pointErrorMessage() || 'El cobro no pudo completarse en la terminal.' }}</p>
+                      <div class="flex items-center justify-center gap-2 pt-1">
+                        <button type="button" (click)="sendPointCharge()" class="btn btn-primary btn-xs rounded-lg gap-1">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">refresh</mat-icon>
+                          <span>Reintentar</span>
+                        </button>
+                        <button type="button" (click)="setPointMode('manual'); resetPointState()" class="btn btn-ghost btn-xs text-base-content/70">
+                          Modo Manual
+                        </button>
+                      </div>
+                    </div>
+                  }
+                }
+              }
             </div>
           }
 
-          <!-- ── TAB 5: FIADO / LIBRETA DE CUENTA CORRIENTE ────────────────────── -->
+          <!-- TAB 5: FIADO / CUENTA CORRIENTE -->
           @if (selectedMethod() === 'FIADO') {
             <div class="space-y-3 bg-amber-500/5 p-3.5 rounded-xl border border-amber-500/20">
               @if (selectedClient(); as client) {
-                <!-- Cliente Asignado -->
                 <div class="flex items-center justify-between bg-base-100 p-2.5 rounded-xl border border-base-200">
                   <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-black text-sm">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-700 flex items-center justify-center font-bold text-sm">
                       {{ client.name.charAt(0).toUpperCase() }}
                     </div>
                     <div>
-                      <p class="text-xs font-black text-base-content">{{ client.name }} {{ client.lastName || '' }}</p>
+                      <p class="text-xs font-bold text-base-content">{{ client.name }} {{ client.lastName || '' }}</p>
                       <p class="text-[10px] text-base-content/50">{{ client.phone || client.dni || 'Sin teléfono' }}</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    (click)="openClientSearchModal()"
-                    class="btn btn-outline btn-2xs font-bold rounded-lg text-primary">
+                  <button type="button" (click)="openClientSearchModal()" class="btn btn-outline btn-xs rounded-lg">
                     Cambiar
                   </button>
                 </div>
 
-                <!-- Detalle Financiero del Fiado -->
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                  <div class="p-2 rounded-lg bg-base-100 border border-base-200">
-                    <span class="text-[9px] font-bold uppercase text-base-content/40 block">Deuda Actual</span>
-                    <span class="font-black tabular-nums text-error">${{ (client.currentAccount?.balance || 0) | number:'1.0-0' }}</span>
+                  <div class="p-2.5 rounded-lg bg-base-100 border border-base-200">
+                    <span class="text-[10px] font-semibold uppercase text-base-content/45 block">Deuda actual</span>
+                    <span class="font-bold tabular-nums text-error">${{ (client.currentAccount?.balance || 0) | number:'1.0-0' }}</span>
                   </div>
-                  <div class="p-2 rounded-lg bg-base-100 border border-base-200">
-                    <span class="text-[9px] font-bold uppercase text-base-content/40 block">Nuevo Saldo</span>
-                    <span class="font-black tabular-nums text-primary">${{ ((client.currentAccount?.balance || 0) + total()) | number:'1.0-0' }}</span>
+                  <div class="p-2.5 rounded-lg bg-base-100 border border-base-200">
+                    <span class="text-[10px] font-semibold uppercase text-base-content/45 block">Nuevo saldo</span>
+                    <span class="font-bold tabular-nums text-base-content">${{ ((client.currentAccount?.balance || 0) + total()) | number:'1.0-0' }}</span>
                   </div>
                 </div>
 
-                <!-- Estado del Crédito -->
                 @let account = client.currentAccount;
                 @let isBlocked = account?.isCreditAllowed === false;
                 @let limit = account?.creditLimit || 0;
                 @let exceeds = limit > 0 && ((account?.balance || 0) + total()) > limit;
 
                 @if (isBlocked) {
-                  <div class="flex items-center gap-2 p-2 rounded-lg bg-error/10 text-error text-xs font-bold border border-error/20">
-                    <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">block</mat-icon>
-                    <span>Este cliente tiene el crédito / fiado SUSPENDIDO.</span>
+                  <div class="flex items-center gap-2 p-2 rounded-lg bg-error/10 text-error text-xs font-semibold border border-error/20">
+                    <mat-icon class="text-[16px]! w-4! h-4!">block</mat-icon>
+                    <span>Este cliente tiene el crédito / fiado suspendido.</span>
                   </div>
                 } @else if (exceeds) {
-                  <div class="flex items-center gap-2 p-2 rounded-lg bg-warning/10 text-warning-content text-xs font-bold border border-warning/20">
-                    <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">warning</mat-icon>
+                  <div class="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 text-amber-700 text-xs font-semibold border border-amber-500/20">
+                    <mat-icon class="text-[16px]! w-4! h-4!">warning</mat-icon>
                     <span>Supera el límite asignado (${{ limit | number:'1.0-0' }}).</span>
                   </div>
                 } @else {
-                  <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-xs font-bold border border-emerald-500/20">
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-xs font-semibold border border-emerald-500/20">
                     <div class="flex items-center gap-1.5">
-                      <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">check_circle</mat-icon>
-                      <span>Crédito Aprobado</span>
+                      <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+                      <span>Crédito habilitado</span>
                     </div>
-                    <span class="text-[10px] text-base-content/50">
+                    <span class="text-[10px] text-base-content/60 tabular-nums">
                       {{ limit > 0 ? ('Límite: $' + (limit | number:'1.0-0')) : 'Sin límite' }}
                     </span>
                   </div>
                 }
               } @else {
-                <!-- Sin cliente seleccionado -->
                 <div class="text-center py-4 space-y-2.5">
-                  <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
-                    <mat-icon class="text-[22px]! w-5.5! h-5.5! leading-none flex items-center justify-center">person_search</mat-icon>
+                  <div class="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
+                    <mat-icon class="text-[20px]! w-5! h-5!">person_search</mat-icon>
                   </div>
                   <div>
-                    <h4 class="text-xs font-black text-base-content">¿A quién se le anota el fiado?</h4>
-                    <p class="text-[11px] text-base-content/60">Seleccioná o registrá el cliente en la libreta para cargar la deuda.</p>
+                    <h4 class="text-xs font-bold text-base-content">Asignar cliente a la cuenta corriente</h4>
+                    <p class="text-[11px] text-base-content/60">Seleccioná o registrá el cliente para anotar el saldo.</p>
                   </div>
-                  <button
-                    type="button"
-                    (click)="openClientSearchModal()"
-                    class="btn btn-primary btn-sm rounded-xl font-black gap-1.5 shadow-xs">
-                    <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">search</mat-icon>
-                    <span>Buscar / Elegir Cliente</span>
+                  <button type="button" (click)="openClientSearchModal()" class="btn btn-primary btn-sm rounded-xl font-semibold gap-1.5">
+                    <mat-icon class="text-[16px]! w-4! h-4!">search</mat-icon>
+                    <span>Buscar o registrar cliente</span>
                   </button>
                 </div>
               }
             </div>
           }
 
-          <!-- Botones Finales Modal -->
+          <!-- Acciones Finales del Modal -->
           <div class="flex gap-2 pt-2 border-t border-base-200">
-            <button
-              type="button"
-              (click)="showPaymentModal.set(false)"
-              class="btn btn-ghost btn-sm rounded-xl font-bold flex-1">
-              Volver
+            <button type="button" (click)="closePaymentModal()" class="btn btn-ghost btn-sm rounded-xl font-semibold flex-1">
+              Cancelar
             </button>
 
-            <button
-              type="button"
-              (click)="processSale()"
-              [disabled]="isProcessing() || (selectedMethod() === 'EFECTIVO' && cashReceived() < total()) || (selectedMethod() === 'FIADO' && (!selectedClient() || selectedClient()?.currentAccount?.isCreditAllowed === false || ((selectedClient()?.currentAccount?.creditLimit || 0) > 0 && ((selectedClient()?.currentAccount?.balance || 0) + total()) > (selectedClient()?.currentAccount?.creditLimit || 0))))"
-              class="btn btn-primary btn-sm rounded-xl font-black flex-[2] gap-1.5 shadow-sm cursor-pointer flex items-center justify-center">
-              @if (isProcessing()) {
-                <span class="loading loading-spinner loading-xs"></span>
-                <span>Registrando...</span>
-              } @else {
-                <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">verified</mat-icon>
-                <span>CONFIRMAR VENTA (${{ total() | number:'1.0-0' }})</span>
-              }
-            </button>
+            @if (selectedMethod() === 'TARJETA' && pointMode() === 'point' && pointOrderStatus() === 'at_terminal') {
+              <button
+                type="button"
+                (click)="cancelPointCharge()"
+                class="btn btn-error btn-outline btn-sm rounded-xl font-bold flex-[2] gap-1.5"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">cancel</mat-icon>
+                <span>Cancelar en Point</span>
+              </button>
+            } @else if (selectedMethod() === 'TARJETA' && pointMode() === 'point' && pointOrderStatus() === 'idle') {
+              <button
+                type="button"
+                (click)="sendPointCharge()"
+                [disabled]="isDispatchingPointOrder() || !selectedPointDevice()"
+                class="btn btn-primary btn-sm rounded-xl font-bold flex-[2] gap-1.5"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">contactless</mat-icon>
+                <span>Cobrar en Point (${{ total() | number:'1.0-0' }})</span>
+              </button>
+            } @else if (selectedMethod() === 'TARJETA' && pointMode() === 'point' && (pointOrderStatus() === 'failed' || pointOrderStatus() === 'cancelled')) {
+              <button
+                type="button"
+                (click)="sendPointCharge()"
+                class="btn btn-primary btn-sm rounded-xl font-bold flex-[2] gap-1.5"
+              >
+                <mat-icon class="text-[16px]! w-4! h-4!">refresh</mat-icon>
+                <span>Reintentar Point</span>
+              </button>
+            } @else {
+              <button
+                type="button"
+                (click)="processSale()"
+                [disabled]="isProcessing() || (selectedMethod() === 'EFECTIVO' && cashReceived() < total()) || (selectedMethod() === 'FIADO' && (!selectedClient() || selectedClient()?.currentAccount?.isCreditAllowed === false || ((selectedClient()?.currentAccount?.creditLimit || 0) > 0 && ((selectedClient()?.currentAccount?.balance || 0) + total()) > (selectedClient()?.currentAccount?.creditLimit || 0))))"
+                class="btn btn-primary btn-sm rounded-xl font-bold flex-[2] gap-1.5"
+              >
+                @if (isProcessing()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                  <span>Registrando...</span>
+                } @else {
+                  <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+                  <span>Confirmar venta (${{ total() | number:'1.0-0' }})</span>
+                }
+              </button>
+            }
           </div>
-
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL: VENTA EXITOSA & POST-VENTA                                         -->
+    <!-- MODAL 3: VENTA EXITOSA & POST-VENTA                                       -->
     <!-- ========================================================================= -->
     @if (showSuccessModal() && lastCompletedOrder(); as order) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-sm w-full p-5 text-center space-y-3.5 animate-scale-up">
-          
-          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
-            <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center">task_alt</mat-icon>
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-sm w-full p-5 text-center space-y-4 animate-scale-up">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
+            <mat-icon class="text-[28px]! w-7! h-7!">task_alt</mat-icon>
           </div>
 
           <div>
-            <h3 class="text-base font-black text-base-content">¡Venta Registrada!</h3>
+            <h3 class="text-base font-bold text-base-content">¡Venta registrada!</h3>
             <p class="text-xs font-mono text-base-content/50 mt-0.5">Orden #{{ order.orderNumber }}</p>
-            <p class="text-lg font-black text-primary tabular-nums mt-1">${{ order.total | number:'1.0-0' }}</p>
+            <p class="text-xl font-bold text-base-content tabular-nums mt-1">${{ order.total | number:'1.0-0' }}</p>
           </div>
 
           <div class="space-y-2 pt-1">
-            <button (click)="printTicket()" class="btn btn-neutral btn-sm w-full rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">print</mat-icon>
-              <span>Imprimir Ticket Térmico</span>
+            <button (click)="printTicket()" class="btn btn-neutral btn-sm w-full rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5">
+              <mat-icon class="text-[17px]! w-4! h-4!">print</mat-icon>
+              <span>Imprimir ticket térmico</span>
             </button>
 
-            <button (click)="shareWhatsApp()" class="btn btn-ghost border border-base-300 btn-sm w-full rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 text-emerald-600 cursor-pointer">
-              <mat-icon class="text-[18px]! w-4.5! h-4.5! leading-none flex items-center justify-center">share</mat-icon>
+            <button (click)="shareWhatsApp()" class="btn btn-ghost border border-base-300 btn-sm w-full rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 text-emerald-600">
+              <mat-icon class="text-[17px]! w-4! h-4!">share</mat-icon>
               <span>Enviar por WhatsApp</span>
             </button>
 
-            <button (click)="startNewSale()" class="btn btn-primary btn-sm w-full rounded-xl font-black text-xs cursor-pointer">
-              <span>➕ Nueva Venta</span>
+            <button (click)="startNewSale()" class="btn btn-primary btn-sm w-full rounded-xl font-bold text-xs gap-1">
+              <mat-icon class="text-[17px]! w-4! h-4!">add</mat-icon>
+              <span>Nueva venta</span>
             </button>
           </div>
-
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL: VINCULAR CELULAR / ESCÁNER REMOTO (QR)                             -->
+    <!-- MODAL 4: VINCULAR CELULAR / ESCÁNER REMOTO (QR)                           -->
     <!-- ========================================================================= -->
     @if (showPairingModal()) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-scale-up relative">
-          <!-- Botón Cerrar -->
           <button
             type="button"
             (click)="closePairingModal()"
@@ -999,19 +1406,17 @@
             <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
           </button>
 
-          <!-- Encabezado Modal -->
           <div class="text-center space-y-1">
             <div class="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
-              <mat-icon class="text-[24px]! w-6! h-6!">smartphone</mat-icon>
+              <mat-icon class="text-[22px]! w-5.5! h-5.5!">qr_code_scanner</mat-icon>
             </div>
-            <h3 class="text-base font-bold text-base-content">Vincular Celular (Pistola)</h3>
+            <h3 class="text-base font-bold text-base-content">Vincular celular como escáner</h3>
             <p class="text-xs text-base-content/60">
-              Abrí la app en el celular y escaneá este QR para sincronizarlo con esta caja.
+              Abrí la app en tu teléfono y escaneá este QR para sincronizarlo con esta caja.
             </p>
           </div>
 
-          <!-- Contenedor QR -->
-          <div class="p-3 bg-white rounded-2xl border border-base-300 shadow-inner flex flex-col items-center justify-center min-h-[220px]">
+          <div class="p-3 bg-white rounded-2xl border border-base-300 flex flex-col items-center justify-center min-h-[220px]">
             @if (pairingLoading()) {
               <div class="flex flex-col items-center gap-2 py-8">
                 <span class="loading loading-spinner loading-md text-primary"></span>
@@ -1030,250 +1435,202 @@
             }
           </div>
 
-          <!-- Información de Terminal -->
           <div class="flex items-center justify-between px-3 py-2 bg-base-200/50 rounded-xl border border-base-200 text-xs">
             <span class="text-base-content/60 font-medium">Terminal activa:</span>
-            <span class="font-mono font-bold text-primary">{{ terminalId() }}</span>
+            <span class="font-mono font-bold text-base-content">{{ terminalId() }}</span>
           </div>
 
-          <!-- Estado de Conexión en Tiempo Real -->
           @if (wsService.isScannerConnected()) {
-            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs flex items-center gap-2.5 animate-fade-in">
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs flex items-center gap-2.5">
               <span class="relative flex h-2.5 w-2.5 shrink-0">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
               <div class="min-w-0">
-                <span class="font-bold block">¡Celular Conectado!</span>
+                <span class="font-bold block">¡Celular conectado!</span>
                 <span class="text-[11px] opacity-80 block truncate">
-                  {{ wsService.activeScanners()[0]?.deviceName || 'Lector Android activo y listo' }}
+                  {{ wsService.activeScanners()[0]?.deviceName || 'Lector activo y listo' }}
                 </span>
               </div>
             </div>
           } @else {
             <div class="p-2.5 rounded-xl bg-base-200/40 border border-base-200 text-base-content/60 text-xs flex items-center justify-center gap-2 text-center">
               <span class="w-2 h-2 rounded-full bg-base-content/30 animate-pulse"></span>
-              <span>Esperando que el celular escanee el QR...</span>
+              <span>Esperando escaneo desde el celular...</span>
             </div>
           }
 
-          <!-- Botón Finalizar -->
-          <button
-            type="button"
-            (click)="closePairingModal()"
-            class="btn btn-primary btn-sm w-full rounded-xl font-bold text-xs"
-          >
-            Listo / Continuar en Mostrador
+          <button type="button" (click)="closePairingModal()" class="btn btn-primary btn-sm w-full rounded-xl font-semibold text-xs">
+            Listo
           </button>
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL DE VENTA POR BALANZA / PESO / FRACCIONADO (PASO 2)                  -->
+    <!-- MODAL 5: VENTA POR BALANZA / PESO / FRACCIONADO                           -->
     <!-- ========================================================================= -->
     @if (showWeightModal()) {
       @let p = weightProduct();
       @let priceKg = weightProductPrice();
 
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in select-none">
-        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
-
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/55 backdrop-blur-xs select-none" (click)="closeWeightModal()">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[92vh] animate-scale-up" (click)="$event.stopPropagation()">
           <!-- Header Modal -->
-          <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-200/30">
+          <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-100">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                <mat-icon class="text-[22px]! w-5.5! h-5.5!">scale</mat-icon>
+              <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                <mat-icon class="text-[20px]! w-5! h-5!">scale</mat-icon>
               </div>
               <div class="min-w-0">
-                <h3 class="text-sm font-black text-base-content truncate">{{ p?.model }}</h3>
+                <h3 class="text-sm font-bold text-base-content truncate">{{ p?.model }}</h3>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="badge badge-xs bg-amber-500 text-white font-bold">AL PESO</span>
-                  <span class="text-xs font-black text-primary tabular-nums">${{ priceKg | number:'1.0-0' }} / {{ p?.unit || 'kg' }}</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-amber-500/15 text-amber-700 font-bold uppercase">Al peso</span>
+                  <span class="text-xs font-bold text-base-content tabular-nums">${{ priceKg | number:'1.0-0' }} / {{ p?.unit || 'kg' }}</span>
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              (click)="closeWeightModal()"
-              class="btn btn-ghost btn-xs btn-circle text-base-content/40 hover:text-base-content">
+            <button type="button" (click)="closeWeightModal()" class="btn btn-ghost btn-xs btn-circle text-base-content/50">
               <mat-icon class="text-[18px]!">close</mat-icon>
             </button>
           </div>
 
-          <!-- Body / Selector de Modo (Dinero $ vs Peso g) -->
           <div class="p-4 overflow-y-auto space-y-4">
-
             <!-- Segmented Switch: ¿Por Dinero o Por Peso? -->
-            <div class="grid grid-cols-2 p-1 bg-base-200 rounded-xl border border-base-300/80 gap-1">
+            <div class="grid grid-cols-2 p-1 bg-base-200/70 rounded-xl border border-base-200 gap-1">
               <button
                 type="button"
                 (click)="setWeightInputMode('money')"
-                class="py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                [class.bg-base-100]="weightInputMode() === 'money'"
-                [class.text-primary]="weightInputMode() === 'money'"
-                [class.shadow-2xs]="weightInputMode() === 'money'"
-                [class.text-base-content/60]="weightInputMode() !== 'money'">
+                class="py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                [ngClass]="weightInputMode() === 'money' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60'"
+              >
                 <mat-icon class="text-[16px]!">payments</mat-icon>
-                <span>Por Dinero ($)</span>
+                <span>Por importe ($)</span>
               </button>
 
               <button
                 type="button"
                 (click)="setWeightInputMode('weight')"
-                class="py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                [class.bg-base-100]="weightInputMode() === 'weight'"
-                [class.text-amber-600]="weightInputMode() === 'weight'"
-                [class.shadow-2xs]="weightInputMode() === 'weight'"
-                [class.text-base-content/60]="weightInputMode() !== 'weight'">
+                class="py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                [ngClass]="weightInputMode() === 'weight' ? 'bg-base-100 text-amber-600 shadow-2xs font-bold' : 'text-base-content/60'"
+              >
                 <mat-icon class="text-[16px]!">scale</mat-icon>
-                <span>Por Peso (gr)</span>
+                <span>Por peso (gr)</span>
               </button>
             </div>
 
-            <!-- CASO 1: MODO DINERO ($) -->
             @if (weightInputMode() === 'money') {
               <div class="space-y-3">
-                <div class="flex items-center justify-between text-xs font-bold text-base-content/70">
-                  <span>¿Cuánto dinero pide el cliente?</span>
-                  <span class="text-primary text-[11px] font-mono">Ej: $1.500 de queso</span>
+                <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
+                  <span>¿Qué importe pide el cliente?</span>
+                  <span class="text-base-content/45 text-[11px]">Ej: $1.500</span>
                 </div>
 
-                <!-- Input Principal de Dinero -->
                 <div class="relative">
-                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-black text-primary">$</span>
+                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-bold text-base-content/60">$</span>
                   <input
                     type="number"
                     [ngModel]="weightMoneyAmount()"
                     (ngModelChange)="weightMoneyAmount.set($event)"
-                    class="input input-bordered w-full pl-8 text-xl font-black tabular-nums rounded-xl focus:border-primary text-base-content bg-base-100"
+                    class="input input-bordered w-full pl-8 text-xl font-bold tabular-nums rounded-xl focus:border-primary text-base-content bg-base-100"
                     placeholder="0"
                   />
                 </div>
 
-                <!-- Card de Conversión a Gramos en Vivo -->
-                <div class="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+                <div class="p-3 rounded-xl bg-base-200/50 border border-base-200 flex items-center justify-between">
                   <div>
-                    <span class="text-[11px] font-bold text-base-content/60 block uppercase tracking-wider">Peso a cortar / balanza</span>
-                    <span class="text-lg font-black text-primary tabular-nums">
+                    <span class="text-[10px] font-semibold text-base-content/50 block uppercase tracking-wider">Peso equivalente en balanza</span>
+                    <span class="text-base font-bold text-base-content tabular-nums">
                       {{ computedGramsFromMoney() }} gramos
                     </span>
                   </div>
-                  <div class="text-right">
-                    <span class="badge badge-sm badge-primary font-mono font-bold">
-                      {{ (computedGramsFromMoney() / 1000) | number:'1.3-3' }} kg
-                    </span>
-                  </div>
+                  <span class="px-2 py-1 rounded-md bg-base-100 border border-base-300 font-mono text-xs font-semibold tabular-nums">
+                    {{ (computedGramsFromMoney() / 1000) | number:'1.3-3' }} kg
+                  </span>
                 </div>
 
-                <!-- Botones Rápidos de Monto en Pesos -->
-                <div class="space-y-1.5">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Montos rápidos</span>
-                  <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    @for (amt of [500, 1000, 1500, 2000, 3000, 5000]; track amt) {
-                      <button
-                        type="button"
-                        (click)="setQuickWeightMoney(amt)"
-                        class="btn btn-xs rounded-lg font-bold border border-base-200"
-                        [class.btn-primary]="weightMoneyAmount() === amt"
-                        [class.btn-ghost]="weightMoneyAmount() !== amt">
-                        ${{ amt >= 1000 ? (amt / 1000) + 'k' : amt }}
-                      </button>
-                    }
-                  </div>
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                  @for (amt of [500, 1000, 1500, 2000, 3000, 5000]; track amt) {
+                    <button
+                      type="button"
+                      (click)="setQuickWeightMoney(amt)"
+                      class="btn btn-xs rounded-lg font-semibold border border-base-300 tabular-nums"
+                      [ngClass]="weightMoneyAmount() === amt ? 'btn-primary' : 'btn-ghost'"
+                    >
+                      ${{ amt >= 1000 ? (amt / 1000) + 'k' : amt }}
+                    </button>
+                  }
                 </div>
               </div>
             }
 
-            <!-- CASO 2: MODO PESO (GRAMOS) -->
             @if (weightInputMode() === 'weight') {
               <div class="space-y-3">
-                <div class="flex items-center justify-between text-xs font-bold text-base-content/70">
-                  <span>¿Cuánto pesó en la balanza?</span>
-                  <span class="text-amber-600 text-[11px] font-mono">En gramos o fracciones</span>
+                <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
+                  <span>¿Cuántos gramos pesó en balanza?</span>
+                  <span class="text-amber-600 text-[11px]">En gramos</span>
                 </div>
 
-                <!-- Input Principal de Gramos -->
                 <div class="relative">
                   <input
                     type="number"
                     [ngModel]="weightGramsAmount()"
                     (ngModelChange)="weightGramsAmount.set($event)"
-                    class="input input-bordered w-full pr-14 text-xl font-black tabular-nums rounded-xl focus:border-amber-500 text-base-content bg-base-100"
+                    class="input input-bordered w-full pr-16 text-xl font-bold tabular-nums rounded-xl focus:border-amber-500 text-base-content bg-base-100"
                     placeholder="0"
                   />
-                  <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-base-content/50">gramos</span>
+                  <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-base-content/45">gramos</span>
                 </div>
 
-                <!-- Card de Conversión a Dinero en Vivo -->
-                <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+                <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
                   <div>
-                    <span class="text-[11px] font-bold text-base-content/60 block uppercase tracking-wider">Total a cobrar</span>
-                    <span class="text-lg font-black text-amber-600 tabular-nums">
+                    <span class="text-[10px] font-semibold text-base-content/60 block uppercase tracking-wider">Importe a cobrar</span>
+                    <span class="text-base font-bold text-base-content tabular-nums">
                       ${{ computedMoneyFromGrams() | number:'1.0-0' }}
                     </span>
                   </div>
-                  <div class="text-right">
-                    <span class="badge badge-sm bg-amber-500 text-white font-mono font-bold">
-                      {{ (weightGramsAmount() / 1000) | number:'1.3-3' }} kg
-                    </span>
-                  </div>
+                  <span class="px-2 py-1 rounded-md bg-amber-500 text-white font-mono text-xs font-semibold tabular-nums">
+                    {{ (weightGramsAmount() / 1000) | number:'1.3-3' }} kg
+                  </span>
                 </div>
 
-                <!-- Botones Rápidos de Gramaje -->
-                <div class="space-y-1.5">
-                  <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider">Pesos comunes</span>
-                  <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    @for (g of [100, 150, 200, 250, 500, 1000]; track g) {
-                      <button
-                        type="button"
-                        (click)="setQuickWeightGrams(g)"
-                        class="btn btn-xs rounded-lg font-bold border border-base-200"
-                        [class.btn-warning]="weightGramsAmount() === g"
-                        [class.btn-ghost]="weightGramsAmount() !== g">
-                        {{ g >= 1000 ? (g / 1000) + 'kg' : g + 'g' }}
-                      </button>
-                    }
-                  </div>
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                  @for (g of [100, 150, 200, 250, 500, 1000]; track g) {
+                    <button
+                      type="button"
+                      (click)="setQuickWeightGrams(g)"
+                      class="btn btn-xs rounded-lg font-semibold border border-base-300 tabular-nums"
+                      [ngClass]="weightGramsAmount() === g ? 'btn-warning' : 'btn-ghost'"
+                    >
+                      {{ g >= 1000 ? (g / 1000) + 'kg' : g + 'g' }}
+                    </button>
+                  }
                 </div>
               </div>
             }
 
-            <!-- Teclado Numérico Táctil de Mostrador -->
-            <div class="pt-2 border-t border-base-200 space-y-1.5">
+            <!-- Teclado Numérico -->
+            <div class="pt-2 border-t border-base-200">
               <div class="grid grid-cols-3 gap-1.5 max-w-xs mx-auto">
                 @for (key of ['1','2','3','4','5','6','7','8','9','C','0','⌫']; track key) {
                   <button
                     type="button"
                     (click)="weightKeypadPress(key)"
-                    class="h-9 rounded-lg font-black text-xs flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-2xs"
-                    [class.bg-base-200]="key !== 'C' && key !== '⌫'"
-                    [class.hover:bg-base-300]="key !== 'C' && key !== '⌫'"
-                    [class.text-base-content]="key !== 'C' && key !== '⌫'"
-                    [class.bg-error/10]="key === 'C'"
-                    [class.text-error]="key === 'C'"
-                    [class.bg-base-300]="key === '⌫'"
-                    [class.text-base-content/70]="key === '⌫'">
+                    class="h-9 rounded-lg font-bold text-xs flex items-center justify-center transition-all active:scale-95 cursor-pointer border border-base-300/80 tabular-nums"
+                    [ngClass]="key === 'C' ? 'bg-error/10 text-error border-error/20' : 'bg-base-100 hover:bg-base-200 text-base-content'"
+                  >
                     {{ key }}
                   </button>
                 }
               </div>
             </div>
-
           </div>
 
-          <!-- Footer con Botón de Confirmación -->
-          <div class="p-3.5 border-t border-base-200 bg-base-200/30 flex gap-2">
-            <button
-              type="button"
-              (click)="closeWeightModal()"
-              class="btn btn-sm btn-ghost rounded-xl text-xs font-bold flex-1">
+          <div class="p-3.5 border-t border-base-200 bg-base-200/20 flex gap-2">
+            <button type="button" (click)="closeWeightModal()" class="btn btn-sm btn-ghost rounded-xl text-xs font-semibold flex-1">
               Cancelar
             </button>
-            <button
-              type="button"
-              (click)="confirmWeightItem()"
-              class="btn btn-sm btn-primary rounded-xl font-black text-xs flex-[2] gap-1.5 shadow-sm">
+            <button type="button" (click)="confirmWeightItem()" class="btn btn-sm btn-primary rounded-xl font-bold text-xs flex-[2] gap-1.5">
               <mat-icon class="text-[16px]!">add_shopping_cart</mat-icon>
               @if (weightInputMode() === 'money') {
                 <span>Sumar ${{ weightMoneyAmount() | number:'1.0-0' }} ({{ computedGramsFromMoney() }}g)</span>
@@ -1282,27 +1639,24 @@
               }
             </button>
           </div>
-
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL: PRODUCTO DEL CATÁLOGO GLOBAL ENCONTRADO                            -->
+    <!-- MODAL 6: PRODUCTO DEL CATÁLOGO GLOBAL ENCONTRADO                          -->
     <!-- ========================================================================= -->
     @if (showGlobalProductModal()) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-        <div class="bg-base-100 rounded-3xl border border-primary/30 shadow-2xl max-w-md w-full overflow-hidden animate-scale-up">
-          
-          <!-- Header -->
-          <div class="p-5 border-b border-base-200 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex items-center justify-between">
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full overflow-hidden animate-scale-up">
+          <div class="p-4 border-b border-base-200 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-primary text-primary-content flex items-center justify-center shadow-md shadow-primary/20">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <mat-icon class="text-xl!">travel_explore</mat-icon>
               </div>
               <div>
-                <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mb-0.5">Catálogo Global</span>
-                <h3 class="text-sm font-black text-base-content leading-tight">Producto Identificado</h3>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-primary block">Catálogo Global</span>
+                <h3 class="text-sm font-bold text-base-content leading-tight">Producto identificado por código</h3>
               </div>
             </div>
             <button type="button" (click)="closeGlobalProductModal()" class="btn btn-ghost btn-xs btn-circle">
@@ -1310,11 +1664,10 @@
             </button>
           </div>
 
-          <!-- Product Preview Card -->
           <div class="p-5 space-y-4">
             @if (globalProductFound(); as gp) {
-              <div class="p-3.5 bg-base-200/50 rounded-2xl border border-base-200 flex items-center gap-3.5">
-                <div class="w-12 h-12 rounded-xl bg-base-100 border border-base-300 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+              <div class="p-3.5 bg-base-200/40 rounded-xl border border-base-200 flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-lg bg-base-100 border border-base-300 flex items-center justify-center text-primary shrink-0 overflow-hidden">
                   @if (gp.imageUrl) {
                     <img [src]="gp.imageUrl" [alt]="gp.name" class="w-full h-full object-contain" />
                   } @else {
@@ -1322,28 +1675,26 @@
                   }
                 </div>
                 <div class="min-w-0 flex-1">
-                  <h4 class="font-black text-xs text-base-content leading-snug">{{ gp.name }}</h4>
-                  <div class="flex items-center gap-2 mt-1 text-[11px] text-base-content/60 font-medium">
-                    <span class="font-bold text-base-content/80">{{ gp.brand }}</span>
-                    <span>•</span>
+                  <h4 class="font-bold text-xs text-base-content leading-snug">{{ gp.name }}</h4>
+                  <div class="flex items-center gap-2 mt-1 text-[11px] text-base-content/60 font-medium flex-wrap">
+                    <span class="font-semibold text-base-content/80">{{ gp.brand }}</span>
+                    <span>·</span>
                     <span>{{ gp.category }}</span>
-                    <span>•</span>
-                    <span class="font-mono text-[10px] bg-base-100 px-1 rounded border border-base-300">{{ gp.barcode }}</span>
+                    <span class="font-mono text-[10px] bg-base-100 px-1.5 py-0.2 rounded border border-base-300">{{ gp.barcode }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Price setting -->
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <label class="text-xs font-bold text-base-content">¿A qué precio lo vendés en tu kiosco?</label>
+                  <label class="text-xs font-semibold text-base-content">¿A qué precio lo vendés en tu comercio?</label>
                   @if (gp.suggestedPrice) {
-                    <span class="text-[10px] font-semibold text-primary/80">Sugerido: ${{ gp.suggestedPrice | number:'1.0-0' }}</span>
+                    <span class="text-[11px] font-semibold text-primary tabular-nums">Sugerido: ${{ gp.suggestedPrice | number:'1.0-0' }}</span>
                   }
                 </div>
 
                 <div class="relative">
-                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-primary font-black text-lg">$</span>
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-base-content/60 font-bold text-lg">$</span>
                   <input
                     type="number"
                     min="1"
@@ -1351,20 +1702,18 @@
                     (ngModelChange)="globalProductPrice.set($event)"
                     (keydown.enter)="confirmAddGlobalProductToCart()"
                     placeholder="1500"
-                    class="input input-bordered w-full pl-9 pr-4 py-3 text-lg font-black text-base-content rounded-2xl focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    class="input input-bordered w-full pl-8 pr-4 py-2.5 text-lg font-bold tabular-nums text-base-content rounded-xl focus:border-primary"
                     autofocus
                   />
                 </div>
 
-                <!-- Quick price buttons -->
                 <div class="grid grid-cols-4 gap-1.5 pt-1">
                   @for (quickPrice of [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000]; track quickPrice) {
                     <button
                       type="button"
                       (click)="globalProductPrice.set(quickPrice)"
-                      class="btn btn-xs rounded-xl font-bold"
-                      [class.btn-primary]="globalProductPrice() === quickPrice"
-                      [class.btn-ghost]="globalProductPrice() !== quickPrice"
+                      class="btn btn-xs rounded-lg font-semibold border border-base-300 tabular-nums"
+                      [ngClass]="globalProductPrice() === quickPrice ? 'btn-primary' : 'btn-ghost'"
                     >
                       ${{ quickPrice | number:'1.0-0' }}
                     </button>
@@ -1372,209 +1721,173 @@
                 </div>
               </div>
 
-              <p class="text-[10px] text-base-content/50 flex items-center gap-1.5">
-                <mat-icon class="text-xs text-amber-500">info</mat-icon>
-                Se agregará al carrito actual y quedará guardado en tu catálogo local para futuras ventas.
+              <p class="text-[11px] text-base-content/50 flex items-center gap-1.5">
+                <mat-icon class="text-[14px]! w-3.5! h-3.5! text-amber-500">info</mat-icon>
+                <span>Se sumará al ticket actual y quedará guardado en tu catálogo local.</span>
               </p>
             }
           </div>
 
-          <!-- Footer Actions -->
-          <div class="p-3.5 border-t border-base-200 bg-base-200/30 flex gap-2">
-            <button
-              type="button"
-              (click)="closeGlobalProductModal()"
-              class="btn btn-sm btn-ghost rounded-xl text-xs font-bold flex-1"
-            >
+          <div class="p-3.5 border-t border-base-200 bg-base-200/20 flex gap-2">
+            <button type="button" (click)="closeGlobalProductModal()" class="btn btn-sm btn-ghost rounded-xl text-xs font-semibold flex-1">
               Cancelar
             </button>
             <button
               type="button"
               (click)="confirmAddGlobalProductToCart()"
               [disabled]="isSavingGlobalProduct() || !globalProductPrice() || globalProductPrice() <= 0"
-              class="btn btn-sm btn-primary rounded-xl font-black text-xs flex-[2] gap-1.5 shadow-sm"
+              class="btn btn-sm btn-primary rounded-xl font-bold text-xs flex-[2] gap-1.5"
             >
               @if (isSavingGlobalProduct()) {
                 <span class="loading loading-spinner loading-xs"></span>
                 <span>Guardando...</span>
               } @else {
                 <mat-icon class="text-[16px]!">add_shopping_cart</mat-icon>
-                <span>Sumar ${{ globalProductPrice() | number:'1.0-0' }} al Carrito</span>
+                <span>Sumar ${{ globalProductPrice() | number:'1.0-0' }} al ticket</span>
               }
             </button>
           </div>
-
         </div>
       </div>
     }
 
     <!-- ========================================================================= -->
-    <!-- MODAL: BÚSQUEDA Y SELECCIÓN DE CLIENTE (LIBRETA DE FIADOS / CTA. CTE.)     -->
+    <!-- MODAL 7: LIBRETA DE CLIENTES / CUENTA CORRIENTE                           -->
     <!-- ========================================================================= -->
     @if (showClientSearchModal()) {
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="closeClientSearchModal()">
+      <div class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 flex items-center justify-center p-4" (click)="closeClientSearchModal()">
         <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-lg w-full p-5 space-y-4 animate-scale-up" (click)="$event.stopPropagation()">
-          
-          <!-- Header -->
           <div class="flex items-center justify-between border-b border-base-200 pb-3">
             <div class="flex items-center gap-2.5">
               <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <mat-icon class="text-[20px]! w-5! h-5! leading-none flex items-center justify-center">menu_book</mat-icon>
+                <mat-icon class="text-[20px]! w-5! h-5!">menu_book</mat-icon>
               </div>
               <div>
-                <h3 class="text-sm font-black text-base-content">Libreta de Clientes / Cuenta Corriente</h3>
-                <p class="text-[10px] text-base-content/50">Seleccioná un cliente para asignarlo a la venta o cargar el fiado</p>
+                <h3 class="text-sm font-bold text-base-content">Clientes & Cuenta Corriente</h3>
+                <p class="text-[11px] text-base-content/50">Seleccioná un cliente para asignarlo a la venta o cargar en cuenta</p>
               </div>
             </div>
-            <button (click)="closeClientSearchModal()" class="btn btn-ghost btn-2xs btn-circle text-base-content/50">
-              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">close</mat-icon>
+            <button (click)="closeClientSearchModal()" class="btn btn-ghost btn-xs btn-circle text-base-content/50">
+              <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
             </button>
           </div>
 
-          <!-- Buscador y Botón Nuevo -->
           <div class="flex gap-2">
-            <div class="relative flex-1">
-              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">search</mat-icon>
+            <label class="flex items-center gap-2 px-3 h-9 flex-1 rounded-xl border border-base-300 bg-base-100 focus-within:border-primary">
+              <mat-icon class="text-[16px]! w-4! h-4! text-base-content/45">search</mat-icon>
               <input
                 type="text"
                 [(ngModel)]="clientSearchQuery"
                 (input)="onClientSearchInput()"
                 placeholder="Buscar por nombre, apellido, DNI o teléfono..."
-                class="input input-sm input-bordered w-full pl-9 rounded-xl text-xs font-bold text-base-content"
+                class="flex-1 bg-transparent border-none outline-none text-xs text-base-content"
                 autofocus
               />
-            </div>
+            </label>
             <button
               type="button"
               (click)="toggleCreateClientForm()"
-              class="btn btn-sm btn-primary rounded-xl font-bold gap-1 text-xs shrink-0">
-              <mat-icon class="text-[16px]! w-4! h-4! leading-none flex items-center justify-center">
+              class="btn btn-sm h-9 btn-primary rounded-xl font-semibold gap-1 text-xs shrink-0"
+            >
+              <mat-icon class="text-[16px]! w-4! h-4!">
                 {{ showCreateClientForm() ? 'expand_less' : 'person_add' }}
               </mat-icon>
-              <span>{{ showCreateClientForm() ? 'Ocultar' : 'Nuevo' }}</span>
+              <span>{{ showCreateClientForm() ? 'Ocultar' : 'Nuevo cliente' }}</span>
             </button>
           </div>
 
-          <!-- Formulario de Alta Rápida de Cliente -->
           @if (showCreateClientForm()) {
-            <div class="p-3.5 rounded-xl bg-base-200/50 border border-base-200 space-y-3 animate-fade-in">
+            <div class="p-3.5 rounded-xl bg-base-200/40 border border-base-200 space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-black text-base-content">Alta Rápida de Cliente</span>
-                <span class="text-[10px] text-base-content/50">Se registrará en tu comercio</span>
+                <span class="text-xs font-bold text-base-content">Alta rápida de cliente</span>
+                <span class="text-[10px] text-base-content/50">Se guardará en el padrón del comercio</span>
               </div>
-              
-              <div class="grid grid-cols-2 gap-2">
+
+              <div class="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Nombre *</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="newClientName"
-                    placeholder="Ej. Juan"
-                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
-                  />
+                  <label class="text-[10px] font-semibold uppercase text-base-content/50 block mb-1">Nombre *</label>
+                  <input type="text" [(ngModel)]="newClientName" placeholder="Ej. Juan" class="input input-xs h-8 input-bordered w-full rounded-lg text-xs" />
                 </div>
                 <div>
-                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Apellido</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="newClientLastName"
-                    placeholder="Ej. Pérez"
-                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
-                  />
+                  <label class="text-[10px] font-semibold uppercase text-base-content/50 block mb-1">Apellido</label>
+                  <input type="text" [(ngModel)]="newClientLastName" placeholder="Ej. Pérez" class="input input-xs h-8 input-bordered w-full rounded-lg text-xs" />
                 </div>
                 <div>
-                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Teléfono / WhatsApp</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="newClientPhone"
-                    placeholder="Ej. 1122334455"
-                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
-                  />
+                  <label class="text-[10px] font-semibold uppercase text-base-content/50 block mb-1">Teléfono / WhatsApp</label>
+                  <input type="text" [(ngModel)]="newClientPhone" placeholder="Ej. 1122334455" class="input input-xs h-8 input-bordered w-full rounded-lg text-xs" />
                 </div>
                 <div>
-                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">DNI</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="newClientDni"
-                    placeholder="Ej. 38445123"
-                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
-                  />
+                  <label class="text-[10px] font-semibold uppercase text-base-content/50 block mb-1">DNI</label>
+                  <input type="text" [(ngModel)]="newClientDni" placeholder="Ej. 38445123" class="input input-xs h-8 input-bordered w-full rounded-lg text-xs" />
                 </div>
                 <div class="col-span-2">
-                  <label class="text-[9px] font-bold uppercase text-base-content/40 block mb-0.5">Límite de Fiado ($) - 0 = Ilimitado</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="newClientCreditLimit"
-                    placeholder="10000"
-                    class="input input-xs input-bordered w-full rounded-lg text-xs font-bold"
-                  />
+                  <label class="text-[10px] font-semibold uppercase text-base-content/50 block mb-1">Límite de crédito / fiado ($) · 0 = Sin límite</label>
+                  <input type="number" [(ngModel)]="newClientCreditLimit" placeholder="10000" class="input input-xs h-8 input-bordered w-full rounded-lg text-xs tabular-nums" />
                 </div>
               </div>
 
               <div class="flex justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  (click)="showCreateClientForm.set(false)"
-                  class="btn btn-2xs btn-ghost font-bold">
+                <button type="button" (click)="showCreateClientForm.set(false)" class="btn btn-xs btn-ghost font-semibold">
                   Cancelar
                 </button>
                 <button
                   type="button"
                   (click)="saveQuickClient()"
                   [disabled]="isCreatingClient() || !newClientName().trim()"
-                  class="btn btn-2xs btn-primary font-black rounded-lg gap-1">
+                  class="btn btn-xs btn-primary font-bold rounded-lg gap-1"
+                >
                   @if (isCreatingClient()) {
                     <span class="loading loading-spinner loading-2xs"></span>
                   }
-                  <span>Guardar y Seleccionar</span>
+                  <span>Guardar y seleccionar</span>
                 </button>
               </div>
             </div>
           }
 
-          <!-- Lista de Clientes Resultados -->
-          <div class="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+          <div class="max-h-64 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
             @if (isSearchingClients()) {
               <div class="py-8 text-center text-base-content/50 space-y-2">
                 <span class="loading loading-spinner loading-sm"></span>
                 <p class="text-xs">Buscando clientes...</p>
               </div>
             } @else if (clientSearchResults().length === 0) {
-              <div class="py-8 text-center text-base-content/40 space-y-2">
-                <mat-icon class="text-[28px]! w-7! h-7! leading-none flex items-center justify-center mx-auto">people_outline</mat-icon>
+              <div class="py-8 text-center text-base-content/45 space-y-1.5">
+                <mat-icon class="text-[24px]! w-6! h-6! mx-auto">people_outline</mat-icon>
                 <p class="text-xs font-bold">No se encontraron clientes</p>
-                <p class="text-[10px]">Escribí un nombre o creá uno nuevo con el botón "+ Nuevo"</p>
+                <p class="text-[11px]">Podés registrar uno al instante con el botón "Nuevo cliente".</p>
               </div>
             } @else {
               @for (client of clientSearchResults(); track client._id) {
                 <div
                   (click)="selectClient(client)"
-                  class="flex items-center justify-between p-2.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
+                  class="flex items-center justify-between p-2.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/30 transition-all cursor-pointer group"
+                >
                   <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-base-200 group-hover:bg-primary group-hover:text-white flex items-center justify-center font-black text-xs transition-colors shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-base-200 group-hover:bg-primary group-hover:text-primary-content flex items-center justify-center font-bold text-xs transition-colors shrink-0">
                       {{ client.name.charAt(0).toUpperCase() }}
                     </div>
                     <div class="min-w-0">
-                      <p class="text-xs font-black text-base-content group-hover:text-primary transition-colors truncate">
+                      <p class="text-xs font-bold text-base-content group-hover:text-primary transition-colors truncate">
                         {{ client.name }} {{ client.lastName || '' }}
                       </p>
-                      <div class="flex items-center gap-2 text-[10px] text-base-content/50">
-                        <span>{{ client.phone || client.dni || 'Sin datos de contacto' }}</span>
-                      </div>
+                      <span class="text-[10.5px] text-base-content/50 block truncate">
+                        {{ client.phone || client.dni || 'Sin datos de contacto' }}
+                      </span>
                     </div>
                   </div>
 
-                  <div class="text-right shrink-0">
+                  <div class="text-right shrink-0 tabular-nums">
                     @let debt = client.currentAccount?.balance || 0;
                     @if (debt > 0) {
-                      <span class="text-xs font-black text-error block tabular-nums">Debe: ${{ debt | number:'1.0-0' }}</span>
+                      <span class="text-xs font-bold text-error block">Deuda: ${{ debt | number:'1.0-0' }}</span>
                     } @else {
-                      <span class="text-xs font-bold text-success block">Al día ($0)</span>
+                      <span class="text-xs font-semibold text-emerald-600 block">Al día ($0)</span>
                     }
                     @if (client.currentAccount?.isCreditAllowed === false) {
-                      <span class="badge badge-2xs badge-error font-bold">Fiado Suspendido</span>
+                      <span class="text-[10px] text-error font-semibold">Crédito suspendido</span>
                     } @else if ((client.currentAccount?.creditLimit || 0) > 0) {
-                      <span class="text-[9px] text-base-content/40 block">Lím: ${{ (client.currentAccount?.creditLimit || 0) | number:'1.0-0' }}</span>
+                      <span class="text-[10px] text-base-content/45 block">Lím: ${{ (client.currentAccount?.creditLimit || 0) | number:'1.0-0' }}</span>
                     }
                   </div>
                 </div>
@@ -1582,25 +1895,20 @@
             }
           </div>
 
-          <!-- Footer Modal -->
           <div class="flex justify-between items-center pt-2 border-t border-base-200">
             <button
               type="button"
               (click)="clearSelectedClient(); closeClientSearchModal()"
-              class="btn btn-ghost btn-xs text-base-content/60 font-bold">
+              class="btn btn-ghost btn-xs text-base-content/60 font-semibold"
+            >
               Continuar como Consumidor Final
             </button>
-            <button
-              type="button"
-              (click)="closeClientSearchModal()"
-              class="btn btn-sm btn-outline rounded-xl text-xs font-bold">
+            <button type="button" (click)="closeClientSearchModal()" class="btn btn-sm btn-outline border-base-300 rounded-xl text-xs font-semibold">
               Cerrar
             </button>
           </div>
-
         </div>
       </div>
     }
-
   </div>
 </app-page-layout>

@@ -23,7 +23,11 @@ export class CashRegisterStoreService {
   async openSession(initialBalance: number) {
     try {
       const newSession = await this.#cashService.openSession(initialBalance);
-      this.#fetchedSession.set(newSession);
+      this.#fetchedSession.set({
+        ...newSession,
+        calculatedCloseBalance: newSession.calculatedCloseBalance ?? newSession.initialBalance ?? initialBalance,
+      });
+      this.#fetchedSession.reload();
       this.#notificationService.success('Caja abierta exitosamente');
       return newSession;
     } catch (error: any) {
@@ -36,9 +40,8 @@ export class CashRegisterStoreService {
   async closeSession(actualCloseBalance: number, notes?: string) {
     try {
       const closedSession = await this.#cashService.closeSession(actualCloseBalance, notes);
-      this.#fetchedSession.set(null as any); // Reset session after closing
+      this.#fetchedSession.set(null as any);
       this.#notificationService.success('Caja cerrada exitosamente');
-      // Reload to double check session status
       this.#fetchedSession.reload();
       return closedSession;
     } catch (error: any) {

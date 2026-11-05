@@ -4,7 +4,6 @@ import { unsavedChangesGuard } from '../guards/unsaved-changes.guard';
 import { ClientOrders } from '../pages/client-orders/client-orders';
 import { PaymentMethods } from '../pages/payment-methods/payment-methods';
 import { ProductList } from '../pages/product-list/product-list';
-import { ProductTypeSelector } from '../shared/components/product-type-selector/product-type-selector';
 import { ProductFormDispatcher } from '../pages/product-forms/product-form-dispatcher';
 
 /**
@@ -35,7 +34,7 @@ export const coreRoutes: Routes = [
       },
       {
         path: 'create',
-        component: ProductTypeSelector,
+        component: ProductFormDispatcher,
       },
       {
         path: 'create/:typeParam',

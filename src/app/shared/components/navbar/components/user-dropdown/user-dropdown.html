@@ -1,94 +1,139 @@
-<!-- 2. USER DROPDOWN (NUEVO) -->
-<button type="button" [matMenuTriggerFor]="userMenu"
-  class="flex items-center gap-2 p-1 pl-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-  <div class="text-right hidden md:block">
-    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-none mb-0.5">
-      {{ user?.name }}
+<!-- Trigger Button en el Navbar -->
+<button
+  type="button"
+  [matMenuTriggerFor]="userMenu"
+  class="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+  
+  <div class="text-right hidden sm:block min-w-0">
+    <p class="text-xs font-black text-slate-700 dark:text-slate-200 leading-tight truncate max-w-[130px]">
+      {{ user?.name || 'Usuario' }}
     </p>
-    <p class="text-[10px] text-slate-400 font-medium leading-none">
+    <p class="text-[10px] text-slate-400 font-medium leading-tight truncate max-w-[130px]">
       {{ user?.email }}
     </p>
   </div>
 
-  <!-- Foto de Perfil con fallback a inicial -->
-  <div
-    class="w-8 h-8 rounded-md overflow-hidden bg-blue-100 flex items-center justify-center border border-blue-200 dark:border-blue-900">
+  <!-- Avatar con foto o inicial -->
+  <div class="size-8 rounded-lg overflow-hidden bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-xs shrink-0">
     @if (user?.profilePhoto) {
-    <img [src]="user?.profilePhoto" class="w-full h-full object-cover" />
+      <img [src]="user?.profilePhoto" [alt]="user?.name" class="w-full h-full object-cover" />
     } @else {
-    <span class="text-xs font-black text-blue-600">{{
-      user?.name?.charAt(0)
-      }}</span>
+      <span>{{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}</span>
     }
   </div>
 </button>
 
-<!-- MENU DE USUARIO (Angular Material) -->
+<!-- Menú Desplegable (Angular Material) -->
 <mat-menu #userMenu="matMenu" xPosition="before" class="minimal-dropdown-panel">
-  <div
-    class="w-56 flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
-    <!-- User Info Header -->
-    <div class="p-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
-      <p class="text-sm font-bold text-slate-700 dark:text-white truncate">
-        {{ user?.name }}
-      </p>
-      <p class="text-xs text-slate-400 truncate mb-2">{{ user?.email }}</p>
-      <span
-        class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-        {{ user?.role }}
-      </span>
+  <div class="w-80 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
+    
+    <!-- 1. HEADER: IDENTIDAD DEL COMERCIO & TIENDA PÚBLICA -->
+    <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
+      
+      <!-- Fila Superior: Nombre del Comercio & Botón Tienda -->
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 truncate leading-snug" [title]="storeName()">
+            {{ storeName() }}
+          </h4>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-tight bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+              {{ shortBusinessBadge() }}
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono truncate">@{{ tenantSlug() }}</span>
+          </div>
+        </div>
+
+        <!-- Botón Ver Tienda Online -->
+        <button
+          type="button"
+          (click)="openStorefront()"
+          class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-800 text-primary border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-2xs shrink-0 cursor-pointer"
+          title="Ver tienda online pública en nueva pestaña">
+          <span>Tienda</span>
+          <mat-icon class="text-[13px]! w-3.5! h-3.5! leading-none">open_in_new</mat-icon>
+        </button>
+      </div>
+
+      <!-- Fila Inferior: Usuario Actual -->
+      <div class="pt-2 border-t border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center font-black text-[11px] shrink-0">
+            {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate leading-tight">
+              {{ user?.name }}
+            </p>
+            <p class="text-[9.5px] text-slate-400 truncate leading-tight mt-0.5">
+              {{ user?.email }}
+            </p>
+          </div>
+        </div>
+
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shrink-0">
+          {{ user?.role }}
+        </span>
+      </div>
+
     </div>
 
-    <!-- Section 1 -->
+    <!-- 2. CONFIGURACIÓN DEL NEGOCIO (Solo Administrador) -->
+    @if (isAdmin()) {
+      <div class="py-1">
+        <div class="px-3.5 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Configuración
+        </div>
+
+        <a mat-menu-item [routerLink]="'/home/settings'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-slate-400 group-hover:text-blue-500">store</mat-icon>
+          <span class="flex-1">Ajustes de Tienda</span>
+        </a>
+
+        <a mat-menu-item [routerLink]="'/home/payment-methods'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-slate-400 group-hover:text-blue-500">payments</mat-icon>
+          <span class="flex-1">Cobros & Pagos (Point/QR)</span>
+        </a>
+
+        <a mat-menu-item [routerLink]="'/home/staff'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-slate-400 group-hover:text-blue-500">badge</mat-icon>
+          <span class="flex-1">Equipo & Empleados (PIN)</span>
+        </a>
+
+        <a mat-menu-item [routerLink]="'/home/fiscal'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+          <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-slate-400 group-hover:text-blue-500">account_balance</mat-icon>
+          <span class="flex-1">Facturación ARCA / AFIP</span>
+        </a>
+
+        @if (businessProfile.features().showShippingOptions) {
+          <a mat-menu-item [routerLink]="'/home/shipping-options'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+            <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-slate-400 group-hover:text-blue-500">local_shipping</mat-icon>
+            <span class="flex-1">Envíos & Delivery</span>
+          </a>
+        }
+      </div>
+
+      <mat-divider class="dark:border-slate-800"></mat-divider>
+    }
+
+    <!-- 3. ACCESOS OPERATIVOS & CERRAR SESIÓN -->
     <div class="py-1">
-      <button mat-menu-item class="flex! items-center! h-10! group">
-        <mat-icon class="material-icons mr-2 text-slate-400 group-hover:text-blue-500">person</mat-icon>
-        <span
-          class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">Mi
-          Perfil</span>
-      </button>
-      <button mat-menu-item class="flex! items-center! h-10! group">
-        <mat-icon class="material-icons mr-2 text-slate-400 group-hover:text-blue-500">settings</mat-icon>
-        <span
-          class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">Ajustes</span>
+      <a mat-menu-item [routerLink]="'/home/pos'" class="flex! items-center! h-9! text-xs! font-bold! text-slate-700! dark:text-slate-200! group hover:bg-slate-100! dark:hover:bg-slate-800!">
+        <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-emerald-500">point_of_sale</mat-icon>
+        <span class="flex-1">Ir al Mostrador (POS)</span>
+      </a>
+
+      <button mat-menu-item (click)="logout()" class="flex! items-center! h-9! text-xs! font-bold! text-red-600! dark:text-red-400! group hover:bg-red-50! dark:hover:bg-red-900/20!">
+        <mat-icon class="text-[18px]! w-4.5! h-4.5! mr-2.5 text-red-500 group-hover:translate-x-0.5 transition-transform">logout</mat-icon>
+        <span class="flex-1">Cerrar Sesión</span>
       </button>
     </div>
 
-    <mat-divider class="dark:border-slate-800"></mat-divider>
-
-    <!-- Section 2 -->
-    <div class="py-1">
-      <button mat-menu-item class="flex! items-center! h-10! group">
-        <mat-icon class="material-icons mr-2 text-slate-400 group-hover:text-red-500">favorite</mat-icon>
-        <span class="text-sm font-medium text-slate-600 dark:text-slate-300">Mis Favoritos</span>
-      </button>
-      <button mat-menu-item class="flex! items-center! h-10! group">
-        <mat-icon class="material-icons mr-2 text-slate-400 group-hover:text-amber-500">layers</mat-icon>
-        <span class="text-sm font-medium text-slate-600 dark:text-slate-300">Colecciones</span>
-      </button>
-      <button mat-menu-item class="flex! items-center! h-10! group !bg-blue-50/30 dark:!bg-blue-900/10">
-        <mat-icon class="material-icons mr-2 text-blue-600 dark:text-blue-400">rocket_launch</mat-icon>
-        <span class="text-sm font-bold text-blue-700 dark:text-blue-400">Versión Pro</span>
-        <mat-icon class="material-icons ml-auto mr-0 text-[14px] text-blue-400">chevron_right</mat-icon>
-      </button>
+    <!-- 4. FOOTER VERSIÓN -->
+    <div class="px-3.5 py-1.5 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-[10px] flex items-center justify-between text-slate-400 font-mono select-none">
+      <span>Vexx {{ appVersion }}</span>
+      <span class="px-1.5 py-0.2 rounded bg-slate-200/60 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[9px] font-bold">Activo</span>
     </div>
 
-    <mat-divider class="dark:border-slate-800"></mat-divider>
-
-    <!-- Sign Out -->
-    <div class="p-1">
-      <button (click)="logout()"
-        class="flex! items-center! h-10! group hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-        <mat-icon class="material-icons mr-2 text-slate-400 group-hover:text-red-600">logout</mat-icon>
-        <span
-          class="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-red-700 dark:group-hover:text-red-400">Cerrar
-          Sesión</span>
-      </button>
-    </div>
-
-    <!-- Version Footer -->
-    <div class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[10px] text-center font-mono text-slate-400 select-none">
-      Vexx {{ appVersion }}
-    </div>
   </div>
 </mat-menu>

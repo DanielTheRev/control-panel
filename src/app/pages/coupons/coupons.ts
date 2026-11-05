@@ -37,10 +37,10 @@ export class CouponsComponent implements OnInit {
 
   // Available product types (discriminators)
   availableProductTypes = [
-    { id: 'TechProduct', label: 'Tecnología', icon: 'devices' },
+    { id: 'KioskProduct', label: 'Kiosco & Almacén', icon: 'storefront' },
     { id: 'ClothingProduct', label: 'Indumentaria & Calzado', icon: 'checkroom' },
-    { id: 'BeautyProduct', label: 'Perfumería & Belleza', icon: 'spa' },
-    { id: 'GeneralProduct', label: 'General / Kiosco & Bazar', icon: 'storefront' }
+    { id: 'TechProduct', label: 'Tecnología & Celulares', icon: 'devices' },
+    { id: 'BeautyProduct', label: 'Perfumería & Cosmética', icon: 'spa' },
   ];
 
   // Selected scope items for the modal form

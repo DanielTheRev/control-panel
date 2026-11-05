@@ -19,6 +19,8 @@ import { ProductStoreService } from '../../states/product.state.service';
 import { MasterCatalogService, MasterCatalogProduct } from '../../services/master-catalog.service';
 import { ClientsService } from '../../services/clients.service';
 import { IClient } from '../../interfaces/client.interface';
+import { PointService, IPointDevice } from '../../services/point.service';
+import { SidebarService } from '../../services/sidebar.service';
 import { environment } from '../../../environments/environment';
 
 export interface CartItem {
@@ -55,6 +57,100 @@ export class PosComponent implements OnInit {
   private productState = inject(ProductStoreService);
   private masterCatalogService = inject(MasterCatalogService);
   private clientsService = inject(ClientsService);
+  private pointService = inject(PointService);
+  private sidebarService = inject(SidebarService);
+
+  // Vista del catálogo en POS (Tarjetas vs Lista compacta)
+  catalogViewMode = signal<'grid' | 'list'>(
+    (() => {
+      try {
+        return (localStorage.getItem('admin_pos_view_mode') as 'grid' | 'list') === 'list' ? 'list' : 'grid';
+      } catch {
+        return 'grid';
+      }
+    })()
+  );
+
+  setCatalogViewMode(mode: 'grid' | 'list'): void {
+    this.catalogViewMode.set(mode);
+    try {
+      localStorage.setItem('admin_pos_view_mode', mode);
+    } catch {}
+  }
+
+  // Textos adaptativos según el rubro del comercio (Indumentaria vs Kiosco / Almacén / Carnicería / Panadería / Tech / Gastronomía)
+  posSubtitle = computed(() => {
+    const type = this.profile.businessType();
+    switch (type) {
+      case 'fashion':
+        return 'Mostrador de indumentaria y calzado · Talles, colores y cobro multicanal';
+      case 'kiosk_grocery':
+        return 'Mostrador rápido de kiosco y almacén · Lector de barras, balanza y libreta';
+      case 'butcher':
+        return 'Mostrador de carnicería y granja · Venta por peso, cortes y cobro rápido';
+      case 'bakery':
+        return 'Mostrador de panadería y confitería · Venta por peso, unidades y caja rápida';
+      case 'tech_electronics':
+        return 'Terminal de tecnología y accesorios · Búsqueda por modelo, SKU y cobro';
+      case 'gastronomy':
+        return 'Comanda rápida de mostrador y cobro multicanal';
+      default:
+        return 'Terminal de mostrador y cobro multicanal';
+    }
+  });
+
+  searchPlaceholder = computed(() => {
+    const type = this.profile.businessType();
+    switch (type) {
+      case 'fashion':
+        return 'Buscar prenda o calzado por modelo, marca, categoría, talle o SKU...';
+      case 'kiosk_grocery':
+        return 'Buscar artículo por nombre, marca o escanear código de barras...';
+      case 'butcher':
+        return 'Buscar corte o producto por nombre, categoría o código...';
+      case 'bakery':
+        return 'Buscar producto por nombre, categoría o código de barras...';
+      case 'tech_electronics':
+        return 'Buscar equipo o accesorio por modelo, marca, SKU o código...';
+      case 'gastronomy':
+        return 'Buscar plato, bebida o combo por nombre o categoría...';
+      default:
+        return 'Buscar producto por nombre, categoría, SKU o código...';
+    }
+  });
+
+  emptyTicketMessage = computed(() => {
+    const type = this.profile.businessType();
+    if (type === 'fashion') {
+      return 'Seleccioná prendas del catálogo o escaneá una etiqueta para armar el ticket.';
+    }
+    if (type === 'tech_electronics') {
+      return 'Seleccioná equipos o accesorios del catálogo o escaneá el código.';
+    }
+    if (type === 'gastronomy') {
+      return 'Seleccioná platos, bebidas o combos del catálogo para armar el pedido.';
+    }
+    return 'Seleccioná productos del catálogo o escaneá un código de barras para empezar.';
+  });
+
+  // Integración Mercado Pago Point (Terminales / Posnet Físico y Sandbox)
+  pointDevices = signal<IPointDevice[]>([]);
+  selectedPointDevice = signal<IPointDevice | null>(null);
+  isLoadingPointDevices = signal<boolean>(false);
+  isDispatchingPointOrder = signal<boolean>(false);
+  pointOrderStatus = signal<'idle' | 'at_terminal' | 'processed' | 'failed' | 'cancelled'>('idle');
+  activePointOrderId = signal<string | null>(null);
+  pointPaymentDetails = signal<{
+    paymentId?: string;
+    status?: string;
+    paymentMethodId?: string;
+    paymentTypeId?: string;
+    cardLastFourDigits?: string;
+  } | null>(null);
+  pointErrorMessage = signal<string | null>(null);
+  pointMode = signal<'point' | 'manual'>('point');
+  printTicketOnPoint = signal<boolean>(true);
+  private pointPollInterval: any = null;
 
   // Catálogo Global en Mostrador POS
   showGlobalProductModal = signal<boolean>(false);
@@ -132,8 +228,22 @@ export class PosComponent implements OnInit {
     return this.products().filter((p) => {
       const matchCat = cat === 'all' || p.category?.toLowerCase() === cat.toLowerCase();
       const matchBrand = brand === 'all' || p.brand?.toLowerCase() === brand.toLowerCase();
-      const matchQ = !q || p.model?.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q) || p.slug?.toLowerCase().includes(q);
-      return matchCat && matchBrand && matchQ;
+      if (!q) return matchCat && matchBrand;
+
+      const matchModel = p.model?.toLowerCase().includes(q);
+      const matchBrandQ = p.brand?.toLowerCase().includes(q);
+      const matchCategoryQ = p.category?.toLowerCase().includes(q);
+      const matchSlug = p.slug?.toLowerCase().includes(q);
+      const matchBarcode = p.barcode?.toLowerCase().includes(q);
+      const matchVariant = p.variants?.some(
+        (v: any) =>
+          v.sku?.toLowerCase().includes(q) ||
+          v.barcode?.toLowerCase().includes(q) ||
+          v.size?.toLowerCase() === q ||
+          v.color?.name?.toLowerCase().includes(q)
+      );
+
+      return matchCat && matchBrand && (matchModel || matchBrandQ || matchCategoryQ || matchSlug || matchBarcode || matchVariant);
     });
   });
 
@@ -228,9 +338,14 @@ export class PosComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.sidebarService.navbarTitle.set({ title: 'Mostrador (POS)' });
     this.setupSearch();
     this.loadInitialCatalog();
     this.setupBarcodeScanner();
+
+    this.destroyRef.onDestroy(() => {
+      this.stopPointPolling();
+    });
   }
 
   setupBarcodeScanner(): void {
@@ -597,6 +712,89 @@ export class PosComponent implements OnInit {
     return product.variants.reduce((acc: number, v: any) => acc + (v.stock || 0), 0);
   }
 
+  getProductFallbackIcon(product?: any): string {
+    if (product?.isSoldByWeight) return 'scale';
+    const type = this.profile.businessType();
+    if (type === 'fashion') return 'checkroom';
+    if (type === 'tech_electronics') return 'devices';
+    if (type === 'gastronomy') return 'restaurant';
+    if (type === 'bakery') return 'bakery_dining';
+    return 'inventory_2';
+  }
+
+  getProductColors(product: any): { name: string; hex: string }[] {
+    if (!product?.variants || !Array.isArray(product.variants)) return [];
+    const seen = new Set<string>();
+    const colors: { name: string; hex: string }[] = [];
+    for (const v of product.variants) {
+      if (v?.color?.name && !seen.has(v.color.name)) {
+        seen.add(v.color.name);
+        colors.push({ name: v.color.name, hex: v.color.hex || '#18181b' });
+      }
+    }
+    return colors;
+  }
+
+  getProductSizesPreview(product: any): string[] {
+    if (!product?.variants || !Array.isArray(product.variants)) return [];
+    const seen = new Set<string>();
+    const sizes: string[] = [];
+    for (const v of product.variants) {
+      if ((v.stock || 0) > 0 && v.size && v.size !== 'Único' && !seen.has(v.size)) {
+        seen.add(v.size);
+        sizes.push(v.size);
+      }
+    }
+    return sizes;
+  }
+
+  getVariantDisplayLabel(variant: any): string {
+    if (!variant) return '';
+    if (this.profile.isFashion()) {
+      const sizePart = variant.size ? `Talle ${variant.size}` : 'Talle Único';
+      const colorPart = variant.color?.name ? ` · ${variant.color.name}` : '';
+      return `${sizePart}${colorPart}`;
+    }
+    const parts: string[] = [];
+    if (variant.size && variant.size !== 'Único') parts.push(variant.size);
+    if (variant.color?.name) parts.push(variant.color.name);
+    if (parts.length === 0 && variant.sku) parts.push(`SKU: ${variant.sku}`);
+    return parts.join(' · ') || 'Estándar';
+  }
+
+  onSearchEnter(): void {
+    const q = this.searchQuery().trim();
+    if (!q) return;
+    // Si coincide exactamente con un código de barras o SKU, o es un código numérico >= 6 dígitos
+    const exactMatch = this.products().find(
+      (p) =>
+        p.barcode?.toLowerCase() === q.toLowerCase() ||
+        p.variants?.some((v: any) => v.barcode?.toLowerCase() === q.toLowerCase() || v.sku?.toLowerCase() === q.toLowerCase())
+    );
+    if (exactMatch) {
+      const matchedVariant = exactMatch.variants?.find(
+        (v: any) => v.barcode?.toLowerCase() === q.toLowerCase() || v.sku?.toLowerCase() === q.toLowerCase()
+      );
+      this.soundService.playScannerBeep();
+      if (exactMatch.isSoldByWeight) {
+        this.openWeightModal(exactMatch);
+      } else if (matchedVariant) {
+        this.addVariantToCart(exactMatch, matchedVariant);
+      } else {
+        this.onProductCardClick(exactMatch);
+      }
+      this.searchQuery.set('');
+      this.onSearchInput();
+      return;
+    }
+
+    if (/^\d{6,14}$/.test(q)) {
+      this.handleScannedBarcode(q);
+      this.searchQuery.set('');
+      this.onSearchInput();
+    }
+  }
+
   onProductCardClick(product: any): void {
     if (product.isSoldByWeight) {
       this.openWeightModal(product);
@@ -839,6 +1037,8 @@ export class PosComponent implements OnInit {
       this.cashReceived.set(this.total());
     } else if (method === 'QR') {
       this.generateQR();
+    } else if (method === 'TARJETA') {
+      this.loadPointDevices();
     } else if (method === 'SPLIT') {
       this.splitPayments.set([]);
       this.splitAmount.set(this.total());
@@ -866,6 +1066,155 @@ export class PosComponent implements OnInit {
   copyAlias(): void {
     navigator.clipboard.writeText(this.storeAlias());
     this.notifications.success('¡Alias copiado al portapapeles!');
+  }
+
+  // ── INTEGRACIÓN MERCADO PAGO POINT ──────────────────────
+
+  loadPointDevices(): void {
+    if (this.pointDevices().length > 0) return;
+    this.isLoadingPointDevices.set(true);
+    this.pointErrorMessage.set(null);
+
+    this.pointService.getDevices().subscribe({
+      next: (res) => {
+        this.isLoadingPointDevices.set(false);
+        if (res.success && res.data && res.data.length > 0) {
+          this.pointDevices.set(res.data);
+          this.selectedPointDevice.set(res.data[0]);
+          this.pointMode.set('point');
+        } else {
+          this.pointDevices.set([]);
+          this.selectedPointDevice.set(null);
+          this.pointMode.set('manual');
+        }
+      },
+      error: (err) => {
+        this.isLoadingPointDevices.set(false);
+        this.pointMode.set('manual');
+        this.pointErrorMessage.set(err.error?.message || 'No se pudieron consultar terminales Point');
+      }
+    });
+  }
+
+  selectPointDevice(device: IPointDevice): void {
+    this.selectedPointDevice.set(device);
+  }
+
+  setPointMode(mode: 'point' | 'manual'): void {
+    this.pointMode.set(mode);
+    if (mode === 'point' && this.pointDevices().length === 0) {
+      this.loadPointDevices();
+    }
+  }
+
+  sendPointCharge(): void {
+    const device = this.selectedPointDevice();
+    if (!device) {
+      this.notifications.warning('Seleccioná una terminal Point');
+      return;
+    }
+
+    this.isDispatchingPointOrder.set(true);
+    this.pointOrderStatus.set('at_terminal');
+    this.pointErrorMessage.set(null);
+
+    this.pointService.createOrder({
+      deviceId: device.id,
+      amount: this.total(),
+      orderNumber: this.currentTicketNumber(),
+      description: `Cobro Vexx #${this.currentTicketNumber()}`,
+      printOnTerminal: this.printTicketOnPoint()
+    }).subscribe({
+      next: (res) => {
+        this.isDispatchingPointOrder.set(false);
+        if (res.success && res.data) {
+          this.activePointOrderId.set(res.data.orderId);
+          this.startPointPolling(res.data.orderId);
+        }
+      },
+      error: (err) => {
+        this.isDispatchingPointOrder.set(false);
+        this.pointOrderStatus.set('failed');
+        const msg = err.error?.message || 'Error al conectar con la terminal Point';
+        this.pointErrorMessage.set(msg);
+        this.notifications.error(msg);
+      }
+    });
+  }
+
+  startPointPolling(orderId: string): void {
+    this.stopPointPolling();
+    this.pointPollInterval = setInterval(() => {
+      this.pointService.getOrderStatus(orderId).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const status = res.data.status;
+            if (status === 'processed') {
+              this.stopPointPolling();
+              this.pointOrderStatus.set('processed');
+              this.pointPaymentDetails.set(res.data.paymentDetails || null);
+              this.soundService.playScannerBeep();
+              this.notifications.success('¡Pago Aprobado en la terminal Point!');
+              setTimeout(() => {
+                this.processSale();
+              }, 1200);
+            } else if (status === 'failed') {
+              this.stopPointPolling();
+              this.pointOrderStatus.set('failed');
+              this.pointErrorMessage.set('El pago fue rechazado por la tarjeta en la terminal.');
+              this.notifications.error('Pago rechazado en la terminal');
+            } else if (status === 'cancelled') {
+              this.stopPointPolling();
+              this.pointOrderStatus.set('cancelled');
+              this.pointErrorMessage.set('La operación fue cancelada en la terminal.');
+            }
+          }
+        },
+        error: () => {}
+      });
+    }, 2000);
+  }
+
+  stopPointPolling(): void {
+    if (this.pointPollInterval) {
+      clearInterval(this.pointPollInterval);
+      this.pointPollInterval = null;
+    }
+  }
+
+  cancelPointCharge(): void {
+    const orderId = this.activePointOrderId();
+    this.stopPointPolling();
+    if (orderId) {
+      this.pointService.cancelOrder(orderId).subscribe({
+        next: () => {
+          this.resetPointState();
+          this.notifications.info('Cobro cancelado en la terminal.');
+        },
+        error: () => {
+          this.resetPointState();
+        }
+      });
+    } else {
+      this.resetPointState();
+    }
+  }
+
+  resetPointState(): void {
+    this.stopPointPolling();
+    this.pointOrderStatus.set('idle');
+    this.activePointOrderId.set(null);
+    this.isDispatchingPointOrder.set(false);
+    this.pointPaymentDetails.set(null);
+    this.pointErrorMessage.set(null);
+  }
+
+  closePaymentModal(): void {
+    if (this.pointOrderStatus() === 'at_terminal') {
+      this.cancelPointCharge();
+    }
+    this.resetPointState();
+    this.showPaymentModal.set(false);
   }
 
   onReceiptFileSelected(event: Event): void {
@@ -1013,7 +1362,8 @@ export class PosComponent implements OnInit {
   shareWhatsApp(): void {
     const order = this.lastCompletedOrder();
     if (!order) return;
-    const msg = `¡Hola! Gracias por tu compra en Vura. Tu comprobante es #${order.orderNumber} por un total de $${order.total?.toLocaleString('es-AR')}.`;
+    const storeName = this.storeConfigStore.StoreConfig().config?.name || 'nuestra tienda';
+    const msg = `¡Hola! Gracias por tu compra en ${storeName}. Tu comprobante es #${order.orderNumber} por un total de $${order.total?.toLocaleString('es-AR')}.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   }
 

@@ -1,52 +1,86 @@
-<app-page-layout>
-  @let title = productID() ? "Editar Producto" : "Crear Nuevo Producto";
+<app-page-layout [flush]="true">
+  @let title = productID() ? "Editar Prenda · Indumentaria & Calzado" : "Nuevo Producto · Indumentaria & Calzado";
   @let subtitle =
     productID()
-      ? (productForm.get('brand')?.value || '') + ' ' + (productForm.get('model')?.value || 'Detalles del producto')
-      : "Rellena la información para tu nuevo artículo.";
+      ? (productForm.get('brand')?.value || '') + ' ' + (productForm.get('model')?.value || 'Detalles del artículo')
+      : "Matriz de talles, variantes de color, galería por variante y simulador de cuotas";
 
   <app-page-header
     header
     [title]="title"
     [subtitle]="subtitle"
+    [inlineSubtitle]="true"
   >
     <div
       actions
-      class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto"
+      class="flex flex-wrap items-center gap-2"
     >
       @if (productForm.invalid) {
         <div
-          class="text-[11px] text-error font-medium bg-error/10 px-3 py-1.5 border border-error/20 rounded-xl flex items-center justify-center gap-1.5 leading-tight shadow-xs"
+          class="text-[11px] text-error font-semibold bg-error/8 px-2.5 py-1 border border-error/20 rounded-lg flex items-center gap-1.5 leading-tight max-w-xs"
         >
-          <mat-icon class="text-[16px]! w-4! h-4! shrink-0">error_outline</mat-icon>
+          <span class="material-symbols-outlined text-[15px] shrink-0" style="font-variation-settings: 'wght' 400">error</span>
           <span class="truncate">
-            Faltan campos: <span class="font-bold">{{ invalidControls.join(", ") }}</span>
+            Faltan: <span class="font-bold">{{ invalidControls.join(", ") }}</span>
           </span>
         </div>
       } @else if (isEditMode() && !hasChanges()) {
         <div
-          class="text-[11px] text-base-content/60 font-medium bg-base-200/60 px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border border-base-300"
+          class="text-[11px] text-base-content/60 font-semibold bg-base-200/60 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-base-300"
         >
-          <mat-icon class="text-[16px]! w-4! h-4!">info</mat-icon>
+          <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'wght' 350">info</span>
           <span>Sin cambios</span>
         </div>
       } @else {
         <div
-          class="text-[11px] text-success font-medium bg-success/10 border border-success/20 px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 shadow-xs"
+          class="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5"
         >
-          <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+          <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'wght' 450">check_circle</span>
           <span>Listo p/guardar</span>
         </div>
       }
+
+      @if (!isEditMode()) {
+        <a
+          routerLink="/home/products/create"
+          [queryParams]="{ select: 'true' }"
+          class="h-8.5 px-3 rounded-lg border border-base-300 bg-base-100 hover:bg-base-200/70 text-xs font-semibold text-base-content/75 hover:text-base-content inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          title="Cambiar plantilla de producto"
+        >
+          <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'wght' 350">swap_horiz</span>
+          <span>Cambiar plantilla</span>
+        </a>
+      }
+
+      <a
+        [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
+        class="h-8.5 px-3 rounded-lg border border-base-300 bg-base-100 hover:bg-base-200/70 text-xs font-semibold text-base-content/70 inline-flex items-center gap-1.5 transition-colors"
+      >
+        <span>Cancelar</span>
+      </a>
+
+      <button
+        type="button"
+        (click)="saveProduct()"
+        [disabled]="productForm.invalid || (isEditMode() && !hasChanges()) || isLoading()"
+        class="h-8.5 px-4 rounded-lg bg-primary text-primary-content hover:brightness-95 text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+      >
+        @if (isLoading()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          <span>Guardando...</span>
+        } @else {
+          <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'wght' 400">check</span>
+          <span>{{ productID() ? "Actualizar Prenda" : "Guardar Prenda" }}</span>
+        }
+      </button>
     </div>
 
     <!-- Stepper Móvil Sticky (Visible en < lg) -->
     <div
       sub-menu
-      class="lg:hidden w-full px-3 py-3.5 bg-base-100 border-b border-base-200 shadow-2xs mb-2 mt-1"
+      class="lg:hidden w-full px-4 py-3 bg-base-100 border-b border-base-300/80"
     >
       <div class="flex items-center justify-between relative max-w-sm mx-auto">
-        <!-- Connecting Line -->
         <div class="absolute left-6 right-6 top-3.5 h-0.5 bg-base-200 -z-0"></div>
         <div
           class="absolute left-6 top-3.5 h-0.5 bg-primary transition-all duration-300 -z-0"
@@ -59,7 +93,6 @@
             (click)="setStep(i)"
             class="flex flex-col items-center gap-1 relative z-10 cursor-pointer group"
           >
-            <!-- Stepper Circle -->
             <div
               class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-200 border-2"
               [ngClass]="
@@ -71,7 +104,7 @@
               "
             >
               @if (currentStep() > i && !isSectionInvalid(sec.id)) {
-                <mat-icon class="text-[14px]! w-3.5! h-3.5!">check</mat-icon>
+                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'wght' 500">check</span>
               } @else if (isSectionInvalid(sec.id)) {
                 <span class="text-error font-black text-[12px]">!</span>
               } @else {
@@ -79,7 +112,6 @@
               }
             </div>
 
-            <!-- Title -->
             <span
               class="text-[10px] font-bold transition-colors"
               [ngClass]="currentStep() === i ? 'text-primary font-black' : 'text-base-content/50'"
@@ -93,144 +125,147 @@
   </app-page-header>
 
   <ng-container content>
-    <form [formGroup]="productForm" class="w-full pb-28 lg:pb-12 pt-2 sm:pt-4 px-1 sm:px-0">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
+    <form [formGroup]="productForm" class="w-full pb-24 lg:pb-0 bg-base-100">
+      <div class="grid grid-cols-1 lg:grid-cols-12 w-full min-h-[calc(100vh-7.5rem)] items-stretch divide-y lg:divide-y-0 lg:divide-x divide-base-300/80">
 
         <!-- ========================================================================= -->
-        <!-- ÍNDICE LATERAL STICKY (Solo Desktop lg+)                                  -->
+        <!-- ÍNDICE LATERAL ARQUITECTÓNICO (Solo Desktop lg+)                          -->
         <!-- ========================================================================= -->
-        <div class="hidden lg:flex lg:flex-col lg:col-span-3 gap-3 sticky top-4 self-start">
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex flex-col gap-2">
-            <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest px-2">
-              Secciones del Producto
-            </span>
+        <aside class="hidden lg:flex lg:flex-col lg:col-span-3 bg-base-200/20 divide-y divide-base-300/80">
+          <div class="sticky top-0 flex flex-col divide-y divide-base-300/80">
+            <div class="p-5 space-y-2.5">
+              <div class="flex items-center justify-between px-1">
+                <span class="text-[10px] font-black text-base-content/45 uppercase tracking-widest">
+                  Estructura de Carga
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/25 text-[10px] font-bold">
+                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'wght' 450">checkroom</span>
+                  <span>Moda & Calzado</span>
+                </span>
+              </div>
 
-            <nav class="flex flex-col gap-1.5 mt-1">
-              @for (sec of sections(); track sec.id) {
-                <button
-                  type="button"
-                  class="flex items-center justify-between p-2.5 rounded-xl transition-all text-left text-xs font-semibold cursor-pointer"
-                  [ngClass]="
-                    activeSection() === sec.id
-                      ? 'bg-primary/10 text-primary font-bold border border-primary/20 shadow-2xs'
-                      : 'hover:bg-base-200/60 text-base-content/70 border border-transparent'
-                  "
-                  (click)="scrollToSection(sec.id)"
-                >
-                  <div class="flex items-center gap-2.5 min-w-0">
-                    <mat-icon class="text-[18px]! w-4.5! h-4.5! shrink-0" [ngClass]="activeSection() === sec.id ? 'text-primary' : 'text-base-content/50'">
-                      {{ sec.icon }}
-                    </mat-icon>
-                    <div class="flex flex-col min-w-0">
-                      <span class="truncate">{{ sec.title }}</span>
-                      <span class="text-[10px] font-normal text-base-content/40 truncate">{{ sec.desc }}</span>
+              <nav class="flex flex-col gap-1">
+                @for (sec of sections(); track sec.id; let idx = $index) {
+                  <button
+                    type="button"
+                    class="flex items-center justify-between p-2.5 rounded-xl transition-all text-left text-xs font-semibold cursor-pointer"
+                    [ngClass]="
+                      activeSection() === sec.id
+                        ? 'bg-primary/10 text-primary font-bold border border-primary/25 shadow-2xs'
+                        : 'hover:bg-base-200/70 text-base-content/70 border border-transparent'
+                    "
+                    (click)="scrollToSection(sec.id)"
+                  >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <span
+                        class="material-symbols-outlined text-[18px] shrink-0"
+                        style="font-variation-settings: 'wght' 350"
+                        [ngClass]="activeSection() === sec.id ? 'text-primary' : 'text-base-content/45'"
+                      >
+                        {{ sec.icon }}
+                      </span>
+                      <div class="flex flex-col min-w-0">
+                        <span class="truncate">{{ sec.title }}</span>
+                        <span class="text-[10px] font-normal text-base-content/45 truncate">{{ sec.desc }}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  @if (isSectionInvalid(sec.id)) {
-                    <span class="badge badge-xs badge-error gap-1 shrink-0 font-bold">Falta dato</span>
-                  } @else {
-                    <mat-icon class="text-[14px]! w-3.5! h-3.5! text-success shrink-0">check_circle</mat-icon>
-                  }
-                </button>
-              }
-            </nav>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- ACCIONES RÁPIDAS (Guardar / Actualizar / Cancelar)                        -->
-          <!-- ========================================================================= -->
-          <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 flex flex-col gap-3">
-            <div class="flex items-center justify-between px-0.5">
-              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest">
-                Acciones
-              </span>
-              @if (isEditMode()) {
-                @if (hasChanges()) {
-                  <span class="badge badge-warning badge-xs font-semibold gap-1">Con cambios</span>
-                } @else {
-                  <span class="badge badge-ghost badge-xs font-normal text-base-content/40">Sin cambios</span>
+                    @if (isSectionInvalid(sec.id)) {
+                      <span class="px-1.5 py-0.5 rounded bg-error/10 text-error border border-error/25 text-[9px] font-bold shrink-0">
+                        Incompleto
+                      </span>
+                    } @else {
+                      <span class="material-symbols-outlined text-[16px] text-emerald-600 shrink-0" style="font-variation-settings: 'wght' 450">
+                        check_circle
+                      </span>
+                    }
+                  </button>
                 }
-              }
+              </nav>
             </div>
 
-            @let sidebarDisable =
-              productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
+            <!-- ACCIONES RÁPIDAS -->
+            <div class="p-5 flex flex-col gap-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black text-base-content/45 uppercase tracking-widest">
+                  Publicación
+                </span>
+                @if (isEditMode()) {
+                  @if (hasChanges()) {
+                    <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                      Con cambios pendientes
+                    </span>
+                  } @else {
+                    <span class="text-[10px] font-medium text-base-content/45">Sin cambios</span>
+                  }
+                }
+              </div>
 
-            <!-- Botón Principal: Guardar / Actualizar -->
-            <button
-              type="button"
-              class="btn btn-primary w-full font-bold shadow-xs hover:shadow-md transition-all gap-2"
-              (click)="saveProduct()"
-              [disabled]="sidebarDisable"
-            >
-              @if (isLoading()) {
-                <span class="loading loading-spinner loading-xs"></span>
-                <span>Guardando...</span>
-              } @else {
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!">save</mat-icon>
-                <span>{{ productID() ? "Actualizar Producto" : "Guardar Producto" }}</span>
-              }
-            </button>
+              @let sidebarDisable =
+                productForm.invalid || (isEditMode() && !hasChanges()) || isLoading();
 
-            <!-- Botón Opcional: Guardar y Cargar Otro (solo creación) -->
-            @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
               <button
                 type="button"
-                class="btn btn-sm btn-outline btn-primary w-full font-bold shadow-2xs gap-1.5"
-                (click)="saveAndCreateNext()"
-                [disabled]="productForm.invalid || isLoading()"
+                class="w-full h-10 rounded-xl bg-primary text-primary-content hover:brightness-95 font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+                (click)="saveProduct()"
+                [disabled]="sidebarDisable"
               >
-                <mat-icon class="text-[18px]! w-4.5! h-4.5!">queue</mat-icon>
-                <span>Guardar y Cargar Otro</span>
+                @if (isLoading()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                  <span>Guardando...</span>
+                } @else {
+                  <span class="material-symbols-outlined text-[17px]" style="font-variation-settings: 'wght' 400">save</span>
+                  <span>{{ productID() ? "Actualizar Prenda" : "Guardar Prenda" }}</span>
+                }
               </button>
-            }
 
-            <!-- Botón Cancelar -->
-            <a
-              [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
-              class="btn btn-sm btn-ghost w-full text-base-content/60 hover:text-base-content transition-colors font-medium text-xs"
-            >
-              Cancelar
-            </a>
+              <a
+                [routerLink]="productID() ? '/home/products/' + productID() : '/home/products'"
+                class="w-full h-9 rounded-xl border border-base-300 bg-base-100 hover:bg-base-200/70 text-base-content/70 hover:text-base-content transition-colors font-semibold text-xs inline-flex items-center justify-center"
+              >
+                Cancelar y volver
+              </a>
 
-            @if (productForm.invalid) {
-              <div class="flex items-center gap-1.5 px-0.5 text-[11px] text-error font-medium">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5! shrink-0">error_outline</mat-icon>
-                <span>Faltan campos obligatorios</span>
-              </div>
-            }
-          </div>
-
-          <!-- Resumen Rápido / Tips -->
-          <div class="bg-base-200/40 rounded-2xl p-4 border border-base-200 text-xs text-base-content/60 space-y-2">
-            <div class="flex items-center gap-2 font-bold text-base-content/80 text-[11px] uppercase tracking-wider">
-              <mat-icon class="text-info text-[16px]! w-4! h-4!">lightbulb</mat-icon>
-              <span>Flujo de Precios</span>
+              @if (productForm.invalid) {
+                <div class="flex items-center gap-1.5 px-1 text-[11px] text-error font-semibold">
+                  <span class="material-symbols-outlined text-[15px] shrink-0">error</span>
+                  <span>Completá los campos obligatorios marcados</span>
+                </div>
+              }
             </div>
-            <p class="text-[11px] leading-relaxed">
-              El <strong>Precio de Lista</strong> absorbe comisiones de cuotas. El <strong>Descuento %</strong> aplica directo al <strong>Precio Transferencia</strong>.
-            </p>
+
+            <!-- Resumen Rápido -->
+            <div class="p-5 text-xs text-base-content/65 space-y-1.5">
+              <div class="flex items-center gap-1.5 font-extrabold text-base-content/80 text-[11px] uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'wght' 400">verified_user</span>
+                <span>Arquitectura de Precios</span>
+              </div>
+              <p class="text-[11px] leading-relaxed">
+                El <strong>Precio de Lista</strong> absorbe comisiones de cuotas e impuestos. El <strong>Descuento %</strong> define el <strong>Precio Efectivo / Transferencia</strong>.
+              </p>
+            </div>
           </div>
-        </div>
+        </aside>
 
         <!-- ========================================================================= -->
         <!-- STREAM PRINCIPAL DE FORMULARIOS (lg:col-span-9)                            -->
         <!-- ========================================================================= -->
-        <div class="lg:col-span-9 flex flex-col gap-6">
+        <div class="lg:col-span-9 flex flex-col divide-y divide-base-300/80 bg-base-100">
 
           <!-- ===================================================================== -->
           <!-- 1. INFORMACIÓN PRINCIPAL & MULTIMEDIA                                 -->
           <!-- ===================================================================== -->
           <section
             id="section-info"
-            class="flex-col gap-4 scroll-mt-24 pt-2 sm:pt-0"
+            class="flex-col gap-5 scroll-mt-16 p-6 lg:p-8"
             [ngClass]="currentStep() === 0 ? 'flex' : 'hidden lg:flex'"
           >
-            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
-              <mat-icon class="text-primary text-[20px]! w-5! h-5!">photo_library</mat-icon>
-              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
-                1. Información Básica & Multimedia
+            <div class="flex items-center gap-2.5 pb-3 border-b border-base-300/80">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-primary/15 text-primary font-mono text-[11px] font-black">
+                01
+              </span>
+              <h2 class="text-xs font-extrabold text-base-content uppercase tracking-wider">
+                Información Básica & Galería Fotográfica
               </h2>
             </div>
 
@@ -240,10 +275,10 @@
                 <!-- Proveedor -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70">
-                    Proveedor / Fabricante {{ selectedType() === ProductType.GENERAL ? '(Opcional)' : '' }}
+                    Proveedor / Fabricante {{ selectedType() === ProductType.KIOSK ? '(Opcional)' : '' }}
                   </legend>
                   <select class="select select-bordered w-full text-xs" formControlName="provider">
-                    @if (selectedType() === ProductType.GENERAL) {
+                    @if (selectedType() === ProductType.KIOSK) {
                       <option value="">Sin proveedor asignado (Opcional)</option>
                     }
                     @for (provider of providers().data; track provider._id) {
@@ -336,7 +371,7 @@
                 <!-- Modelo / Nombre -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70">
-                    {{ selectedType() === ProductType.GENERAL ? 'Nombre del Producto' : selectedType() === ProductType.CLOTHING ? 'Modelo / Nombre de la Prenda' : 'Modelo / Nombre' }}
+                    {{ selectedType() === ProductType.KIOSK ? 'Nombre del Producto' : selectedType() === ProductType.CLOTHING ? 'Modelo / Nombre de la Prenda' : 'Modelo / Nombre' }}
                   </legend>
                   <input
                     type="text"
@@ -365,7 +400,7 @@
                 <!-- Marca -->
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs text-base-content/70 flex items-center justify-between">
-                    <span>Marca {{ selectedType() === ProductType.GENERAL ? '(Opcional)' : '' }}</span>
+                    <span>Marca {{ selectedType() === ProductType.KIOSK ? '(Opcional)' : '' }}</span>
                     <button
                       type="button"
                       class="btn btn-ghost btn-xs text-primary gap-1 font-bold"
@@ -375,7 +410,7 @@
                     </button>
                   </legend>
                   <select class="select select-bordered w-full text-xs" formControlName="brand">
-                    @if (selectedType() === ProductType.GENERAL) {
+                    @if (selectedType() === ProductType.KIOSK) {
                       <option value="">Genérico / Sin marca (Opcional)</option>
                     }
                     @for (b of brands(); track b) {
@@ -474,12 +509,12 @@
                   <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-1.5">
                     <mat-icon class="text-primary text-[16px]! w-4! h-4!">image</mat-icon>
                     <span>Galería de Fotos</span>
-                    @if (selectedType() === ProductType.GENERAL) {
+                    @if (selectedType() === ProductType.KIOSK) {
                       <span class="badge badge-sm badge-ghost text-2xs font-normal text-muted-foreground">Opcional</span>
                     }
                   </h3>
                   <p class="text-[11px] text-base-content/50">
-                    {{ selectedType() === ProductType.GENERAL ? 'Podés guardar el producto sin fotos o agregarlas si querés mostrarlas en tienda.' : 'La primera imagen será la foto de portada principal.' }}
+                    {{ selectedType() === ProductType.KIOSK ? 'Podés guardar el producto sin fotos o agregarlas si querés mostrarlas en tienda.' : 'La primera imagen será la foto de portada principal.' }}
                   </p>
                 </div>
               </div>
@@ -497,18 +532,20 @@
           <!-- ===================================================================== -->
           <section
             id="section-pricing"
-            class="flex-col gap-4 scroll-mt-24 pt-2 sm:pt-0"
+            class="flex-col gap-5 scroll-mt-16 p-6 lg:p-8"
             [ngClass]="currentStep() === 1 ? 'flex' : 'hidden lg:flex'"
           >
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1 border-b border-base-200">
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-secondary text-[20px]! w-5! h-5!">payments</mat-icon>
-                <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
-                  2. Precios, Cuotas & Rentabilidad
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-base-300/80">
+              <div class="flex items-center gap-2.5">
+                <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-primary/15 text-primary font-mono text-[11px] font-black">
+                  02
+                </span>
+                <h2 class="text-xs font-extrabold text-base-content uppercase tracking-wider">
+                  Precios, Cuotas & Rentabilidad
                 </h2>
               </div>
-              <div class="flex items-center gap-1.5 text-[10px] text-base-content/50">
-                <mat-icon class="text-[14px]! w-3.5! h-3.5!">tune</mat-icon>
+              <div class="flex items-center gap-1.5 text-[11px] text-base-content/55">
+                <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'wght' 350">tune</span>
                 <span>Modo Tienda: <strong>{{ storeConfig().config.pricingStrategy?.card1PayDiscount ? '1 Pago Rebajado' : 'Tarjetas a Precio de Lista' }}</strong></span>
               </div>
             </div>
@@ -1301,13 +1338,15 @@
           <!-- ===================================================================== -->
           <section
             id="section-variants"
-            class="flex-col gap-4 scroll-mt-24 pt-2 sm:pt-0"
+            class="flex-col gap-5 scroll-mt-16 p-6 lg:p-8"
             [ngClass]="currentStep() === 2 ? 'flex' : 'hidden lg:flex'"
           >
-            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
-              <mat-icon class="text-primary text-[20px]! w-5! h-5!">inventory_2</mat-icon>
-              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
-                {{ selectedType() === ProductType.TECH ? '3. Modelos, Colores & Control de Stock' : '3. Talles, Colores & Control de Stock' }}
+            <div class="flex items-center gap-2.5 pb-3 border-b border-base-300/80">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-primary/15 text-primary font-mono text-[11px] font-black">
+                03
+              </span>
+              <h2 class="text-xs font-extrabold text-base-content uppercase tracking-wider">
+                {{ selectedType() === ProductType.TECH ? 'Modelos, Colores & Control de Stock' : 'Talles, Colores & Control de Stock' }}
               </h2>
             </div>
 
@@ -1329,7 +1368,7 @@
                   [initialValues]="beautyInitialValue()"
                   (formChange)="onTypeSpecificFormChange($event)"
                 />
-              } @else if (selectedType() === ProductType.GENERAL) {
+              } @else if (selectedType() === ProductType.KIOSK) {
                 <app-general-product-form
                   [value]="generalInitialValue()"
                   (formChange)="onGeneralFormChange($event)"
@@ -1578,7 +1617,7 @@
                                   class="input input-xs input-bordered w-28 text-xs font-bold"
                                   placeholder="Volumen (Ej: 100ml)"
                                 />
-                              } @else if (selectedType() === ProductType.GENERAL) {
+                              } @else if (selectedType() === ProductType.KIOSK) {
                                 <input
                                   type="text"
                                   formControlName="size"
@@ -1651,13 +1690,15 @@
           <!-- ===================================================================== -->
           <section
             id="section-details"
-            class="flex-col gap-4 scroll-mt-24 pt-2 sm:pt-0"
+            class="flex-col gap-5 scroll-mt-16 p-6 lg:p-8"
             [ngClass]="currentStep() === 3 ? 'flex' : 'hidden lg:flex'"
           >
-            <div class="flex items-center gap-2 pb-1 border-b border-base-200">
-              <mat-icon class="text-amber-500 text-[20px]! w-5! h-5!">tune</mat-icon>
-              <h2 class="text-sm font-bold text-base-content uppercase tracking-wider">
-                4. Descripción, Ficha Técnica & SEO
+            <div class="flex items-center gap-2.5 pb-3 border-b border-base-300/80">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-primary/15 text-primary font-mono text-[11px] font-black">
+                04
+              </span>
+              <h2 class="text-xs font-extrabold text-base-content uppercase tracking-wider">
+                Descripción, Guía de Talles, Ficha Técnica & SEO
               </h2>
             </div>
 
@@ -2132,7 +2173,7 @@
         </button>
       } @else {
         <div class="flex items-center gap-2">
-          @if (!isEditMode() && selectedType() === ProductType.GENERAL) {
+          @if (!isEditMode() && selectedType() === ProductType.KIOSK) {
             <button
               type="button"
               class="btn btn-sm btn-outline btn-primary gap-1 font-bold text-xs"

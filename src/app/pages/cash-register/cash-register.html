@@ -1,174 +1,901 @@
 @let session = cashStore.session();
 @let isLoading = cashStore.isLoading();
 
-<app-page-layout>
-  <app-page-header header title="Gestión de Caja" subtitle="Control de apertura y cierre de sucursal">
-    <div actions>
+<app-page-layout [flush]="true">
+  <!-- ========================================================================= -->
+  <!-- 1. CABECERA ARQUITECTÓNICA DE BORDE A BORDE                               -->
+  <!-- ========================================================================= -->
+  <app-page-header
+    header
+    title="Caja Registradora & Arqueo"
+    subtitle="Control de fondo de cambio, efectivo en cajón y conciliación de turno"
+    [inlineSubtitle]="true"
+  >
+    <div actions class="flex items-center flex-wrap gap-2">
+      <!-- Estado de la Caja -->
       @if (session) {
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-success/10 text-success rounded-full border border-success/20">
-          <mat-icon class="text-sm">check_circle</mat-icon>
-          <span class="text-[10px] font-bold uppercase tracking-wider">Sesión Activa</span>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-500/25 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Caja Abierta</span>
+          <span class="opacity-60">·</span>
+          <span class="font-mono text-[11px]">{{ sessionDurationLabel() }}</span>
         </div>
       } @else if (!isLoading) {
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-error/10 text-error rounded-full border border-error/20">
-          <mat-icon class="text-sm">lock</mat-icon>
-          <span class="text-[10px] font-bold uppercase tracking-wider">Caja Cerrada</span>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-500/25 text-xs font-semibold">
+          <mat-icon class="text-[14px]! w-3.5! h-3.5!">lock</mat-icon>
+          <span>Caja Cerrada</span>
         </div>
       }
+
+      <!-- Accesos rápidos contextuales -->
+      <a
+        routerLink="/home/pos"
+        class="btn btn-sm h-8 min-h-8 px-3 btn-ghost border border-base-300/90 bg-base-100 hover:bg-base-200/60 text-base-content/80 rounded-lg text-xs font-semibold gap-1.5"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4! text-primary">point_of_sale</mat-icon>
+        <span>Ir al Mostrador (POS)</span>
+      </a>
+
+      <a
+        routerLink="/home/daily-reports"
+        class="btn btn-sm h-8 min-h-8 px-3 btn-ghost border border-base-300/90 bg-base-100 hover:bg-base-200/60 text-base-content/80 rounded-lg text-xs font-semibold gap-1.5 hidden sm:inline-flex"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!">assessment</mat-icon>
+        <span>Resumen Diario</span>
+      </a>
+
+      <button
+        type="button"
+        (click)="refreshAll()"
+        [disabled]="isLoading"
+        class="btn btn-sm h-8 min-h-8 px-2.5 btn-ghost border border-base-300/90 bg-base-100 hover:bg-base-200/60 text-base-content/70 rounded-lg cursor-pointer"
+        title="Sincronizar estado de caja y ventas"
+      >
+        <mat-icon class="text-[16px]! w-4! h-4!" [class.animate-spin]="isLoading">refresh</mat-icon>
+      </button>
     </div>
   </app-page-header>
 
-  <div content class="flex flex-col gap-4 max-w-4xl mx-auto w-full pb-6">
-
-    <!-- Loading State -->
+  <div content class="bg-base-100 flex-1 flex flex-col min-h-0 w-full overflow-y-auto">
+    <!-- ======================================================================= -->
+    <!-- ESTADO DE CARGA                                                         -->
+    <!-- ======================================================================= -->
     @if (isLoading) {
-      <div class="flex flex-col items-center justify-center py-20 space-y-3">
-        <span class="loading loading-ring loading-md text-primary"></span>
-        <p class="text-sm text-base-content/40 font-bold">Sincronizando con el servidor...</p>
+      <div class="flex-1 flex flex-col items-center justify-center py-24 gap-3">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-xs font-semibold text-base-content/60">Sincronizando arqueo y movimientos de caja...</p>
       </div>
     }
 
-    <!-- Open Box Form (no session) -->
-    @if (!isLoading && !session) {
-      <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3 bg-base-200/30">
-          <div class="w-9 h-9 rounded-sm bg-primary/10 text-primary flex items-center justify-center">
-            <mat-icon>point_of_sale</mat-icon>
-          </div>
+    <!-- ======================================================================= -->
+    <!-- ESCENARIO A: SESIÓN DE CAJA ACTIVA (ARQUEO, CONTEO Y CIERRE DE TURNO)   -->
+    <!-- ======================================================================= -->
+    @if (!isLoading && session) {
+      <!-- 1. BANDA DE KPIs DEL TURNO DE BORDE A BORDE -->
+      <section class="bg-base-100 border-b border-base-300/80 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-base-300/80 shrink-0">
+        <!-- KPI 1: Fondo Inicial -->
+        <div class="px-6 py-4 flex items-start justify-between gap-3">
           <div>
-            <h2 class="text-sm font-bold">Apertura de Turno</h2>
-            <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">Declara el saldo inicial para iniciar</p>
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-base-content/50 block">
+              1. Fondo Inicial (Cambio)
+            </span>
+            <div class="text-xl sm:text-2xl font-bold text-base-content tabular-nums mt-1">
+              ${{ initialCash() | number:'1.0-0' }}
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-base-content/55 mt-1">
+              <mat-icon class="text-[13px]! w-3.5! h-3.5!">schedule</mat-icon>
+              <span>
+                Apertura:
+                @if (sessionOpenedAt(); as openedDate) {
+                  <strong class="text-base-content/80">{{ openedDate | date:'HH:mm' }} hs</strong>
+                  <span>({{ openedDate | date:'dd/MM' }})</span>
+                } @else {
+                  <strong class="text-base-content/80">Turno actual</strong>
+                }
+              </span>
+            </div>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-base-200/80 text-base-content/70 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[19px]! w-5! h-5!">account_balance_wallet</mat-icon>
           </div>
         </div>
 
-        <div class="p-5 space-y-4">
-          <p class="text-xs text-base-content/50 leading-relaxed max-w-md">
-            Para registrar ventas presenciales, primero debes declarar el efectivo inicial disponible en el cajón de dinero.
-          </p>
+        <!-- KPI 2: Ventas en Efectivo -->
+        <div class="px-6 py-4 flex items-start justify-between gap-3">
+          <div>
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+              2. Cobros en Efectivo
+            </span>
+            <div class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">
+              + ${{ cashSalesInShift() | number:'1.0-0' }}
+            </div>
+            <p class="text-[11px] text-base-content/55 mt-1">
+              Billetes ingresados por ventas hoy
+            </p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[19px]! w-5! h-5!">payments</mat-icon>
+          </div>
+        </div>
 
-          <div class="form-control">
-            <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Monto Inicial en Efectivo (ARS)</label>
-            <div class="relative group">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-xl text-base-content/20 group-focus-within:text-primary transition-colors">$</span>
-              <input type="number" [ngModel]="initialBalance()" (ngModelChange)="initialBalance.set($event)"
-                class="input input-bordered w-full pl-10 h-14 text-2xl font-black rounded-sm"
-                placeholder="0" />
+        <!-- KPI 3: Efectivo Esperado en Cajón -->
+        <div class="px-6 py-4 flex items-start justify-between gap-3 bg-base-200/20">
+          <div>
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-primary block">
+              3. Total Esperado en Cajón
+            </span>
+            <div class="text-xl sm:text-2xl font-bold text-base-content tabular-nums mt-1">
+              ${{ expectedCloseCash() | number:'1.0-0' }}
+            </div>
+            <p class="text-[11px] text-base-content/55 mt-1">
+              Fondo inicial + Ventas en efectivo
+            </p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-primary/12 text-primary flex items-center justify-center shrink-0">
+            <mat-icon class="text-[19px]! w-5! h-5!">point_of_sale</mat-icon>
+          </div>
+        </div>
+
+        <!-- KPI 4: Medios Digitales (Fuera del cajón físico) -->
+        <div class="px-6 py-4 flex items-start justify-between gap-3">
+          <div>
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-base-content/50 block">
+              4. Cobros Digitales (Hoy)
+            </span>
+            <div class="text-xl sm:text-2xl font-bold text-base-content tabular-nums mt-1">
+              ${{ totalDigitalSales() | number:'1.0-0' }}
+            </div>
+            <p class="text-[11px] text-base-content/55 mt-1">
+              Tarjetas, transferencias, QR y fiado
+            </p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-base-200/80 text-base-content/70 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[19px]! w-5! h-5!">credit_score</mat-icon>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CUERPO SPLIT DE BORDE A BORDE (SIN CONTORNOS NI MÁRGENES EXTERIORES) -->
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-base-300/80 w-full">
+        <!-- ================================================================= -->
+        <!-- COLUMNA IZQUIERDA (8 cols): CONSOLA DE ARQUEO Y CIERRE DE TURNO   -->
+        <!-- ================================================================= -->
+        <div class="lg:col-span-7 xl:col-span-8 bg-base-100 flex flex-col">
+          <!-- Subcabecera de la Consola de Arqueo -->
+          <div class="px-6 py-4 border-b border-base-300/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-base-content text-base-100 flex items-center justify-center shrink-0">
+                <mat-icon class="text-[19px]! w-5! h-5!">calculate</mat-icon>
+              </div>
+              <div>
+                <h2 class="text-sm font-bold text-base-content">Arqueo Físico y Cierre de Turno</h2>
+                <p class="text-xs text-base-content/55">
+                  Contá el dinero real en el cajón para verificar si la caja cuadra antes de cerrar.
+                </p>
+              </div>
+            </div>
+
+            <!-- Selector de Modo: Monto Directo vs Contador de Billetes -->
+            <div class="inline-flex items-center p-0.5 rounded-lg bg-base-200/80 border border-base-300/80 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                (click)="closeCountMode.set('direct')"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                [ngClass]="closeCountMode() === 'direct' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+              >
+                <mat-icon class="text-[15px]! w-4! h-4!">edit</mat-icon>
+                <span>Monto directo</span>
+              </button>
+              <button
+                type="button"
+                (click)="closeCountMode.set('bills')"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                [ngClass]="closeCountMode() === 'bills' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+              >
+                <mat-icon class="text-[15px]! w-4! h-4!">payments</mat-icon>
+                <span>Contar billetes</span>
+              </button>
             </div>
           </div>
 
-          <button class="btn btn-primary w-full h-11 rounded-sm font-bold text-sm group" (click)="openSession()">
-            Empezar Jornada
-            <mat-icon class="group-hover:translate-x-0.5 transition-transform">play_arrow</mat-icon>
+          <!-- Cuerpo del Arqueo -->
+          <div class="p-6 space-y-5 flex-1">
+            @if (closeCountMode() === 'direct') {
+              <!-- MODO 1: INGRESO DIRECTO DEL EFECTIVO FÍSICO -->
+              <div class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <label for="actual-close-input" class="text-xs font-bold uppercase tracking-wider text-base-content/65">
+                    Efectivo físico contado en cajón (ARS)
+                  </label>
+                  <button
+                    type="button"
+                    (click)="matchExpectedBalance()"
+                    class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">done_all</mat-icon>
+                    <span>Igualar al esperado (${{ expectedCloseCash() | number:'1.0-0' }})</span>
+                  </button>
+                </div>
+
+                <div class="relative">
+                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-base-content/45">$</span>
+                  <input
+                    id="actual-close-input"
+                    type="number"
+                    min="0"
+                    [ngModel]="actualCloseBalance()"
+                    (ngModelChange)="actualCloseBalance.set($event)"
+                    class="input input-bordered w-full pl-10 pr-4 h-13 text-2xl font-bold tabular-nums rounded-xl focus:border-primary bg-base-100 text-base-content"
+                    placeholder="0"
+                  />
+                </div>
+
+                <!-- Botones rápidos de carga -->
+                <div class="flex items-center flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    (click)="matchExpectedBalance()"
+                    class="btn btn-xs rounded-lg font-semibold border border-base-300 tabular-nums"
+                    [ngClass]="actualCloseBalance() === expectedCloseCash() ? 'btn-primary' : 'btn-ghost bg-base-200/40'"
+                  >
+                    Exacto (${{ expectedCloseCash() | number:'1.0-0' }})
+                  </button>
+                  @for (addAmt of [1000, 5000, 10000, 20000, 50000]; track addAmt) {
+                    <button
+                      type="button"
+                      (click)="actualCloseBalance.set((actualCloseBalance() || 0) + addAmt)"
+                      class="btn btn-xs btn-ghost bg-base-200/40 hover:bg-base-200 border border-base-300/80 rounded-lg font-semibold text-[11px] tabular-nums"
+                    >
+                      +${{ addAmt | number:'1.0-0' }}
+                    </button>
+                  }
+                  @if (actualCloseBalance() > 0) {
+                    <button
+                      type="button"
+                      (click)="actualCloseBalance.set(0)"
+                      class="btn btn-xs btn-ghost text-error rounded-lg font-semibold text-[11px] ml-auto"
+                    >
+                      Limpiar ($0)
+                    </button>
+                  }
+                </div>
+              </div>
+            } @else {
+              <!-- MODO 2: CALCULADORA INTERACTIVA DE BILLETES ARGENTINOS -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-base-content/65">
+                    Desglose por denominación de billetes
+                  </span>
+                  <button
+                    type="button"
+                    (click)="resetBillCounter()"
+                    class="text-xs font-semibold text-base-content/50 hover:text-error flex items-center gap-1 cursor-pointer"
+                  >
+                    <mat-icon class="text-[14px]! w-3.5! h-3.5!">restart_alt</mat-icon>
+                    <span>Reiniciar conteo</span>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  @for (denom of denominations; track denom.value) {
+                    @let qty = billCounts()[denom.value] || 0;
+                    <div class="bill-row px-3 py-2 flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold tabular-nums w-18 text-center shrink-0">
+                          {{ denom.label }}
+                        </span>
+                        <span class="text-[11px] text-base-content/45">×</span>
+                      </div>
+
+                      <div class="inline-flex items-center bg-base-200/50 rounded-lg border border-base-300/90 p-0.5 shrink-0">
+                        <button
+                          type="button"
+                          (click)="stepBillCount(denom.value, -1)"
+                          class="w-6 h-6 rounded hover:bg-base-300 text-base-content flex items-center justify-center cursor-pointer"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">remove</mat-icon>
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          [ngModel]="qty"
+                          (ngModelChange)="updateBillCount(denom.value, $event)"
+                          class="w-11 text-center bg-transparent border-none outline-none text-xs font-bold text-base-content tabular-nums"
+                        />
+                        <button
+                          type="button"
+                          (click)="stepBillCount(denom.value, 1)"
+                          class="w-6 h-6 rounded hover:bg-base-300 text-base-content flex items-center justify-center cursor-pointer"
+                        >
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+                        </button>
+                      </div>
+
+                      <div class="text-right min-w-[76px] tabular-nums">
+                        <span class="text-xs font-bold" [ngClass]="qty > 0 ? 'text-base-content' : 'text-base-content/35'">
+                          ${{ (denom.value * qty) | number:'1.0-0' }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Monedas / Cambio Chico -->
+                  <div class="bill-row px-3 py-2 flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-base-content/70">Monedas / Otros ($)</span>
+                    <div class="relative w-28">
+                      <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-base-content/40">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        [ngModel]="coinsAndChange()"
+                        (ngModelChange)="coinsAndChange.set($event)"
+                        class="input input-xs h-7 input-bordered w-full pl-6 text-right font-bold tabular-nums rounded-md"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- PANEL DE CONCILIACIÓN EN VIVO (ESPERADO VS DECLARADO)         -->
+            <!-- ============================================================= -->
+            <div
+              class="p-4 rounded-xl border transition-colors"
+              [ngClass]="{
+                'bg-emerald-500/8 border-emerald-500/30': auditStatus() === 'exact',
+                'bg-blue-500/8 border-blue-500/30': auditStatus() === 'surplus',
+                'bg-error/8 border-error/30': auditStatus() === 'shortage'
+              }"
+            >
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                <div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">
+                    Efectivo esperado
+                  </span>
+                  <span class="text-base font-bold text-base-content tabular-nums">
+                    ${{ expectedCloseCash() | number:'1.0-0' }}
+                  </span>
+                </div>
+
+                <div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">
+                    Efectivo físico declarado
+                  </span>
+                  <span class="text-base font-bold text-base-content tabular-nums">
+                    ${{ (actualCloseBalance() || 0) | number:'1.0-0' }}
+                  </span>
+                </div>
+
+                <div class="sm:text-right">
+                  <span class="text-[10px] font-bold uppercase tracking-wider block"
+                    [ngClass]="{
+                      'text-emerald-700 dark:text-emerald-400': auditStatus() === 'exact',
+                      'text-blue-700 dark:text-blue-400': auditStatus() === 'surplus',
+                      'text-error': auditStatus() === 'shortage'
+                    }"
+                  >
+                    @if (auditStatus() === 'exact') {
+                      Caja cuadrada · Exacta
+                    } @else if (auditStatus() === 'surplus') {
+                      Sobrante en caja
+                    } @else {
+                      Faltante en caja
+                    }
+                  </span>
+                  <div
+                    class="text-lg font-bold tabular-nums flex sm:justify-end items-center gap-1"
+                    [ngClass]="{
+                      'text-emerald-600 dark:text-emerald-400': auditStatus() === 'exact',
+                      'text-blue-600 dark:text-blue-400': auditStatus() === 'surplus',
+                      'text-error': auditStatus() === 'shortage'
+                    }"
+                  >
+                    @if (auditStatus() === 'exact') {
+                      <mat-icon class="text-[18px]! w-4.5! h-4.5!">check_circle</mat-icon>
+                      <span>$0 diferencia</span>
+                    } @else if (auditStatus() === 'surplus') {
+                      <span>+ ${{ auditDifference() | number:'1.0-0' }}</span>
+                    } @else {
+                      <span>- ${{ (auditDifference() * -1) | number:'1.0-0' }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notas / Observaciones de Cierre -->
+            <div class="space-y-1.5">
+              <label for="close-notes-input" class="text-xs font-bold uppercase tracking-wider text-base-content/65 block">
+                Observaciones de cierre / retiros / gastos de caja (opcional)
+              </label>
+              <textarea
+                id="close-notes-input"
+                rows="2"
+                [ngModel]="closeNotes()"
+                (ngModelChange)="closeNotes.set($event)"
+                class="textarea textarea-bordered w-full rounded-xl text-xs bg-base-100 focus:border-primary"
+                placeholder="Ej: Se retiraron $5.000 para pago a proveedor, o detalle de faltante/sobrante..."
+              ></textarea>
+            </div>
+
+            <!-- Footer de Cierre de Turno -->
+            <div class="pt-4 border-t border-base-300/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-2 text-xs text-base-content/60">
+                <mat-icon class="text-[16px]! w-4! h-4! text-base-content/45">badge</mat-icon>
+                <span>Responsable de turno: <strong class="text-base-content">{{ operatorName() }}</strong></span>
+              </div>
+
+              <button
+                type="button"
+                (click)="requestCloseSession()"
+                [disabled]="isSubmitting()"
+                class="btn btn-error text-white h-10 px-5 rounded-xl font-bold text-xs gap-2 shadow-xs cursor-pointer"
+              >
+                <mat-icon class="text-[18px]! w-4.5! h-4.5!">lock</mat-icon>
+                <span>Realizar Arqueo y Cerrar Caja</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- COLUMNA DERECHA (4 cols): AUDITORÍA DE MEDIOS Y MOVIMIENTOS       -->
+        <!-- ================================================================= -->
+        <aside class="lg:col-span-5 xl:col-span-4 bg-base-200/20 flex flex-col divide-y divide-base-300/80">
+          <!-- Sección 1: Desglose por Medio de Cobro del Día -->
+          <div>
+            <div class="px-5 py-4 border-b border-base-300/80 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-primary">pie_chart</mat-icon>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
+                  Medios de Cobro Registrados Hoy
+                </h3>
+              </div>
+              <span class="text-[11px] font-semibold text-base-content/50 tabular-nums">
+                {{ dailyStats()?.salesCount?.total || 0 }} op.
+              </span>
+            </div>
+
+            <div class="p-5 space-y-2.5">
+              <!-- Efectivo (Cajón) -->
+              <div class="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+                    <mat-icon class="text-[16px]! w-4! h-4!">payments</mat-icon>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-base-content block">Efectivo (Va al cajón)</span>
+                    <span class="text-[10px] text-base-content/50">Suma al arqueo físico</span>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                  ${{ cashSalesInShift() | number:'1.0-0' }}
+                </span>
+              </div>
+
+              <!-- Medios Digitales (No suman al cajón físico) -->
+              @for (m of digitalMethodsBreakdown(); track m.key) {
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-100 border border-base-300/70">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-md bg-base-200/70 text-base-content/65 flex items-center justify-center">
+                      <mat-icon class="text-[16px]! w-4! h-4!">{{ m.icon }}</mat-icon>
+                    </div>
+                    <div>
+                      <span class="text-xs font-semibold text-base-content block">{{ m.label }}</span>
+                      <span class="text-[10px] text-base-content/45">Acreditación digital / cuenta</span>
+                    </div>
+                  </div>
+                  <span class="text-xs font-bold text-base-content tabular-nums">
+                    ${{ m.amount | number:'1.0-0' }}
+                  </span>
+                </div>
+              }
+
+              <!-- Total Facturado del Día -->
+              <div class="pt-3 mt-1 border-t border-base-300/80 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">
+                  Facturación Total del Día
+                </span>
+                <span class="text-base font-bold text-base-content tabular-nums">
+                  ${{ totalDayRevenue() | number:'1.0-0' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección 2: Últimas Operaciones del Día -->
+          <div class="flex-1 flex flex-col">
+            <div class="px-5 py-3.5 border-b border-base-300/80 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-base-content/70">receipt_long</mat-icon>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
+                  Últimos Cobros del Día
+                </h3>
+              </div>
+              <a routerLink="/home/daily-reports" class="text-[11px] font-semibold text-primary hover:underline">
+                Ver todos
+              </a>
+            </div>
+
+            @if (recentSales().length === 0) {
+              <div class="p-8 text-center flex-1 flex flex-col items-center justify-center text-base-content/45">
+                <mat-icon class="text-2xl! w-6! h-6! mb-1.5">point_of_sale</mat-icon>
+                <p class="text-xs font-semibold">Sin ventas registradas hoy</p>
+                <p class="text-[11px] mt-0.5">Los cobros realizados en el POS aparecerán acá en vivo.</p>
+              </div>
+            } @else {
+              <div class="divide-y divide-base-300/60">
+                @for (sale of recentSales(); track sale.orderNumber + '-' + $index) {
+                  <div class="px-5 py-3 flex items-center justify-between gap-2 hover:bg-base-200/40 transition-colors">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-base-content font-mono">#{{ sale.orderNumber }}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded bg-base-200 text-base-content/70 font-semibold">
+                          {{ sale.saleType === 'LOCAL' ? 'Mostrador' : 'Online' }}
+                        </span>
+                      </div>
+                      <div class="text-[10.5px] text-base-content/50 truncate mt-0.5">
+                        {{ getPaymentMethodLabel(sale.paymentMethod) }} · {{ sale.createdAt | date:'HH:mm' }} hs
+                      </div>
+                    </div>
+                    <span class="text-xs font-bold text-base-content tabular-nums shrink-0">
+                      ${{ sale.total | number:'1.0-0' }}
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </aside>
+      </div>
+    }
+
+    <!-- ======================================================================= -->
+    <!-- ESCENARIO B: CAJA CERRADA (CONSOLA DE APERTURA DE BORDE A BORDE)        -->
+    <!-- ======================================================================= -->
+    @if (!isLoading && !session) {
+      <!-- Banner de Resumen si recién se cerró un turno -->
+      @if (lastClosedSummary(); as summary) {
+        <div class="px-6 py-3.5 border-b border-base-300/80 bg-emerald-500/8 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+              <mat-icon class="text-[20px]! w-5! h-5!">task_alt</mat-icon>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xs font-bold text-base-content">Turno cerrado correctamente</h3>
+                <span class="text-[11px] font-mono text-base-content/50">{{ summary.closedAt | date:'HH:mm' }} hs</span>
+              </div>
+              <p class="text-xs text-base-content/65">
+                Esperado: <strong class="tabular-nums">${{ summary.expectedCloseBalance | number:'1.0-0' }}</strong> ·
+                Declarado: <strong class="tabular-nums">${{ summary.actualCloseBalance | number:'1.0-0' }}</strong> ·
+                Diferencia:
+                <strong
+                  class="tabular-nums"
+                  [ngClass]="summary.difference === 0 ? 'text-emerald-600' : (summary.difference > 0 ? 'text-blue-600' : 'text-error')"
+                >
+                  {{ summary.difference > 0 ? '+' : '' }}${{ summary.difference | number:'1.0-0' }}
+                </strong>
+              </p>
+            </div>
+          </div>
+          <button type="button" (click)="lastClosedSummary.set(null)" class="btn btn-xs btn-ghost self-end md:self-center">
+            Ocultar aviso
           </button>
         </div>
-      </div>
-    }
+      }
 
-    <!-- Current Session State -->
-    @if (!isLoading && session) {
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-        <!-- Session Info (left sidebar) -->
-        <div class="lg:col-span-2">
-          <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden h-full flex flex-col">
-            <div class="px-5 py-3 border-b border-base-200 bg-base-200/30 shrink-0">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-sm bg-success/10 text-success flex items-center justify-center">
-                  <mat-icon>schedule</mat-icon>
-                </div>
-                <div>
-                  <h2 class="text-sm font-bold">Sesión Activa</h2>
-                  <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">{{ session.openDate | date:'fullDate' }}</p>
-                </div>
+      <!-- Split de Borde a Borde sin contorno exterior -->
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-base-300/80 w-full">
+        <!-- Columna Izquierda (7 cols): Formulario de Apertura de Turno -->
+        <div class="lg:col-span-7 xl:col-span-8 bg-base-100 flex flex-col">
+          <div class="px-6 py-4 border-b border-base-300/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-primary text-primary-content flex items-center justify-center shrink-0 shadow-xs">
+                <mat-icon class="text-[20px]! w-5! h-5!">lock_open</mat-icon>
+              </div>
+              <div>
+                <h2 class="text-sm sm:text-base font-bold text-base-content">Apertura de Caja y Turno</h2>
+                <p class="text-xs text-base-content/55">
+                  Declarar el fondo inicial de cambio disponible en el cajón físico.
+                </p>
               </div>
             </div>
 
-            <div class="p-4 flex-1 space-y-3">
-              <!-- Open Time -->
-              <div class="flex items-center gap-3 p-3 rounded-sm bg-base-200/40">
-                <mat-icon class="text-base-content/30">access_time</mat-icon>
-                <div>
-                  <p class="text-[10px] font-bold uppercase tracking-widest opacity-35">Hora de Apertura</p>
-                  <p class="text-sm font-bold">{{ session.openDate | date:'shortTime' }}hs</p>
-                </div>
-              </div>
-
-              <!-- Initial Balance -->
-              <div class="flex justify-between items-center p-3 rounded-sm bg-base-200/40">
-                <span class="text-[10px] font-bold uppercase tracking-widest opacity-35">Saldo Inicial</span>
-                <span class="font-black text-sm tabular-nums">${{ session.initialBalance | number:'1.0-0' }}</span>
-              </div>
-
-              <!-- Sales -->
-              <div class="flex justify-between items-center p-3 rounded-sm bg-primary/5 border border-primary/10">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-primary/60">Ventas Registradas</span>
-                <span class="font-black text-sm text-primary tabular-nums">+ ${{ (session.expectedCloseBalance - session.initialBalance) | number:'1.0-0' }}</span>
-              </div>
-
-              <!-- Expected Total -->
-              <div class="flex justify-between items-center p-4 rounded-sm bg-neutral text-neutral-content">
-                <span class="text-[10px] font-bold uppercase tracking-widest opacity-50">Total Esperado</span>
-                <span class="text-xl font-black tabular-nums">${{ session.expectedCloseBalance | number:'1.0-0' }}</span>
-              </div>
-            </div>
-
-            <div class="px-5 py-2.5 bg-base-200/30 border-t border-base-200 shrink-0">
-              <p class="text-[10px] font-bold uppercase tracking-widest opacity-25 text-center">Responsable: {{ session.openedBy?.name || 'Administrador' }}</p>
+            <!-- Conmutador: Monto directo vs Contar billetes -->
+            <div class="inline-flex items-center p-0.5 rounded-lg bg-base-200/80 border border-base-300/80 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                (click)="openCountMode.set('direct')"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                [ngClass]="openCountMode() === 'direct' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60'"
+              >
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">edit</mat-icon>
+                <span>Monto directo</span>
+              </button>
+              <button
+                type="button"
+                (click)="openCountMode.set('bills')"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                [ngClass]="openCountMode() === 'bills' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60'"
+              >
+                <mat-icon class="text-[14px]! w-3.5! h-3.5!">payments</mat-icon>
+                <span>Contar billetes</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- Close Form (right) -->
-        <div class="lg:col-span-3">
-          <div class="bg-base-100 border border-base-300 rounded-sm overflow-hidden h-full flex flex-col">
-            <div class="px-5 py-3 border-b border-base-200 bg-error/5 shrink-0">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-sm bg-error/10 text-error flex items-center justify-center">
-                  <mat-icon>lock_open</mat-icon>
-                </div>
-                <div>
-                  <h2 class="text-sm font-bold">Cierre de Jornada</h2>
-                  <p class="text-[10px] font-bold opacity-35 uppercase tracking-widest">Registra el efectivo y cerrá la caja</p>
-                </div>
-              </div>
-            </div>
+          <div class="p-6 space-y-6 flex-1">
+            @if (openCountMode() === 'direct') {
+              <div class="space-y-3.5">
+                <label for="initial-balance-input" class="text-xs font-bold uppercase tracking-wider text-base-content/65 block">
+                  Fondo inicial en efectivo en cajón (ARS)
+                </label>
 
-            <div class="p-5 flex-1 space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Cash input -->
-                <div class="form-control">
-                  <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Efectivo Físico en Caja</label>
-                  <div class="relative group">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-base-content/20 group-focus-within:text-error transition-colors">$</span>
-                    <input type="number" [ngModel]="actualCloseBalance()" (ngModelChange)="actualCloseBalance.set($event)"
-                      class="input input-bordered w-full pl-10 h-14 text-xl font-black rounded-sm"
-                      placeholder="Contar efectivo..." />
+                <div class="relative">
+                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-base-content/45">$</span>
+                  <input
+                    id="initial-balance-input"
+                    type="number"
+                    min="0"
+                    [ngModel]="initialBalance()"
+                    (ngModelChange)="initialBalance.set($event)"
+                    (keydown.enter)="openSession()"
+                    class="input input-bordered w-full pl-10 pr-4 h-13 text-2xl font-bold tabular-nums rounded-xl focus:border-primary bg-base-100 text-base-content"
+                    placeholder="0"
+                  />
+                </div>
+
+                <!-- Presets de Fondo de Cambio -->
+                <div class="space-y-1.5">
+                  <span class="text-[10.5px] font-semibold text-base-content/50 uppercase tracking-wider block">
+                    Fondos de cambio frecuentes:
+                  </span>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    @for (preset of [0, 10000, 20000, 30000, 50000, 100000]; track preset) {
+                      <button
+                        type="button"
+                        (click)="setQuickInitialFund(preset)"
+                        class="btn btn-xs rounded-lg font-semibold border border-base-300 tabular-nums"
+                        [ngClass]="initialBalance() === preset ? 'btn-primary' : 'btn-ghost bg-base-200/40'"
+                      >
+                        {{ preset === 0 ? '$0 (Sin cambio)' : '$' + (preset | number:'1.0-0') }}
+                      </button>
+                    }
                   </div>
-                  <p class="text-[10px] font-medium opacity-40 mt-1.5 leading-relaxed">
-                    Suma todo el efectivo físico presente en el cajón antes de cerrar.
-                  </p>
+                </div>
+              </div>
+            } @else {
+              <!-- Calculadora de billetes para la apertura -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-base-content/65">
+                    Billetes en el fondo de cambio: <strong class="text-primary tabular-nums">${{ initialBalance() | number:'1.0-0' }}</strong>
+                  </span>
+                  <button type="button" (click)="resetBillCounter()" class="text-xs font-semibold text-base-content/50 hover:text-error cursor-pointer">
+                    Reiniciar
+                  </button>
                 </div>
 
-                <!-- Notes -->
-                <div class="form-control">
-                  <label class="text-[10px] font-bold uppercase tracking-widest opacity-35 mb-1.5">Notas de Cierre</label>
-                  <textarea [ngModel]="closeNotes()" (ngModelChange)="closeNotes.set($event)"
-                    class="textarea textarea-bordered h-full min-h-[100px] rounded-sm text-sm"
-                    placeholder="Detalles sobre faltantes, sobrantes o novedades del día..."></textarea>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  @for (denom of denominations; track denom.value) {
+                    @let qty = billCounts()[denom.value] || 0;
+                    <div class="bill-row px-3 py-2 flex items-center justify-between gap-2">
+                      <span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-mono text-xs font-bold tabular-nums w-18 text-center">
+                        {{ denom.label }}
+                      </span>
+                      <div class="inline-flex items-center bg-base-200/50 rounded-lg border border-base-300/90 p-0.5">
+                        <button type="button" (click)="stepBillCount(denom.value, -1)" class="w-6 h-6 rounded hover:bg-base-300 flex items-center justify-center">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">remove</mat-icon>
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          [ngModel]="qty"
+                          (ngModelChange)="updateBillCount(denom.value, $event)"
+                          class="w-10 text-center bg-transparent border-none outline-none text-xs font-bold tabular-nums"
+                        />
+                        <button type="button" (click)="stepBillCount(denom.value, 1)" class="w-6 h-6 rounded hover:bg-base-300 flex items-center justify-center">
+                          <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+                        </button>
+                      </div>
+                      <span class="text-xs font-bold tabular-nums min-w-[70px] text-right">
+                        ${{ (denom.value * qty) | number:'1.0-0' }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Resumen de Responsable y Botón de Apertura -->
+            <div class="p-3.5 rounded-xl bg-base-200/45 border border-base-300/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-[17px]! w-4! h-4! text-primary">person</mat-icon>
+                <span class="text-base-content/65">Operador responsable:</span>
+                <strong class="text-base-content">{{ operatorName() }}</strong>
+              </div>
+              <span class="text-base-content/50 font-mono text-[11px]">
+                Fondo declarado: <strong class="text-base-content">${{ (initialBalance() || 0) | number:'1.0-0' }}</strong>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              (click)="openSession()"
+              [disabled]="isSubmitting()"
+              class="btn btn-primary w-full h-11 rounded-xl font-bold text-sm gap-2 shadow-sm cursor-pointer"
+            >
+              @if (isSubmitting()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Abriendo caja...</span>
+              } @else {
+                <mat-icon class="text-[19px]! w-5! h-5!">play_arrow</mat-icon>
+                <span>Abrir Caja e Iniciar Turno (${{ (initialBalance() || 0) | number:'1.0-0' }})</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Columna Derecha (5 cols): Resumen del Día en Curso & Guía de Conciliación -->
+        <aside class="lg:col-span-5 xl:col-span-4 bg-base-200/20 flex flex-col divide-y divide-base-300/80">
+          <!-- Actividad del día hasta el momento -->
+          <div>
+            <div class="px-5 py-4 border-b border-base-300/80 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-primary">today</mat-icon>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
+                  Actividad Registrada Hoy
+                </h3>
+              </div>
+              <span class="text-[11px] font-semibold text-base-content/50">
+                {{ dailyStats()?.salesCount?.total || 0 }} ventas
+              </span>
+            </div>
+
+            <div class="p-5 space-y-3">
+              <div class="grid grid-cols-2 gap-2.5">
+                <div class="p-3 rounded-xl bg-base-100 border border-base-300/70">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Efectivo hoy</span>
+                  <span class="text-base font-bold text-emerald-600 tabular-nums mt-0.5 block">
+                    ${{ cashSalesFromStats() | number:'1.0-0' }}
+                  </span>
+                </div>
+                <div class="p-3 rounded-xl bg-base-100 border border-base-300/70">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 block">Digitales hoy</span>
+                  <span class="text-base font-bold text-base-content tabular-nums mt-0.5 block">
+                    ${{ totalDigitalSales() | number:'1.0-0' }}
+                  </span>
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-base-200">
-                <button class="btn btn-error w-full h-11 rounded-sm font-bold text-sm text-white group" (click)="closeSession()">
-                  Cerrar Caja y Terminar Turno
-                  <mat-icon class="group-hover:translate-x-0.5 transition-transform">exit_to_app</mat-icon>
-                </button>
+              <div class="p-3 rounded-xl bg-base-100 border border-base-300/80 flex items-center justify-between">
+                <span class="text-xs font-semibold text-base-content/70">Total facturado en la fecha</span>
+                <span class="text-base font-bold text-base-content tabular-nums">
+                  ${{ totalDayRevenue() | number:'1.0-0' }}
+                </span>
               </div>
             </div>
+          </div>
+
+          <!-- Cómo funciona el arqueo -->
+          <div class="p-5 space-y-3 flex-1">
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-content/75">
+              <mat-icon class="text-[17px]! w-4! h-4! text-primary">verified_user</mat-icon>
+              <span>Reglas de Conciliación de Caja</span>
+            </div>
+            <ul class="space-y-2.5 text-xs text-base-content/65 leading-relaxed">
+              <li class="flex items-start gap-2">
+                <mat-icon class="text-[15px]! w-4! h-4! text-emerald-600 shrink-0 mt-0.5">check_circle</mat-icon>
+                <span><strong class="text-base-content">Efectivo físico:</strong> El arqueo de cajón suma únicamente tu fondo inicial más las ventas cobradas en efectivo.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <mat-icon class="text-[15px]! w-4! h-4! text-primary shrink-0 mt-0.5">check_circle</mat-icon>
+                <span><strong class="text-base-content">Medios digitales separados:</strong> Transferencias, tarjetas, QR y cuenta corriente se auditan por separado sin distorsionar los billetes del cajón.</span>
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    }
+
+    <!-- ======================================================================= -->
+    <!-- MODAL DE CONFIRMACIÓN DE CIERRE DE CAJA                                 -->
+    <!-- ======================================================================= -->
+    @if (showCloseConfirmModal()) {
+      <div class="fixed inset-0 z-50 bg-black/55 backdrop-blur-xs flex items-center justify-center p-4" (click)="cancelCloseSession()">
+        <div class="bg-base-100 rounded-2xl border border-base-200 shadow-2xl max-w-md w-full overflow-hidden animate-scale-up" (click)="$event.stopPropagation()">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-error/10 text-error flex items-center justify-center">
+                <mat-icon class="text-[20px]! w-5! h-5!">lock</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-base-content">Confirmar Cierre de Caja</h3>
+                <p class="text-[11px] text-base-content/55">Verificá el resumen del arqueo antes de finalizar el turno</p>
+              </div>
+            </div>
+            <button type="button" (click)="cancelCloseSession()" class="btn btn-ghost btn-xs btn-circle text-base-content/50">
+              <mat-icon class="text-[16px]! w-4! h-4!">close</mat-icon>
+            </button>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <div class="p-3.5 rounded-xl bg-base-200/50 border border-base-300/80 space-y-2 text-xs tabular-nums">
+              <div class="flex justify-between text-base-content/65">
+                <span>Fondo inicial de apertura:</span>
+                <span class="font-semibold text-base-content">${{ initialCash() | number:'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between text-base-content/65">
+                <span>Ventas en efectivo del turno:</span>
+                <span class="font-semibold text-emerald-600">+ ${{ cashSalesInShift() | number:'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between pt-2 border-t border-base-300 font-bold text-base-content">
+                <span>Efectivo esperado en cajón:</span>
+                <span>${{ expectedCloseCash() | number:'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between font-bold text-base-content">
+                <span>Efectivo físico declarado:</span>
+                <span>${{ (actualCloseBalance() || 0) | number:'1.0-0' }}</span>
+              </div>
+              <div
+                class="flex justify-between pt-2 border-t border-base-300 font-bold text-sm"
+                [ngClass]="{
+                  'text-emerald-600': auditStatus() === 'exact',
+                  'text-blue-600': auditStatus() === 'surplus',
+                  'text-error': auditStatus() === 'shortage'
+                }"
+              >
+                <span>Diferencia de arqueo:</span>
+                <span>
+                  @if (auditStatus() === 'exact') {
+                    $0 (Caja cuadrada)
+                  } @else if (auditStatus() === 'surplus') {
+                    + ${{ auditDifference() | number:'1.0-0' }} (Sobrante)
+                  } @else {
+                    - ${{ (auditDifference() * -1) | number:'1.0-0' }} (Faltante)
+                  }
+                </span>
+              </div>
+            </div>
+
+            @if (closeNotes()) {
+              <div class="p-3 rounded-xl bg-base-200/30 border border-base-200 text-xs">
+                <span class="text-[10px] font-bold uppercase text-base-content/45 block mb-0.5">Notas adjuntas:</span>
+                <p class="text-base-content/80">{{ closeNotes() }}</p>
+              </div>
+            }
+          </div>
+
+          <div class="px-5 py-3.5 border-t border-base-200 bg-base-200/20 flex gap-2">
+            <button
+              type="button"
+              (click)="cancelCloseSession()"
+              [disabled]="isSubmitting()"
+              class="btn btn-sm btn-ghost rounded-xl font-semibold flex-1"
+            >
+              Volver
+            </button>
+            <button
+              type="button"
+              (click)="confirmCloseSession()"
+              [disabled]="isSubmitting()"
+              class="btn btn-sm btn-error text-white rounded-xl font-bold flex-[2] gap-1.5"
+            >
+              @if (isSubmitting()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                <span>Cerrando turno...</span>
+              } @else {
+                <mat-icon class="text-[16px]! w-4! h-4!">check_circle</mat-icon>
+                <span>Confirmar y Cerrar Turno</span>
+              }
+            </button>
           </div>
         </div>
       </div>
     }
-
   </div>
 </app-page-layout>

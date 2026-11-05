@@ -20,7 +20,6 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -49,7 +48,6 @@ import { ProviderCreate } from '../../provider-create/provider-create';
     FormsModule,
     PageLayout,
     PageHeader,
-    MatIcon,
     RouterLink,
   ],
   templateUrl: './kiosco-product-create.html',
@@ -113,7 +111,7 @@ export class KioscoProductCreate implements OnInit {
   });
 
   kioscoForm: FormGroup = this.fb.group({
-    productType: [ProductType.GENERAL],
+    productType: [ProductType.KIOSK],
     barcode: [''],
     model: ['', Validators.required], // Nombre del producto
     category: ['', Validators.required],
@@ -131,7 +129,7 @@ export class KioscoProductCreate implements OnInit {
   });
 
   constructor() {
-    this.sidebarService.navbarTitle.set({ title: 'Kiosco / Carga Rápida' });
+    this.sidebarService.navbarTitle.set({ title: 'Kiosco & Almacén' });
 
     // Cálculo dinámico entre Costo, Margen y Precio de Venta
     this.kioscoForm.get('costPrice')?.valueChanges.pipe(takeUntilDestroyed()).subscribe((cost) => {
@@ -195,7 +193,7 @@ export class KioscoProductCreate implements OnInit {
       const margin = cost > 0 ? Math.round(((sale - cost) / cost) * 100) : 40;
 
       this.kioscoForm.patchValue({
-        productType: ProductType.GENERAL,
+        productType: ProductType.KIOSK,
         barcode: (product as any).barcode || firstVariant?.barcode || '',
         model: product.model || '',
         category: product.category || '',
@@ -382,7 +380,7 @@ export class KioscoProductCreate implements OnInit {
     const raw = this.kioscoForm.getRawValue();
     const formData = new FormData();
 
-    formData.append('productType', ProductType.GENERAL);
+    formData.append('productType', ProductType.KIOSK);
     formData.append('model', raw.model);
     formData.append('category', raw.category);
     formData.append('brand', raw.brand || 'Genérico');
@@ -431,7 +429,7 @@ export class KioscoProductCreate implements OnInit {
           // Preservar categoría para el siguiente
           const lastCat = raw.category;
           this.kioscoForm.reset({
-            productType: ProductType.GENERAL,
+            productType: ProductType.KIOSK,
             barcode: '',
             model: '',
             category: lastCat,

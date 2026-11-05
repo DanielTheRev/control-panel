@@ -1,4 +1,12 @@
 import { ICostConcept } from './product.interface';
+import {
+  BusinessType,
+  BusinessTypeEnum,
+  IVerticalCapabilities,
+} from './business-vertical.interface';
+
+export type { BusinessType, IVerticalCapabilities };
+export { BusinessTypeEnum };
 
 export interface IHomeSectionConfig {
   active: boolean;
@@ -146,18 +154,11 @@ export interface IPOSConfig {
   autoPrintReceipt?: boolean;
 }
 
-export type BusinessType =
-  | 'kiosk_grocery'
-  | 'fashion'
-  | 'tech_electronics'
-  | 'butcher'
-  | 'bakery'
-  | 'gastronomy';
-
 export interface IEcommerceConfig {
   name: string;
   logo?: string;
   businessType?: BusinessType;
+  capabilities?: IVerticalCapabilities;
   profit: number;
   profit1Pay?: number;
   profitInstallments?: number;

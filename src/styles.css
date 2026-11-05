@@ -56,6 +56,11 @@
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
   }
+
+  mat-icon.sidebar-icon {
+    font-family: 'Material Symbols Outlined', 'Material Icons Outlined', 'Material Icons' !important;
+    font-variation-settings: 'FILL' 0, 'wght' 350, 'GRAD' 0, 'opsz' 20;
+  }
 }
 
 /* Dark variant for Tailwind */
@@ -145,40 +150,6 @@ main::-webkit-scrollbar-thumb {
     .margin-collapsed {
       margin-left: 80px !important;
     }
-  }
-
-  .menu-item {
-    @apply flex items-center px-3 py-2 mx-2 rounded-md transition-colors duration-200 cursor-pointer;
-    @apply text-sm font-medium text-base-content/40 hover:text-base-content;
-    overflow: hidden;
-    white-space: nowrap;
-
-    mat-icon {
-      @apply min-w-5 text-[20px] w-5 h-5 text-base-content/40;
-      @apply transition-colors duration-200;
-    }
-
-    &:hover mat-icon {
-      @apply text-base-content;
-    }
-
-    &.active {
-      @apply bg-primary text-primary-content font-bold shadow-md shadow-primary/25;
-
-      mat-icon {
-        @apply text-primary-content!;
-      }
-    }
-  }
-
-  .menu-text {
-    @apply ml-4 text-sm;
-    color: inherit;
-  }
-
-  .menu-item.active .menu-text {
-    @apply font-semibold;
-    color: inherit;
   }
 
   /* Clean Date Input Container */

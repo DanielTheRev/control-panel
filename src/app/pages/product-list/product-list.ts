@@ -24,12 +24,14 @@ import { ProviderStateService } from '../../states/provider.state.service';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { ProductService } from '../../services/product.service';
 import { StoreConfigService } from '../../services/store.config.service';
+import { BusinessProfileService } from '../../services/business-profile.service';
 import { ICatalogRankingConfig } from '../../interfaces/config.interface';
 
 @Component({
   selector: 'app-product-list',
   imports: [
     PageHeader,
+    PageLayout,
     MatIcon,
     MatChipsModule,
     MatTableModule,
@@ -57,6 +59,13 @@ export class ProductList {
   #excelExportService = inject(ExcelExportService);
   #productService = inject(ProductService);
   #storeConfigService = inject(StoreConfigService);
+  #businessProfile = inject(BusinessProfileService);
+
+  // Ruta directa al formulario según el rubro de la tienda (usando slugs limpios: 'kiosco', 'indumentaria', 'tecnologia')
+  readonly newProductRoute = computed(() => {
+    const slug = this.#businessProfile.defaultCreateProductSlug() || 'kiosco';
+    return ['create', slug];
+  });
 
   // Modo Principal: Inventario vs Ranking ELO
   activeMainTab = signal<'inventory' | 'ranking'>('inventory');
@@ -170,10 +179,10 @@ export class ProductList {
   showFiltersSidebar = signal<boolean>(
     (() => {
       try {
-        const saved = localStorage.getItem('admin_products_show_filters');
-        return saved !== null ? saved === 'true' : true;
+        const saved = localStorage.getItem('admin_products_show_adv_filters');
+        return saved !== null ? saved === 'true' : false;
       } catch {
-        return true;
+        return false;
       }
     })()
   );
@@ -260,11 +269,11 @@ export class ProductList {
       } catch (e) {}
     });
 
-    // Persistir preferencia de visibilidad de barra lateral de filtros
+    // Persistir preferencia de visibilidad de barra de filtros avanzados
     effect(() => {
       const show = this.showFiltersSidebar();
       try {
-        localStorage.setItem('admin_products_show_filters', String(show));
+        localStorage.setItem('admin_products_show_adv_filters', String(show));
       } catch (e) {}
     });
 
@@ -655,13 +664,31 @@ export class ProductList {
   }
 
   getProductTypeLabel(type: string): string {
-    return type === ProductType.TECH ? 'Tecnología' : 'Indumentaria';
+    switch (type) {
+      case ProductType.TECH:
+        return 'Tecnología & Celulares';
+      case ProductType.CLOTHING:
+        return 'Indumentaria & Calzado';
+      case ProductType.BEAUTY:
+        return 'Perfumería & Cosmética';
+      case ProductType.KIOSK:
+      default:
+        return 'Kiosco & Almacén';
+    }
   }
 
   getProductTypeClass(type: string): string {
-    return type === ProductType.TECH
-      ? 'badge badge-primary'
-      : 'badge badge-success';
+    switch (type) {
+      case ProductType.TECH:
+        return 'badge badge-info';
+      case ProductType.CLOTHING:
+        return 'badge badge-primary';
+      case ProductType.BEAUTY:
+        return 'badge badge-secondary';
+      case ProductType.KIOSK:
+      default:
+        return 'badge badge-success';
+    }
   }
 
   getTotalStock(product: IProduct): number {
@@ -2211,10 +2238,10 @@ export class ProductList {
   aiTargetProductType = signal<ProductType>(ProductType.CLOTHING);
 
   productTypeOptions = [
+    { type: ProductType.KIOSK, label: 'Kiosco & Almacén', icon: 'storefront', badge: 'Código de Barras & Unidad' },
     { type: ProductType.CLOTHING, label: 'Indumentaria & Calzado', icon: 'checkroom', badge: 'Talles y Medidas' },
-    { type: ProductType.TECH, label: 'Tecnología & Gadgets', icon: 'devices', badge: 'Capacidad y Specs' },
-    { type: ProductType.BEAUTY, label: 'Belleza & Cosmética', icon: 'spa', badge: 'Tonos y Volúmenes' },
-    { type: ProductType.GENERAL, label: 'Bazar, Hogar & General', icon: 'inventory_2', badge: 'Variantes Libres' }
+    { type: ProductType.TECH, label: 'Tecnología & Celulares', icon: 'devices', badge: 'Capacidad y Specs' },
+    { type: ProductType.BEAUTY, label: 'Perfumería & Cosmética', icon: 'spa', badge: 'Notas y Mililitros' }
   ];
 
   selectedScopeProperties = signal<string[]>(['variants_matrix', 'costPriceARS']);
@@ -2290,7 +2317,7 @@ export class ProductList {
             'Ajustar costos de compra un 15% por inflación',
             'Generar descripción enfocada en beneficios y cuidado'
           ];
-        case ProductType.GENERAL:
+        case ProductType.KIOSK:
           return [
             'Extraer medidas, materiales y variantes desde el proveedor',
             'Poner 10 unidades de stock a cada variante',
@@ -2324,7 +2351,7 @@ export class ProductList {
           'Ajustar costos de compra un 15% por inflación',
           'Generar descripción enfocada en beneficios y cuidado'
         ];
-      case ProductType.GENERAL:
+      case ProductType.KIOSK:
         return [
           'Extraer medidas, materiales y variantes desde el proveedor',
           'Poner 10 unidades de stock a cada variante',
@@ -2390,7 +2417,7 @@ export class ProductList {
       let rubro: 'clothing' | 'tech' | 'beauty' | 'general' = 'clothing';
       if (summary.dominantType === ProductType.TECH) rubro = 'tech';
       else if (summary.dominantType === ProductType.BEAUTY) rubro = 'beauty';
-      else if (summary.dominantType === ProductType.GENERAL) rubro = 'general';
+      else if (summary.dominantType === ProductType.KIOSK) rubro = 'general';
 
       this.applyRecommendedProperties(rubro);
     }
@@ -2541,7 +2568,7 @@ export class ProductList {
         ];
         break;
 
-      case ProductType.GENERAL:
+      case ProductType.KIOSK:
         dictionary = `- provider (string, OBLIGATORIO): Proveedor o fabricante.
   ⚡ Proveedores registrados en la tienda: [ ${providersList} ].
 - linkProductProvider (string URL, opcional): Link a la página web del proveedor.
@@ -2550,7 +2577,7 @@ export class ProductList {
 - brand (string, OBLIGATORIO): Marca. Por defecto "${defaultBrand}" o marca del producto.
 - category (string, OBLIGATORIO): Categoría del producto.
   ⚡ Categorías activas en la tienda: [ ${categoriesList} ].
-- productType (string, OBLIGATORIO): "GeneralProduct".
+- productType (string, OBLIGATORIO): "KioskProduct".
 - status (string, OBLIGATORIO): "draft" (modo Borrador).
 - costPriceARS (number, OBLIGATORIO): Costo unitario en pesos sin IVA (ej: 16500).
 - images (string[], opcional): URLs directas de fotos del producto extraídas de la web.
@@ -2572,7 +2599,7 @@ export class ProductList {
             subtitle: 'Aislamiento al Vacío 24hs',
             brand: 'Stanley',
             category: 'Bazar & Hogar',
-            productType: 'GeneralProduct',
+            productType: 'KioskProduct',
             status: 'draft',
             costPriceARS: 16500,
             images: [

@@ -6,7 +6,7 @@ export enum ProductType {
   TECH = 'TechProduct',
   CLOTHING = 'ClothingProduct',
   BEAUTY = 'BeautyProduct',
-  GENERAL = 'GeneralProduct',
+  KIOSK = 'KioskProduct',
 }
 
 export interface ISizeGuideRow {
@@ -166,13 +166,15 @@ export interface IProduct {
   updatedAt?: string | Date;
 }
 
-export interface IGeneralProduct extends IProduct {
-  productType: ProductType.GENERAL;
+export interface IKioskProduct extends IProduct {
+  productType: ProductType.KIOSK;
   unit?: string;
   weight?: string;
   barcode?: string;
   isSoldByWeight?: boolean;
 }
+
+export type IGeneralProduct = IKioskProduct;
 
 export interface ITechProduct extends IProduct {
   productType: ProductType.TECH;

@@ -9,5 +9,6 @@ import { Component, input } from '@angular/core';
 export class PageHeader {
   title = input<string>();
   subtitle = input<string>();
-  withMB = input<boolean>(true);
+  withMB = input<boolean>(false);
+  inlineSubtitle = input<boolean>(false);
 }

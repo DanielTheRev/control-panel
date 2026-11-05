@@ -155,7 +155,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   confirmDiscardChanges(): void {
     // 1. Revertir tema y perfil al rubro original guardado en el servidor
     const savedType =
-      this.configState.StoreConfig().config?.businessType || 'kiosk_grocery';
+      this.businessProfile.businessType();
     this.businessProfile.applyTheme(savedType);
     this.selectedBusinessType.set(savedType);
 
@@ -196,7 +196,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     // aseguramos restaurar el tema y perfil original guardado
     if (this.hasUnsavedChanges()) {
       const savedType =
-        this.configState.StoreConfig().config?.businessType || 'kiosk_grocery';
+        this.businessProfile.businessType();
       this.businessProfile.applyTheme(savedType);
     }
   }
@@ -530,7 +530,7 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
 
     this.configForm = this.#fb.group({
       name: [''],
-      businessType: [{ value: 'kiosk_grocery', disabled: true }],
+      businessType: [{ value: null, disabled: true }],
       costCurrency: ['USD'],
 
       integrations: this.#fb.group({

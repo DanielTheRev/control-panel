@@ -282,15 +282,33 @@ export class ProductDetail implements OnInit {
   getProductTypeLabel(): string {
     const p = this.product();
     if (!p) return '';
-    return p.productType === ProductType.TECH ? '📱 Tech' : '👕 Ropa';
+    switch (p.productType) {
+      case ProductType.TECH:
+        return 'Tecnología & Celulares';
+      case ProductType.CLOTHING:
+        return 'Indumentaria & Calzado';
+      case ProductType.BEAUTY:
+        return 'Perfumería & Cosmética';
+      case ProductType.KIOSK:
+      default:
+        return 'Kiosco & Almacén';
+    }
   }
 
   getProductTypeClass(): string {
     const p = this.product();
     if (!p) return '';
-    return p.productType === ProductType.TECH
-      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-      : 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300';
+    switch (p.productType) {
+      case ProductType.TECH:
+        return 'bg-sky-500/10 text-sky-700 border border-sky-500/25 dark:text-sky-300';
+      case ProductType.CLOTHING:
+        return 'bg-violet-500/10 text-violet-700 border border-violet-500/25 dark:text-violet-300';
+      case ProductType.BEAUTY:
+        return 'bg-rose-500/10 text-rose-700 border border-rose-500/25 dark:text-rose-300';
+      case ProductType.KIOSK:
+      default:
+        return 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300';
+    }
   }
 
   getStatusBadge(status: ProductStatus | undefined): { label: string; class: string } {

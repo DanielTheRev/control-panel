@@ -37,6 +37,25 @@ export class SidebarComponent {
   isExpanded = computed(() => this.sidebarService.SidebarStatus().isExpanded);
   isCollapsed = computed(() => this.sidebarService.SidebarStatus().isCollapsed);
 
+  currentUser = computed(() => this.authService.user());
+
+  userInitials = computed(() => {
+    const name = this.currentUser()?.name?.trim();
+    if (!name) return 'VX';
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  });
+
+  userRoleLabel = computed(() => {
+    const role = this.currentUser()?.role;
+    if (role === 'admin') return 'Administrador';
+    if (role === 'employee') return 'Operador';
+    return 'Staff';
+  });
+
   appVersion = environment.appVersion || 'v1.4.2';
   buildDate = environment.buildDate || '28/08/2026';
 

@@ -1,6 +1,15 @@
 import { computed, effect, inject, Injectable } from '@angular/core';
 import { StoreConfigStateService } from '../states/store.config.state.service';
-import { BusinessType } from '../interfaces/config.interface';
+import {
+  BusinessType,
+  IVerticalCapabilities,
+  PRODUCT_TYPE_TO_ROUTE_SLUG,
+  ProductCreateRouteSlug,
+  VERTICAL_ALLOWED_PRODUCTS,
+  getPrimaryProductTypeForBusiness,
+  isProductTypeAllowedForStore,
+} from '../interfaces/business-vertical.interface';
+import { ProductType } from '../interfaces/product.interface';
 
 export interface BusinessFeatures {
   showPOS: boolean;
@@ -31,6 +40,8 @@ export interface BusinessThemeConfig {
   colorName: string;         // Nombre del color para badges
   previewHex: string;        // Hex para swatches/indicadores UI
 }
+
+const CACHED_BUSINESS_TYPE_KEY = 'gp_store_business_type';
 
 /**
  * Paleta de colores temáticos por cada rubro adaptada a la identidad del comercio en Argentina
@@ -87,28 +98,113 @@ export const BUSINESS_THEMES: Record<BusinessType, BusinessThemeConfig> = {
 };
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BusinessProfileService {
   readonly #configState = inject(StoreConfigStateService);
 
+  /**
+   * Rubro comercial del comercio actual.
+   * Cumple estrictamente la política Fail Fast: cuando la configuración del servidor
+   * ya fue cargada (hasData === true), si falta businessType o no es válido, lanza un
+   * error explícito y trazable en lugar de aplicar un fallback silencioso.
+   */
   readonly businessType = computed<BusinessType>(() => {
-    return this.#configState.StoreConfig().config?.businessType || 'kiosk_grocery';
+    const state = this.#configState.StoreConfig();
+    const configuredType = state.config?.businessType;
+
+    if (state.hasData) {
+      if (!configuredType || !(configuredType in BUSINESS_THEMES)) {
+        throw new Error(
+          'Business type not configured: El comercio no tiene un rubro comercial asignado en su configuración.',
+        );
+      }
+      return configuredType;
+    }
+
+    if (configuredType && configuredType in BUSINESS_THEMES) {
+      return configuredType;
+    }
+
+    // Mientras la petición HTTP inicial de configuración está en vuelo, leemos únicamente
+    // la caché autenticada previa del mismo navegador si existe.
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem(CACHED_BUSINESS_TYPE_KEY) as BusinessType | null;
+      if (cached && cached in BUSINESS_THEMES) {
+        return cached;
+      }
+    }
+
+    return undefined as unknown as BusinessType;
+  });
+
+  /**
+   * Objeto capabilities resuelto desde el Backend (GET /api/ecommerce)
+   */
+  readonly capabilities = computed<IVerticalCapabilities | null>(() => {
+    return this.#configState.StoreConfig().config?.capabilities ?? null;
+  });
+
+  /**
+   * Tipos de producto permitidos para la vertical comercial del comercio
+   */
+  readonly allowedProductTypes = computed<ProductType[]>(() => {
+    const caps = this.capabilities();
+    if (caps?.allowedProductTypes?.length) {
+      return caps.allowedProductTypes;
+    }
+    const type = this.businessType();
+    if (!type) return [];
+    return VERTICAL_ALLOWED_PRODUCTS[type] ?? [];
+  });
+
+  /**
+   * Plantilla de producto principal según el rubro comercial del comercio
+   */
+  readonly primaryProductType = computed<ProductType>(() => {
+    const type = this.businessType();
+    if (!type) return ProductType.KIOSK;
+    return getPrimaryProductTypeForBusiness(type, this.capabilities());
+  });
+
+  /**
+   * Slug semántico limpio para el botón "+ Nuevo producto" (ej: 'kiosco', 'indumentaria', 'tecnologia')
+   */
+  readonly defaultCreateProductSlug = computed<ProductCreateRouteSlug>(() => {
+    const primary = this.primaryProductType();
+    return PRODUCT_TYPE_TO_ROUTE_SLUG[primary] ?? 'kiosco';
   });
 
   constructor() {
-    // Sincroniza dinámicamente el tema en el HTML cuando cambia la configuración de la tienda
     effect(() => {
       const type = this.businessType();
-      this.applyTheme(type);
+      if (type && type in BUSINESS_THEMES) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(CACHED_BUSINESS_TYPE_KEY, type);
+        }
+        this.applyTheme(type);
+      }
     });
+  }
+
+  /**
+   * Valida preventivamente si un ProductType está permitido para el comercio actual
+   */
+  isProductTypeAllowed(productType: ProductType): boolean {
+    const type = this.businessType();
+    return isProductTypeAllowedForStore(type, productType, this.capabilities());
   }
 
   /**
    * Aplica dinámicamente el color primario y contraste en CSS `:root` / `<html>`
    */
   applyTheme(type: BusinessType): void {
-    const theme = BUSINESS_THEMES[type] || BUSINESS_THEMES.kiosk_grocery;
+    if (!type || !(type in BUSINESS_THEMES)) {
+      throw new Error(
+        `Business type not configured or invalid ('${String(type)}'): No se puede aplicar tema visual sin rubro comercial válido.`,
+      );
+    }
+    const theme = BUSINESS_THEMES[type];
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
       root.style.setProperty('--color-primary', theme.primary);
@@ -121,7 +217,12 @@ export class BusinessProfileService {
    * Retorna la configuración de tema para un rubro específico
    */
   getThemeConfig(type: BusinessType): BusinessThemeConfig {
-    return BUSINESS_THEMES[type] || BUSINESS_THEMES.kiosk_grocery;
+    if (!type || !(type in BUSINESS_THEMES)) {
+      throw new Error(
+        `Business type not configured or invalid ('${String(type)}'): Rubro comercial inexistente.`,
+      );
+    }
+    return BUSINESS_THEMES[type];
   }
 
   /**
@@ -151,21 +252,26 @@ export class BusinessProfileService {
    * Comercios que admiten venta por peso / balanza (Carnicería, Panadería, Kiosco/Almacén con fiambrería)
    */
   readonly canSellByWeight = computed(() => {
+    const caps = this.capabilities();
+    if (caps) {
+      return caps.hasWeightScalePricing;
+    }
     const t = this.businessType();
     return t === 'butcher' || t === 'bakery' || t === 'kiosk_grocery';
   });
 
   /**
-   * Flags granulares de características según rubro
+   * Flags granulares de características según rubro y capabilities del Backend
    */
   readonly features = computed<BusinessFeatures>(() => {
+    const caps = this.capabilities();
     const isCounter = this.isKioskOrCounter();
     const isFashion = this.isFashion();
 
     return {
       showPOS: true,
       showCashRegister: true,
-      showShopTheLook: isFashion,
+      showShopTheLook: caps ? caps.hasShopTheLook : isFashion,
       showHeroSlider: isFashion || !isCounter,
       showBanners: isFashion || !isCounter,
       showWebMenus: isFashion || !isCounter,
@@ -180,7 +286,7 @@ export class BusinessProfileService {
       showSettingsShipping: !isCounter,
       showSettingsEmails: !isCounter,
       showSettingsContact: !isCounter,
-      showSettingsClothing: isFashion,
+      showSettingsClothing: caps ? caps.hasClothingSizesAndFits : isFashion,
     };
   });
 
@@ -197,7 +303,14 @@ export class BusinessProfileService {
    * Nombre amigable argentino para mostrar en badges, sidebar o títulos
    */
   readonly businessTypeLabel = computed(() => {
+    const caps = this.capabilities();
+    if (caps?.label) {
+      return caps.label;
+    }
     const t = this.businessType();
-    return (BUSINESS_THEMES[t] || BUSINESS_THEMES.kiosk_grocery).label;
+    if (!t || !(t in BUSINESS_THEMES)) {
+      return '';
+    }
+    return BUSINESS_THEMES[t].label;
   });
 }

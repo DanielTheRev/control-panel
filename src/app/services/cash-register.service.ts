@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
@@ -7,17 +7,23 @@ export interface CashRegisterSession {
   _id: string;
   status: 'OPEN' | 'CLOSED';
   initialBalance: number;
-  expectedCloseBalance: number;
+  calculatedCloseBalance?: number;
+  expectedCloseBalance?: number;
   actualCloseBalance?: number;
-  openDate: string;
+  difference?: number;
+  openedAt?: string;
+  openDate?: string;
+  closedAt?: string;
   closeDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
   openedBy: any;
   closedBy?: any;
   notes?: string;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CashRegisterService {
   private http = inject(HttpClient);
@@ -32,6 +38,8 @@ export class CashRegisterService {
   }
 
   async closeSession(actualCloseBalance: number, notes?: string): Promise<CashRegisterSession> {
-    return await firstValueFrom(this.http.post<CashRegisterSession>(`${this.apiUrl}/close`, { actualCloseBalance, notes }));
+    return await firstValueFrom(
+      this.http.post<CashRegisterSession>(`${this.apiUrl}/close`, { actualCloseBalance, notes })
+    );
   }
 }
