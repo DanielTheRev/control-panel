@@ -124,19 +124,44 @@ export class AuthService {
       );
   }
 
+  private clearTenantCaches(): void {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('gp_store_business_type');
+        localStorage.removeItem('cartItems');
+        localStorage.removeItem('orderToConfirm');
+        localStorage.removeItem('pending_payment');
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('gp_store_business_type')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (e) {}
+    }
+  }
+
   logout(): Observable<any> {
     this.setLoading(true);
+    this.clearTenantCaches();
 
     return this.http.post(`${this.API_URL}/logout`, {}).pipe(
       tap(() => {
         this.setUnauthenticatedState();
-        this.router.navigate(['/login']);
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        } else {
+          this.router.navigate(['/login']);
+        }
         this.#debug.log('✅ Logout exitoso');
       }),
       catchError((error: HttpErrorResponse) => {
         // Incluso si hay error en el logout del server, limpiamos el estado local
         this.setUnauthenticatedState();
-        this.router.navigate(['/login']);
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        } else {
+          this.router.navigate(['/login']);
+        }
         this.#debug.error('⚠️ Error en logout (limpiando estado local):', error);
         return of(null);
       }),

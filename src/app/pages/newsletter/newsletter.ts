@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { NewsletterService, INewsletterSubscriber } from '../../services/newsletter.service';
 import { DebugService } from '../../services/debug.service';
 import { MatIconModule } from '@angular/material/icon';
+import { getTenantSlug } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-newsletter',
@@ -51,7 +52,8 @@ export class NewsletterComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `suscriptores-vura-${new Date().toISOString().split('T')[0]}.csv`;
+    const tenant = getTenantSlug() || 'tienda';
+    link.download = `suscriptores-${tenant}-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

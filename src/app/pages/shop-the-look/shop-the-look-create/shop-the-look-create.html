@@ -435,7 +435,7 @@
                   type="text"
                   formControlName="metaTitle"
                   class="input input-bordered w-full text-xs"
-                  placeholder="Ej: Conjunto Celeste de Verano | Lookbook Vura"
+                  placeholder="Ej: Conjunto Celeste de Verano | Lookbook de Temporada"
                 />
                 <div class="mt-1 text-[10px] text-base-content/60 truncate" [title]="effectiveMetaTitle()">
                   <span class="font-semibold text-base-content/80">Se usará:</span> {{ effectiveMetaTitle() }}
@@ -500,7 +500,7 @@
                 <div class="p-3.5 rounded-2xl bg-base-200/50 border border-base-300 space-y-2 text-xs">
                   <div class="flex items-center gap-2 text-[10px] text-base-content/50 font-mono truncate">
                     <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[8px]">G</span>
-                    <span>vura.com.ar › shop-the-look › {{ form.value.slug || 'celeste-en-movimiento' }}</span>
+                    <span>{{ storeDomain() }} › shop-the-look › {{ form.value.slug || 'look-en-tendencia' }}</span>
                   </div>
                   <div class="font-bold text-primary hover:underline cursor-pointer text-sm truncate">
                     {{ effectiveMetaTitle() }}

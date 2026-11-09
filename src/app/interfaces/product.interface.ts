@@ -72,12 +72,12 @@ export interface IBaseVariant {
   barcode?: string;
 }
 
-// Vura (ClothingProduct) — talle obligatorio
+// Indumentaria & Moda (ClothingProduct) — talle obligatorio
 export interface IClothingVariant extends IBaseVariant {
   size: string;
 }
 
-// Electromix (TechProduct) — atributos flexibles obligatorios
+// Tecnología & Electrónica (TechProduct) — atributos flexibles obligatorios
 export interface ITechVariant extends IBaseVariant {
   attributes: IVariantAttribute[];
 }

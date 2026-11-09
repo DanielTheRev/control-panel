@@ -217,16 +217,6 @@
                 </div>
               </div>
 
-              <!-- Aviso de Seguridad / Inmutabilidad -->
-              <div class="flex items-start gap-3 p-3.5 rounded-xl bg-info/10 border border-info/20 text-info-content text-xs">
-                <mat-icon class="text-[18px]! w-4.5! h-4.5! text-info shrink-0 mt-0.5">lock</mat-icon>
-                <div class="space-y-0.5">
-                  <span class="font-bold text-info block">Rubro comercial fijo y protegido</span>
-                  <p class="text-[11px] text-base-content/70 leading-relaxed">
-                    El rubro comercial no puede modificarse desde el panel de la tienda para garantizar la integridad de datos, facturación y catálogo. Si requerís dar de alta una nueva sucursal o necesitás cambiar de rubro, contactate con el <strong>SuperAdmin</strong> desde la administración central.
-                  </p>
-                </div>
-              </div>
             </div>
 
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-6">
@@ -687,8 +677,8 @@
                         <span>1. Con Dominio Propio (Recomendado)</span>
                       </div>
                       <p class="text-[11px] text-base-content/70 leading-relaxed">
-                        Si tenés tu dominio verificado en Resend (ej. <code>vura.com.ar</code>), poné cualquier casilla de tu marca: <br />
-                        <strong class="font-mono text-primary text-[10px]">pedidos@vura.com.ar</strong> o <strong class="font-mono text-primary text-[10px]">hola@vura.com.ar</strong>.
+                        Si tenés tu dominio verificado en Resend (ej. <code>tudominio.com.ar</code>), poné cualquier casilla de tu marca: <br />
+                        <strong class="font-mono text-primary text-[10px]">pedidos@tudominio.com.ar</strong> o <strong class="font-mono text-primary text-[10px]">hola@tudominio.com.ar</strong>.
                       </p>
                     </div>
 
@@ -2518,7 +2508,7 @@
                   [value]="newDomainInput()"
                   (input)="newDomainInput.set($any($event.target).value)"
                   (keydown.enter)="addDomain()"
-                  placeholder="https://vura.com.ar o http://localhost:4200"
+                  placeholder="https://tudominio.com.ar o http://localhost:4200"
                   class="input input-sm input-bordered grow rounded-xl text-xs font-mono"
                 />
                 <button
@@ -2581,7 +2571,7 @@
                 <p class="text-primary font-bold"># Encabezado HTTP en cada petición a la API:</p>
                 <p>x-api-key: {{ configState.connectionSettings()?.apiKey || 'pk_live_tu_llave' }}</p>
                 <p class="text-base-content/40 pt-1"># URL Base:</p>
-                <p>https://api.vura.com.ar/api</p>
+                <p>{{ apiUrl }}</p>
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import { ShippingOptions } from '../pages/shipping-options/shipping-options';
 import { businessTypeGuard } from '../guards/business-type.guard';
 
 /**
- * Rutas exclusivas para comercios con perfil de Moda / Retail / E-commerce visual (ej: Vura)
+ * Rutas exclusivas para comercios con perfil de Moda / Retail / E-commerce visual
  * Bloqueadas automáticamente para kioscos, carnicerías y almacenes para no sobrecargar su panel.
  */
 export const fashionRoutes: Routes = [

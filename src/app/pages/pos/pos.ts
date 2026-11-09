@@ -22,6 +22,7 @@ import { IClient } from '../../interfaces/client.interface';
 import { PointService, IPointDevice } from '../../services/point.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { environment } from '../../../environments/environment';
+import { getTenantSlug } from '../../utils/tenant.utils';
 
 export interface CartItem {
   cartItemId: string;
@@ -328,7 +329,7 @@ export class PosComponent implements OnInit {
     const config = this.storeConfigStore.StoreConfig().config;
     return config?.paymentGateways?.transfer?.alias ||
       config?.contact?.email ||
-      'vura.oficial.mp';
+      '';
   });
 
   // Transfer Mode Policy
@@ -376,16 +377,19 @@ export class PosComponent implements OnInit {
         },
         error: () => {
           const serverUrl = environment.apiUrl.replace(/\/api$/, '');
+          const currentTenant = getTenantSlug() || 'POS';
           const fallbackData = {
-            tenantSlug: 'vura',
+            tenantSlug: currentTenant,
             terminalId: this.terminalId(),
-            pairingCode: `VURA-${this.terminalId()}`,
+            pairingCode: `${currentTenant.toUpperCase()}-${this.terminalId()}`,
             serverUrl,
             qrPayload: JSON.stringify({
-              type: 'NEXO_POS_TERMINAL',
+              type: 'VEXX_POS_TERMINAL',
               version: '1.0',
               action: 'pos_pair',
-              tenant: 'vura',
+              tenant: currentTenant,
+              tenantSlug: currentTenant,
+              terminal: this.terminalId(),
               terminalId: this.terminalId(),
               serverUrl,
               timestamp: Date.now(),

@@ -35,7 +35,7 @@ export class BentoEditorComponent implements OnInit {
   originalConfig: IVisualMenuConfig | null = null;
 
   visualMenuForm: FormGroup = this.#fb.group({
-    sectionTitle: ['Vura / Catálogo', Validators.required],
+    sectionTitle: ['Destacados / Catálogo', Validators.required],
     sectionSubtitle: ['Explorá Nuestras Categorías.', Validators.required],
     description: [''],
     displayMode: ['grid'],
@@ -118,7 +118,7 @@ export class BentoEditorComponent implements OnInit {
       if (config) {
         this.originalConfig = config;
         this.visualMenuForm.patchValue({
-          sectionTitle: config.sectionTitle || 'Vura / Catálogo',
+          sectionTitle: config.sectionTitle || 'Destacados / Catálogo',
           sectionSubtitle: config.sectionSubtitle || 'Explorá Nuestras Categorías.',
           description: config.description || '',
           displayMode: config.displayMode || 'grid'

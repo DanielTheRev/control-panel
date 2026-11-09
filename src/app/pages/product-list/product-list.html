@@ -682,7 +682,7 @@
                   <div class="p-3.5 flex-1 flex flex-col justify-between min-w-0 gap-2.5">
                     <div class="min-w-0">
                       <div class="flex items-center justify-between gap-1 text-[10px] font-semibold text-base-content/45 uppercase tracking-wider truncate mb-0.5">
-                        <span class="truncate">{{ p.brand || "Vura" }} · {{ p.category }}</span>
+                        <span class="truncate">{{ p.brand || 'Genérico' }} · {{ p.category }}</span>
                         @let colors = getProductColors(p);
                         @if (colors.length > 0) {
                           <div class="flex items-center -space-x-1 shrink-0">
@@ -1253,7 +1253,7 @@
                 <div class="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
                   <div>
                     <div class="flex items-center justify-between text-[10px] text-base-content/45 font-semibold uppercase tracking-wider">
-                      <span class="truncate">{{ product.brand || 'Vura' }}</span>
+                      <span class="truncate">{{ product.brand || 'Genérico' }}</span>
                       <span class="truncate text-primary">{{ product.category }}</span>
                     </div>
                     <h4 class="text-[13px] font-semibold text-base-content truncate mt-0.5" [title]="product.model">

@@ -41,6 +41,7 @@ import { BusinessProfileService, BUSINESS_THEMES } from '../../services/business
 import { Router, RouterLink } from '@angular/router';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
 import { environment } from '../../../environments/environment';
+import { getTenantSlug } from '../../utils/tenant.utils';
 
 @Component({
   selector: 'app-store-settings',
@@ -83,10 +84,12 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   isLoadingDolares = signal(false);
   isCopiedFeed = signal(false);
 
+  readonly apiUrl = environment.apiUrl;
+
   readonly metaFeedUrl = computed(() => {
-    const slug = this.configState.connectionSettings()?.slug || environment.tenantSlug || 'vura';
+    const slug = this.configState.connectionSettings()?.slug || getTenantSlug();
     const apiBase = environment.apiUrl || 'https://api.vexx.com.ar';
-    return `${apiBase}/api/feeds/meta/${slug}`;
+    return `${apiBase}/feeds/meta/${slug}`;
   });
 
   async copyMetaFeedUrl(): Promise<void> {

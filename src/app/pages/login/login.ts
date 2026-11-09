@@ -81,7 +81,11 @@ export class Login implements OnInit {
       this.authService.login(credentials).subscribe({
         next: (response) => {
           this.#debug.log('✅ Login exitoso:', response);
-          this.router.navigate(['/home']);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/home';
+          } else {
+            this.router.navigate(['/home']);
+          }
         },
         error: (error) => {
           this.#debug.error('❌ Error en login:', error);

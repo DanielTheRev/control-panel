@@ -13,6 +13,7 @@ import { PaymentType } from '../../../interfaces/paymentInfo.interface';
 import { ShippingType } from '../../../interfaces/shipping.interface';
 import { ArcaService, IInvoiceResponse } from '../../../services/arca.service';
 import { NotificationsService } from '../../../services/notifications.service';
+import { StoreConfigStateService } from '../../../states/store.config.state.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -40,6 +41,8 @@ export class OrderDetails implements OnInit {
   private arcaService = inject(ArcaService);
   private notifications = inject(NotificationsService);
   private location = inject(Location);
+  private storeConfigState = inject(StoreConfigStateService);
+  readonly storeName = computed(() => this.storeConfigState.StoreConfig().config?.name || 'nuestra tienda');
   public paymentType = PaymentType;
   public paymentStatus = PaymentStatus;
   public OrderStatus = OrderStatus;
@@ -261,8 +264,9 @@ export class OrderDetails implements OnInit {
     const cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone) return '';
     const clientName = o.user?.name || o.buyerData?.firstName || 'cliente';
+    const store = this.storeName();
     const text = encodeURIComponent(
-      `¡Hola ${clientName}! Te contactamos de VURA por tu pedido #${o.orderNumber}. Queríamos informarte sobre el estado de tu compra.`
+      `¡Hola ${clientName}! Te contactamos de ${store} por tu pedido #${o.orderNumber}. Queríamos informarte sobre el estado de tu compra.`
     );
     const formattedPhone = cleanPhone.startsWith('54') ? cleanPhone : `549${cleanPhone.replace(/^0+/, '')}`;
     return `https://wa.me/${formattedPhone}?text=${text}`;
@@ -272,7 +276,8 @@ export class OrderDetails implements OnInit {
     const o = this.order();
     if (!o) return '';
     const email = o.user?.email || o.buyerData?.email || '';
-    const subject = encodeURIComponent(`Tu pedido #${o.orderNumber} en VURA`);
+    const store = this.storeName();
+    const subject = encodeURIComponent(`Tu pedido #${o.orderNumber} en ${store}`);
     return `mailto:${email}?subject=${subject}`;
   }
 

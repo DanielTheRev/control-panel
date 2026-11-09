@@ -6,7 +6,7 @@ export const environment = {
   supabaseUrl: 'https://savyruhfhrkjqhtaozae.supabase.co',
   supabasePublishableKey: 'sb_publishable_PNirMf7Zqlq6XceesCDoRg_U0_-th7z',
   realtimeProvider: 'supabase' as 'socketio' | 'supabase',
-  tenantSlug: 'vura',
+  tenantSlug: '',
   brandName: 'Vexx',
   storeUrl: '',
   MP_MASTER_CLIENT_ID: 8846222731123020,

@@ -34,6 +34,7 @@ export class CouponsComponent implements OnInit {
 
   // Available categories from store configuration
   availableCategories = computed(() => this.#configState.StoreConfig().config?.categories || []);
+  storeInstagram = computed(() => this.#configState.StoreConfig().config?.social?.instagram || 'tu_comercio');
 
   // Available product types (discriminators)
   availableProductTypes = [

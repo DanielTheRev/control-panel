@@ -14,6 +14,7 @@ import { PageLayout } from '../../../shared/components/page-layout/page-layout';
 import { ProductSearchDialogComponent } from '../../../shared/components/product-search-dialog/product-search-dialog';
 import { SingleImageUpload } from '../../../shared/components/single-image-upload/single-image-upload';
 import { ShopTheLookStateService } from '../../../states/shop-the-look.state.service';
+import { StoreConfigStateService } from '../../../states/store.config.state.service';
 import { getStoreUrl } from '../../../utils/tenant.utils';
 
 interface ILookDraft {
@@ -53,6 +54,13 @@ export class ShopTheLookCreateComponent implements OnInit {
   #router = inject(Router);
   #sidebarService = inject(SidebarService);
   #productService = inject(ProductService);
+  #storeConfigState = inject(StoreConfigStateService);
+
+  readonly storeName = computed(() => this.#storeConfigState.StoreConfig().config?.name || 'Tienda Oficial');
+  readonly storeDomain = computed(() => {
+    const url = getStoreUrl();
+    return url.replace(/^https?:\/\//, '');
+  });
 
   readonly lookID = input<string>();
 
@@ -93,18 +101,20 @@ export class ShopTheLookCreateComponent implements OnInit {
   // Previsualizaciones reactivas de los datos SEO por defecto (cuando no se completan manualmente)
   computedDefaultMetaTitle = computed(() => {
     const title = this.form.get('title')?.value?.trim();
-    return title ? `Vura | Shop The Look - ${title}` : 'Vura | Shop The Look - Outfit';
+    const brand = this.storeName();
+    return title ? `${brand} | Shop The Look - ${title}` : `${brand} | Shop The Look - Outfit`;
   });
 
   computedDefaultMetaDescription = computed(() => {
     const title = this.form.get('title')?.value?.trim();
     const subtitle = this.form.get('subtitle')?.value?.trim();
+    const brand = this.storeName();
     if (subtitle) {
-      return `${subtitle} - Descubrí el look ${title || 'en tendencia'} y comprá cada prenda en Vura.`;
+      return `${subtitle} - Descubrí el look ${title || 'en tendencia'} y comprá cada prenda en ${brand}.`;
     }
     return title
-      ? `Descubrí el outfit ${title} y comprá cada prenda directamente desde la foto en Vura.`
-      : 'Descubrí este outfit y comprá cada prenda directamente desde la foto en Vura.';
+      ? `Descubrí el outfit ${title} y comprá cada prenda directamente desde la foto en ${brand}.`
+      : `Descubrí este outfit y comprá cada prenda directamente desde la foto en ${brand}.`;
   });
 
   computedDefaultMetaImage = computed(() => {

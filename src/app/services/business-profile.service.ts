@@ -10,6 +10,7 @@ import {
   isProductTypeAllowedForStore,
 } from '../interfaces/business-vertical.interface';
 import { ProductType } from '../interfaces/product.interface';
+import { getTenantSlug } from '../utils/tenant.utils';
 
 export interface BusinessFeatures {
   showPOS: boolean;
@@ -41,7 +42,10 @@ export interface BusinessThemeConfig {
   previewHex: string;        // Hex para swatches/indicadores UI
 }
 
-const CACHED_BUSINESS_TYPE_KEY = 'gp_store_business_type';
+function getTenantBusinessTypeKey(): string {
+  const slug = getTenantSlug();
+  return `gp_store_business_type_${slug}`;
+}
 
 /**
  * Paleta de colores temáticos por cada rubro adaptada a la identidad del comercio en Argentina
@@ -127,9 +131,10 @@ export class BusinessProfileService {
     }
 
     // Mientras la petición HTTP inicial de configuración está en vuelo, leemos únicamente
-    // la caché autenticada previa del mismo navegador si existe.
+    // la caché autenticada previa del mismo tenant si existe.
     if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem(CACHED_BUSINESS_TYPE_KEY) as BusinessType | null;
+      localStorage.removeItem('gp_store_business_type');
+      const cached = localStorage.getItem(getTenantBusinessTypeKey()) as BusinessType | null;
       if (cached && cached in BUSINESS_THEMES) {
         return cached;
       }
@@ -180,7 +185,7 @@ export class BusinessProfileService {
       const type = this.businessType();
       if (type && type in BUSINESS_THEMES) {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(CACHED_BUSINESS_TYPE_KEY, type);
+          localStorage.setItem(getTenantBusinessTypeKey(), type);
         }
         this.applyTheme(type);
       }
@@ -235,14 +240,14 @@ export class BusinessProfileService {
   });
 
   /**
-   * Comercios de moda / retail con fuerte componente visual / e-commerce (ej: Vura)
+   * Comercios de moda / retail con fuerte componente visual / e-commerce
    */
   readonly isFashion = computed(() => {
     return this.businessType() === 'fashion';
   });
 
   /**
-   * Comercios de tecnología / electrónica (ej: Electromix)
+   * Comercios de tecnología / electrónica
    */
   readonly isTech = computed(() => {
     return this.businessType() === 'tech_electronics';

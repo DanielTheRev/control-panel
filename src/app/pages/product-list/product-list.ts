@@ -108,7 +108,7 @@ export class ProductList {
     return prods;
   });
 
-  // Paginación de la Vista Tienda & Ranking (por defecto 16 para replicar el lote de carga de la tienda Vura)
+  // Paginación de la Vista Tienda & Ranking (por defecto 16 artículos)
   rankingPage = signal<number>(1);
   rankingPageSize = signal<number>(16);
 
@@ -1207,7 +1207,7 @@ export class ProductList {
 
     try {
       const config = this.#StoreConfigState.StoreConfig().config;
-      const storeName = config?.name || 'Vura';
+      const storeName = config?.name || 'Catálogo';
 
       this.#excelExportService.exportProductsToExcel(
         products,
@@ -1217,7 +1217,7 @@ export class ProductList {
       );
 
       const msg = isFilteredBySelection
-        ? `📊 ¡Excel descargado con ${products.length} prenda${products.length > 1 ? 's' : ''} seleccionada${products.length > 1 ? 's' : ''}!`
+        ? `📊 ¡Excel descargado con ${products.length} producto${products.length > 1 ? 's' : ''} seleccionado${products.length > 1 ? 's' : ''}!`
         : `📊 ¡Excel descargado con ${products.length} productos del catálogo!`;
       this.#snackBar.open(msg, 'Genial', { duration: 4000 });
     } catch (err) {
@@ -1663,14 +1663,14 @@ export class ProductList {
             const prodObj = (item && typeof item === 'object') ? (item.product || item) : item;
             const colorStr = (item && typeof item === 'object' && item.color) ? ` [Color: ${item.color}]` : '';
             if (typeof prodObj === 'object' && prodObj !== null && prodObj.model) {
-              resolvedCombined.push(`• ${prodObj.model}${colorStr} (Marca: ${prodObj.brand || 'Vura'} | Categoría: ${prodObj.category || 'Indumentaria'})`);
+              resolvedCombined.push(`• ${prodObj.model}${colorStr} (Marca: ${prodObj.brand || 'Genérico'} | Categoría: ${prodObj.category || 'General'})`);
             } else {
               const id = typeof prodObj === 'string' ? prodObj : prodObj?._id?.toString();
               const found = allKnownMap.get(id);
               if (found) {
-                resolvedCombined.push(`• ${found.model}${colorStr} (Marca: ${found.brand || 'Vura'} | Categoría: ${found.category || 'Indumentaria'})`);
+                resolvedCombined.push(`• ${found.model}${colorStr} (Marca: ${found.brand || 'Genérico'} | Categoría: ${found.category || 'General'})`);
               } else if (id) {
-                resolvedCombined.push(`• Prenda ID: ${id}${colorStr}`);
+                resolvedCombined.push(`• Producto ID: ${id}${colorStr}`);
               }
             }
           });
@@ -1893,8 +1893,8 @@ export class ProductList {
         type: 'Object { metaTitle, metaDescription }',
         explanation: 'Optimización para buscadores (Google): metaTitle (máx 60 caracteres) y metaDescription (máx 150 caracteres).',
         example: {
-          metaTitle: 'Remera Oversize Vura | Tienda Oficial',
-          metaDescription: 'Comprá la remera oversize Vura en cuotas sin interés y envíos a todo el país.'
+          metaTitle: 'Producto Destacado | Tienda Oficial',
+          metaDescription: 'Comprá este producto con los mejores precios, cuotas y envíos a todo el país.'
         }
       },
 
@@ -2434,11 +2434,11 @@ export class ProductList {
     const customInstruction = this.aiCustomInstruction().trim();
     const categoriesList = this.Categories().length > 0
       ? this.Categories().join(', ')
-      : 'Remeras, Pantalones, Buzos, Camperas, Suéteres, Camisas, Chombas, Blusas, Calzado, Accesorios';
+      : 'General';
 
     const config = this.#StoreConfigState.StoreConfig().config;
-    const defaultBrand = config?.brands?.[0] || 'Vura';
-    const providersList = (this.ProviderState().data || []).map((p: any) => p.name).filter(Boolean).join(', ') || 'Vura, Krencia';
+    const defaultBrand = config?.brands?.[0] || 'Genérico';
+    const providersList = (this.ProviderState().data || []).map((p: any) => p.name).filter(Boolean).join(', ') || 'Proveedor General';
     const fitsList = this.storeClothingFits().join(', ');
 
     let dictionary = '';
@@ -2833,7 +2833,7 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
         item.outfitCombinaCon = (p as any).combineWith.map((c: any) => {
           const prodObj = (c && typeof c === 'object') ? (c.product || c) : c;
           const colorStr = (c && typeof c === 'object' && c.color) ? ` [${c.color}]` : '';
-          if (typeof prodObj === 'object' && prodObj?.model) return `${prodObj.model}${colorStr} (${prodObj.brand || 'Vura'} - ${prodObj.category || ''})`.trim();
+          if (typeof prodObj === 'object' && prodObj?.model) return `${prodObj.model}${colorStr} (${prodObj.brand || 'Genérico'} - ${prodObj.category || ''})`.trim();
           return typeof prodObj === 'string' ? `${prodObj}${colorStr}` : prodObj?._id;
         });
       }
@@ -2964,7 +2964,7 @@ El usuario usará el botón de "Copiar código" de este bloque para pegarlo dire
     });
 
     const config = this.#StoreConfigState.StoreConfig().config;
-    const defaultBrand = config?.brands?.[0] || 'Vura';
+    const defaultBrand = config?.brands?.[0] || 'Genérico';
     const fitsList = this.storeClothingFits().join(', ');
     const activeProps = this.availableScopeProperties.filter((p) => scopeKeys.includes(p.key));
     const dictionaryLines = activeProps.map((p) => `- ${p.payloadKey} (${p.type}, OBLIGATORIO): [Objetivo: ${p.label}] ${p.explanation}`).join('\n');
@@ -3137,7 +3137,7 @@ El usuario tocará el botón de "Copiar código" de este bloque para pegarlo dir
       if (this.aiBulkMode() === 'create') {
         const storeCategories = (this.Categories() || []).map((c: string) => c.toLowerCase().trim());
         const config = this.#StoreConfigState.StoreConfig().config;
-        const defaultBrand = config?.brands?.[0] || 'Vura';
+        const defaultBrand = config?.brands?.[0] || 'Genérico';
 
         const validated = parsed.map((item: any, idx: number) => {
           if (!item.model || !item.category) {

@@ -56,8 +56,8 @@ export class SidebarComponent {
     return 'Staff';
   });
 
-  appVersion = environment.appVersion || 'v1.4.2';
-  buildDate = environment.buildDate || '28/08/2026';
+  appVersion = environment.appVersion;
+  buildDate = environment.buildDate;
 
   get brandName(): string {
     const tenant = localStorage.getItem('lastTenantSlug');

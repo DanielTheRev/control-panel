@@ -2,12 +2,12 @@ import { environment } from '../../environments/environment';
 
 /**
  * Returns the tenant slug for the current session.
- * - localhost: reads from environment.tenantSlug
- * - production: extracts from subdomain (e.g. bellaisabella.vexx.com.ar → "bellaisabella")
+ * - localhost: reads from environment.tenantSlug or localStorage
+ * - production: extracts from subdomain (e.g. bellaisabella.vexx.com.ar -> "bellaisabella")
  */
 export function getTenantSlug(): string {
   if (typeof window === 'undefined') {
-    return environment.tenantSlug || 'vura';
+    return environment.tenantSlug || '';
   }
 
   const hostname = window.location.hostname;
@@ -20,7 +20,7 @@ export function getTenantSlug(): string {
     }
   } catch (e) {}
 
-  // 2. Extraer subdominio si estamos en producción (ej: vura.vexx.com.ar -> "vura")
+  // 2. Extraer subdominio si estamos en producción (ej: mitienda.vexx.com.ar -> "mitienda")
   if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
     const parts = hostname.split('.');
     if (parts.length > 2 && parts[0] !== 'admin' && parts[0] !== 'panel' && parts[0] !== 'www' && parts[0] !== 'api') {
@@ -28,8 +28,8 @@ export function getTenantSlug(): string {
     }
   }
 
-  // 3. Environment o fallback por defecto 'vura'
-  return environment.tenantSlug || 'vura';
+  // 3. Environment configurado o vacío
+  return environment.tenantSlug || '';
 }
 
 /**
@@ -38,15 +38,9 @@ export function getTenantSlug(): string {
  * - Otherwise, builds it from the tenant slug: https://{slug}.vexx.com.ar
  */
 export function getStoreUrl(): string {
-  // if (environment.storeUrl) {
-  //   return environment.storeUrl;
-  // }
   if (!environment.production) {
     return 'http://localhost:4200';
   }
   const slug = getTenantSlug();
-  if (slug === 'vura') {
-    return 'https://vura.com.ar';
-  }
-  return `https://${slug}.vexx.com.ar`;
+  return slug ? `https://${slug}.vexx.com.ar` : 'https://vexx.com.ar';
 }

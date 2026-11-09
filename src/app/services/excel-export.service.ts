@@ -220,7 +220,7 @@ export class ExcelExportService {
         p.model || '',
         subtitle,
         slug,
-        p.brand || 'Vura',
+        p.brand || '',
         p.category || '',
         statusLabel,
         gender,

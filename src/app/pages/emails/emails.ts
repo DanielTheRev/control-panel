@@ -309,7 +309,7 @@ export class EmailsComponent implements OnInit {
       direccion_envio: 'Av. Corrientes 1234, CABA',
       codigo_seguimiento: 'AR-99382104',
       transporte: 'Andreani',
-      alias_transferencia: 'vura.tienda.nx',
+      alias_transferencia: 'mitienda.transferencia',
       cbu_transferencia: '0000003100077162947946',
       banco_transferencia: 'Naranja X',
       titular_transferencia: 'Fernando Larrosa',
