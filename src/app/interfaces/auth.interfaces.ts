@@ -1,9 +1,12 @@
 import { IUser } from './User.interface';
 
 export interface LoginCredentials {
-  tenantSlug: string;
+  storeName?: string;
+  tenantSlug?: string;
   email: string;
   password: string;
+  rememberMe?: boolean;
+  isEmployee?: boolean;
 }
 
 export interface LoginResponse {

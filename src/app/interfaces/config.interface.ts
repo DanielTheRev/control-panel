@@ -1,3 +1,11 @@
+import {
+  ChannelKey,
+  CredentialSource,
+  MpCheckoutMode,
+  QrCreditSettlementTerm,
+  QrDebitSettlementTerm,
+  WebSettlementTerm,
+} from './price-builder.interface';
 import { ICostConcept } from './product.interface';
 import {
   BusinessType,
@@ -129,6 +137,8 @@ export interface IEcommerceIntegrations {
   arca?: IArcaIntegrationConfig;
 }
 
+export type PriceRoundingMode = 'exact' | '10' | '50' | '100' | '500' | 'auto';
+
 export interface IPricingStrategy {
   method: 'markup' | 'margin';
   transferGrossUp: boolean;
@@ -137,6 +147,7 @@ export interface IPricingStrategy {
   transferDiscountPercentage?: number;
   cashDiscountPercentage?: number;
   card1PayDiscount?: boolean;
+  priceRoundingMode?: PriceRoundingMode;
 }
 
 export interface IDolarRate {
@@ -167,6 +178,7 @@ export interface IEcommerceConfig {
   };
   fiscalProfile?: IFiscalProfile;
   defaultAdditionalCosts?: ICostConcept[];
+  defaultEnabledChannels?: Partial<Record<ChannelKey, boolean>>;
   costCurrency?: 'USD' | 'ARS';
   dollarQuoteType?: 'oficial' | 'blue' | 'bolsa' | 'ccl' | 'tarjeta' | 'mayorista' | 'cripto' | 'custom';
   customDollarRate?: number;
@@ -217,9 +229,12 @@ export interface IEcommerceConfig {
     mercadopago: {
       active: boolean;
       baseCommission: number;
+      cft2cuotas?: number;
       cft3cuotas: number;
       cft6Cuotas: number;
+      cft9cuotas?: number;
       cft12cuotas?: number;
+      cft18cuotas?: number;
       accessToken: string;
       publicKey: string;
       environment?: 'sandbox' | 'production';
@@ -228,6 +243,66 @@ export interface IEcommerceConfig {
       maxInstallments: number;
       excludedPaymentMethods?: string[];
       excludedPaymentTypes?: string[];
+      customRatesOverride?: boolean;
+      oauth?: {
+        connected: boolean;
+        mpUserId?: string | null;
+      };
+      credentials?: {
+        production?: {
+          credentialSource?: CredentialSource;
+          publicKey?: string;
+          accessToken?: string;
+          webhookSecret?: string;
+        };
+        sandbox?: {
+          publicKey?: string;
+          accessToken?: string;
+          webhookSecret?: string;
+        };
+      };
+      storefrontChannels?: {
+        minimalCatalog?: {
+          environment: 'sandbox' | 'production';
+          checkoutMode: MpCheckoutMode;
+          sandboxToken?: string;
+        };
+        webTemplate?: {
+          environment: 'sandbox' | 'production';
+          checkoutMode: MpCheckoutMode;
+          sandboxToken?: string;
+        };
+        customWeb?: {
+          environment: 'sandbox' | 'production';
+          liveApiKey?: string;
+          testApiKey?: string;
+        };
+      };
+      webCheckout?: {
+        settlementTerm: WebSettlementTerm;
+        baseCommission: number;
+        cft2cuotas: number;
+        cft3cuotas: number;
+        cft6Cuotas: number;
+        cft9cuotas?: number;
+        cft12cuotas?: number;
+        cft18cuotas?: number;
+      };
+      qr?: {
+        allowCardsInQr: boolean;
+        accountMoneyCommission: number;
+        debitTerm: QrDebitSettlementTerm;
+        debitCommission: number;
+        creditTerm: QrCreditSettlementTerm;
+        creditCommission: number;
+        prepaidCommission: number;
+      };
+      posPoint?: {
+        debitCommission: number;
+        creditCommission: number;
+        prepaidCommission: number;
+        pixCommission: number;
+      };
       successUrl?: string;
       failureUrl?: string;
       pendingUrl?: string;

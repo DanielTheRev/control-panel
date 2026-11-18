@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../guards/auth.guard';
+import { capabilityGuard } from '../guards/capability.guard';
 import { unsavedChangesGuard } from '../guards/unsaved-changes.guard';
 import { ClientOrders } from '../pages/client-orders/client-orders';
 import { PaymentMethods } from '../pages/payment-methods/payment-methods';
 import { ProductList } from '../pages/product-list/product-list';
-import { ProductFormDispatcher } from '../pages/product-forms/product-form-dispatcher';
 
 /**
  * Rutas universales del núcleo administrativo:
@@ -13,6 +13,7 @@ import { ProductFormDispatcher } from '../pages/product-forms/product-form-dispa
 export const coreRoutes: Routes = [
   {
     path: 'client-orders',
+    canActivate: [capabilityGuard('showOnlineOrders')],
     children: [
       {
         path: '',
@@ -34,15 +35,13 @@ export const coreRoutes: Routes = [
       },
       {
         path: 'create',
-        component: ProductFormDispatcher,
-      },
-      {
-        path: 'create/:typeParam',
-        component: ProductFormDispatcher,
+        title: 'Nuevo Producto',
+        loadComponent: () => import('../pages/product-form/product-form').then(c => c.ProductFormComponent),
       },
       {
         path: 'edit/:productID',
-        component: ProductFormDispatcher,
+        title: 'Editar Producto',
+        loadComponent: () => import('../pages/product-form/product-form').then(c => c.ProductFormComponent),
       },
       {
         path: ':productID',
@@ -104,6 +103,7 @@ export const coreRoutes: Routes = [
   },
   {
     path: 'providers',
+    canActivate: [capabilityGuard('showSupplierPurchases')],
     children: [
       {
         path: '',
@@ -133,6 +133,36 @@ export const coreRoutes: Routes = [
   {
     path: 'fiscal',
     title: 'ARCA & Finanzas Fiscales',
+    canActivate: [capabilityGuard('showArcaBilling')],
     loadComponent: () => import('../pages/fiscal-dashboard/fiscal-dashboard').then(c => c.FiscalDashboardComponent)
+  },
+  {
+    path: 'product-bundles',
+    title: 'Conjuntos de Productos',
+    canActivate: [capabilityGuard('showProductBundles')],
+    loadComponent: () => import('../pages/product-bundles/product-bundles').then(c => c.ProductBundlesComponent)
+  },
+  {
+    path: 'data-sets',
+    title: 'Conjuntos de Datos',
+    canActivate: [capabilityGuard('showDataSets')],
+    loadComponent: () => import('../pages/data-sets/data-sets').then(c => c.DataSetsComponent)
+  },
+  {
+    path: 'addons',
+    redirectTo: 'templates',
+    pathMatch: 'full',
+  },
+  {
+    path: 'templates',
+    title: 'Tienda Vexx & Plantillas',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('../pages/vexx-marketplace/vexx-marketplace.component').then(c => c.VexxMarketplaceComponent)
+  },
+  {
+    path: 'favorites',
+    title: 'Favoritos & Aviso de Stock',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('../pages/favorites/favorites').then(c => c.FavoritesComponent)
   },
 ];

@@ -12,6 +12,7 @@ import {
   PaymentStatus,
 } from '../interfaces/order.interface';
 import { AuthService } from '../services/auth.service';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { OrdersService, sanitizeOrder } from '../services/orders.service';
 import { DebugService } from '../services/debug.service';
 
@@ -21,6 +22,7 @@ import { DebugService } from '../services/debug.service';
 export class OrdersStateService {
   private orderService = inject(OrdersService);
   private auth = inject(AuthService);
+  private profile = inject(BusinessProfileService);
   private debug = inject(DebugService);
   // Signals para filtros
   private _status = signal<string>('all');
@@ -38,7 +40,7 @@ export class OrdersStateService {
 
   // httpResource para obtener datos
   private state = httpResource<OrdersApiResponse>(() => {
-    if (!this.auth.isAuthenticated()) return;
+    if (!this.auth.isAuthenticated() || !this.profile.features().showOnlineOrders) return undefined;
     const params = new URLSearchParams();
     params.set('page', this._page().toString());
     params.set('limit', this._limit().toString());

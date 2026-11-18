@@ -1,6 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { CashRegisterService, CashRegisterSession } from '../services/cash-register.service';
 import { NotificationsService } from '../services/notifications.service';
 
@@ -10,9 +11,13 @@ import { NotificationsService } from '../services/notifications.service';
 export class CashRegisterStoreService {
   #cashService = inject(CashRegisterService);
   #notificationService = inject(NotificationsService);
+  #profile = inject(BusinessProfileService);
 
   // httpResource for the current session
-  #fetchedSession = httpResource<CashRegisterSession>(() => `${environment.apiUrl}/cash-register/current`);
+  #fetchedSession = httpResource<CashRegisterSession>(() => {
+    if (!this.#profile.features().showCashRegister) return undefined;
+    return `${environment.apiUrl}/cash-register/current`;
+  });
 
   // Public computed state
   readonly session = computed(() => this.#fetchedSession.value());

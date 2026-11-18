@@ -61,11 +61,12 @@ export class ProductList {
   #storeConfigService = inject(StoreConfigService);
   #businessProfile = inject(BusinessProfileService);
 
-  // Ruta directa al formulario según el rubro de la tienda (usando slugs limpios: 'kiosco', 'indumentaria', 'tecnologia')
-  readonly newProductRoute = computed(() => {
-    const slug = this.#businessProfile.defaultCreateProductSlug() || 'kiosco';
-    return ['create', slug];
-  });
+  readonly productListView = this.#businessProfile.productListViewConfig;
+  readonly profileFeatures = this.#businessProfile.features;
+  readonly bundleLabel = this.#businessProfile.bundleLabel;
+
+  // Ruta única al formulario modular universal de producto
+  readonly newProductRoute = computed(() => ['create']);
 
   // Modo Principal: Inventario vs Ranking ELO
   activeMainTab = signal<'inventory' | 'ranking'>('inventory');

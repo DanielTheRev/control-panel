@@ -90,7 +90,7 @@ export class ProductService {
     );
   }
 
-  create(productData: FormData) {
+  create(productData: FormData | Record<string, any>) {
     return firstValueFrom(
       this.#http.post<IProduct>(`${this.#apiUrl}`, productData).pipe(
         map(mapProductPrices),
@@ -118,7 +118,7 @@ export class ProductService {
     );
   }
 
-  updateProduct(id: string, product: FormData) {
+  updateProduct(id: string, product: FormData | Record<string, any>) {
     return firstValueFrom(
       this.#http.patch<any>(`${this.#apiUrl}/${id}`, product).pipe(
         map(mapProductPrices),

@@ -3,33 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 
-export interface MasterCatalogProduct {
-  _id?: string;
-  barcode: string;
-  name: string;
-  brand?: string;
-  category: string;
-  description?: string;
-  imageUrl?: string;
-  unit?: string;
-  isSoldByWeight?: boolean;
-  suggestedPrice?: number;
-  source?: 'seed' | 'crowdsourced' | 'admin';
-  verified?: boolean;
-}
+import {
+  MasterCatalogLookupResponse,
+  MasterCatalogProduct,
+  MasterCatalogSearchResponse,
+} from '../interfaces/master-catalog.interface';
 
-export interface MasterCatalogLookupResponse {
-  success: boolean;
-  found: boolean;
-  source?: 'database' | 'external' | 'not_found';
-  product?: MasterCatalogProduct;
-}
-
-export interface MasterCatalogSearchResponse {
-  success: boolean;
-  count: number;
-  data: MasterCatalogProduct[];
-}
+export type {
+  MasterCatalogLookupResponse,
+  MasterCatalogProduct,
+  MasterCatalogSearchResponse,
+};
 
 @Injectable({
   providedIn: 'root'

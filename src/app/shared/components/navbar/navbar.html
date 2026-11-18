@@ -10,14 +10,25 @@
     </button>
 
     <!-- Breadcrumb Indicator (Subtle & Clean) -->
-    <div class="flex items-center gap-2 text-xs text-base-content/50 font-medium truncate">
+    <div class="hidden sm:flex items-center gap-2 text-xs text-base-content/50 font-medium truncate">
       <span class="hover:text-base-content transition-colors">Panel</span>
       <span class="text-base-content/30">/</span>
       <span class="text-base-content/80 font-semibold truncate">{{ navbarTitle().title }}</span>
     </div>
   </div>
 
-  <div class="flex items-center gap-3 shrink-0">
+  <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+    <!-- Acceso Directo Tienda Vexx (Plantillas & Complementos) -->
+    <a
+      routerLink="/home/templates"
+      routerLinkActive="ring-2 ring-primary/30"
+      class="btn btn-xs bg-primary text-primary-content border border-primary hover:bg-base-100 hover:text-primary hover:border-primary !rounded-md font-bold gap-1.5 transition-colors"
+      title="Explorar Plantillas y Complementos"
+    >
+      <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">storefront</mat-icon>
+      <span class="hidden sm:inline">Tienda Vexx</span>
+    </a>
+
     <!-- WebSocket Status -->
     <div class="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-base-200/80 border border-base-200">
       <div class="w-2 h-2 rounded-full"

@@ -1,27 +1,56 @@
-<div class="flex h-screen w-full overflow-hidden bg-base-100">
-  <!-- 1. DESKTOP / TABLET SIDEBAR (FLEX SHRINK-0) -->
-  <app-sidebar class="hidden md:flex flex-col shrink-0 h-full" />
+@let boot = bootstrapState.state();
 
-  <!-- 2. MOBILE DRAWER (OVERLAY SLIDE-OVER) -->
-  @if (sidebarService.SidebarStatus().isMobileOpen) {
-    <!-- Backdrop -->
-    <div
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 animate-fade-in"
-      (click)="sidebarService.closeMobile()"
-    ></div>
-
-    <!-- Mobile Drawer Content -->
-    <app-sidebar
-      [isMobile]="true"
-      class="fixed inset-y-0 left-0 w-72 max-w-[85vw] z-50 md:hidden flex flex-col shadow-2xl animate-slide-right select-none"
-    />
-  }
-
-  <!-- 3. MAIN WORKSPACE (EDGE-TO-EDGE, SIN MARCO EXTERIOR) -->
-  <div class="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-base-100">
-    <app-navbar />
-    <main class="flex-1 min-w-0 overflow-y-auto flex flex-col bg-base-100">
-      <router-outlet />
-    </main>
+@if (boot.hasError && !boot.hasData) {
+  <div class="flex h-screen w-full items-center justify-center bg-base-100 p-6">
+    <div class="max-w-md w-full bg-base-100 border border-error/30 rounded-2xl p-8 text-center shadow-sm space-y-4">
+      <div class="w-12 h-12 rounded-full bg-error/15 text-error flex items-center justify-center mx-auto">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+        </svg>
+      </div>
+      <h1 class="text-lg font-bold text-base-content">No se pudo iniciar el panel</h1>
+      <p class="text-sm text-base-content/75">{{ bootstrapErrorMessage() }}</p>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button type="button" class="btn btn-primary btn-sm" (click)="retryBootstrap()">
+          Reintentar
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="logout()">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
   </div>
-</div>
+} @else if (boot.isLoading && !boot.hasData) {
+  <div class="flex h-screen w-full flex-col items-center justify-center bg-base-100 gap-3">
+    <span class="loading loading-spinner loading-lg text-primary"></span>
+    <p class="text-xs font-semibold uppercase tracking-widest text-base-content/50">
+      Sincronizando capacidades del comercio...
+    </p>
+  </div>
+} @else {
+  <div class="flex h-screen w-full overflow-hidden bg-base-100">
+    <!-- 1. DESKTOP / TABLET SIDEBAR (FLEX SHRINK-0) -->
+    <app-sidebar class="hidden md:flex flex-col shrink-0 h-full" />
+
+    <!-- 2. MOBILE DRAWER (OVERLAY SLIDE-OVER) -->
+    @if (sidebarService.SidebarStatus().isMobileOpen) {
+      <div
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 animate-fade-in"
+        (click)="sidebarService.closeMobile()"
+      ></div>
+
+      <app-sidebar
+        [isMobile]="true"
+        class="fixed inset-y-0 left-0 w-72 max-w-[85vw] z-50 md:hidden flex flex-col shadow-2xl animate-slide-right select-none"
+      />
+    }
+
+    <!-- 3. MAIN WORKSPACE (EDGE-TO-EDGE, SIN MARCO EXTERIOR) -->
+    <div class="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-base-100">
+      <app-navbar />
+      <main class="flex-1 min-w-0 overflow-y-auto flex flex-col bg-base-100">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+}

@@ -430,7 +430,7 @@ export class ProductStoreService {
     return this.#productService.calculatePrices(data);
   }
 
-  async createProduct(data: FormData) {
+  async createProduct(data: FormData | Record<string, any>) {
     try {
       const product = await this.#productService.create(data);
       this.#addProduct(product);
@@ -442,7 +442,7 @@ export class ProductStoreService {
     }
   }
 
-  async updateProduct(id: string, data: FormData) {
+  async updateProduct(id: string, data: FormData | Record<string, any>) {
     try {
       const response = await this.#productService.updateProduct(id, data);
       this.#updateProduct(response);

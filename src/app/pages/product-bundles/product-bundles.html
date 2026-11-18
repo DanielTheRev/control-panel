@@ -1,0 +1,377 @@
+<app-page-layout>
+  <app-page-header
+    [title]="bundleLabel()"
+    subtitle="Creá combos, packs o conjuntos de productos con precio personalizado o descuento automático sobre la suma"
+  >
+    <button type="button" class="btn btn-primary btn-sm gap-2" (click)="openCreateModal()">
+      <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">add</mat-icon>
+      Nuevo conjunto
+    </button>
+  </app-page-header>
+
+  <div class="space-y-4">
+    <!-- Barra de búsqueda y métricas -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-base-100 p-3 rounded-xl border border-base-200">
+      <label class="input input-bordered input-sm flex items-center gap-2 w-full sm:w-80">
+        <mat-icon class="!text-[18px] !w-[18px] !h-[18px] opacity-60">search</mat-icon>
+        <input
+          type="text"
+          class="grow"
+          placeholder="Buscar por nombre, slug o categoría..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+      </label>
+
+      <div class="flex items-center gap-2 text-xs">
+        <span class="badge badge-ghost font-medium">Total: {{ bundles().length }}</span>
+        <span class="badge badge-success badge-soft font-medium">Activos: {{ activeCount() }}</span>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    @if (isLoading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton h-44 w-full rounded-xl"></div>
+        }
+      </div>
+    } @else if (filteredBundles().length === 0) {
+      <div class="bg-base-100 border border-dashed border-base-300 rounded-2xl p-10 text-center">
+        <mat-icon class="!text-[40px] !w-[40px] !h-[40px] text-base-content/30 mx-auto mb-2">workspaces</mat-icon>
+        <p class="font-semibold text-base-content">No hay conjuntos creados</p>
+        <p class="text-sm text-base-content/60 mt-1">
+          Agrupá 2 o más productos en un combo o pack para venderlos juntos en POS y catálogo.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm mt-4" (click)="openCreateModal()">
+          Crear primer conjunto
+        </button>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (bundle of filteredBundles(); track bundle._id) {
+          <div class="card bg-base-100 border border-base-200 shadow-2xs hover:shadow-sm transition-shadow">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="font-bold text-base-content truncate">{{ bundle.name }}</h3>
+                  <p class="text-xs text-base-content/50 font-mono truncate">/{{ bundle.slug }}</p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-primary toggle-sm"
+                  [checked]="bundle.isActive"
+                  (change)="toggleActive(bundle)"
+                  [title]="bundle.isActive ? 'Activo' : 'Inactivo'"
+                />
+              </div>
+
+              @if (bundle.description) {
+                <p class="text-xs text-base-content/70 line-clamp-2">{{ bundle.description }}</p>
+              }
+
+              <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="badge badge-outline badge-sm">{{ bundle.items.length }} productos</span>
+                <span class="badge badge-primary badge-soft badge-sm">
+                  {{ bundle.pricingType === 'custom' ? 'Precio fijo' : 'Suma heredada' }}
+                </span>
+                @if (bundle.discountPercentage && bundle.pricingType === 'sum_inherited') {
+                  <span class="badge badge-secondary badge-soft badge-sm">
+                    -{{ bundle.discountPercentage }}%
+                  </span>
+                }
+                @if (bundle.category) {
+                  <span class="badge badge-ghost badge-sm">{{ bundle.category }}</span>
+                }
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-base-200 mt-auto">
+                <div>
+                  <span class="text-[11px] text-base-content/50 block">Precio final</span>
+                  <span class="text-base font-bold text-primary">
+                    @if (bundle.pricingType === 'custom') {
+                      ${{ bundle.bundlePrice || 0 | number:'1.0-0' }}
+                    } @else {
+                      Dinámico (-{{ bundle.discountPercentage || 0 }}%)
+                    }
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square"
+                    title="Editar"
+                    (click)="openEditModal(bundle)"
+                  >
+                    <mat-icon class="!text-[17px] !w-[17px] !h-[17px]">edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square text-error"
+                    title="Eliminar"
+                    (click)="deleteBundle(bundle)"
+                  >
+                    <mat-icon class="!text-[17px] !w-[17px] !h-[17px]">delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</app-page-layout>
+
+<!-- Modal Crear / Editar -->
+@if (isModalOpen()) {
+  <dialog class="modal modal-open">
+    <div class="modal-box max-w-4xl p-0 overflow-hidden">
+      <div class="px-5 py-4 border-b border-base-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-lg">{{ editingId() ? 'Editar conjunto' : 'Nuevo conjunto' }}</h3>
+          <p class="text-xs text-base-content/60">Seleccioná al menos 2 productos y definí la regla de precio</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm btn-circle" (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-5 max-h-[75vh] overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Columna izquierda: datos y pricing -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Nombre *</span></label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full"
+              placeholder="Ej: Combo Asado Completo"
+              [ngModel]="formName()"
+              (ngModelChange)="onNameChange($event)"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Slug</span></label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full font-mono text-xs"
+              placeholder="combo-asado-completo"
+              [ngModel]="formSlug()"
+              (ngModelChange)="formSlug.set($event)"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Categoría (opcional)</span></label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full"
+              placeholder="Ej: Combos, Packs, Promociones"
+              [ngModel]="formCategory()"
+              (ngModelChange)="formCategory.set($event)"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Descripción</span></label>
+            <textarea
+              class="textarea textarea-bordered textarea-sm w-full"
+              rows="2"
+              [ngModel]="formDescription()"
+              (ngModelChange)="formDescription.set($event)"
+            ></textarea>
+          </div>
+
+          <div class="divider my-1 text-xs">Estrategia de Precio</div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="formPricingType() === 'sum_inherited'"
+              [class.btn-outline]="formPricingType() !== 'sum_inherited'"
+              (click)="formPricingType.set('sum_inherited')"
+            >
+              Suma + Descuento
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="formPricingType() === 'custom'"
+              [class.btn-outline]="formPricingType() !== 'custom'"
+              (click)="formPricingType.set('custom')"
+            >
+              Precio Fijo
+            </button>
+          </div>
+
+          @if (formPricingType() === 'custom') {
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Precio del Combo ($)</span></label>
+              <input
+                type="number"
+                min="0"
+                class="input input-bordered input-sm w-full"
+                [ngModel]="formBundlePrice()"
+                (ngModelChange)="formBundlePrice.set(+$event)"
+              />
+            </div>
+          } @else {
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Descuento sobre suma (%)</span></label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                class="input input-bordered input-sm w-full"
+                [ngModel]="formDiscountPercentage()"
+                (ngModelChange)="formDiscountPercentage.set(+$event)"
+              />
+            </div>
+          }
+
+          <div class="bg-base-200/60 rounded-xl p-3 text-xs space-y-1">
+            <div class="flex justify-between">
+              <span class="text-base-content/70">Suma de productos:</span>
+              <span class="font-semibold">${{ sumItemsPrice() | number:'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-base-content/70">Costo heredado estimado:</span>
+              <span class="font-semibold">${{ sumItemsCost() | number:'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between pt-1 border-t border-base-300 text-sm">
+              <span class="font-bold">Precio final:</span>
+              <span class="font-bold text-primary">${{ finalPreviewPrice() | number:'1.0-0' }}</span>
+            </div>
+          </div>
+
+          <label class="label cursor-pointer justify-start gap-3">
+            <input
+              type="checkbox"
+              class="toggle toggle-primary toggle-sm"
+              [ngModel]="formIsActive()"
+              (ngModelChange)="formIsActive.set($event)"
+            />
+            <span class="label-text text-xs font-medium">Conjunto activo para venta</span>
+          </label>
+        </div>
+
+        <!-- Columna derecha: selector de productos -->
+        <div class="lg:col-span-7 flex flex-col gap-3">
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Buscar productos para agregar</span>
+            </label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full"
+              placeholder="Escribí nombre, SKU o código de barras..."
+              [ngModel]="productQuery()"
+              (ngModelChange)="searchProducts($event)"
+            />
+          </div>
+
+          <!-- Resultados rápidos -->
+          <div class="border border-base-200 rounded-xl max-h-40 overflow-y-auto divide-y divide-base-200">
+            @if (isSearchingProducts()) {
+              <div class="p-3 text-xs text-base-content/60">Buscando productos...</div>
+            } @else if (productResults().length === 0) {
+              <div class="p-3 text-xs text-base-content/60">Sin resultados</div>
+            } @else {
+              @for (p of productResults(); track p._id) {
+                <button
+                  type="button"
+                  class="w-full px-3 py-2 text-left hover:bg-base-200/60 flex items-center justify-between gap-2 text-xs"
+                  (click)="addProductToBundle(p)"
+                >
+                  <span class="truncate font-medium">{{ p.model }}</span>
+                  <span class="flex items-center gap-2 shrink-0">
+                    <span class="text-base-content/60">${{ getProductPrice(p) | number:'1.0-0' }}</span>
+                    <mat-icon class="!text-[16px] !w-[16px] !h-[16px] text-primary">add_circle</mat-icon>
+                  </span>
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Items seleccionados -->
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-xs font-semibold">
+              Productos incluidos ({{ formItems().length }} / mín. 2)
+            </span>
+          </div>
+
+          <div class="space-y-2 max-h-56 overflow-y-auto">
+            @if (formItems().length === 0) {
+              <div class="border border-dashed border-base-300 rounded-xl p-4 text-center text-xs text-base-content/50">
+                Agregá al menos 2 productos desde el buscador superior.
+              </div>
+            } @else {
+              @for (item of formItems(); track $index) {
+                <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-base-200/40 border border-base-200 text-xs">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-semibold truncate">{{ item.productName }}</p>
+                    <p class="text-[11px] text-base-content/60">${{ item.unitPrice | number:'1.0-0' }} c/u</p>
+                  </div>
+
+                  @if (item.variants.length > 0) {
+                    <select
+                      class="select select-bordered select-xs max-w-36"
+                      [ngModel]="item.variantSku"
+                      (ngModelChange)="updateItemVariant($index, $event)"
+                    >
+                      <option value="">Cualquier variante</option>
+                      @for (v of item.variants; track v.sku) {
+                        @if (v.sku) {
+                          <option [value]="v.sku">{{ v.size || v.color || v.sku }}</option>
+                        }
+                      }
+                    </select>
+                  }
+
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-base-content/60">Cant:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      class="input input-bordered input-xs w-16 text-center"
+                      [ngModel]="item.quantity"
+                      (ngModelChange)="updateItemQuantity($index, $event)"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs btn-square text-error"
+                      (click)="removeItem($index)"
+                    >
+                      <mat-icon class="!text-[16px] !w-[16px] !h-[16px]">close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t border-base-200 flex justify-end gap-2 bg-base-200/30">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closeModal()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="isSaving() || formItems().length < 2"
+          (click)="saveBundle()"
+        >
+          @if (isSaving()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          }
+          {{ editingId() ? 'Guardar cambios' : 'Crear conjunto' }}
+        </button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop" (click)="closeModal()">
+      <button type="button">close</button>
+    </form>
+  </dialog>
+}

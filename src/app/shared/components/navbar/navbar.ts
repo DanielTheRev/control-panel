@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { SidebarService } from '../../../services/sidebar.service';
 import { WebSocketService } from '../../../services/websocket.service';
@@ -8,7 +10,7 @@ import { UserDropdown } from './components/user-dropdown/user-dropdown';
 
 @Component({
   selector: 'app-navbar',
-  imports: [CommonModule, Notifications, UserDropdown],
+  imports: [CommonModule, RouterLink, RouterLinkActive, MatIconModule, Notifications, UserDropdown],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
 })

@@ -3,24 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
-export interface CashRegisterSession {
-  _id: string;
-  status: 'OPEN' | 'CLOSED';
-  initialBalance: number;
-  calculatedCloseBalance?: number;
-  expectedCloseBalance?: number;
-  actualCloseBalance?: number;
-  difference?: number;
-  openedAt?: string;
-  openDate?: string;
-  closedAt?: string;
-  closeDate?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  openedBy: any;
-  closedBy?: any;
-  notes?: string;
-}
+import { CashRegisterSession } from '../interfaces/cash-register.interface';
+
+export type { CashRegisterSession };
 
 @Injectable({
   providedIn: 'root',

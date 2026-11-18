@@ -1,0 +1,352 @@
+<app-page-layout>
+  <app-page-header
+    title="Conjuntos de Datos"
+    subtitle="Definí colecciones automáticas de productos mediante reglas dinámicas y ordenamiento"
+  >
+    <button type="button" class="btn btn-primary btn-sm gap-2" (click)="openCreateModal()">
+      <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">add</mat-icon>
+      Nuevo conjunto de datos
+    </button>
+  </app-page-header>
+
+  <div class="space-y-4">
+    <!-- Barra de búsqueda -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-base-100 p-3 rounded-xl border border-base-200">
+      <label class="input input-bordered input-sm flex items-center gap-2 w-full sm:w-80">
+        <mat-icon class="!text-[18px] !w-[18px] !h-[18px] opacity-60">search</mat-icon>
+        <input
+          type="text"
+          class="grow"
+          placeholder="Buscar por nombre o slug..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+      </label>
+
+      <div class="flex items-center gap-2 text-xs">
+        <span class="badge badge-ghost font-medium">Total: {{ dataSets().length }}</span>
+        <span class="badge badge-success badge-soft font-medium">Activos: {{ activeCount() }}</span>
+        @if (allowMetrics()) {
+          <span class="badge badge-primary badge-soft font-medium">Métricas Pro habilitadas</span>
+        }
+      </div>
+    </div>
+
+    <!-- Lista -->
+    @if (isLoading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton h-44 w-full rounded-xl"></div>
+        }
+      </div>
+    } @else if (filteredDataSets().length === 0) {
+      <div class="bg-base-100 border border-dashed border-base-300 rounded-2xl p-10 text-center">
+        <mat-icon class="!text-[40px] !w-[40px] !h-[40px] text-base-content/30 mx-auto mb-2">dataset</mat-icon>
+        <p class="font-semibold text-base-content">No hay conjuntos de datos</p>
+        <p class="text-sm text-base-content/60 mt-1">
+          Creá filtros inteligentes como "Ofertas > 20%", "Recién llegados" o "Más vendidos".
+        </p>
+        <button type="button" class="btn btn-primary btn-sm mt-4" (click)="openCreateModal()">
+          Crear primer conjunto
+        </button>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (ds of filteredDataSets(); track ds._id) {
+          <div class="card bg-base-100 border border-base-200 shadow-2xs hover:shadow-sm transition-shadow">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="font-bold text-base-content truncate">{{ ds.name }}</h3>
+                  <p class="text-xs text-base-content/50 font-mono truncate">/{{ ds.slug }}</p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-primary toggle-sm"
+                  [checked]="ds.isActive"
+                  (change)="toggleActive(ds)"
+                />
+              </div>
+
+              @if (ds.description) {
+                <p class="text-xs text-base-content/70 line-clamp-2">{{ ds.description }}</p>
+              }
+
+              <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="badge badge-outline badge-sm">
+                  {{ ds.filters.length }} {{ ds.filters.length === 1 ? 'regla' : 'reglas' }}
+                </span>
+                <span class="badge badge-ghost badge-sm">
+                  {{ ds.matchType === 'all' ? 'Todas (AND)' : 'Cualquiera (OR)' }}
+                </span>
+                <span class="badge badge-primary badge-soft badge-sm">
+                  {{ getSortLabel(ds.sortBy) }}
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-base-200 mt-auto">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-xs gap-1"
+                  (click)="testLive(ds)"
+                >
+                  <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">play_arrow</mat-icon>
+                  Probar en vivo
+                </button>
+
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square"
+                    title="Editar"
+                    (click)="openEditModal(ds)"
+                  >
+                    <mat-icon class="!text-[17px] !w-[17px] !h-[17px]">edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square text-error"
+                    title="Eliminar"
+                    (click)="deleteDataSet(ds)"
+                  >
+                    <mat-icon class="!text-[17px] !w-[17px] !h-[17px]">delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</app-page-layout>
+
+<!-- Modal Crear / Editar -->
+@if (isModalOpen()) {
+  <dialog class="modal modal-open">
+    <div class="modal-box max-w-3xl p-0 overflow-hidden">
+      <div class="px-5 py-4 border-b border-base-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-lg">{{ editingId() ? 'Editar conjunto de datos' : 'Nuevo conjunto de datos' }}</h3>
+          <p class="text-xs text-base-content/60">Configurá las reglas dinámicas de filtrado y orden</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm btn-circle" (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-5 max-h-[75vh] overflow-y-auto space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Nombre *</span></label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full"
+              placeholder="Ej: Destacados de Temporada"
+              [ngModel]="formName()"
+              (ngModelChange)="onNameChange($event)"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Slug</span></label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full font-mono text-xs"
+              placeholder="destacados-de-temporada"
+              [ngModel]="formSlug()"
+              (ngModelChange)="formSlug.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-semibold">Descripción</span></label>
+          <input
+            type="text"
+            class="input input-bordered input-sm w-full"
+            placeholder="Uso interno o descripción de la colección"
+            [ngModel]="formDescription()"
+            (ngModelChange)="formDescription.set($event)"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Coincidencia</span></label>
+            <select
+              class="select select-bordered select-sm w-full"
+              [ngModel]="formMatchType()"
+              (ngModelChange)="formMatchType.set($event)"
+            >
+              <option value="all">Todas las reglas (AND)</option>
+              <option value="any">Cualquier regla (OR)</option>
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Ordenamiento</span></label>
+            <select
+              class="select select-bordered select-sm w-full"
+              [ngModel]="formSortBy()"
+              (ngModelChange)="formSortBy.set($event)"
+            >
+              @for (s of availableSorts(); track s.value) {
+                <option [value]="s.value">{{ s.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Límite máx.</span></label>
+            <input
+              type="number"
+              min="1"
+              max="200"
+              class="input input-bordered input-sm w-full"
+              [ngModel]="formMaxItems()"
+              (ngModelChange)="formMaxItems.set(+$event)"
+            />
+          </div>
+        </div>
+
+        <!-- Reglas -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wide text-base-content/70">Reglas de filtrado</span>
+            <button type="button" class="btn btn-outline btn-xs gap-1" (click)="addFilterRow()">
+              <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">add</mat-icon>
+              Agregar regla
+            </button>
+          </div>
+
+          @if (formFilters().length === 0) {
+            <div class="border border-dashed border-base-300 rounded-xl p-4 text-center text-xs text-base-content/50">
+              Sin filtros específicos (retornará todos los productos publicados según el orden elegido).
+            </div>
+          } @else {
+            <div class="space-y-2">
+              @for (filter of formFilters(); track $index) {
+                <div class="grid grid-cols-12 gap-2 items-center bg-base-200/40 p-2 rounded-xl border border-base-200">
+                  <select
+                    class="select select-bordered select-xs col-span-12 sm:col-span-4"
+                    [ngModel]="filter.field"
+                    (ngModelChange)="updateFilterRow($index, { field: $event })"
+                  >
+                    @for (f of availableFields(); track f.value) {
+                      <option [value]="f.value">{{ f.label }}</option>
+                    }
+                  </select>
+
+                  <select
+                    class="select select-bordered select-xs col-span-5 sm:col-span-3"
+                    [ngModel]="filter.operator"
+                    (ngModelChange)="updateFilterRow($index, { operator: $event })"
+                  >
+                    @for (op of operators; track op.value) {
+                      <option [value]="op.value">{{ op.label }}</option>
+                    }
+                  </select>
+
+                  <input
+                    type="text"
+                    class="input input-bordered input-xs col-span-6 sm:col-span-4"
+                    placeholder="Valor (ej: Ofertas o 1000)"
+                    [ngModel]="filter.value"
+                    (ngModelChange)="updateFilterRow($index, { value: $event })"
+                  />
+
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-square text-error col-span-1 justify-self-end"
+                    (click)="removeFilterRow($index)"
+                  >
+                    <mat-icon class="!text-[16px] !w-[16px] !h-[16px]">delete</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <label class="label cursor-pointer justify-start gap-3">
+          <input
+            type="checkbox"
+            class="toggle toggle-primary toggle-sm"
+            [ngModel]="formIsActive()"
+            (ngModelChange)="formIsActive.set($event)"
+          />
+          <span class="label-text text-xs font-medium">Conjunto activo</span>
+        </label>
+      </div>
+
+      <div class="px-5 py-3 border-t border-base-200 flex justify-end gap-2 bg-base-200/30">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closeModal()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="isSaving()"
+          (click)="saveDataSet()"
+        >
+          @if (isSaving()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          }
+          {{ editingId() ? 'Guardar cambios' : 'Crear conjunto' }}
+        </button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop" (click)="closeModal()">
+      <button type="button">close</button>
+    </form>
+  </dialog>
+}
+
+<!-- Modal Probar en vivo -->
+@if (isPreviewOpen()) {
+  <dialog class="modal modal-open">
+    <div class="modal-box max-w-2xl p-0 overflow-hidden">
+      <div class="px-5 py-4 border-b border-base-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">Vista previa: {{ previewTitle() }}</h3>
+          <p class="text-xs text-base-content/60">Resultado en vivo desde /api/data-sets/:slug/execute</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm btn-circle" (click)="closePreview()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-4 max-h-[65vh] overflow-y-auto">
+        @if (isPreviewLoading()) {
+          <div class="flex items-center justify-center py-10 gap-2 text-sm text-base-content/60">
+            <span class="loading loading-spinner loading-sm text-primary"></span>
+            Ejecutando consulta...
+          </div>
+        } @else if (previewProducts().length === 0) {
+          <div class="text-center py-10 text-sm text-base-content/60">
+            Ningún producto coincide actualmente con las reglas de este conjunto.
+          </div>
+        } @else {
+          <div class="divide-y divide-base-200">
+            @for (p of previewProducts(); track p._id) {
+              <div class="py-2.5 flex items-center justify-between gap-3 text-sm">
+                <div class="min-w-0">
+                  <p class="font-semibold truncate">{{ p.model }}</p>
+                  <p class="text-xs text-base-content/50">{{ p.category || 'Sin categoría' }}</p>
+                </div>
+                <span class="font-bold text-primary shrink-0">${{ getProductPrice(p) | number:'1.0-0' }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="px-5 py-3 border-t border-base-200 flex justify-between items-center bg-base-200/30">
+        <span class="text-xs text-base-content/60">{{ previewProducts().length }} productos encontrados</span>
+        <button type="button" class="btn btn-sm" (click)="closePreview()">Cerrar</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop" (click)="closePreview()">
+      <button type="button">close</button>
+    </form>
+  </dialog>
+}

@@ -8,7 +8,7 @@ import { AuthService } from '../../../services/auth.service';
 import { BusinessProfileService } from '../../../services/business-profile.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { StoreConfigStateService } from '../../../states/store.config.state.service';
-import { COUNTER_SIDEBAR_GROUPS, RETAIL_SIDEBAR_GROUPS } from './sidebar.config';
+import { TenantBootstrapStateService } from '../../../states/tenant-bootstrap.state.service';
 import { ISidebarGroup } from './sidebar.models';
 
 @Component({
@@ -32,6 +32,7 @@ export class SidebarComponent {
   authService = inject(AuthService);
   profile = inject(BusinessProfileService);
   #storeConfig = inject(StoreConfigStateService);
+  readonly bootstrapState = inject(TenantBootstrapStateService);
 
   storeConfig = computed(() => this.#storeConfig.StoreConfig());
   isExpanded = computed(() => this.sidebarService.SidebarStatus().isExpanded);
@@ -68,35 +69,25 @@ export class SidebarComponent {
   }
 
   /**
-   * Grupos de navegación calculados reactivamente según el rubro comercial (vertical),
-   * el rol de usuario (Admin vs Empleado) y las capacidades habilitadas.
+   * Grupos de navegación dinámicos resueltos por el Backend en bootstrap.navigation.sidebarGroups
+   * (Jerarquía de 3 niveles: Manifest -> Rubro -> Cliente + Rol/Permisos).
    */
-  readonly visibleGroups = computed<ISidebarGroup[]>(() => {
-    const isAdmin = this.authService.isAdmin();
-    const features = this.profile.features();
-    const isCounter = this.profile.isKioskOrCounter();
-
-    const baseGroups = isCounter ? COUNTER_SIDEBAR_GROUPS : RETAIL_SIDEBAR_GROUPS;
-
-    return baseGroups
-      .filter((group) => {
-        if (group.adminOnly && !isAdmin) return false;
-        if (group.requiredFeature && !features[group.requiredFeature]) return false;
-        return true;
-      })
-      .map((group) => {
-        const visibleItems = group.items.filter((item) => {
-          if (item.adminOnly && !isAdmin) return false;
-          if (item.requiredFeature && !features[item.requiredFeature]) return false;
-          return true;
-        });
-        return {
-          ...group,
-          items: visibleItems,
-        };
-      })
-      .filter((group) => group.items.length > 0);
-  });
+  readonly visibleGroups = computed<ISidebarGroup[]>(() =>
+    this.bootstrapState
+      .sidebarGroups()
+      .filter((group) => group.items.length > 0)
+      .map((group) => ({
+        id: group.groupKey,
+        title: group.groupLabel,
+        items: group.items.map((item) => ({
+          id: item.key,
+          label: item.label,
+          icon: item.icon,
+          route: item.route,
+          highlight: item.key === 'pos',
+        })),
+      }))
+  );
 
   onItemClick(): void {
     if (this.isMobile()) {

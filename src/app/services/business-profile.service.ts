@@ -1,5 +1,6 @@
 import { computed, effect, inject, Injectable } from '@angular/core';
 import { StoreConfigStateService } from '../states/store.config.state.service';
+import { TenantBootstrapStateService } from '../states/tenant-bootstrap.state.service';
 import {
   BusinessType,
   IVerticalCapabilities,
@@ -9,42 +10,28 @@ import {
   getPrimaryProductTypeForBusiness,
   isProductTypeAllowedForStore,
 } from '../interfaces/business-vertical.interface';
+import {
+  IBootstrapTheme,
+  IPlanCapabilities,
+  IProductFormConfig,
+  IProductListViewConfig,
+  VexxPlanTier,
+} from '../interfaces/tenant-bootstrap.interface';
 import { ProductType } from '../interfaces/product.interface';
 import { getTenantSlug } from '../utils/tenant.utils';
 
-export interface BusinessFeatures {
-  showPOS: boolean;
-  showCashRegister: boolean;
-  showShopTheLook: boolean;
-  showHeroSlider: boolean;
-  showBanners: boolean;
-  showWebMenus: boolean;
-  showNewsletter: boolean;
-  showShippingOptions: boolean;
-  showEmailsTemplates: boolean;
-  showRecommendations: boolean;
-  showFavorites: boolean;
-  canSellByWeight: boolean;
-  showSettingsAuth: boolean;
-  showSettingsIntegrations: boolean;
-  showSettingsShipping: boolean;
-  showSettingsEmails: boolean;
-  showSettingsContact: boolean;
-  showSettingsClothing: boolean;
-}
+import { BusinessFeatures, BusinessThemeConfig } from '../interfaces/business-profile.interface';
 
-export interface BusinessThemeConfig {
-  primary: string;           // Valor CSS (oklch o hex)
-  primaryContent: string;    // Color de texto contrastante
-  label: string;             // Nombre argentino legible
-  badge: string;             // Tag breve descriptivo
-  colorName: string;         // Nombre del color para badges
-  previewHex: string;        // Hex para swatches/indicadores UI
-}
+export type { BusinessFeatures, BusinessThemeConfig };
 
 function getTenantBusinessTypeKey(): string {
   const slug = getTenantSlug();
   return `gp_store_business_type_${slug}`;
+}
+
+function getTenantThemeKey(): string {
+  const slug = getTenantSlug();
+  return `gp_store_theme_${slug}`;
 }
 
 /**
@@ -106,6 +93,62 @@ export const BUSINESS_THEMES: Record<BusinessType, BusinessThemeConfig> = {
 })
 export class BusinessProfileService {
   readonly #configState = inject(StoreConfigStateService);
+  readonly #bootstrapState = inject(TenantBootstrapStateService);
+
+  readonly planTier = computed<VexxPlanTier | null>(
+    () => this.#bootstrapState.planTier(),
+  );
+
+  readonly activeAddons = computed<string[]>(
+    () => this.#bootstrapState.activeAddons(),
+  );
+
+  readonly customLabels = computed<Record<string, string>>(
+    () => this.#bootstrapState.customLabels(),
+  );
+
+  readonly addonLabels = computed<Record<string, Record<string, string>>>(
+    () => this.#bootstrapState.data()?.tenant?.addonLabels ?? {},
+  );
+
+  /**
+   * Resuelve una etiqueta Addon-First desde bootstrap.tenant.addonLabels[addonId][key]
+   * o bootstrap.addons.find(a => a.id === addonId)?.labels?.[key].
+   */
+  getAddonLabel(addonId: string, key: string, defaultLabel = ''): string {
+    const fromTenantMap = this.addonLabels()?.[addonId]?.[key];
+    if (typeof fromTenantMap === 'string' && fromTenantMap.trim().length > 0) {
+      return fromTenantMap;
+    }
+
+    const addonItem = this.#bootstrapState.addons().find((a) => a.id === addonId);
+    const fromAddonItem = addonItem?.labels?.[key];
+    if (typeof fromAddonItem === 'string' && fromAddonItem.trim().length > 0) {
+      return fromAddonItem;
+    }
+
+    return defaultLabel;
+  }
+
+  readonly planCapabilities = computed<IPlanCapabilities | null>(
+    () => this.#bootstrapState.planCapabilities(),
+  );
+
+  readonly productFormConfig = computed<IProductFormConfig | null>(
+    () => this.#bootstrapState.productFormConfig(),
+  );
+
+  readonly productListViewConfig = computed<IProductListViewConfig | null>(
+    () => this.#bootstrapState.productListViewConfig(),
+  );
+
+  readonly bootstrapTheme = computed<IBootstrapTheme | null>(
+    () => this.#bootstrapState.theme(),
+  );
+
+  hasAddon(addon: string): boolean {
+    return this.activeAddons().includes(addon);
+  }
 
   /**
    * Rubro comercial del comercio actual.
@@ -114,10 +157,11 @@ export class BusinessProfileService {
    * error explícito y trazable en lugar de aplicar un fallback silencioso.
    */
   readonly businessType = computed<BusinessType>(() => {
+    const bootstrapType = this.#bootstrapState.data()?.tenant?.businessType;
     const state = this.#configState.StoreConfig();
-    const configuredType = state.config?.businessType;
+    const configuredType = bootstrapType ?? state.config?.businessType;
 
-    if (state.hasData) {
+    if (this.#bootstrapState.state().hasData || state.hasData) {
       if (!configuredType || !(configuredType in BUSINESS_THEMES)) {
         throw new Error(
           'Business type not configured: El comercio no tiene un rubro comercial asignado en su configuración.',
@@ -182,10 +226,34 @@ export class BusinessProfileService {
 
   constructor() {
     effect(() => {
+      const remoteTheme = this.bootstrapTheme();
+      if (remoteTheme) {
+        this.applyThemeFromBootstrap(remoteTheme);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(getTenantThemeKey(), JSON.stringify(remoteTheme));
+          if (remoteTheme.businessType && remoteTheme.businessType in BUSINESS_THEMES) {
+            localStorage.setItem(getTenantBusinessTypeKey(), remoteTheme.businessType);
+          }
+        }
+        return;
+      }
+
       const type = this.businessType();
       if (type && type in BUSINESS_THEMES) {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(getTenantBusinessTypeKey(), type);
+          const rawCachedTheme = localStorage.getItem(getTenantThemeKey());
+          if (rawCachedTheme) {
+            try {
+              const parsed = JSON.parse(rawCachedTheme) as IBootstrapTheme;
+              if (parsed?.primary && parsed?.primaryContent && parsed?.businessType === type) {
+                this.applyThemeFromBootstrap(parsed);
+                return;
+              }
+            } catch {
+              localStorage.removeItem(getTenantThemeKey());
+            }
+          }
         }
         this.applyTheme(type);
       }
@@ -198,6 +266,29 @@ export class BusinessProfileService {
   isProductTypeAllowed(productType: ProductType): boolean {
     const type = this.businessType();
     return isProductTypeAllowedForStore(type, productType, this.capabilities());
+  }
+
+  /**
+   * Aplica el tema dinámico provisto por GET /api/tenant/bootstrap.
+   * Cumple estrictamente Fail Fast: no inventa colores ni rubros por defecto.
+   */
+  applyThemeFromBootstrap(bootstrapTheme: IBootstrapTheme): void {
+    if (!bootstrapTheme?.primary?.trim() || !bootstrapTheme?.primaryContent?.trim()) {
+      throw new Error(
+        'Invalid bootstrap theme: El servidor devolvió un objeto theme sin color primario o contraste válido.',
+      );
+    }
+    if (!bootstrapTheme?.businessType?.trim()) {
+      throw new Error(
+        'Invalid bootstrap theme: El objeto theme recibido no especifica businessType.',
+      );
+    }
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--color-primary', bootstrapTheme.primary.trim());
+      root.style.setProperty('--color-primary-content', bootstrapTheme.primaryContent.trim());
+      root.setAttribute('data-business-type', bootstrapTheme.businessType.trim());
+    }
   }
 
   /**
@@ -257,6 +348,10 @@ export class BusinessProfileService {
    * Comercios que admiten venta por peso / balanza (Carnicería, Panadería, Kiosco/Almacén con fiambrería)
    */
   readonly canSellByWeight = computed(() => {
+    const planCaps = this.planCapabilities();
+    if (planCaps) {
+      return planCaps.hasScaleWeightPricing;
+    }
     const caps = this.capabilities();
     if (caps) {
       return caps.hasWeightScalePricing;
@@ -265,34 +360,70 @@ export class BusinessProfileService {
     return t === 'butcher' || t === 'bakery' || t === 'kiosk_grocery';
   });
 
+  readonly addons = this.#bootstrapState.addons;
+
+  isAddonActive(addonId: string): boolean {
+    const item = this.addons().find((a) => a.id === addonId);
+    if (item) {
+      return item.isActive === true;
+    }
+    return this.activeAddons().includes(addonId);
+  }
+
   /**
-   * Flags granulares de características según rubro y capabilities del Backend
+   * Flags granulares de características gobernados estrictamente por capabilities y addons del Backend.
+   * Si una bandera no viene explícitamente en true, se trata como false (cero fallbacks silenciosos).
    */
   readonly features = computed<BusinessFeatures>(() => {
+    const planCaps = this.planCapabilities();
+    const formCfg = this.productFormConfig();
     const caps = this.capabilities();
-    const isCounter = this.isKioskOrCounter();
-    const isFashion = this.isFashion();
 
     return {
-      showPOS: true,
-      showCashRegister: true,
-      showShopTheLook: caps ? caps.hasShopTheLook : isFashion,
-      showHeroSlider: isFashion || !isCounter,
-      showBanners: isFashion || !isCounter,
-      showWebMenus: isFashion || !isCounter,
-      showNewsletter: isFashion || !isCounter,
-      showShippingOptions: isFashion || !isCounter,
-      showEmailsTemplates: isFashion || !isCounter,
-      showRecommendations: isFashion || !isCounter,
-      showFavorites: isFashion || !isCounter,
-      canSellByWeight: this.canSellByWeight(),
-      showSettingsAuth: !isCounter,
-      showSettingsIntegrations: !isCounter,
-      showSettingsShipping: !isCounter,
-      showSettingsEmails: !isCounter,
-      showSettingsContact: !isCounter,
-      showSettingsClothing: caps ? caps.hasClothingSizesAndFits : isFashion,
+      showPOS: Boolean(planCaps?.hasPos),
+      showCashRegister: Boolean(planCaps?.hasCashRegister),
+      showOnlineOrders: Boolean(planCaps?.hasOnlineOrders),
+      showCustomerAccounts: Boolean(planCaps?.hasCustomerAccounts),
+      showSupplierPurchases: Boolean(planCaps?.hasSupplierPurchases),
+      showShopTheLook: Boolean(caps?.hasShopTheLook),
+      showDataSets: Boolean(planCaps?.hasDataSets),
+      showProductBundles: Boolean(planCaps?.hasProductBundles),
+      allowMetricDataSets: Boolean(planCaps?.hasMetricDataSets),
+      showCoupons: Boolean(planCaps?.hasCoupons),
+      showArcaBilling: Boolean(planCaps?.hasArcaBilling),
+      showHeroSlider: Boolean(planCaps?.hasMarketingBanners),
+      showBanners: Boolean(planCaps?.hasMarketingBanners),
+      showWebMenus: Boolean(planCaps?.hasWebCatalog),
+      showNewsletter: this.isAddonActive('newsletter'),
+      showShippingOptions: Boolean(
+        planCaps?.hasAutomatedShippingCouriers || planCaps?.hasLocalDeliveryAndTakeaway,
+      ),
+      showEmailsTemplates: Boolean(planCaps?.hasFullWebStore),
+      showRecommendations: Boolean(planCaps?.hasFullWebStore),
+      showFavorites: Boolean(planCaps?.hasWebCatalog || planCaps?.hasFullWebStore),
+      canSellByWeight: Boolean(planCaps?.hasScaleWeightPricing),
+      showSettingsAuth: Boolean(planCaps?.hasFullWebStore),
+      showSettingsIntegrations: Boolean(
+        planCaps?.hasFullWebStore || planCaps?.hasArcaBilling,
+      ),
+      showSettingsShipping: Boolean(
+        planCaps?.hasAutomatedShippingCouriers || planCaps?.hasLocalDeliveryAndTakeaway,
+      ),
+      showSettingsEmails: Boolean(planCaps?.hasFullWebStore),
+      showSettingsContact: Boolean(planCaps?.hasWebCatalog || planCaps?.hasFullWebStore),
+      showSettingsClothing: Boolean(formCfg?.showSizeGuideAndFits),
     };
+  });
+
+  /**
+   * Etiqueta dinámica del módulo de combos / conjuntos de productos según el comercio
+   */
+  readonly bundleLabel = computed<string>(() => {
+    const formLabel = this.productFormConfig()?.bundleLabel;
+    if (formLabel) return formLabel;
+    const customLabel = this.customLabels()['bundleTitle'];
+    if (customLabel) return customLabel;
+    return 'Conjuntos de Productos';
   });
 
   /**
@@ -301,7 +432,13 @@ export class BusinessProfileService {
    * - Moda / Retail: va a Ventas & Métricas
    */
   readonly defaultLandingRoute = computed(() => {
-    return this.isKioskOrCounter() ? '/home/pos' : '/home/sales';
+    if (this.isKioskOrCounter() && this.features().showPOS) {
+      return '/home/pos';
+    }
+    if (this.features().showPOS && !this.features().showOnlineOrders) {
+      return '/home/pos';
+    }
+    return '/home/sales';
   });
 
   /**

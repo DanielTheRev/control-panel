@@ -1,15 +1,15 @@
 import { Routes } from '@angular/router';
+import { addonGuard, capabilityGuard } from '../guards/capability.guard';
 import { ShippingOptions } from '../pages/shipping-options/shipping-options';
-import { businessTypeGuard } from '../guards/business-type.guard';
 
 /**
- * Rutas exclusivas para comercios con perfil de Moda / Retail / E-commerce visual
- * Bloqueadas automáticamente para kioscos, carnicerías y almacenes para no sobrecargar su panel.
+ * Rutas modulares de catálogo web, marketing, envíos y storefront.
+ * Protegidas estrictamente por capabilities y addons desde GET /api/tenant/bootstrap.
  */
 export const fashionRoutes: Routes = [
   {
     path: 'shipping-options',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showShippingOptions')],
     children: [
       {
         path: '',
@@ -29,12 +29,12 @@ export const fashionRoutes: Routes = [
   {
     path: 'home-layout',
     title: 'Diseño del Home',
-    canActivate: [businessTypeGuard(['fashion', 'tech_electronics'])],
+    canActivate: [capabilityGuard('showBanners')],
     loadComponent: () => import('../pages/home-layout/home-layout').then(c => c.HomeLayoutComponent),
   },
   {
     path: 'banners',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showBanners')],
     children: [
       {
         path: '',
@@ -53,7 +53,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'menus',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showWebMenus')],
     children: [
       {
         path: '',
@@ -77,7 +77,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'hero',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showHeroSlider')],
     children: [
       {
         path: '',
@@ -96,7 +96,7 @@ export const fashionRoutes: Routes = [
   },
   {
     path: 'shop-the-look',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showProductBundles')],
     children: [
       {
         path: '',
@@ -116,31 +116,31 @@ export const fashionRoutes: Routes = [
   {
     path: 'recommendations',
     title: 'Recomendaciones',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showRecommendations')],
     loadComponent: () => import('../pages/recommendations/recommendations').then(c => c.RecommendationsComponent)
   },
   {
     path: 'emails',
     title: 'Emails & Plantillas',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showEmailsTemplates')],
     loadComponent: () => import('../pages/emails/emails').then(c => c.EmailsComponent)
   },
   {
     path: 'coupons',
     title: 'Cupones de Descuento',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showCoupons')],
     loadComponent: () => import('../pages/coupons/coupons').then(c => c.CouponsComponent)
   },
   {
     path: 'subscribers',
     title: 'Suscriptores Newsletter',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [addonGuard('newsletter')],
     loadComponent: () => import('../pages/newsletter/newsletter').then(c => c.NewsletterComponent)
   },
   {
     path: 'favorites',
     title: 'Favoritos',
-    canActivate: [businessTypeGuard(['fashion'])],
+    canActivate: [capabilityGuard('showFavorites')],
     loadComponent: () => import('../pages/favorites/favorites').then(c => c.FavoritesComponent)
   },
 ];

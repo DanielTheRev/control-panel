@@ -2,6 +2,7 @@ import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { IShopTheLook } from '../interfaces/shop-the-look.interface';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { ShopTheLookService } from '../services/shop-the-look.service';
 import { NotificationsService } from '../services/notifications.service';
 
@@ -11,13 +12,17 @@ import { NotificationsService } from '../services/notifications.service';
 export class ShopTheLookStateService {
   #shopTheLookService = inject(ShopTheLookService);
   #notificationService = inject(NotificationsService);
+  #profile = inject(BusinessProfileService);
 
   #fetchedCampaigns: HttpResourceRef<IShopTheLook[] | undefined>;
 
   constructor() {
-    this.#fetchedCampaigns = httpResource<IShopTheLook[]>(() => ({
-      url: `${environment.apiUrl}/shop-the-look`,
-    }));
+    this.#fetchedCampaigns = httpResource<IShopTheLook[]>(() => {
+      if (!this.#profile.features().showProductBundles) return undefined;
+      return {
+        url: `${environment.apiUrl}/shop-the-look`,
+      };
+    });
   }
 
   readonly campaigns = computed(() => {

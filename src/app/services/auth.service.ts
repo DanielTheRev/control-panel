@@ -100,16 +100,31 @@ export class AuthService {
     this.setLoading(true);
     this.setError(null);
 
+    const endpoint = credentials.isEmployee
+      ? `${this.API_URL}/employee/login`
+      : `${this.API_URL}/admin/login`;
+
     return this.http
-      .post<LoginResponse>(`${this.API_URL}/admin/login`, {
-        ...credentials,
+      .post<LoginResponse>(endpoint, {
+        ...(credentials.storeName ? { storeName: credentials.storeName } : {}),
+        ...(credentials.tenantSlug ? { tenantSlug: credentials.tenantSlug } : {}),
+        email: credentials.email,
+        password: credentials.password,
+        rememberMe: Boolean(credentials.rememberMe),
         provider: AuthProvider.Email,
       })
       .pipe(
         tap((response: LoginResponse) => {
           if (response.success) {
-            if (credentials.tenantSlug) {
-              localStorage.setItem('lastTenantSlug', credentials.tenantSlug.trim().toLowerCase());
+            if (response.token && typeof localStorage !== 'undefined') {
+              localStorage.setItem('vexx_panel_token', response.token);
+            }
+            const resolvedSlug = response.tenantSlug || credentials.tenantSlug;
+            if (resolvedSlug && typeof localStorage !== 'undefined') {
+              localStorage.setItem('lastTenantSlug', resolvedSlug.trim().toLowerCase());
+            }
+            if (credentials.storeName && typeof localStorage !== 'undefined') {
+              localStorage.setItem('lastStoreName', credentials.storeName.trim());
             }
             this.setAuthenticatedState(response.user);
             this.#debug.log('✅ Login exitoso:', response.user);
@@ -124,15 +139,66 @@ export class AuthService {
       );
   }
 
+  pinLogin(payload: { pin: string; employeeId?: string; email?: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.API_URL}/employee/pin-login`, payload).pipe(
+      tap((response: LoginResponse) => {
+        if (response.success) {
+          if (response.token && typeof localStorage !== 'undefined') {
+            localStorage.setItem('vexx_panel_token', response.token);
+          }
+          if (response.tenantSlug && typeof localStorage !== 'undefined') {
+            localStorage.setItem('lastTenantSlug', response.tenantSlug.trim().toLowerCase());
+          }
+          this.setAuthenticatedState(response.user);
+        }
+      }),
+    );
+  }
+
+  forgotPassword(payload: { storeName: string; email: string; isEmployee: boolean }): Observable<any> {
+    const endpoint = payload.isEmployee
+      ? `${this.API_URL}/employee/forgot-password`
+      : `${this.API_URL}/admin/forgot-password`;
+    return this.http.post(endpoint, {
+      storeName: payload.storeName,
+      email: payload.email,
+    });
+  }
+
+  resetPassword(payload: {
+    storeName?: string;
+    tenantSlug?: string;
+    token: string;
+    newPassword: string;
+    email?: string;
+    scope: 'admin' | 'employee';
+  }): Observable<any> {
+    const endpoint =
+      payload.scope === 'employee'
+        ? `${this.API_URL}/employee/reset-password`
+        : `${this.API_URL}/admin/reset-password`;
+    return this.http.post(endpoint, {
+      ...(payload.storeName ? { storeName: payload.storeName } : {}),
+      ...(payload.tenantSlug ? { tenantSlug: payload.tenantSlug } : {}),
+      token: payload.token,
+      newPassword: payload.newPassword,
+      ...(payload.email ? { email: payload.email } : {}),
+    });
+  }
+
   private clearTenantCaches(): void {
     if (typeof localStorage !== 'undefined') {
       try {
+        localStorage.removeItem('vexx_panel_token');
         localStorage.removeItem('gp_store_business_type');
         localStorage.removeItem('cartItems');
         localStorage.removeItem('orderToConfirm');
         localStorage.removeItem('pending_payment');
         Object.keys(localStorage).forEach((key) => {
-          if (key.startsWith('gp_store_business_type')) {
+          if (
+            key.startsWith('gp_store_business_type') ||
+            key.startsWith('gp_store_theme')
+          ) {
             localStorage.removeItem(key);
           }
         });

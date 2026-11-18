@@ -2,6 +2,7 @@ import { httpResource } from '@angular/common/http';
 import { computed, inject, Injectable } from '@angular/core';
 import { IBanner } from '../interfaces/banner.interface';
 import { BannerService } from '../services/banner.service';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { DebugService } from '../services/debug.service';
 
 @Injectable({
@@ -10,8 +11,10 @@ import { DebugService } from '../services/debug.service';
 export class BannerStateService {
   #bannerService = inject(BannerService);
   #debug = inject(DebugService);
+  #profile = inject(BusinessProfileService);
 
   #state = httpResource<IBanner[]>(() => {
+    if (!this.#profile.features().showBanners) return undefined;
     return {
       url: this.#bannerService.apiUrl,
       method: 'GET',

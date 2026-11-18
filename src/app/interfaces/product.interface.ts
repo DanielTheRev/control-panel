@@ -1,5 +1,12 @@
 // ============ ENUMS ============
 
+import {
+  ChannelKey,
+  IDisplaySummaryItem,
+  IPaymentRestrictions,
+  IPriceBuilderChannelPricing,
+  IPriceBuilderChannelSnapshot,
+} from './price-builder.interface';
 import { IProvider } from './provider.interface';
 
 export enum ProductType {
@@ -63,13 +70,19 @@ export interface IVariantAttribute {
 export interface IBaseVariant {
   _id?: string;
   sku: string;
+  label?: string;
   color?: IVariantColor;
+  size?: string;
+  volume?: string;
+  attributes?: IVariantAttribute[];
   stock: number;
   reservedStock: number;
   isActive: boolean;
-  imageReference: { url: string; public_id: string };
-  imageIndex?: number;
   barcode?: string;
+  inheritPrice?: boolean;
+  providerCost?: number;
+  profitMargin?: number;
+  prices?: Record<string, unknown>;
 }
 
 // Indumentaria & Moda (ClothingProduct) — talle obligatorio
@@ -108,13 +121,15 @@ export interface IProduct {
   subtitle?: string;
   price: IProductPrices;
   finance?: IProductFinance;
+  paymentRestrictions?: IPaymentRestrictions;
+  channelPricing?: IPriceBuilderChannelPricing;
   isLegacyPrices?: boolean;
   discount: number;
   rating: number | null;
   reviews: number | null;
   images: IProductImage[];
   features: string[];
-  specifications: { key: string; value: string }[];
+  specifications: { key: string; value: string; isFeatured?: boolean }[];
   variants: IVariant[];
   tags?: string[];
   lowStockThreshold?: number;
@@ -263,9 +278,15 @@ export interface IProductPrices {
   listPrice: number;
   card_ticket1PayPrice: number;
   cashTransferPrice: number;
+  cashPrice?: number;
+  transferPrice?: number;
+  qrPrice?: number;
+  debitPrice?: number;
   discountPercentageTransfer: number;
   updatedAt?: string | Date;
   shippingSubsidy?: number;
+  channels?: Record<ChannelKey, IPriceBuilderChannelSnapshot>;
+  displaySummary?: IDisplaySummaryItem[];
   installments: {
     threePaymentsAmount: number;
     sixPaymentsAmount: number;
@@ -283,13 +304,31 @@ export interface IProductSeo {
   };
 }
 
-export interface IProductImage {
+export interface IProductImageCrop {
+  aspectRatio: '1:1' | '4:5' | '9:16' | '16:9' | string;
   url: string;
   public_id: string;
+  storageKey?: string;
   width?: number;
   height?: number;
   bytes?: number;
   format?: string;
+}
+
+export interface IProductImage {
+  id?: string;
+  url: string;
+  public_id: string;
+  storageProvider?: string;
+  storageKey?: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  format?: string;
+  aspectRatio?: '1:1' | '4:5' | '9:16' | '16:9' | string;
+  crops?: IProductImageCrop[];
+  variantSkus?: string[];
+  isMain?: boolean;
 }
 
 export interface IProductCreateDTO {
@@ -308,7 +347,7 @@ export interface IProductCreateDTO {
   isFeatured?: boolean;
   image: { link: string; file: File }[];
   features: string[];
-  specifications: { key: string; value: string }[];
+  specifications: { key: string; value: string; isFeatured?: boolean }[];
   variants: IVariant[];
   tags?: string[];
   // Tech

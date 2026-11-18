@@ -7,6 +7,7 @@ import { IStaffMember, StaffRole } from '../../interfaces/staff.interface';
 import { NotificationsService } from '../../services/notifications.service';
 import { StaffService } from '../../services/staff.service';
 import { AuthService } from '../../services/auth.service';
+import { TenantBootstrapStateService } from '../../states/tenant-bootstrap.state.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PageLayout } from '../../shared/components/page-layout/page-layout';
 
@@ -28,7 +29,11 @@ export class StaffComponent implements OnInit {
   private staffService = inject(StaffService);
   private notifications = inject(NotificationsService);
   public authService = inject(AuthService);
+  private bootstrapState = inject(TenantBootstrapStateService);
   private fb = inject(FormBuilder);
+
+  public readonly permissionCatalog = this.bootstrapState.permissionCatalog;
+  public selectedPermissions = signal<string[]>([]);
 
   // Estados de datos
   public staffList = signal<IStaffMember[]>([]);
@@ -122,6 +127,7 @@ export class StaffComponent implements OnInit {
     this.editingStaff.set(null);
     this.showPassword.set(false);
     this.showPin.set(false);
+    this.selectedPermissions.set([]);
     this.staffForm.reset({
       name: '',
       lastName: '',
@@ -144,6 +150,7 @@ export class StaffComponent implements OnInit {
     this.editingStaff.set(staff);
     this.showPassword.set(false);
     this.showPin.set(false);
+    this.selectedPermissions.set([...((staff as any).permissions ?? [])]);
     this.staffForm.reset({
       name: staff.name,
       lastName: staff.lastName || '',
@@ -166,6 +173,16 @@ export class StaffComponent implements OnInit {
     this.showModal.set(false);
     this.editingStaff.set(null);
     this.staffForm.reset();
+  }
+
+  public hasPermission(key: string): boolean {
+    return this.selectedPermissions().includes(key);
+  }
+
+  public togglePermission(key: string): void {
+    this.selectedPermissions.update((perms) =>
+      perms.includes(key) ? perms.filter((p) => p !== key) : [...perms, key]
+    );
   }
 
   public generateRandomPin(): void {
@@ -198,6 +215,7 @@ export class StaffComponent implements OnInit {
         position: formValue.position?.trim(),
         role: formValue.role,
         isActive: formValue.isActive,
+        permissions: this.selectedPermissions(),
       };
 
       if (formValue.password && formValue.password.trim()) {
@@ -231,6 +249,7 @@ export class StaffComponent implements OnInit {
         dni: formValue.dni?.trim() || '',
         position: formValue.position?.trim(),
         role: formValue.role,
+        permissions: this.selectedPermissions(),
       };
 
       if (formValue.pinCode && formValue.pinCode.trim()) {

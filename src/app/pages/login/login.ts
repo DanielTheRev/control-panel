@@ -38,13 +38,15 @@ export class Login implements OnInit {
 
   ngOnInit() {
     const storeParam = this.route.snapshot.queryParams['store'] || this.route.snapshot.queryParams['tenant'];
-    const savedTenant = localStorage.getItem('lastTenantSlug');
-    const initialTenant = (storeParam || savedTenant || '').trim().toLowerCase();
+    const savedStore = localStorage.getItem('lastStoreName');
+    const initialStore = (storeParam || savedStore || '').trim();
 
     this.loginForm = this.formBuilder.group({
-      tenantSlug: [initialTenant, [Validators.required, Validators.minLength(2)]],
+      storeName: [initialStore, [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      rememberMe: [true],
+      isEmployee: [false],
     });
   }
 
@@ -69,11 +71,13 @@ export class Login implements OnInit {
     this.submitAttempted.set(true);
 
     if (this.loginForm.valid) {
-      const tenantSlug = (this.loginForm.get('tenantSlug')?.value || '').trim().toLowerCase();
+      const storeName = (this.loginForm.get('storeName')?.value || '').trim();
       const credentials: LoginCredentials = {
-        tenantSlug,
+        storeName,
         email: this.loginForm.get('email')?.value?.trim().toLowerCase(),
         password: this.loginForm.get('password')?.value,
+        rememberMe: Boolean(this.loginForm.get('rememberMe')?.value),
+        isEmployee: Boolean(this.loginForm.get('isEmployee')?.value),
       };
       
       this.#debug.log('🔐 Intentando login con:', { tenantSlug: credentials.tenantSlug, email: credentials.email });
@@ -105,6 +109,48 @@ export class Login implements OnInit {
     });
   }
 
+  forgotPasswordMode = signal(false);
+  forgotLoading = signal(false);
+  forgotSuccess = signal<string | null>(null);
+  forgotError = signal<string | null>(null);
+
+  toggleForgotPassword() {
+    this.forgotPasswordMode.update((v) => !v);
+    this.forgotSuccess.set(null);
+    this.forgotError.set(null);
+    this.clearError();
+  }
+
+  onForgotPassword() {
+    const storeName = (this.loginForm.get('storeName')?.value || '').trim();
+    const email = (this.loginForm.get('email')?.value || '').trim().toLowerCase();
+    const isEmployee = Boolean(this.loginForm.get('isEmployee')?.value);
+
+    if (!storeName || !email) {
+      this.forgotError.set('Ingresá el Nombre del Comercio y tu Email para recuperar la clave.');
+      return;
+    }
+
+    this.forgotLoading.set(true);
+    this.forgotError.set(null);
+    this.forgotSuccess.set(null);
+
+    this.authService.forgotPassword({ storeName, email, isEmployee }).subscribe({
+      next: () => {
+        this.forgotLoading.set(false);
+        this.forgotSuccess.set(
+          'Si los datos coinciden, te enviamos un enlace de recuperación a tu email.'
+        );
+      },
+      error: (err) => {
+        this.forgotLoading.set(false);
+        this.forgotError.set(
+          err?.error?.message || 'No se pudo enviar el email de recuperación.'
+        );
+      },
+    });
+  }
+
   clearError() {
     this.authService.clearError();
   }
@@ -123,14 +169,14 @@ export class Login implements OnInit {
     const field = this.loginForm.get(fieldName);
     if (field?.errors) {
       if (field.errors['required']) {
-        if (fieldName === 'tenantSlug') return 'El identificador de tienda es requerido';
+        if (fieldName === 'storeName') return 'El nombre del comercio es requerido';
         return `${fieldName === 'email' ? 'Email' : 'Contraseña'} es requerido`;
       }
       if (field.errors['email']) {
         return 'Email no válido';
       }
       if (field.errors['minlength']) {
-        if (fieldName === 'tenantSlug') return 'El nombre de tienda debe tener al menos 2 caracteres';
+        if (fieldName === 'storeName') return 'El nombre del comercio debe tener al menos 2 caracteres';
         return 'La contraseña debe tener al menos 6 caracteres';
       }
     }

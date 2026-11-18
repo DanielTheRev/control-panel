@@ -3,13 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export interface INewsletterSubscriber {
-  _id: string;
-  email: string;
-  isActive: boolean;
-  subscribedAt: string;
-  createdAt: string;
-}
+import { INewsletterSubscriber } from '../interfaces/newsletter.interface';
+
+export type { INewsletterSubscriber };
 
 @Injectable({
   providedIn: 'root'

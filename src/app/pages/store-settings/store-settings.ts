@@ -38,8 +38,10 @@ import { StoreConfigStateService } from '../../states/store.config.state.service
 import { StoreConfigService } from '../../services/store.config.service';
 import { NotificationsService } from '../../services/notifications.service';
 import { BusinessProfileService, BUSINESS_THEMES } from '../../services/business-profile.service';
+import { TenantBootstrapStateService } from '../../states/tenant-bootstrap.state.service';
 import { Router, RouterLink } from '@angular/router';
 import { SingleImageUpload } from '../../shared/components/single-image-upload/single-image-upload';
+import { StorefrontTemplatesSectionComponent } from './components/storefront-templates-section.component';
 import { environment } from '../../../environments/environment';
 import { getTenantSlug } from '../../utils/tenant.utils';
 
@@ -54,6 +56,7 @@ import { getTenantSlug } from '../../utils/tenant.utils';
     MatIcon,
     CommonModule,
     SingleImageUpload,
+    StorefrontTemplatesSectionComponent,
     MatTooltipModule,
     RouterLink,
   ],
@@ -63,6 +66,7 @@ import { getTenantSlug } from '../../utils/tenant.utils';
 export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate {
   configState = inject(StoreConfigStateService);
   businessProfile = inject(BusinessProfileService);
+  readonly bootstrapState = inject(TenantBootstrapStateService);
   #storeConfigService = inject(StoreConfigService);
   #arcaService = inject(ArcaService);
   #sidebarService = inject(SidebarService);
@@ -104,18 +108,46 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     }
   }
 
-  activeTab = signal<
-    | 'general'
-    | 'integrations'
-    | 'fiscal'
-    | 'auth'
-    | 'emails'
-    | 'contact'
-    | 'clothing'
-    | 'pos'
-    | 'connection'
-    | 'shipping'
-  >('general');
+  activeTab = signal<string>('identity_and_contact');
+
+  readonly settingsTabs = computed(() => this.bootstrapState.settingsTabs());
+
+  private readonly syncActiveTabEffect = effect(() => {
+    const tabs = this.settingsTabs();
+    const rawRequested = this.tab()?.trim();
+    const legacyAliasMap: Record<string, string> = {
+      general: 'identity_and_contact',
+      contact: 'identity_and_contact',
+      pricing: 'pricing_and_gateways',
+      gateways: 'pricing_and_gateways',
+      fiscal: 'fiscal_and_arca',
+      pos: 'pos_and_register',
+      connection: 'storefront_and_connection',
+      clothing: 'vertical_custom_lists',
+      auth: 'customer_auth',
+      shipping: 'shipping_and_delivery',
+      emails: 'email_studio',
+      integrations: 'marketing_pixels_and_feeds',
+    };
+    const requested = rawRequested ? (legacyAliasMap[rawRequested] ?? rawRequested) : undefined;
+    if (requested && tabs.some((t) => t.tabKey === requested)) {
+      this.activeTab.set(requested);
+      return;
+    }
+    if (tabs.length > 0 && !tabs.some((t) => t.tabKey === this.activeTab())) {
+      this.activeTab.set(tabs[0].tabKey);
+    }
+  });
+
+  tabSection(tabKey: string, sectionKey: string): boolean {
+    const tab = this.bootstrapState.getSettingsTab(tabKey);
+    if (!tab) return false;
+    return Boolean(tab.sections?.[sectionKey]);
+  }
+
+  getTabLabel(tabKey: string, fallback: string): string {
+    return this.bootstrapState.getSettingsTab(tabKey)?.label || fallback;
+  }
 
   // Rubro seleccionado actualmente en la vista (reactivo a la selección en tiempo real)
   selectedBusinessType = linkedSignal<BusinessType>(() => this.businessProfile.businessType());
@@ -128,14 +160,6 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
   readonly isFashionProfile = computed(() => {
     return this.selectedBusinessType() === 'fashion';
   });
-
-  // Visibilidad condicional estricta de pestañas según rubro
-  readonly showTabAuth = computed(() => !this.isCounterProfile());
-  readonly showTabIntegrations = computed(() => !this.isCounterProfile());
-  readonly showTabShipping = computed(() => !this.isCounterProfile());
-  readonly showTabEmails = computed(() => !this.isCounterProfile());
-  readonly showTabContact = computed(() => !this.isCounterProfile());
-  readonly showTabClothing = computed(() => this.isFashionProfile());
 
   // Protección contra cambios sin guardar (CanDeactivate & BeforeUnload)
   showUnsavedModal = signal<boolean>(false);
@@ -535,6 +559,24 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
       name: [''],
       businessType: [{ value: null, disabled: true }],
       costCurrency: ['USD'],
+      profit: [50],
+      dollarQuoteType: ['blue'],
+      customDollarRate: [null],
+      pricingStrategy: this.#fb.group({
+        method: ['markup'],
+        transferGrossUp: [false],
+        absorbInstallments: [false],
+        maxInstallmentsToAbsorb: [3],
+        priceRoundingMode: ['100'],
+      }),
+      defaultEnabledChannels: this.#fb.group({
+        cash: [true],
+        transfer: [true],
+        qr: [true],
+        debit: [true],
+        credit1Pay: [true],
+        list: [true],
+      }),
 
       integrations: this.#fb.group({
         metaPixel: this.#fb.group({
@@ -715,6 +757,23 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
             .get('defaultAdditionalCosts')
             ?.setValue(config.defaultAdditionalCosts);
         }
+        if (typeof config.profit === 'number') {
+          this.configForm.get('profit')?.setValue(config.profit);
+        }
+        if (config.dollarQuoteType) {
+          this.configForm.get('dollarQuoteType')?.setValue(config.dollarQuoteType);
+        }
+        if (typeof config.customDollarRate === 'number') {
+          this.configForm.get('customDollarRate')?.setValue(config.customDollarRate);
+        }
+        if (config.pricingStrategy) {
+          this.configForm.get('pricingStrategy')?.patchValue(config.pricingStrategy);
+        }
+        if (config.defaultEnabledChannels) {
+          this.configForm
+            .get('defaultEnabledChannels')
+            ?.patchValue(config.defaultEnabledChannels);
+        }
         if (config.integrations?.arca) {
           this.configForm
             .get('integrations.arca')
@@ -764,36 +823,6 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
           'Error al sincronizar con Mercado Pago',
         );
         this.cleanUrlParams();
-      }
-    });
-
-    effect(() => {
-      const requestedTab = this.tab();
-      if (requestedTab === 'pricing' || requestedTab === 'gateways') {
-        this.#router.navigate(['/home/payment-methods']);
-        return;
-      }
-      if (
-        requestedTab &&
-        [
-          'general',
-          'integrations',
-          'fiscal',
-          'auth',
-          'contact',
-          'clothing',
-          'pos',
-          'connection',
-          'shipping',
-          'emails',
-        ].includes(requestedTab)
-      ) {
-        const isCounter = this.isCounterProfile();
-        if (isCounter && ['auth', 'integrations', 'shipping', 'emails', 'contact', 'clothing'].includes(requestedTab)) {
-          this.activeTab.set('general');
-        } else {
-          this.activeTab.set(requestedTab as any);
-        }
       }
     });
 
@@ -1178,9 +1207,21 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
 
     await this.saveSlice('fiscal', {
       fiscalProfile: normalizedFp,
-      defaultAdditionalCosts: this.configForm.get('defaultAdditionalCosts')
-        ?.value,
       integrations: this.configForm.get('integrations')?.value,
+    });
+  }
+
+  async savePricingSettings() {
+    await this.saveSlice('pricing', {
+      costCurrency: this.configForm.get('costCurrency')?.value,
+      dollarQuoteType: this.configForm.get('dollarQuoteType')?.value,
+      customDollarRate: this.configForm.get('customDollarRate')?.value,
+      profit: Number(this.configForm.get('profit')?.value) || 0,
+      pricingStrategy: this.configForm.get('pricingStrategy')?.value,
+      defaultAdditionalCosts:
+        this.configForm.get('defaultAdditionalCosts')?.value ?? [],
+      defaultEnabledChannels:
+        this.configForm.get('defaultEnabledChannels')?.value,
     });
   }
 
@@ -1200,6 +1241,8 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     switch (this.activeTab()) {
       case 'general':
         return 'Guardar Identidad & Logo';
+      case 'pricing':
+        return 'Guardar Precios & Costos Base';
       case 'auth':
         return 'Guardar Métodos de Autenticación';
       case 'fiscal':
@@ -1228,6 +1271,8 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
     switch (tab) {
       case 'general':
         return this.saveGeneralSettings();
+      case 'pricing':
+        return this.savePricingSettings();
       case 'auth':
         return this.saveAuthSettings();
       case 'fiscal':

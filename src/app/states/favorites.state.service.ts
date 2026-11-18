@@ -9,6 +9,7 @@ import {
   INotifyStockResult,
 } from '../interfaces/favorites.interface';
 import { AuthService } from '../services/auth.service';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { FavoritesService } from '../services/favorites.service';
 
 @Injectable({
@@ -17,10 +18,11 @@ import { FavoritesService } from '../services/favorites.service';
 export class FavoritesStateService {
   private favoritesService = inject(FavoritesService);
   private auth = inject(AuthService);
+  private profile = inject(BusinessProfileService);
 
-  // ── httpResource: GET automático ligado a autenticación ──
+  // ── httpResource: GET automático ligado a autenticación y capacidad ──
   private resource = httpResource<FavoritesApiResponse<IFavoritesByProduct[]>>(() => {
-    if (!this.auth.isAuthenticated()) return;
+    if (!this.auth.isAuthenticated() || !this.profile.features().showFavorites) return undefined;
     return {
       url: `${this.favoritesService.endpoint}/by-product`,
     };

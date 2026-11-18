@@ -21,127 +21,17 @@
       </button>
     </div>
 
-    <!-- Pestañas de Navegación Rápida (Sub-Menu) Adaptadas al Rubro -->
+    <!-- Pestañas de Navegación Rápida (Sub-Menu) Gobernadas por bootstrap.navigation.settingsTabs -->
     <div sub-menu class="inline-flex items-center gap-1.5 p-1 bg-base-100/80 rounded-2xl border border-base-200 shadow-2xs overflow-x-auto max-w-full custom-scrollbar">
-      <!-- 1. General & Logo (Siempre disponible) -->
-      <button
-        type="button"
-        (click)="activeTab.set('general')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'general' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">store</mat-icon>
-        <span>General & Logo</span>
-      </button>
-
-      <!-- 2. Fiscal & ARCA (Siempre disponible) -->
-      <button
-        type="button"
-        (click)="activeTab.set('fiscal')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'fiscal' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">receipt_long</mat-icon>
-        <span>Fiscal & ARCA</span>
-      </button>
-
-      <!-- 3. Mostrador & POS (Siempre disponible y vital para Kioscos) -->
-      <button
-        type="button"
-        (click)="activeTab.set('pos')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'pos' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">point_of_sale</mat-icon>
-        <span>Mostrador & POS</span>
-      </button>
-
-      <!-- 4. Conexión & Tienda Web (Siempre disponible) -->
-      <button
-        type="button"
-        (click)="activeTab.set('connection')"
-        class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-        [ngClass]="activeTab() === 'connection' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-      >
-        <mat-icon class="text-[13px]! w-3.5! h-3.5!">link</mat-icon>
-        <span>Conexión & Tienda Web</span>
-      </button>
-
-      <!-- 5. Indumentaria (Solo para Fashion o General) -->
-      @if (showTabClothing()) {
+      @for (tab of settingsTabs(); track tab.tabKey) {
         <button
           type="button"
-          (click)="activeTab.set('clothing')"
+          (click)="activeTab.set(tab.tabKey)"
           class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'clothing' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+          [ngClass]="activeTab() === tab.tabKey ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
         >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">checkroom</mat-icon>
-          <span>Indumentaria</span>
-        </button>
-      }
-
-      <!-- 6. Autenticación (Solo E-commerce / Fashion / General) -->
-      @if (showTabAuth()) {
-        <button
-          type="button"
-          (click)="activeTab.set('auth')"
-          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'auth' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-        >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">lock_person</mat-icon>
-          <span>Autenticación</span>
-        </button>
-      }
-
-      <!-- 7. Integraciones (Solo E-commerce / Fashion / General) -->
-      @if (showTabIntegrations()) {
-        <button
-          type="button"
-          (click)="activeTab.set('integrations')"
-          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'integrations' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-        >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">extension</mat-icon>
-          <span>Integraciones</span>
-        </button>
-      }
-
-      <!-- 8. Logística & Envíos (Solo E-commerce / Fashion / General) -->
-      @if (showTabShipping()) {
-        <button
-          type="button"
-          (click)="activeTab.set('shipping')"
-          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'shipping' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-        >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">local_shipping</mat-icon>
-          <span>Logística & Envíos</span>
-        </button>
-      }
-
-      <!-- 9. Emails & Plantillas (Solo E-commerce / Fashion / General) -->
-      @if (showTabEmails()) {
-        <button
-          type="button"
-          (click)="activeTab.set('emails')"
-          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'emails' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-        >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
-          <span>Emails & Plantillas</span>
-        </button>
-      }
-
-      <!-- 10. Contacto & Redes (Solo E-commerce / Fashion / General) -->
-      @if (showTabContact()) {
-        <button
-          type="button"
-          (click)="activeTab.set('contact')"
-          class="btn btn-xs rounded-xl font-bold transition-all whitespace-nowrap gap-1.5 shadow-2xs"
-          [ngClass]="activeTab() === 'contact' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-        >
-          <mat-icon class="text-[13px]! w-3.5! h-3.5!">contact_phone</mat-icon>
-          <span>Contacto & Redes</span>
+          <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ tab.icon }}</mat-icon>
+          <span>{{ tab.label }}</span>
         </button>
       }
     </div>
@@ -162,7 +52,7 @@
         <!-- ========================================================================= -->
         <!-- 1. GENERAL & LOGO                                                         -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'general') {
+        @if (activeTab() === 'identity_and_contact') {
           <div class="space-y-6">
             <!-- RUBRO & PERFIL DE NEGOCIO (INMUTABLE / INFORMATIVO) -->
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
@@ -325,13 +215,369 @@
                 </div>
               </div>
             </div>
+
+            <!-- Canales de Contacto Directo (fusionado en Identidad & Contacto) -->
+            <div formGroupName="contact" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-9 h-9 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold">
+                  <mat-icon class="text-[20px]! w-5! h-5!">contacts</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Canales de Contacto Directo</h3>
+                  <p class="text-xs text-base-content/50">Datos que se muestran en el pie de página y botones de ayuda.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Email de Soporte / Ventas</label>
+                  <input type="email" formControlName="email" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="contacto@mitienda.com" />
+                </div>
+                @if (tabSection('identity_and_contact', 'showWhatsappContact')) {
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content/80">WhatsApp Directo</label>
+                    <input type="text" formControlName="whatsapp" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="5491112345678" />
+                  </div>
+                }
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Teléfono</label>
+                  <input type="text" formControlName="phone" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="+54 9 11 1234-5678" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Dirección Física / Local</label>
+                  <input type="text" formControlName="address" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Av. Siempre Viva 123" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Redes Sociales (fusionado en Identidad & Contacto) -->
+            @if (tabSection('identity_and_contact', 'showSocialLinksConfig')) {
+              <div formGroupName="social" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+                <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                  <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                    <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Perfiles en Redes Sociales</h3>
+                    <p class="text-xs text-base-content/50">Enlaces directos a tus redes para la tienda online.</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-pink-600">Instagram URL</label>
+                    <input type="url" formControlName="instagram" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://instagram.com/mitienda" />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-blue-600">Facebook URL</label>
+                    <input type="url" formControlName="facebook" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://facebook.com/mitienda" />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-base-content">TikTok URL</label>
+                    <input type="url" formControlName="tiktok" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://tiktok.com/@mitienda" />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-info">Twitter / X URL</label>
+                    <input type="url" formControlName="twitter" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://twitter.com/mitienda" />
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         }
 
         <!-- ========================================================================= -->
-        <!-- 2. AUTENTICACIÓN & LOGIN DE CLIENTES                                       -->
+        <!-- PRECIOS Y COSTOS BASE (ESTRATEGIA, DÓLAR, CANALES & DEFAULTS)             -->
         <!-- ========================================================================= -->
-        @if (showTabAuth() && activeTab() === 'auth') {
+        @if (activeTab() === 'pricing_and_gateways') {
+          <div class="space-y-6 animate-fade-in">
+            <!-- Card 1: Estrategia de Precios, Margen y Dólar -->
+            <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                    <mat-icon class="text-[22px]! w-5.5! h-5.5!">trending_up</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Estrategia Global de Precios & Dólar</h3>
+                    <p class="text-xs text-base-content/50">
+                      Configuración base independiente de Fiscal & ARCA. Aplica a nuevos productos y cálculos de Price Builder.
+                    </p>
+                  </div>
+                </div>
+                <a routerLink="/home/payment-methods" class="btn btn-xs btn-outline rounded-lg gap-1.5 font-bold">
+                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">payments</mat-icon>
+                  <span>Cobros y Pagos (Mercado Pago)</span>
+                </a>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" formGroupName="pricingStrategy">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Método de Ganancia Base</label>
+                  <select formControlName="method" class="select select-sm select-bordered w-full rounded-lg text-xs font-bold">
+                    <option value="markup">Sobre costo (Markup)</option>
+                    <option value="margin">Sobre venta (Margen real)</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Redondeo de Precios</label>
+                  <select formControlName="priceRoundingMode" class="select select-sm select-bordered w-full rounded-lg text-xs font-bold">
+                    <option value="auto">Automático (por ticket)</option>
+                    <option value="exact">Exacto (sin redondeo)</option>
+                    <option value="10">Múltiplo de $10</option>
+                    <option value="50">Múltiplo de $50</option>
+                    <option value="100">Múltiplo de $100</option>
+                    <option value="500">Múltiplo de $500</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Absorber Cuotas Sin Interés</label>
+                  <label class="flex items-center justify-between gap-2 px-3 h-8 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer">
+                    <span class="text-xs font-semibold">{{ configForm.get('pricingStrategy.absorbInstallments')?.value ? 'Activado' : 'Desactivado' }}</span>
+                    <input type="checkbox" formControlName="absorbInstallments" class="toggle toggle-primary toggle-xs" />
+                  </label>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Tope de Cuotas a Absorber</label>
+                  <select
+                    formControlName="maxInstallmentsToAbsorb"
+                    class="select select-sm select-bordered w-full rounded-lg text-xs font-bold"
+                  >
+                    <option [ngValue]="1">1 pago (sin cuotas s/i)</option>
+                    <option [ngValue]="2">Hasta 2 cuotas s/i</option>
+                    <option [ngValue]="3">Hasta 3 cuotas s/i</option>
+                    <option [ngValue]="6">Hasta 6 cuotas s/i</option>
+                    <option [ngValue]="9">Hasta 9 cuotas s/i</option>
+                    <option [ngValue]="12">Hasta 12 cuotas s/i</option>
+                    <option [ngValue]="18">Hasta 18 cuotas s/i</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5" [formGroup]="configForm">
+                  <label class="text-xs font-bold text-base-content/80">Ganancia Objetivo Global (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    formControlName="profit"
+                    class="input input-sm input-bordered w-full rounded-lg text-xs font-bold tabular-nums"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-base-200">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Moneda de Costo Base</label>
+                  <select formControlName="costCurrency" class="select select-sm select-bordered w-full rounded-lg text-xs font-bold">
+                    <option value="ARS">Pesos Argentinos (ARS)</option>
+                    <option value="USD">Dólares Estadounidenses (USD)</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Cotización de Dólar</label>
+                  <select formControlName="dollarQuoteType" class="select select-sm select-bordered w-full rounded-lg text-xs font-bold">
+                    <option value="blue">Dólar Blue</option>
+                    <option value="oficial">Dólar Oficial</option>
+                    <option value="bolsa">Dólar MEP / Bolsa</option>
+                    <option value="ccl">Dólar CCL</option>
+                    <option value="cripto">Dólar Cripto</option>
+                    <option value="mayorista">Dólar Mayorista</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Cotización Manual ($ ARS)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    formControlName="customDollarRate"
+                    class="input input-sm input-bordered w-full rounded-lg text-xs font-mono tabular-nums"
+                    placeholder="Solo si usás personalizado"
+                  />
+                </div>
+              </div>
+
+              <!-- Canales habilitados por defecto en productos nuevos -->
+              <div class="pt-3 border-t border-base-200 space-y-2" formGroupName="defaultEnabledChannels">
+                <span class="text-xs font-bold text-base-content block">Canales Habilitados por Defecto en Productos Nuevos</span>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="cash" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Efectivo</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="transfer" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Transferencia</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="qr" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Código QR</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="debit" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Débito</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="credit1Pay" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Crédito 1 Pago</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-lg border border-base-300 bg-base-200/40 cursor-pointer text-xs font-bold">
+                    <input type="checkbox" formControlName="list" class="checkbox checkbox-primary checkbox-xs" />
+                    <span>Precio Lista</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Presets Globales de Costos e Impuestos (defaultAdditionalCosts) -->
+            <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
+              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
+                  <mat-icon class="text-[22px]! w-5.5! h-5.5!">price_change</mat-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Presets Globales de Costos e Impuestos</h3>
+                  <p class="text-xs text-base-content/50">
+                    Se precargarán automáticamente al abrir Nuevo Producto (el usuario puede quitarlos o editarlos por producto).
+                  </p>
+                </div>
+              </div>
+
+              <div class="bg-base-200/40 p-3.5 sm:p-4 rounded-lg border border-base-200 space-y-3">
+                <span class="text-xs font-bold text-base-content uppercase tracking-wider block">Agregar Nuevo Concepto Base</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Nombre / Concepto</label>
+                    <input
+                      type="text"
+                      [ngModel]="newCostConcept()"
+                      (ngModelChange)="newCostConcept.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="input input-sm input-bordered w-full rounded-lg text-xs"
+                      placeholder="Ej. IIBB 3.5%, Packaging, etc."
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Categoría</label>
+                    <select
+                      [ngModel]="newCostCategory()"
+                      (ngModelChange)="newCostCategory.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="select select-sm select-bordered w-full rounded-lg text-xs font-bold"
+                    >
+                      <option value="expense">📦 Gasto Operativo</option>
+                      <option value="tax">🏛️ Impuesto / Tasa</option>
+                      <option value="shipping">🚚 Envío / Logística</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Tipo de Cálculo</label>
+                    <select
+                      [ngModel]="newCostType()"
+                      (ngModelChange)="newCostType.set($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      class="select select-sm select-bordered w-full rounded-lg text-xs font-bold"
+                    >
+                      <option value="fixed">$ Monto Fijo</option>
+                      <option value="percent_over_provider">% s/Costo Proveedor</option>
+                      <option value="percent_over_price">% s/Precio de Venta</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-base-content/70">Valor</label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        [ngModel]="newCostValue()"
+                        (ngModelChange)="newCostValue.set($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        class="input input-sm input-bordered w-full rounded-lg font-mono text-xs"
+                        placeholder="0"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary rounded-lg font-bold gap-1 shrink-0"
+                        (click)="addDefaultCost()"
+                      >
+                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
+                        <span>Agregar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              @if (defaultCostsList.length === 0) {
+                <div class="text-center py-6 bg-base-200/20 rounded-lg border border-dashed border-base-300 space-y-1">
+                  <mat-icon class="text-base-content/30 text-[24px]! w-6! h-6!">playlist_add</mat-icon>
+                  <p class="text-xs font-semibold text-base-content/60">No tenés conceptos por defecto configurados.</p>
+                </div>
+              } @else {
+                <div class="overflow-x-auto border border-base-200 rounded-lg">
+                  <table class="table table-xs w-full">
+                    <thead class="bg-base-200/60 font-bold text-[10px] uppercase text-base-content/70">
+                      <tr>
+                        <th>Concepto</th>
+                        <th>Categoría</th>
+                        <th>Tipo de Cálculo</th>
+                        <th>Valor</th>
+                        <th class="w-10 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cost of defaultCostsList; track $index) {
+                        <tr class="hover:bg-base-200/30">
+                          <td class="font-bold text-xs">{{ cost.concept }}</td>
+                          <td>
+                            @if (cost.category === 'tax') {
+                              <span class="badge badge-xs bg-amber-500/10 text-amber-700 border-amber-500/30 font-bold text-[10px]">🏛️ Impuesto</span>
+                            } @else if (cost.category === 'shipping') {
+                              <span class="badge badge-xs bg-purple-500/10 text-purple-700 border-purple-500/30 font-bold text-[10px]">🚚 Envío</span>
+                            } @else {
+                              <span class="badge badge-xs bg-blue-500/10 text-blue-700 border-blue-500/30 font-bold text-[10px]">📦 Gasto</span>
+                            }
+                          </td>
+                          <td class="text-[11px] text-base-content/70">
+                            @if (cost.type === 'percent_over_provider') { % sobre Costo Proveedor }
+                            @else if (cost.type === 'percent_over_price') { % sobre Precio de Venta }
+                            @else { $ Monto Fijo }
+                          </td>
+                          <td class="font-mono font-bold text-xs">
+                            {{ cost.type === 'fixed' ? '$' + cost.value : cost.value + '%' }}
+                          </td>
+                          <td class="text-center">
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                              (click)="removeDefaultCost($index)"
+                              title="Eliminar Concepto"
+                            >
+                              <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- 2. AUTENTICACIÓN & LOGIN DE CLIENTES (customer_auth + Google OAuth)       -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'customer_auth') {
+          <div class="space-y-6">
           <div formGroupName="authConfig" class="space-y-6">
 
             <!-- Header Informativo de la sección -->
@@ -391,19 +637,11 @@
 
                 <!-- Callout de Validación Google OAuth -->
                 @if (configForm.get('authConfig.allowGoogle')?.value && !configForm.get('integrations.googleAuth.clientId')?.value) {
-                  <div class="p-3 bg-warning/10 border border-warning/30 rounded-xl space-y-2">
+                  <div class="p-3 bg-warning/10 border border-warning/30 rounded-xl">
                     <div class="flex items-start gap-1.5 text-warning-content text-[11px] font-semibold">
                       <mat-icon class="text-[14px]! w-3.5! h-3.5! text-warning shrink-0 mt-0.5">warning</mat-icon>
-                      <span>Falta configurar Google Client ID para que funcione en la tienda.</span>
+                      <span>Falta completar el Google OAuth Client ID en la tarjeta de abajo.</span>
                     </div>
-                    <button
-                      type="button"
-                      (click)="activeTab.set('integrations')"
-                      class="btn btn-xs btn-warning w-full font-bold gap-1 shadow-2xs"
-                    >
-                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">settings</mat-icon>
-                      <span>Configurar en Integraciones</span>
-                    </button>
                   </div>
                 }
               </div>
@@ -446,7 +684,7 @@
                     </div>
                     <button
                       type="button"
-                      (click)="activeTab.set('integrations')"
+                      (click)="activeTab.set('email_studio')"
                       class="btn btn-xs btn-warning w-full font-bold gap-1 shadow-2xs"
                     >
                       <mat-icon class="text-[13px]! w-3.5! h-3.5!">mail</mat-icon>
@@ -534,15 +772,9 @@
             </div>
 
           </div>
-        }
 
-        <!-- ========================================================================= -->
-        <!-- 3. INTEGRACIONES & APIS (GOOGLE, RESEND, META)                            -->
-        <!-- ========================================================================= -->
-        @if (showTabIntegrations() && activeTab() === 'integrations') {
-          <div formGroupName="integrations" class="space-y-6">
-
-            <!-- 🔑 Google Sign-In (OAuth) -->
+          <!-- 🔑 Google Sign-In (OAuth) — Unificado dentro de Autenticación -->
+          <div formGroupName="integrations">
             <div formGroupName="googleAuth" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
               <div class="flex items-center justify-between pb-3 border-b border-base-200">
                 <div class="flex items-center gap-3">
@@ -583,120 +815,15 @@
                 </p>
               </div>
             </div>
+          </div>
+          </div>
+        }
 
-            <!-- ✉️ Resend (Email Transaccional) -->
-            <div formGroupName="resend" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-neutral/10 text-base-content flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">mail</mat-icon>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-bold text-base-content">Resend (Correos Transaccionales)</h3>
-                      @if (configForm.get('integrations.resend.active')?.value) {
-                        @if (configForm.get('integrations.resend.apiKey')?.value) {
-                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado y Listo</span>
-                        } @else {
-                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta API Key)</span>
-                        }
-                      } @else {
-                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
-                      }
-                    </div>
-                    <p class="text-xs text-base-content/50">Envío automático de emails de confirmación de compra y despacho con tu dominio.</p>
-                  </div>
-                </div>
-                <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="space-y-1.5 sm:col-span-3">
-                  <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-base-content/80">API Key de Resend (Secreto)</label>
-                    <button
-                      type="button"
-                      (click)="showResendKey.set(!showResendKey())"
-                      class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
-                    >
-                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showResendKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
-                      <span>{{ showResendKey() ? 'Ocultar' : 'Ver' }}</span>
-                    </button>
-                  </div>
-                  <input
-                    [type]="showResendKey() ? 'text' : 'password'"
-                    formControlName="apiKey"
-                    autocomplete="new-password"
-                    data-lpignore="true"
-                    data-1p-ignore="true"
-                    data-bwignore="true"
-                    data-form-type="other"
-                    spellcheck="false"
-                    class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
-                    placeholder="re_123456789_xxxxxxxxxxxxxxxxxxxx"
-                  />
-                  <p class="text-[11px] text-base-content/50">
-                    Obtenela en tu panel de <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" class="link link-primary font-bold">Resend.com ➔ API Keys</a>.
-                  </p>
-                </div>
-
-                <div class="space-y-1.5 sm:col-span-2">
-                  <label class="text-xs font-bold text-base-content/80">Email Remitente (From Email)</label>
-                  <input
-                    type="email"
-                    formControlName="fromEmail"
-                    autocomplete="off"
-                    data-lpignore="true"
-                    data-1p-ignore="true"
-                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
-                    placeholder="pedidos@mitienda.com o onboarding@resend.dev"
-                  />
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Nombre Remitente</label>
-                  <input
-                    type="text"
-                    formControlName="fromName"
-                    class="input input-sm input-bordered w-full rounded-xl text-xs"
-                    placeholder="Mi Tienda"
-                  />
-                </div>
-
-                <!-- 💡 Cartelito Informativo Pedagógico sobre From Email -->
-                <div class="sm:col-span-3 p-3.5 bg-info/10 border border-info/20 rounded-2xl space-y-2 text-xs text-base-content/80">
-                  <div class="flex items-center gap-2 font-bold text-info">
-                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">info</mat-icon>
-                    <span class="text-xs uppercase tracking-wider">¿Qué colocar en "Email Remitente (From Email)"?</span>
-                  </div>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
-                      <div class="flex items-center gap-1.5 font-bold text-success text-[11px]">
-                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">domain</mat-icon>
-                        <span>1. Con Dominio Propio (Recomendado)</span>
-                      </div>
-                      <p class="text-[11px] text-base-content/70 leading-relaxed">
-                        Si tenés tu dominio verificado en Resend (ej. <code>tudominio.com.ar</code>), poné cualquier casilla de tu marca: <br />
-                        <strong class="font-mono text-primary text-[10px]">pedidos@tudominio.com.ar</strong> o <strong class="font-mono text-primary text-[10px]">hola@tudominio.com.ar</strong>.
-                      </p>
-                    </div>
-
-                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
-                      <div class="flex items-center gap-1.5 font-bold text-amber-500 text-[11px]">
-                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">science</mat-icon>
-                        <span>2. Sin Dominio / Modo Pruebas</span>
-                      </div>
-                      <p class="text-[11px] text-base-content/70 leading-relaxed">
-                        Si todavía no configuraste tu dominio propio, escribí exactamente: <br />
-                        <strong class="font-mono text-amber-600 text-[10px]">onboarding@resend.dev</strong><br />
-                        <span class="text-[10px] text-base-content/50"><em>(Resend te presta este dominio para pruebas y solo envía a tu email de registro).</em></span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- ========================================================================= -->
+        <!-- 3. MARKETING PIXELS & FEEDS (META PIXEL + CAPI + FEEDS + GA4)             -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'marketing_pixels_and_feeds') {
+          <div formGroupName="integrations" class="space-y-6">
 
             <!-- 📊 Google Analytics 4 -->
             <div formGroupName="googleAnalytics" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
@@ -823,7 +950,7 @@
         <!-- ========================================================================= -->
         <!-- 4. FISCAL & ARCA (EX-AFIP) & PRESETS DE COSTOS E IMPUESTOS                -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'fiscal') {
+        @if (activeTab() === 'fiscal_and_arca') {
           <div class="space-y-6">
 
             <!-- Card 1: Perfil Fiscal de la Tienda -->
@@ -1226,173 +1353,13 @@
               </div>
             </div>
 
-            <!-- Card 3: Presets de Costos e Impuestos por Defecto -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-5">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
-                  <mat-icon class="text-[22px]! w-5.5! h-5.5!">price_change</mat-icon>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Presets Globales de Costos e Impuestos</h3>
-                  <p class="text-xs text-base-content/50">
-                    Se aplicarán automáticamente a cada nuevo producto creado manualmente o mediante la IA/scrapers.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Formulario para agregar concepto -->
-              <div class="bg-base-200/40 p-3.5 sm:p-4 rounded-xl border border-base-200 space-y-3">
-                <span class="text-xs font-bold text-base-content uppercase tracking-wider block">Agregar Nuevo Concepto Base</span>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <!-- Concepto -->
-                  <div class="space-y-1">
-                    <label class="text-[11px] font-bold text-base-content/70">Nombre / Concepto</label>
-                    <input
-                      type="text"
-                      [ngModel]="newCostConcept()"
-                      (ngModelChange)="newCostConcept.set($event)"
-                      [ngModelOptions]="{standalone: true}"
-                      class="input input-sm input-bordered w-full rounded-xl text-xs"
-                      placeholder="Ej. IIBB 3.5%, Packaging, etc."
-                    />
-                  </div>
-
-                  <!-- Categoría: Gasto vs Impuesto -->
-                  <div class="space-y-1">
-                    <label class="text-[11px] font-bold text-base-content/70">Categoría</label>
-                    <select
-                      [ngModel]="newCostCategory()"
-                      (ngModelChange)="newCostCategory.set($event)"
-                      [ngModelOptions]="{standalone: true}"
-                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
-                    >
-                      <option value="expense">📦 Gasto Operativo</option>
-                      <option value="tax">🏛️ Impuesto / Tasa</option>
-                      <option value="shipping">🚚 Envío / Logística</option>
-                    </select>
-                  </div>
-
-                  <!-- Tipo de Cálculo -->
-                  <div class="space-y-1">
-                    <label class="text-[11px] font-bold text-base-content/70">Tipo de Cálculo</label>
-                    <select
-                      [ngModel]="newCostType()"
-                      (ngModelChange)="newCostType.set($event)"
-                      [ngModelOptions]="{standalone: true}"
-                      class="select select-sm select-bordered w-full rounded-xl text-xs font-bold"
-                    >
-                      <option value="fixed">$ Monto Fijo</option>
-                      <option value="percent_over_provider">% s/Costo Proveedor</option>
-                      <option value="percent_over_price">% s/Precio de Venta</option>
-                    </select>
-                  </div>
-
-                  <!-- Valor -->
-                  <div class="space-y-1">
-                    <label class="text-[11px] font-bold text-base-content/70">Valor</label>
-                    <div class="flex items-center gap-2">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        [ngModel]="newCostValue()"
-                        (ngModelChange)="newCostValue.set($event)"
-                        [ngModelOptions]="{standalone: true}"
-                        class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
-                        placeholder="0"
-                      />
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-primary rounded-xl font-bold gap-1 shrink-0"
-                        (click)="addDefaultCost()"
-                      >
-                        <mat-icon class="text-[14px]! w-3.5! h-3.5!">add</mat-icon>
-                        <span>Agregar</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Lista de Conceptos por Defecto -->
-              @if (defaultCostsList.length === 0) {
-                <div class="text-center py-6 bg-base-200/20 rounded-xl border border-dashed border-base-300 space-y-1">
-                  <mat-icon class="text-base-content/30 text-[24px]! w-6! h-6!">playlist_add</mat-icon>
-                  <p class="text-xs font-semibold text-base-content/60">No tenés conceptos por defecto configurados.</p>
-                  <p class="text-[11px] text-base-content/40">Agregá conceptos como IIBB, embalaje o comisiones para que se asignen automáticamente a cada producto nuevo.</p>
-                </div>
-              } @else {
-                <div class="overflow-x-auto border border-base-200 rounded-xl">
-                  <table class="table table-xs w-full">
-                    <thead class="bg-base-200/60 font-bold text-[10px] uppercase text-base-content/70">
-                      <tr>
-                        <th>Concepto</th>
-                        <th>Categoría</th>
-                        <th>Tipo de Cálculo</th>
-                        <th>Valor</th>
-                        <th class="w-10 text-center">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (cost of defaultCostsList; track $index) {
-                        <tr class="hover:bg-base-200/30">
-                          <td class="font-bold text-xs">{{ cost.concept }}</td>
-                          <td>
-                            @if (cost.category === 'tax') {
-                              <span class="badge badge-xs bg-amber-500/10 text-amber-700 border-amber-500/30 font-bold text-[10px]">
-                                🏛️ Impuesto
-                              </span>
-                            } @else if (cost.category === 'shipping') {
-                              <span class="badge badge-xs bg-purple-500/10 text-purple-700 border-purple-500/30 font-bold text-[10px]">
-                                🚚 Envío
-                              </span>
-                            } @else {
-                              <span class="badge badge-xs bg-blue-500/10 text-blue-700 border-blue-500/30 font-bold text-[10px]">
-                                📦 Gasto
-                              </span>
-                            }
-                          </td>
-                          <td class="text-[11px] text-base-content/70">
-                            @if (cost.type === 'percent_over_provider') {
-                              % sobre Costo Proveedor
-                            } @else if (cost.type === 'percent_over_price') {
-                              % sobre Precio de Venta (Ad-Valorem)
-                            } @else {
-                              $ Monto Fijo
-                            }
-                          </td>
-                          <td class="font-mono font-bold text-xs">
-                            @if (cost.type === 'fixed') {
-                              ${{ cost.value }}
-                            } @else {
-                              {{ cost.value }}%
-                            }
-                          </td>
-                          <td class="text-center">
-                            <button
-                              type="button"
-                              class="btn btn-ghost btn-xs text-error hover:bg-error/10"
-                              (click)="removeDefaultCost($index)"
-                              title="Eliminar Concepto"
-                            >
-                              <mat-icon class="text-[14px]! w-3.5! h-3.5!">delete</mat-icon>
-                            </button>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              }
-            </div>
-
           </div>
         }
 
         <!-- ========================================================================= -->
         <!-- LOGÍSTICA & ENVÍOS (ZONAS, UMBRALES Y SUBSIDIO SILENCIOSO)                -->
         <!-- ========================================================================= -->
-        @if (showTabShipping() && activeTab() === 'shipping') {
+        @if (activeTab() === 'shipping_and_delivery') {
           <div formGroupName="shippingConfig" class="space-y-6">
 
             <!-- Card 1: Umbral de Envío Gratis & Subsidio Silencioso -->
@@ -1697,9 +1664,123 @@
         }
 
         <!-- ========================================================================= -->
-        <!-- 5. EMAILS & NOTIFICACIONES (RESEND & PLANTILLAS)                          -->
+        <!-- 5. EMAIL STUDIO (RESEND + BRANDING + PLANTILLAS)                          -->
         <!-- ========================================================================= -->
-        @if (showTabEmails() && activeTab() === 'emails') {
+        @if (activeTab() === 'email_studio') {
+          <div class="space-y-6">
+          <!-- ✉️ Resend (Email Transaccional) — Unificado dentro de Email Studio -->
+          <div formGroupName="integrations">
+            <div formGroupName="resend" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-neutral/10 text-base-content flex items-center justify-center font-black">
+                    <mat-icon class="text-[20px]! w-5! h-5!">mail</mat-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-base-content">Resend (Correos Transaccionales)</h3>
+                      @if (configForm.get('integrations.resend.active')?.value) {
+                        @if (configForm.get('integrations.resend.apiKey')?.value) {
+                          <span class="badge badge-xs badge-success text-[10px] font-bold text-white px-2 py-1">🟢 Conectado y Listo</span>
+                        } @else {
+                          <span class="badge badge-xs badge-warning text-[10px] font-bold text-warning-content px-2 py-1">🟡 Incompleto (Falta API Key)</span>
+                        }
+                      } @else {
+                        <span class="badge badge-xs badge-ghost text-[10px] font-medium text-base-content/50 px-2 py-1">⚪ Desactivado</span>
+                      }
+                    </div>
+                    <p class="text-xs text-base-content/50">Envío automático de emails de confirmación de compra y despacho con tu dominio.</p>
+                  </div>
+                </div>
+                <input type="checkbox" formControlName="active" class="toggle toggle-primary" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="space-y-1.5 sm:col-span-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-base-content/80">API Key de Resend (Secreto)</label>
+                    <button
+                      type="button"
+                      (click)="showResendKey.set(!showResendKey())"
+                      class="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                    >
+                      <mat-icon class="text-[13px]! w-3.5! h-3.5!">{{ showResendKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                      <span>{{ showResendKey() ? 'Ocultar' : 'Ver' }}</span>
+                    </button>
+                  </div>
+                  <input
+                    [type]="showResendKey() ? 'text' : 'password'"
+                    formControlName="apiKey"
+                    autocomplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
+                    spellcheck="false"
+                    class="input input-sm input-bordered w-full rounded-xl font-mono text-xs shadow-2xs"
+                    placeholder="re_123456789_xxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <p class="text-[11px] text-base-content/50">
+                    Obtenela en tu panel de <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" class="link link-primary font-bold">Resend.com ➔ API Keys</a>.
+                  </p>
+                </div>
+
+                <div class="space-y-1.5 sm:col-span-2">
+                  <label class="text-xs font-bold text-base-content/80">Email Remitente (From Email)</label>
+                  <input
+                    type="email"
+                    formControlName="fromEmail"
+                    autocomplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs font-mono"
+                    placeholder="pedidos@mitienda.com o onboarding@resend.dev"
+                  />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-base-content/80">Nombre Remitente</label>
+                  <input
+                    type="text"
+                    formControlName="fromName"
+                    class="input input-sm input-bordered w-full rounded-xl text-xs"
+                    placeholder="Mi Tienda"
+                  />
+                </div>
+
+                <div class="sm:col-span-3 p-3.5 bg-info/10 border border-info/20 rounded-2xl space-y-2 text-xs text-base-content/80">
+                  <div class="flex items-center gap-2 font-bold text-info">
+                    <mat-icon class="text-[18px]! w-4.5! h-4.5!">info</mat-icon>
+                    <span class="text-xs uppercase tracking-wider">¿Qué colocar en "Email Remitente (From Email)"?</span>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
+                      <div class="flex items-center gap-1.5 font-bold text-success text-[11px]">
+                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">domain</mat-icon>
+                        <span>1. Con Dominio Propio (Recomendado)</span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-relaxed">
+                        Si tenés tu dominio verificado en Resend (ej. <code>tudominio.com.ar</code>), poné cualquier casilla de tu marca: <br />
+                        <strong class="font-mono text-primary text-[10px]">pedidos@tudominio.com.ar</strong> o <strong class="font-mono text-primary text-[10px]">hola@tudominio.com.ar</strong>.
+                      </p>
+                    </div>
+                    <div class="p-3 bg-base-100 rounded-xl border border-base-200 space-y-1">
+                      <div class="flex items-center gap-1.5 font-bold text-amber-500 text-[11px]">
+                        <mat-icon class="text-[15px]! w-3.5! h-3.5!">science</mat-icon>
+                        <span>2. Sin Dominio / Modo Pruebas</span>
+                      </div>
+                      <p class="text-[11px] text-base-content/70 leading-relaxed">
+                        Si todavía no configuraste tu dominio propio, escribí exactamente: <br />
+                        <strong class="font-mono text-amber-600 text-[10px]">onboarding@resend.dev</strong><br />
+                        <span class="text-[10px] text-base-content/50"><em>(Resend te presta este dominio para pruebas y solo envía a tu email de registro).</em></span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div formGroupName="emailTemplates" class="space-y-6">
 
             <!-- 🎨 Branding Global de Correos -->
@@ -2207,83 +2288,17 @@
               </div>
             </div>
           </div>
-        }
-
-        <!-- ========================================================================= -->
-        <!-- 6. CONTACTO & REDES SOCIALES                                              -->
-        <!-- ========================================================================= -->
-        @if (showTabContact() && activeTab() === 'contact') {
-          <div class="space-y-6">
-            <!-- Contacto -->
-            <div formGroupName="contact" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-9 h-9 rounded-xl bg-info/10 text-info flex items-center justify-center font-bold">
-                  <mat-icon class="text-[20px]! w-5! h-5!">contacts</mat-icon>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Canales de Contacto Directo</h3>
-                  <p class="text-xs text-base-content/50">Datos que se muestran en el pie de página y botones de ayuda.</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Email de Soporte / Ventas</label>
-                  <input type="email" formControlName="email" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="contacto@mitienda.com" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">WhatsApp Directo</label>
-                  <input type="text" formControlName="whatsapp" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="5491112345678" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Teléfono</label>
-                  <input type="text" formControlName="phone" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="+54 9 11 1234-5678" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content/80">Dirección Física / Local</label>
-                  <input type="text" formControlName="address" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="Av. Siempre Viva 123" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Redes Sociales -->
-            <div formGroupName="social" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center gap-3 pb-3 border-b border-base-200">
-                <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
-                  <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Perfiles en Redes Sociales</h3>
-                  <p class="text-xs text-base-content/50">Enlaces directos a tus redes para la tienda online.</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-pink-600">Instagram URL</label>
-                  <input type="url" formControlName="instagram" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://instagram.com/mitienda" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-blue-600">Facebook URL</label>
-                  <input type="url" formControlName="facebook" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://facebook.com/mitienda" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-base-content">TikTok URL</label>
-                  <input type="url" formControlName="tiktok" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://tiktok.com/@mitienda" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-info">Twitter / X URL</label>
-                  <input type="url" formControlName="twitter" class="input input-sm input-bordered w-full rounded-xl text-xs" placeholder="https://twitter.com/mitienda" />
-                </div>
-              </div>
-            </div>
           </div>
         }
 
         <!-- ========================================================================= -->
-        <!-- 6. INDUMENTARIA (FITS & CORTES)                                           -->
+        <!-- 6. CONTACTO & REDES SOCIALES (YA FUSIONADO EN identity_and_contact)        -->
         <!-- ========================================================================= -->
-        @if (showTabClothing() && activeTab() === 'clothing') {
+
+        <!-- ========================================================================= -->
+        <!-- 6. LISTAS Y MEDIDAS POR RUBRO (vertical_custom_lists)                     -->
+        <!-- ========================================================================= -->
+        @if (activeTab() === 'vertical_custom_lists') {
           <div class="space-y-6">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
               <div class="flex items-center gap-3 pb-3 border-b border-base-200">
@@ -2291,8 +2306,10 @@
                   <mat-icon class="text-[20px]! w-5! h-5!">checkroom</mat-icon>
                 </div>
                 <div>
-                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">Cortes y Fits de Indumentaria</h3>
-                  <p class="text-xs text-base-content/50">Opciones que aparecen en el selector al cargar ropa.</p>
+                  <h3 class="text-sm font-bold text-base-content uppercase tracking-wider">
+                    {{ getTabLabel('vertical_custom_lists', 'Listas & Medidas') }}
+                  </h3>
+                  <p class="text-xs text-base-content/50">Opciones reutilizables en los selectores de tus productos.</p>
                 </div>
               </div>
 
@@ -2328,7 +2345,7 @@
         <!-- ========================================================================= -->
         <!-- PESTAÑA: MOSTRADOR & POS                                                  -->
         <!-- ========================================================================= -->
-        @if (activeTab() === 'pos') {
+        @if (activeTab() === 'pos_and_register') {
           <div formGroupName="posConfig" class="space-y-6">
 
             <!-- Card: Política de Validación de Transferencias -->
@@ -2422,10 +2439,19 @@
         }
 
         <!-- Conexión & Tienda Web -->
-        @if (activeTab() === 'connection') {
+        @if (activeTab() === 'storefront_and_connection') {
           <div class="space-y-6">
 
-            <!-- Banner Informativo -->
+            <!-- Tienda de Plantillas, Subdominio Vexx y Dominio Propio -->
+            <app-storefront-templates-section
+              [showTemplateSelector]="tabSection('storefront_and_connection', 'showTemplateSelectorAndSettings')"
+              [showVexxSubdomainInfo]="tabSection('storefront_and_connection', 'showVexxSubdomainInfo')"
+              [showCustomDomainSetup]="tabSection('storefront_and_connection', 'showCustomDomainSetup')"
+              [tenantSlug]="bootstrapState.data()?.tenant?.slug || ''"
+            />
+
+            <!-- Banner Informativo (solo si Headless API Key está activo) -->
+            @if (tabSection('storefront_and_connection', 'showHeadlessApiKeyAndCors')) {
             <div class="bg-gradient-to-r from-primary/10 via-base-100 to-base-100 rounded-2xl border border-primary/20 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
@@ -2440,28 +2466,32 @@
                 </p>
               </div>
             </div>
+            }
 
             <!-- Tarjeta 1: Llave Pública de Tienda (Storefront API Key) -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">key</mat-icon>
+            @if (tabSection('storefront_and_connection', 'showHeadlessApiKeyAndCors')) {
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                      <mat-icon class="text-[20px]! w-5! h-5!">key</mat-icon>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-bold text-base-content">Llave de Conexión de tu Tienda (Pública)</h3>
+                      <p class="text-xs text-base-content/50">Esta clave identifica a tu tienda de forma segura en tu página web.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="text-sm font-bold text-base-content">Llave de Conexión de tu Tienda (Pública)</h3>
-                    <p class="text-xs text-base-content/50">Esta clave identifica a tu tienda de forma segura en tu página web.</p>
-                  </div>
+                  @if (tabSection('storefront_and_connection', 'allowMerchantRegenerateApiKey')) {
+                    <button
+                      type="button"
+                      (click)="showRegenerateConfirm.set(true)"
+                      class="btn btn-xs btn-ghost text-error hover:bg-error/10 font-bold gap-1 rounded-xl"
+                    >
+                      <mat-icon class="text-[14px]! w-3.5! h-3.5!">sync</mat-icon>
+                      <span>Regenerar Llave</span>
+                    </button>
+                  }
                 </div>
-                <button
-                  type="button"
-                  (click)="showRegenerateConfirm.set(true)"
-                  class="btn btn-xs btn-ghost text-error hover:bg-error/10 font-bold gap-1 rounded-xl"
-                >
-                  <mat-icon class="text-[14px]! w-3.5! h-3.5!">sync</mat-icon>
-                  <span>Regenerar Llave</span>
-                </button>
-              </div>
 
               <div class="space-y-2">
                 <label class="text-xs font-bold text-base-content/80">Storefront API Key</label>
@@ -2485,42 +2515,44 @@
                   🔒 Es segura para incluirse en el código frontend de tu web (permite consultar catálogo y crear pedidos).
                 </p>
               </div>
-            </div>
+              </div>
 
-            <!-- Tarjeta 2: Dominios Autorizados (CORS / Whitelist) -->
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-base-200">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center font-black">
-                    <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
-                  </div>
-                  <div>
-                    <h3 class="text-sm font-bold text-base-content">Dominios Autorizados (Seguridad Web)</h3>
-                    <p class="text-xs text-base-content/50">Solo las webs listadas acá pueden consultar los datos de tu tienda.</p>
+              <!-- Tarjeta 2: Dominios Autorizados (CORS / Whitelist) -->
+              <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-base-200">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center font-black">
+                      <mat-icon class="text-[20px]! w-5! h-5!">public</mat-icon>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-bold text-base-content">Dominios Autorizados (Seguridad Web)</h3>
+                      <p class="text-xs text-base-content/50">Solo las webs listadas acá pueden consultar los datos de tu tienda.</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Input para agregar nuevo dominio -->
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <input
-                  type="text"
-                  [value]="newDomainInput()"
-                  (input)="newDomainInput.set($any($event.target).value)"
-                  (keydown.enter)="addDomain()"
-                  placeholder="https://tudominio.com.ar o http://localhost:4200"
-                  class="input input-sm input-bordered grow rounded-xl text-xs font-mono"
-                />
-                <button
-                  type="button"
-                  (click)="addDomain()"
-                  [disabled]="isUpdatingOrigins() || !newDomainInput().trim()"
-                  class="btn btn-sm btn-primary rounded-xl text-xs font-bold gap-1 shadow-xs"
-                >
-                  <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
-                  <span>Agregar Dominio</span>
-                </button>
-              </div>
+                @if (tabSection('storefront_and_connection', 'allowMerchantEditAllowedOrigins')) {
+                  <!-- Input para agregar nuevo dominio -->
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <input
+                      type="text"
+                      [value]="newDomainInput()"
+                      (input)="newDomainInput.set($any($event.target).value)"
+                      (keydown.enter)="addDomain()"
+                      placeholder="https://tudominio.com.ar o http://localhost:4200"
+                      class="input input-sm input-bordered grow rounded-xl text-xs font-mono"
+                    />
+                    <button
+                      type="button"
+                      (click)="addDomain()"
+                      [disabled]="isUpdatingOrigins() || !newDomainInput().trim()"
+                      class="btn btn-sm btn-primary rounded-xl text-xs font-bold gap-1 shadow-xs"
+                    >
+                      <mat-icon class="text-[16px]! w-4! h-4!">add</mat-icon>
+                      <span>Agregar Dominio</span>
+                    </button>
+                  </div>
+                }
 
               <!-- Lista de dominios configurados -->
               <div class="space-y-2 pt-2">
@@ -2552,6 +2584,7 @@
                 }
               </div>
             </div>
+            }
 
             <!-- Tarjeta 3: Guía Rápida para Desarrolladores & IAs -->
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm p-4 sm:p-6 space-y-4">

@@ -2,6 +2,7 @@ import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { httpResource } from '@angular/common/http';
 import { IShippingOption } from '../interfaces/shipping.interface';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { ShippingOptionsService } from '../services/shipping-options.service';
 
 @Injectable({
@@ -9,8 +10,10 @@ import { ShippingOptionsService } from '../services/shipping-options.service';
 })
 export class ShippingOptionsStateService {
   #shippingOptionsService = inject(ShippingOptionsService);
+  #profile = inject(BusinessProfileService);
 
   #shippingOptions = httpResource<IShippingOption[]>(() => {
+    if (!this.#profile.features().showShippingOptions) return undefined;
     return {
       url: `${this.#shippingOptionsService.apiUrl}/all`,
       method: 'GET',

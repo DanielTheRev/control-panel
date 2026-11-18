@@ -32,20 +32,22 @@
           <mat-icon class="text-[15px]! w-4! h-4!">inventory_2</mat-icon>
           <span>Catálogo & Stock</span>
         </button>
-        <button
-          type="button"
-          class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-          [ngClass]="activeMainTab() === 'ranking' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
-          (click)="switchToRankingTab()"
-        >
-          <mat-icon class="text-[15px]! w-4! h-4!">military_tech</mat-icon>
-          <span>Ranking ELO</span>
-          <span
-            class="w-1.5 h-1.5 rounded-full"
-            [ngClass]="rankingConfig().active ? 'bg-emerald-500' : 'bg-base-content/25'"
-            [title]="rankingConfig().active ? 'Algoritmo ELO Activo en Tienda' : 'Algoritmo ELO Inactivo'"
-          ></span>
-        </button>
+        @if (productListView()?.showEloRankingTab) {
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            [ngClass]="activeMainTab() === 'ranking' ? 'bg-base-100 text-base-content shadow-2xs font-bold' : 'text-base-content/60 hover:text-base-content'"
+            (click)="switchToRankingTab()"
+          >
+            <mat-icon class="text-[15px]! w-4! h-4!">military_tech</mat-icon>
+            <span>Ranking ELO</span>
+            <span
+              class="w-1.5 h-1.5 rounded-full"
+              [ngClass]="rankingConfig().active ? 'bg-emerald-500' : 'bg-base-content/25'"
+              [title]="rankingConfig().active ? 'Algoritmo ELO Activo en Tienda' : 'Algoritmo ELO Inactivo'"
+            ></span>
+          </button>
+        }
       </div>
     </div>
 
@@ -297,72 +299,82 @@
     <!-- 3. PANEL INTEGRADO DE FILTROS AVANZADOS (Desktop) -->
     @if (showFiltersSidebar()) {
       <div class="hidden lg:flex items-center justify-between gap-3 px-5 py-2.5 border-b border-base-200/80 bg-base-200/30 shrink-0 text-xs">
-        <div class="grid grid-cols-5 gap-2.5 flex-1">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Proveedor:</span>
-            <select
-              class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
-              [value]="ProductState.currentProviderFilter()"
-              (change)="onProviderChange($event)"
-            >
-              <option value="">Todos</option>
-              @for (p of ProviderState().data; track p._id) {
-                <option [value]="p._id">{{ p.name }}</option>
-              }
-            </select>
-          </div>
+        <div class="flex flex-wrap items-center gap-3 flex-1">
+          @if (productListView()?.showSupplierFilter) {
+            <div class="flex items-center gap-1.5 min-w-44">
+              <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Proveedor:</span>
+              <select
+                class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
+                [value]="ProductState.currentProviderFilter()"
+                (change)="onProviderChange($event)"
+              >
+                <option value="">Todos</option>
+                @for (p of ProviderState().data; track p._id) {
+                  <option [value]="p._id">{{ p.name }}</option>
+                }
+              </select>
+            </div>
+          }
 
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Destacados:</span>
-            <select
-              class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
-              [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')"
-              (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todos</option>
-              <option value="true">Destacados ({{ ProductState.featuredCount() }})</option>
-              <option value="false">No destacados ({{ ProductState.nonFeaturedCount() }})</option>
-            </select>
-          </div>
+          @if (productListView()?.showFeaturedFilter) {
+            <div class="flex items-center gap-1.5 min-w-44">
+              <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Destacados:</span>
+              <select
+                class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
+                [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')"
+                (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+              >
+                <option value="">Todos</option>
+                <option value="true">Destacados ({{ ProductState.featuredCount() }})</option>
+                <option value="false">No destacados ({{ ProductState.nonFeaturedCount() }})</option>
+              </select>
+            </div>
+          }
 
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Img SEO:</span>
-            <select
-              class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
-              [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todas</option>
-              <option value="true">Con SEO ({{ ProductState.hasSeoImageCount() }})</option>
-              <option value="false">Sin SEO ({{ ProductState.noSeoImageCount() }})</option>
-            </select>
-          </div>
+          @if (productListView()?.showImgSeoFilter) {
+            <div class="flex items-center gap-1.5 min-w-44">
+              <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Img SEO:</span>
+              <select
+                class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
+                [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')"
+                (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+              >
+                <option value="">Todas</option>
+                <option value="true">Con SEO ({{ ProductState.hasSeoImageCount() }})</option>
+                <option value="false">Sin SEO ({{ ProductState.noSeoImageCount() }})</option>
+              </select>
+            </div>
+          }
 
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Guía talles:</span>
-            <select
-              class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
-              [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todas</option>
-              <option value="true">Con guía ({{ ProductState.hasSizeGuideCount() }})</option>
-              <option value="false">Sin guía ({{ ProductState.noSizeGuideCount() }})</option>
-            </select>
-          </div>
+          @if (productListView()?.showSizeGuideFilter) {
+            <div class="flex items-center gap-1.5 min-w-44">
+              <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Guía talles:</span>
+              <select
+                class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
+                [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')"
+                (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+              >
+                <option value="">Todas</option>
+                <option value="true">Con guía ({{ ProductState.hasSizeGuideCount() }})</option>
+                <option value="false">Sin guía ({{ ProductState.noSizeGuideCount() }})</option>
+              </select>
+            </div>
+          }
 
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Link prov:</span>
-            <select
-              class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
-              [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')"
-              (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
-            >
-              <option value="">Todos</option>
-              <option value="true">Con link ({{ ProductState.hasLinkProviderCount() }})</option>
-              <option value="false">Sin link ({{ ProductState.noLinkProviderCount() }})</option>
-            </select>
-          </div>
+          @if (productListView()?.showSupplierLinkFilter) {
+            <div class="flex items-center gap-1.5 min-w-44">
+              <span class="text-[11px] font-semibold text-base-content/55 shrink-0">Link prov:</span>
+              <select
+                class="select select-bordered select-xs w-full rounded-lg bg-base-100 font-medium text-xs"
+                [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')"
+                (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))"
+              >
+                <option value="">Todos</option>
+                <option value="true">Con link ({{ ProductState.hasLinkProviderCount() }})</option>
+                <option value="false">Sin link ({{ ProductState.noLinkProviderCount() }})</option>
+              </select>
+            </div>
+          }
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
@@ -1436,38 +1448,46 @@
             <option value="name_desc">Nombre: Z - A</option>
           </select>
         </div>
-        <div class="space-y-1.5">
-          <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Destacados</label>
-          <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')" (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
-            <option value="">Todos los productos</option>
-            <option value="true">Solo Destacados</option>
-            <option value="false">No Destacados</option>
-          </select>
-        </div>
-        <div class="space-y-1.5">
-          <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Imagen SEO</label>
-          <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')" (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
-            <option value="">Todas</option>
-            <option value="true">Con Imagen SEO</option>
-            <option value="false">Sin Imagen SEO</option>
-          </select>
-        </div>
-        <div class="space-y-1.5">
-          <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Guía de Talles</label>
-          <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')" (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
-            <option value="">Todas</option>
-            <option value="true">Con Guía</option>
-            <option value="false">Sin Guía</option>
-          </select>
-        </div>
-        <div class="space-y-1.5">
-          <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Link Proveedor</label>
-          <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')" (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
-            <option value="">Todos</option>
-            <option value="true">Con Link</option>
-            <option value="false">Sin Link</option>
-          </select>
-        </div>
+        @if (productListView()?.showFeaturedFilter) {
+          <div class="space-y-1.5">
+            <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Destacados</label>
+            <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentIsFeaturedFilter() === undefined ? '' : (ProductState.currentIsFeaturedFilter() ? 'true' : 'false')" (change)="ProductState.setIsFeaturedFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
+              <option value="">Todos los productos</option>
+              <option value="true">Solo Destacados</option>
+              <option value="false">No Destacados</option>
+            </select>
+          </div>
+        }
+        @if (productListView()?.showImgSeoFilter) {
+          <div class="space-y-1.5">
+            <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Imagen SEO</label>
+            <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasSeoImageFilter() === undefined ? '' : (ProductState.currentHasSeoImageFilter() ? 'true' : 'false')" (change)="ProductState.setHasSeoImageFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
+              <option value="">Todas</option>
+              <option value="true">Con Imagen SEO</option>
+              <option value="false">Sin Imagen SEO</option>
+            </select>
+          </div>
+        }
+        @if (productListView()?.showSizeGuideFilter) {
+          <div class="space-y-1.5">
+            <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Guía de Talles</label>
+            <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasSizeGuideFilter() === undefined ? '' : (ProductState.currentHasSizeGuideFilter() ? 'true' : 'false')" (change)="ProductState.setHasSizeGuideFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
+              <option value="">Todas</option>
+              <option value="true">Con Guía</option>
+              <option value="false">Sin Guía</option>
+            </select>
+          </div>
+        }
+        @if (productListView()?.showSupplierLinkFilter) {
+          <div class="space-y-1.5">
+            <label class="font-bold text-base-content/60 uppercase tracking-wider block text-[10px]">Link Proveedor</label>
+            <select class="select select-bordered select-sm w-full text-xs rounded-lg" [value]="ProductState.currentHasLinkProviderFilter() === undefined ? '' : (ProductState.currentHasLinkProviderFilter() ? 'true' : 'false')" (change)="ProductState.setHasLinkProviderFilter($any($event.target).value === '' ? undefined : ($any($event.target).value === 'true'))">
+              <option value="">Todos</option>
+              <option value="true">Con Link</option>
+              <option value="false">Sin Link</option>
+            </select>
+          </div>
+        }
       </div>
 
       <div class="p-4 border-t border-base-200 bg-base-100 flex items-center gap-2">

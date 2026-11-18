@@ -1,11 +1,11 @@
 <section class="bg-base-200 min-h-screen w-full flex items-center justify-center p-4">
   <div class="flex flex-col items-center justify-center mx-auto w-full max-w-md">
     <div class="flex items-center mb-6 text-2xl font-bold text-base-content tracking-tight">
-      <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mr-3 shadow-md text-primary-content">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
+      <img
+        src="/icons/icon-96x96.png"
+        alt="Vexx"
+        class="w-10 h-10 rounded-xl mr-3 shadow-md object-contain"
+      />
       <span>Vexx</span>
     </div>
     
@@ -36,31 +36,26 @@
           [formGroup]="loginForm"
           (ngSubmit)="onSubmit()"
         >
-          <!-- Input Tienda / Slug -->
+          <!-- Input Nombre del Comercio -->
           <div>
             <label
-              for="tenantSlug"
+              for="storeName"
               class="block mb-1.5 text-xs font-bold text-base-content uppercase tracking-wider"
-              >Tienda / Comercio</label
+              >Nombre del Comercio</label
             >
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 font-mono text-sm">
-                @
-              </span>
-              <input
-                type="text"
-                name="tenantSlug"
-                id="tenantSlug"
-                class="input input-bordered w-full pl-8 font-medium lowercase"
-                [class.input-error]="isFieldInvalid('tenantSlug')"
-                placeholder="El nombre de tu tienda o comercio"
-                formControlName="tenantSlug"
-                autocomplete="organization"
-              />
-            </div>
-            @if (isFieldInvalid('tenantSlug')) {
+            <input
+              type="text"
+              name="storeName"
+              id="storeName"
+              class="input input-bordered w-full font-medium"
+              [class.input-error]="isFieldInvalid('storeName')"
+              placeholder="El nombre de tu comercio"
+              formControlName="storeName"
+              autocomplete="organization"
+            />
+            @if (isFieldInvalid('storeName')) {
             <p class="mt-1 text-xs text-error">
-              {{ getFieldError("tenantSlug") }}
+              {{ getFieldError("storeName") }}
             </p>
             }
           </div>
@@ -70,7 +65,7 @@
             <label
               for="email"
               class="block mb-1.5 text-xs font-bold text-base-content uppercase tracking-wider"
-              >Email Administrador</label
+              >Email</label
             >
             <input
               type="email"
@@ -78,7 +73,7 @@
               id="email"
               class="input input-bordered w-full"
               [class.input-error]="isFieldInvalid('email')"
-              placeholder="admin@tuempresa.com"
+              placeholder="usuario@tuempresa.com"
               formControlName="email"
               autocomplete="email"
             />
@@ -156,6 +151,62 @@
             }
           </div>
 
+          <!-- Checkboxes: Recordarme + Soy empleado -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <label class="label cursor-pointer gap-2 p-0">
+              <input
+                type="checkbox"
+                formControlName="rememberMe"
+                class="checkbox checkbox-xs checkbox-primary"
+              />
+              <span class="label-text text-xs text-base-content/80">Recordarme (15 días)</span>
+            </label>
+
+            <label class="label cursor-pointer gap-2 p-0">
+              <input
+                type="checkbox"
+                formControlName="isEmployee"
+                class="checkbox checkbox-xs checkbox-secondary"
+              />
+              <span class="label-text text-xs font-medium text-base-content/80">Soy empleado</span>
+            </label>
+          </div>
+
+          @if (forgotPasswordMode()) {
+          <div class="p-3 rounded-xl bg-base-200/70 border border-base-300 space-y-2">
+            <p class="text-xs text-base-content/70">
+              Ingresá el <strong>Nombre del Comercio</strong> y tu <strong>Email</strong> arriba para recibir un enlace de recuperación.
+            </p>
+            @if (forgotError()) {
+            <p class="text-xs text-error">{{ forgotError() }}</p>
+            }
+            @if (forgotSuccess()) {
+            <p class="text-xs text-success font-medium">{{ forgotSuccess() }}</p>
+            }
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                [disabled]="forgotLoading()"
+                (click)="onForgotPassword()"
+                class="btn btn-sm btn-secondary flex-1"
+              >
+                @if (forgotLoading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                Enviando...
+                } @else {
+                Enviar enlace
+                }
+              </button>
+              <button
+                type="button"
+                (click)="toggleForgotPassword()"
+                class="btn btn-sm btn-ghost"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
+          } @else {
           <button
             type="submit"
             [disabled]="loading"
@@ -168,13 +219,24 @@
             Ingresar al Panel
             }
           </button>
+
+          <div class="text-center">
+            <button
+              type="button"
+              (click)="toggleForgotPassword()"
+              class="text-xs text-primary hover:underline font-medium"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+          }
         </form>
 
-        <div class="mt-4 text-center border-t border-base-300 pt-3">
+        <!-- <div class="mt-4 text-center border-t border-base-300 pt-3">
           <p class="text-xs text-base-content/50">
             Plataforma Multi-Tenant • Vexx
           </p>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

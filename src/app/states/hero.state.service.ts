@@ -1,6 +1,7 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { httpResource } from '@angular/common/http';
+import { BusinessProfileService } from '../services/business-profile.service';
 import { HeroService } from '../services/hero.service';
 import { IHeroSlide } from '../interfaces/HeroSlide.interface';
 
@@ -9,12 +10,14 @@ import { IHeroSlide } from '../interfaces/HeroSlide.interface';
 })
 export class HeroStateService {
   #heroService = inject(HeroService);
+  #profile = inject(BusinessProfileService);
 
   #state = httpResource<IHeroSlide[]>(() => {
+    if (!this.#profile.features().showHeroSlider) return undefined;
     return {
       url: this.#heroService.apiUrl,
       method: 'GET',
-    }
+    };
   });
 
   readonly state = computed(() => {

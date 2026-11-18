@@ -2,6 +2,7 @@
 import { httpResource } from "@angular/common/http";
 import { computed, inject, Injectable } from "@angular/core";
 import { IProvider, IProviderCreate } from "../interfaces/provider.interface";
+import { BusinessProfileService } from "../services/business-profile.service";
 import { ProviderService } from "../services/provider.service";
 
 @Injectable({
@@ -10,11 +11,15 @@ import { ProviderService } from "../services/provider.service";
 export class ProviderStateService {
 
   #providerService = inject(ProviderService);
+  #profile = inject(BusinessProfileService);
 
-  readonly #State = httpResource<IProvider[]>(() => ({
-    url: this.#providerService.apiURL,
-    method: 'GET'
-  }))
+  readonly #State = httpResource<IProvider[]>(() => {
+    if (!this.#profile.features().showSupplierPurchases) return undefined;
+    return {
+      url: this.#providerService.apiURL,
+      method: 'GET'
+    };
+  })
 
   readonly ProviderState = computed(() => ({
     data: this.#State.value()!,

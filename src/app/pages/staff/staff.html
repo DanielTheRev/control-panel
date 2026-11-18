@@ -540,6 +540,56 @@
           </div>
         </div>
 
+        <!-- Selector Dinámico de Permisos (bootstrap.permissionCatalog) -->
+        @if (permissionCatalog().length > 0) {
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-base-content uppercase tracking-wider">Permisos del Empleado</span>
+              <span class="text-[10px] text-base-content/50">{{ selectedPermissions().length }} seleccionados</span>
+            </div>
+            <div class="max-h-56 overflow-y-auto space-y-2.5 pr-1">
+              @for (group of permissionCatalog(); track group.sectionKey) {
+                <div class="p-2.5 rounded-lg bg-base-200/40 border border-base-200 space-y-1.5">
+                  <div>
+                    <div class="text-xs font-bold text-base-content">{{ group.title }}</div>
+                    @if (group.description) {
+                      <div class="text-[10px] text-base-content/50">{{ group.description }}</div>
+                    }
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    @for (perm of group.permissions; track perm.key) {
+                      <label
+                        class="flex items-start gap-2 p-1.5 rounded-md cursor-pointer hover:bg-base-200/70 transition-colors"
+                        [class.border]="perm.sensitive"
+                        [class.border-warning/40]="perm.sensitive"
+                        [class.bg-warning/5]="perm.sensitive"
+                      >
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-xs checkbox-primary mt-0.5"
+                          [checked]="hasPermission(perm.key)"
+                          (change)="togglePermission(perm.key)"
+                        />
+                        <div class="min-w-0">
+                          <div class="text-[11px] font-medium text-base-content flex items-center gap-1">
+                            <span class="truncate">{{ perm.label }}</span>
+                            @if (perm.sensitive) {
+                              <span class="badge badge-warning badge-xs text-[9px]">Sensible</span>
+                            }
+                          </div>
+                          @if (perm.description) {
+                            <div class="text-[10px] text-base-content/50 leading-tight">{{ perm.description }}</div>
+                          }
+                        </div>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Fila 6: Estado Activo -->
         @if (editingStaff()) {
           <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-200/30 border border-base-200">

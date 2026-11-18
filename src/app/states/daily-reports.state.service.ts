@@ -3,31 +3,9 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { SaleWithDetail } from '../interfaces/sales.interface';
 
-export interface HourlyBreakpoint {
-  hour: number;
-  revenue: number;
-  count: number;
-}
+import { DailyStats, HourlyBreakpoint } from '../interfaces/daily-reports.interface';
 
-export interface DailyStats {
-  date: string;
-  totalRevenue: number;
-  totalEarnings: number;
-  totalCostPrice?: number;
-  salesCount: {
-    total: number;
-    local: number;
-    online: number;
-  };
-  refunds: {
-    total: number;
-    count: number;
-  };
-  incomeByMethod: Record<string, number>;
-  revenueByMethod: Record<string, number>;
-  hourlyBreakdown: HourlyBreakpoint[];
-  salesWithDetails: SaleWithDetail[];
-}
+export type { DailyStats, HourlyBreakpoint };
 
 @Injectable({
   providedIn: 'root',
