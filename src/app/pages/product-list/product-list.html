@@ -715,15 +715,44 @@
                       >
                         {{ p.model }}
                       </h3>
+
+                      <!-- Canales de Pago (Nivel 1 compacto) -->
+                      @let ch = $any(p.price)?.channels;
+                      @let pr = $any(p).paymentRestrictions;
+                      <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                        @if (!ch || ch.cash?.enabled || ch.transfer?.enabled) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                            Efec / Transf
+                          </span>
+                        }
+                        @if (ch?.qr?.enabled) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400">
+                            QR
+                          </span>
+                        }
+                        @if (ch?.debit?.enabled) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-base-200 text-base-content/75">
+                            Débito
+                          </span>
+                        }
+                        @if (pr?.allowCardPayment === false) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                            Solo Contado
+                          </span>
+                        } @else if (pr?.allowInterestFreeInstallments) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-primary/10 text-primary">
+                            {{ pr.maxInstallments ? pr.maxInstallments + ' CSI' : 'CSI' }}
+                          </span>
+                        } @else if (ch?.credit1Pay?.enabled) {
+                          <span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-base-200 text-base-content/75">
+                            1 Pago
+                          </span>
+                        }
+                      </div>
                     </div>
 
-                    <!-- Pie Financiero Limpio (Sin cajas grises anidadas) -->
-                    <div
-                      class="pt-2.5 border-t border-base-200/80 flex items-end justify-between gap-2 tabular-nums"
-                      [matTooltip]="getProductFinanceTooltip(p)"
-                      matTooltipClass="finance-tooltip"
-                      matTooltipPosition="above"
-                    >
+                    <!-- Pie Financiero Limpio (Sin hover pop-up) -->
+                    <div class="pt-2.5 border-t border-base-200/80 flex items-end justify-between gap-2 tabular-nums">
                       <div class="flex flex-col">
                         <span class="text-[15px] font-bold text-base-content leading-none tracking-tight">
                           {{ p.price.cashTransferPrice | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
@@ -2041,6 +2070,82 @@
               }
             </div>
           }
+        </div>
+
+        <!-- Bloque 1: Canales de Cobro & Precios -->
+        @let drawerCh = $any(p.price)?.channels;
+        @let drawerPr = $any(p).paymentRestrictions;
+        @if (drawerCh) {
+          <div class="p-3 bg-base-200/40 rounded-xl border border-base-200 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10.5px] font-bold text-base-content/55 uppercase tracking-wider">
+                Canales de Cobro & Precios
+              </span>
+              @if (drawerPr?.allowCardPayment === false) {
+                <span class="badge badge-warning badge-xs font-semibold">Solo Contado</span>
+              } @else if (drawerPr?.allowInterestFreeInstallments) {
+                <span class="badge badge-primary badge-xs font-semibold">
+                  {{ drawerPr.maxInstallments ? drawerPr.maxInstallments + ' Cuotas S/I' : 'Cuotas S/I' }}
+                </span>
+              }
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5 text-xs">
+              @for (chItem of [
+                { key: 'cash', label: 'Efectivo', data: drawerCh.cash },
+                { key: 'transfer', label: 'Transferencia', data: drawerCh.transfer },
+                { key: 'qr', label: 'QR', data: drawerCh.qr },
+                { key: 'debit', label: 'Débito', data: drawerCh.debit },
+                { key: 'credit1Pay', label: 'Crédito 1 Pago', data: drawerCh.credit1Pay },
+                { key: 'list', label: 'Lista', data: drawerCh.list }
+              ]; track chItem.key) {
+                @if (chItem.data) {
+                  <div
+                    class="flex items-center justify-between p-2 rounded-lg border bg-base-100"
+                    [ngClass]="chItem.data.enabled !== false ? 'border-base-200' : 'border-base-200/50 opacity-50'"
+                  >
+                    <span class="text-[11px] font-medium text-base-content/75 truncate">{{ chItem.label }}</span>
+                    <span class="text-[11px] font-bold tabular-nums text-base-content">
+                      {{ chItem.data.price | currency: "ARS" : "symbol-narrow" : "1.0-0" }}
+                    </span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Bloque 3: Salud Modular -->
+        <div class="p-3 bg-base-200/40 rounded-xl border border-base-200 space-y-2">
+          <span class="text-[10.5px] font-bold text-base-content/55 uppercase tracking-wider block">
+            Salud Modular
+          </span>
+          <div class="flex flex-wrap gap-1.5">
+            <span
+              class="badge badge-xs gap-1"
+              [ngClass]="$any(p).descriptions?.shortDescription || $any(p).descriptions?.largeDescription ? 'badge-success badge-outline' : 'badge-ghost opacity-50'"
+            >
+              Descripciones
+            </span>
+            <span
+              class="badge badge-xs gap-1"
+              [ngClass]="$any(p).sizeGuide ? 'badge-success badge-outline' : 'badge-ghost opacity-50'"
+            >
+              Guía de talles
+            </span>
+            <span
+              class="badge badge-xs gap-1"
+              [ngClass]="$any(p).seo?.metaImage || $any(p).seo?.metaTitle ? 'badge-success badge-outline' : 'badge-ghost opacity-50'"
+            >
+              SEO
+            </span>
+            <span
+              class="badge badge-xs gap-1"
+              [ngClass]="$any(p).combineWith?.length ? 'badge-success badge-outline' : 'badge-ghost opacity-50'"
+            >
+              Cross-sell
+            </span>
+          </div>
         </div>
 
         <!-- Cambio Rápido de Estado -->
