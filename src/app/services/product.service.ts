@@ -16,6 +16,11 @@ import { IFinanceCost } from '../interfaces/finance.interface';
 export function mapProductPrices(product: any): IProduct {
   if (!product) return product;
 
+  if (!Array.isArray(product.images)) product.images = [];
+  if (!Array.isArray(product.variants)) product.variants = [];
+  if (!Array.isArray(product.features)) product.features = [];
+  if (!Array.isArray(product.specifications)) product.specifications = [];
+
   if (!product.price && product.prices) {
     product.isLegacyPrices = true;
     // Just in case we receive the old structure, map prices to price for components that expect price

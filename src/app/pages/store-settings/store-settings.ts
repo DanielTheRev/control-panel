@@ -826,7 +826,9 @@ export class StoreSettings implements OnInit, OnDestroy, CanComponentDeactivate 
       }
     });
 
-    this.configState.loadConnectionSettings();
+    if (this.tabSection('storefront_and_connection', 'showHeadlessApiKeyAndCors')) {
+      this.configState.loadConnectionSettings();
+    }
   }
 
   ngOnInit() {

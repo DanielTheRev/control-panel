@@ -41,9 +41,17 @@
 
         @if (isExpanded()) {
           <div class="flex flex-col min-w-0 overflow-hidden leading-tight">
-            <span class="text-[15px] font-bold tracking-tight text-base-content truncate">
-              {{ brandName }}
-            </span>
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-[15px] font-bold tracking-tight text-base-content truncate">
+                {{ brandName }}
+              </span>
+              @let planLabel = bootstrapState.data()?.tenant?.planTier;
+              @if (planLabel) {
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/15 text-primary border border-primary/25 shrink-0">
+                  {{ planLabel }}
+                </span>
+              }
+            </div>
             <span class="text-[9.5px] font-bold text-primary uppercase tracking-[0.08em] truncate mt-0.5">
               {{ profile.businessTypeLabel() }}
             </span>

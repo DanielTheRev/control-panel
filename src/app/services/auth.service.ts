@@ -116,9 +116,6 @@ export class AuthService {
       .pipe(
         tap((response: LoginResponse) => {
           if (response.success) {
-            if (response.token && typeof localStorage !== 'undefined') {
-              localStorage.setItem('vexx_panel_token', response.token);
-            }
             const resolvedSlug = response.tenantSlug || credentials.tenantSlug;
             if (resolvedSlug && typeof localStorage !== 'undefined') {
               localStorage.setItem('lastTenantSlug', resolvedSlug.trim().toLowerCase());
@@ -143,9 +140,6 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.API_URL}/employee/pin-login`, payload).pipe(
       tap((response: LoginResponse) => {
         if (response.success) {
-          if (response.token && typeof localStorage !== 'undefined') {
-            localStorage.setItem('vexx_panel_token', response.token);
-          }
           if (response.tenantSlug && typeof localStorage !== 'undefined') {
             localStorage.setItem('lastTenantSlug', response.tenantSlug.trim().toLowerCase());
           }

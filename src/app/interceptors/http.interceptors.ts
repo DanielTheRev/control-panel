@@ -13,14 +13,10 @@ export const httpInterceptor: HttpInterceptorFn = (req, next) => {
   const bootstrapState = inject(TenantBootstrapStateService);
   const router = inject(Router);
   const tenantSlug = localStorage.getItem('lastTenantSlug') || getTenantSlug();
-  const token = localStorage.getItem('vexx_panel_token');
 
   const headers: Record<string, string> = {};
   if (tenantSlug) {
     headers['x-tenant-id'] = tenantSlug;
-  }
-  if (token && !req.headers.has('Authorization')) {
-    headers['Authorization'] = `Bearer ${token}`;
   }
 
   req = req.clone({
