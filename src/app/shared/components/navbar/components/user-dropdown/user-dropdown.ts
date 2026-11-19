@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
@@ -41,6 +41,16 @@ export class UserDropdown {
   readonly isAdmin = computed(() => {
     return this.user?.role === 'admin';
   });
+
+  readonly isOpen = signal(false);
+
+  toggleMenu(): void {
+    this.isOpen.update((v) => !v);
+  }
+
+  closeMenu(): void {
+    this.isOpen.set(false);
+  }
 
   readonly storeName = computed(() => {
     return this.configState.StoreConfig().config?.name || 'Mi Comercio';

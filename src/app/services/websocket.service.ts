@@ -56,8 +56,7 @@ export class WebSocketService {
    * Proveedor activo: configurado formalmente desde environment
    */
   public get provider(): 'socketio' | 'supabase' {
-    const env = environment as any;
-    return env.realtimeProvider || env.realtime_provider || 'supabase';
+    return 'socketio';
   }
 
   constructor(private authService: AuthService) {
@@ -76,11 +75,7 @@ export class WebSocketService {
   }
 
   connect(): void {
-    if (this.provider === 'supabase') {
-      this.connectSupabase();
-    } else {
-      this.connectSocketIo();
-    }
+    this.connectSocketIo();
   }
 
   private connectSocketIo(): void {
@@ -91,17 +86,18 @@ export class WebSocketService {
 
     this.#debug.log('🔌 Creando conexión WebSocket Socket.io:');
 
-    const tenantId = getTenantSlug();
+    const tenantSlug = getTenantSlug();
 
     const env = environment as any;
     const socketUrl = env.socketUrl || env.socket_config?.url;
-    const socketPath = env.socketPath || env.socket_config?.path;
+    const socketPath = env.socketPath || env.socket_config?.path || '/api/socket.io';
 
     this.socket = io(socketUrl, {
       withCredentials: true,
       path: socketPath,
-      extraHeaders: { 'x-tenant-id': tenantId },
-      query: { tenantId },
+      auth: { tenantSlug },
+      extraHeaders: { 'x-tenant-slug': tenantSlug, 'x-tenant-id': tenantSlug },
+      query: { tenantId: tenantSlug },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       timeout: 5000,

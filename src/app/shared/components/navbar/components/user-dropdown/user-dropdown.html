@@ -1,7 +1,8 @@
+<div class="relative">
 <!-- Trigger Button en el Navbar -->
 <button
   type="button"
-  [matMenuTriggerFor]="userMenu"
+  (click)="toggleMenu()"
   class="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
   
   <div class="text-right hidden sm:block min-w-0">
@@ -23,9 +24,10 @@
   </div>
 </button>
 
-<!-- Menú Desplegable (Angular Material) -->
-<mat-menu #userMenu="matMenu" xPosition="before" class="minimal-dropdown-panel">
-  <div class="w-80 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
+<!-- Menú Desplegable -->
+@if (isOpen()) {
+  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+  <div class="absolute right-0 mt-2 z-50 w-80 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
     
     <!-- 1. HEADER: IDENTIDAD DEL COMERCIO & TIENDA PÚBLICA -->
     <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
@@ -136,4 +138,5 @@
     </div>
 
   </div>
-</mat-menu>
+}
+</div>
